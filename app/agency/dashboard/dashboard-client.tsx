@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { 
   Users, DollarSign, PhoneCall, Copy, Check,
   ChevronRight, ArrowUpRight, Loader2, MessageSquare, Send, X,
-  Phone, Headphones, Sparkles, Mail, MessageCircle, FlaskConical
+  Phone, Headphones, Sparkles, Mail, MessageCircle, FlaskConical, Megaphone
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '../../../hooks/useTheme';
@@ -157,8 +157,8 @@ export default function AgencyDashboardPage() {
   const hasDemo = !!agency?.demo_phone_number;
   const demoPhoneDisplay = hasDemo ? formatDemoPhone(agency!.demo_phone_number!) : '';
 
-  const smsTemplate = `Hey — call this number real quick and tell it what your business does:\n\n${demoPhoneDisplay}\n\nIt's an AI that answers phones for businesses. It'll actually roleplay as your receptionist live on the call. Took me 2 min. Curious what you think.`;
-  const emailTemplate = `Subject: Try this — call this number and see what picks up\n\nHey,\n\nI've been using an AI that answers phone calls for businesses — real conversations, not a phone tree.\n\nCall this number and tell it what your business does:\n${demoPhoneDisplay}\n\nIt'll answer like your receptionist — booking appointments, handling questions, everything. After the call you get a text summary of what was discussed.\n\nTakes 2 minutes, no signup. Let me know what you think — if you're interested I can set one up for you.\n\n${agency?.name || ''}`;
+  const smsTemplate = `Hey, call this number real quick and tell it what your business does:\n\n${demoPhoneDisplay}\n\nIt's an AI that answers phones for businesses. It'll actually roleplay as your receptionist live on the call. Took me 2 min. Curious what you think.`;
+  const emailTemplate = `Subject: Try this, call this number and see what picks up\n\nHey,\n\nI've been using an AI that answers phone calls for businesses, real conversations, not a phone tree.\n\nCall this number and tell it what your business does:\n${demoPhoneDisplay}\n\nIt'll answer like your receptionist, booking appointments, handling questions, everything. After the call you get a text summary of what was discussed.\n\nTakes 2 minutes, no signup. Let me know what you think, if you're interested I can set one up for you.\n\n${agency?.name || ''}`;
   const copySmsTemplate = () => { navigator.clipboard.writeText(smsTemplate); setSmsCopied(true); setTimeout(() => setSmsCopied(false), 2000); };
   const copyEmailTemplate = () => { navigator.clipboard.writeText(emailTemplate); setEmailCopied(true); setTimeout(() => setEmailCopied(false), 2000); };
 
@@ -223,7 +223,7 @@ export default function AgencyDashboardPage() {
         </button>
       </div>
 
-      {/* Setup Checklist — uses billable count so test client doesn't satisfy "add first client" */}
+      {/* Setup Checklist, uses billable count so test client doesn't satisfy "add first client" */}
       <SetupChecklist
         agency={agency}
         clientCount={billableClientCount}
@@ -235,7 +235,7 @@ export default function AgencyDashboardPage() {
         provisioningTestClient={provisioningTestClient}
       />
 
-      {/* YOUR TEST AI — provisioned state */}
+      {/* YOUR TEST AI, provisioned state */}
       {testClient?.vapi_phone_number && (
         <div className="mb-6 sm:mb-8 rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
@@ -259,7 +259,7 @@ export default function AgencyDashboardPage() {
         </div>
       )}
 
-      {/* YOUR TEST AI — free plan: paid feature upgrade prompt */}
+      {/* YOUR TEST AI, free plan: paid feature upgrade prompt */}
       {!testClient && !demoMode && isFreePlan && (
         <div className="mb-6 sm:mb-8">
           <PaidFeatureNotice
@@ -272,7 +272,7 @@ export default function AgencyDashboardPage() {
         </div>
       )}
 
-      {/* YOUR TEST AI — not yet provisioned CTA */}
+      {/* YOUR TEST AI, not yet provisioned CTA */}
       {!testClient && !demoMode && !isFreePlan && (
         <div className="mb-6 sm:mb-8 rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
@@ -339,6 +339,18 @@ export default function AgencyDashboardPage() {
           <button onClick={copySignupLink} className="inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors flex-shrink-0" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary}40`, color: theme.primary }}>{copied ? (<><Check className="h-4 w-4" />Copied!</>) : (<><Copy className="h-4 w-4" />Copy Link</>)}</button>
         </div>
       </div>
+
+      {/* MARKETING KIT quick access */}
+      <a href="/agency/marketing-kit" className="mb-6 sm:mb-8 flex items-center justify-between gap-3 rounded-xl p-4 sm:p-5 transition-colors" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.hover)} onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = theme.card)}>
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Megaphone className="h-5 w-5" style={{ color: theme.primary }} /></div>
+          <div className="min-w-0">
+            <h3 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>Marketing Kit</h3>
+            <p className="text-xs sm:text-sm truncate" style={{ color: theme.textMuted }}>Branded QR codes, a print-ready one-pager, and scripts to land your first clients.</p>
+          </div>
+        </div>
+        <span className="inline-flex items-center gap-1 text-sm font-medium flex-shrink-0" style={{ color: theme.primary }}>Open <ChevronRight className="h-4 w-4" /></span>
+      </a>
 
       {/* SHARE YOUR DEMO */}
       {hasDemo && (

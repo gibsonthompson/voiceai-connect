@@ -166,7 +166,14 @@ export default function ClientAIAgentPage() {
     }
   };
 
-  const handleConnectCalendar = () => { window.location.href = `${getBackendUrl()}/api/auth/google-calendar/connect?clientId=${client?.id}`; };
+  // Pass the origin + page we are on so the backend returns us to the SAME
+  // origin after OAuth. The session token is origin-scoped (localStorage), so
+  // being sent to a different host (e.g. the slug subdomain when the client is
+  // on the agency's custom domain) would drop the token and log them out.
+  const handleConnectCalendar = () => {
+    const ret = encodeURIComponent(`${window.location.origin}/client/ai-agent`);
+    window.location.href = `${getBackendUrl()}/api/auth/google-calendar/connect?clientId=${client?.id}&return=${ret}`;
+  };
 
   const handleDisconnectCalendar = async () => {
     if (!confirm('Are you sure you want to disconnect Google Calendar? Your AI receptionist will no longer be able to book appointments.')) return;
@@ -330,19 +337,47 @@ export default function ClientAIAgentPage() {
                 </button>
               </div>
             ) : isCalendarConnected ? (
-              <div className="space-y-2.5">
-                <div className="flex items-center gap-2 p-2.5 rounded-lg" style={{ backgroundColor: theme.successBg, border: `1px solid ${theme.successBorder}` }}>
-                  <Check className="w-4 h-4" style={{ color: theme.success }} />
-                  <p className="text-xs sm:text-sm font-medium" style={{ color: theme.successText }}>Calendar connected</p>
+              <div className="space-y-3">
+                {/* Connected hero: branded gradient, Google Calendar mark, live pulse */}
+                <div className="relative overflow-hidden rounded-xl p-3.5 sm:p-4" style={{ border: `1px solid ${theme.successBorder}`, background: `linear-gradient(135deg, ${theme.successBg}, ${hexToRgba(primaryColor, 0.06)})` }}>
+                  <div className="flex items-center gap-3">
+                    <div className="relative flex-shrink-0">
+                      <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+                        <GoogleCalendarIcon className="w-6 h-6" />
+                      </div>
+                      <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ backgroundColor: theme.success }} />
+                        <span className="relative inline-flex rounded-full h-3.5 w-3.5 border-2" style={{ backgroundColor: theme.success, borderColor: theme.card }} />
+                      </span>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold leading-tight" style={{ color: theme.successText }}>Calendar connected</p>
+                      <p className="text-[11px] sm:text-xs mt-0.5 leading-relaxed" style={{ color: theme.textMuted }}>Your AI books appointments straight into your calendar, around the clock.</p>
+                    </div>
+                  </div>
                 </div>
+
+                {/* Two balanced detail chips */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex items-center gap-2 p-2.5 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
+                    <Calendar className="w-4 h-4 flex-shrink-0" style={{ color: primaryColor }} />
+                    <div className="min-w-0"><p className="text-[10px] uppercase tracking-wide font-semibold" style={{ color: theme.textMuted4 }}>Calendar</p><p className="text-xs font-semibold truncate" style={{ color: theme.text }}>Primary</p></div>
+                  </div>
+                  <div className="flex items-center gap-2 p-2.5 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
+                    <Link2 className="w-4 h-4 flex-shrink-0" style={{ color: primaryColor }} />
+                    <div className="min-w-0"><p className="text-[10px] uppercase tracking-wide font-semibold" style={{ color: theme.textMuted4 }}>Sync</p><p className="text-xs font-semibold truncate" style={{ color: theme.text }}>Real time</p></div>
+                  </div>
+                </div>
+
                 {calendarStatus && !calendarStatus.token_valid && (
                   <div className="p-2.5 sm:p-3 rounded-lg flex items-start gap-2" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
                     <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: theme.warning }} />
-                    <p className="text-xs sm:text-sm font-medium" style={{ color: theme.warningText }}>Calendar connection may have expired.</p>
+                    <p className="text-xs sm:text-sm font-medium" style={{ color: theme.warningText }}>Calendar connection may have expired. Reconnect to keep bookings flowing.</p>
                   </div>
                 )}
+
                 <div className="flex gap-2">
-                  <button onClick={handleConnectCalendar} className="flex-1 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition hover:opacity-90" style={{ backgroundColor: theme.bg, color: theme.textMuted, border: `1px solid ${theme.border}` }}>Reconnect</button>
+                  <button onClick={handleConnectCalendar} className="flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition hover:opacity-90" style={{ backgroundColor: theme.bg, color: theme.textMuted, border: `1px solid ${theme.border}` }}><RotateCcw className="w-3.5 h-3.5" /> Reconnect</button>
                   <button onClick={handleDisconnectCalendar} disabled={disconnectingCalendar} className="flex-1 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: theme.errorBg, color: theme.error, border: `1px solid ${theme.errorBorder}` }}>
                     {disconnectingCalendar ? (<span className="flex items-center justify-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Disconnecting...</span>) : 'Disconnect'}
                   </button>
@@ -350,9 +385,35 @@ export default function ClientAIAgentPage() {
               </div>
             ) : (
               <div className="space-y-3">
+                {/* Invitation hero: branded gradient, Google Calendar mark */}
+                <div className="relative overflow-hidden rounded-xl p-3.5 sm:p-4" style={{ border: `1px solid ${theme.border}`, background: `linear-gradient(135deg, ${hexToRgba(primaryColor, 0.08)}, ${theme.card})` }}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+                      <GoogleCalendarIcon className="w-6 h-6" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold leading-tight" style={{ color: theme.text }}>Turn calls into booked jobs</p>
+                      <p className="text-[11px] sm:text-xs mt-0.5 leading-relaxed" style={{ color: theme.textMuted }}>Connect your calendar so the AI can schedule appointments while it is still on the call.</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Two balanced benefit chips */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex items-center gap-2 p-2.5 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
+                    <Check className="w-4 h-4 flex-shrink-0" style={{ color: primaryColor }} />
+                    <p className="text-[11px] sm:text-xs font-medium" style={{ color: theme.text }}>Books in real time</p>
+                  </div>
+                  <div className="flex items-center gap-2 p-2.5 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
+                    <Shield className="w-4 h-4 flex-shrink-0" style={{ color: primaryColor }} />
+                    <p className="text-[11px] sm:text-xs font-medium" style={{ color: theme.text }}>Private & revocable</p>
+                  </div>
+                </div>
+
                 <button onClick={handleConnectCalendar} className="w-full flex items-center justify-center gap-2.5 py-2.5 sm:py-3 rounded-xl text-sm font-semibold transition hover:shadow-sm" style={{ backgroundColor: theme.card, color: theme.text, border: `1px solid ${theme.border}` }}>
                   <GoogleGIcon className="w-[18px] h-[18px]" /> Connect Google Calendar
                 </button>
+
                 <div className="flex items-start gap-2.5 p-2.5 sm:p-3 rounded-xl" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
                   <img src="/icon-512x512.png" alt="VoiceAI Connect" className="w-4 h-4 rounded flex-shrink-0 mt-0.5" />
                   <p className="text-[11px] sm:text-xs leading-relaxed" style={{ color: theme.textMuted }}>

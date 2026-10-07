@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   FileText, Mail, MessageSquare, PhoneCall, Plus, Search, Loader2,
-  MoreVertical, Copy, Trash2, Edit, Sparkles
+  MoreVertical, Copy, Trash2, Edit, Sparkles, Megaphone, ChevronRight
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
@@ -131,11 +131,11 @@ export default function OutreachPage() {
 
   if (!canUseLeadFinder) {
     const previewEmails = [
-      { name: 'Initial Outreach', desc: 'First contact — introduces AI receptionist value prop' },
+      { name: 'Initial Outreach', desc: 'First contact, introduces AI receptionist value prop' },
       { name: 'Follow-up #1', desc: 'Soft follow-up with missed call cost data' },
-      { name: 'Follow-up #2', desc: 'Social proof — client results and testimonials' },
-      { name: 'Follow-up #3', desc: 'Urgency — limited availability messaging' },
-      { name: 'Break-up Email', desc: 'Final touch — door stays open' },
+      { name: 'Follow-up #2', desc: 'Social proof, client results and testimonials' },
+      { name: 'Follow-up #3', desc: 'Urgency, limited availability messaging' },
+      { name: 'Break-up Email', desc: 'Final touch, door stays open' },
       { name: 'Re-engagement', desc: 'Win-back for cold leads after 30+ days' },
     ];
     const previewSms = [
@@ -385,16 +385,41 @@ export default function OutreachPage() {
             </p>
           </div>
           
-          <Link
-            href="/agency/outreach/templates/new"
-            className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors w-full sm:w-auto"
-            style={{ backgroundColor: theme.primary, color: theme.primaryText }}
-          >
-            <Plus className="h-4 w-4" />
-            New Template
-          </Link>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Link
+              href="/agency/marketing-kit"
+              className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors flex-1 sm:flex-none"
+              style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, color: theme.text }}
+            >
+              <Megaphone className="h-4 w-4" style={{ color: theme.primary }} />
+              Marketing Kit
+            </Link>
+            <Link
+              href="/agency/outreach/templates/new"
+              className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors flex-1 sm:flex-none"
+              style={{ backgroundColor: theme.primary, color: theme.primaryText }}
+            >
+              <Plus className="h-4 w-4" />
+              New Template
+            </Link>
+          </div>
         </div>
       </div>
+
+      {/* Marketing Kit banner */}
+      <Link href="/agency/marketing-kit" className="flex items-center justify-between gap-3 rounded-xl p-4 mb-6 sm:mb-8 transition-colors"
+        style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
+        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.hover)}
+        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = theme.card)}>
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Megaphone className="h-4 w-4" style={{ color: theme.primary }} /></div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold" style={{ color: theme.text }}>Marketing Kit</p>
+            <p className="text-xs truncate" style={{ color: theme.textMuted }}>Branded QR codes, a print-ready one-pager, and scripts to land clients.</p>
+          </div>
+        </div>
+        <ChevronRight className="h-5 w-5 flex-shrink-0" style={{ color: theme.textMuted }} />
+      </Link>
 
       {/* Quick Links */}
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-3 mb-6 sm:mb-8">
