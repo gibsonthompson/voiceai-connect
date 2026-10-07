@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { 
-  Users, Copy, Check, UserPlus, BarChart3, Search, DollarSign,
+  Users, Copy, Check, UserPlus, Megaphone, Search, DollarSign,
   ChevronRight, ArrowUpRight, Loader2, MessageSquare, Send, X, LifeBuoy,
   Phone, Headphones, Sparkles, Mail, MessageCircle, FlaskConical, Globe, Inbox
 } from 'lucide-react';
@@ -162,8 +162,8 @@ export default function AgencyDashboardPage() {
   const hasDemo = !!agency?.demo_phone_number;
   const demoPhoneDisplay = hasDemo ? formatDemoPhone(agency!.demo_phone_number!) : '';
 
-  const smsTemplate = `Hey — call this number real quick and tell it what your business does:\n\n${demoPhoneDisplay}\n\nIt's an AI that answers phones for businesses. It'll actually roleplay as your receptionist live on the call. Took me 2 min. Curious what you think.`;
-  const emailTemplate = `Subject: Try this — call this number and see what picks up\n\nHey,\n\nI've been using an AI that answers phone calls for businesses — real conversations, not a phone tree.\n\nCall this number and tell it what your business does:\n${demoPhoneDisplay}\n\nIt'll answer like your receptionist — booking appointments, handling questions, everything. After the call you get a text summary of what was discussed.\n\nTakes 2 minutes, no signup. Let me know what you think — if you're interested I can set one up for you.\n\n${agency?.name || ''}`;
+  const smsTemplate = `Hey - call this number real quick and tell it what your business does:\n\n${demoPhoneDisplay}\n\nIt's an AI that answers phones for businesses. It'll actually roleplay as your receptionist live on the call. Took me 2 min. Curious what you think.`;
+  const emailTemplate = `Subject: Try this - call this number and see what picks up\n\nHey,\n\nI've been using an AI that answers phone calls for businesses - real conversations, not a phone tree.\n\nCall this number and tell it what your business does:\n${demoPhoneDisplay}\n\nIt'll answer like your receptionist - booking appointments, handling questions, everything. After the call you get a text summary of what was discussed.\n\nTakes 2 minutes, no signup. Let me know what you think - if you're interested I can set one up for you.\n\n${agency?.name || ''}`;
   const copySmsTemplate = () => { navigator.clipboard.writeText(smsTemplate); setSmsCopied(true); setTimeout(() => setSmsCopied(false), 2000); };
   const copyEmailTemplate = () => { navigator.clipboard.writeText(emailTemplate); setEmailCopied(true); setTimeout(() => setEmailCopied(false), 2000); };
 
@@ -222,7 +222,7 @@ export default function AgencyDashboardPage() {
 
       <PlatformUnreadNudge agencyId={agency?.id} />
 
-      {/* Setup Checklist — uses billable count so test client doesn't satisfy "add first client" */}
+      {/* Setup Checklist - uses billable count so test client doesn't satisfy "add first client" */}
       <SetupChecklist
         agency={agency}
         clientCount={billableClientCount}
@@ -287,9 +287,9 @@ export default function AgencyDashboardPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: theme.primary15 }}><DollarSign className="h-5 w-5" style={{ color: theme.primary }} /></div>
           <span className="text-sm font-medium" style={{ color: theme.text }}>Pricing</span>
         </a>
-        <a href="/agency/analytics" className="rounded-xl p-4 flex flex-col items-center gap-2.5 text-center transition-all" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${theme.primary}40`; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = 'none'; }}>
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: `${theme.primary}10` }}><BarChart3 className="h-5 w-5" style={{ color: theme.primary }} /></div>
-          <span className="text-sm font-medium" style={{ color: theme.text }}>Analytics</span>
+        <a href="/agency/marketing-kit" className="rounded-xl p-4 flex flex-col items-center gap-2.5 text-center transition-all" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${theme.primary}40`; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = 'none'; }}>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden" style={{ backgroundColor: `${theme.primary}10` }}>{agency?.logo_url ? <img src={agency.logo_url} alt="" className="h-7 w-7 object-contain" /> : <Megaphone className="h-5 w-5" style={{ color: theme.primary }} />}</div>
+          <span className="text-sm font-medium" style={{ color: theme.text }}>Marketing Kit</span>
         </a>
         {testClient ? (
           <a href={`/agency/clients/${testClient.id}`} className="rounded-xl p-4 flex flex-col items-center gap-2.5 text-center transition-all" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${theme.primary}40`; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = 'none'; }}>
