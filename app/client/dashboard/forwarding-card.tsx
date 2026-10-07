@@ -402,6 +402,7 @@ export function CallForwardingCard({ callsThisMonth = 0 }: CallForwardingCardPro
     return (
       <div className="rounded-2xl p-5 sm:p-6 mb-5 sm:mb-7 fu fu2" style={card}>
         {intro}
+        {setupOpen && (
         <div className="mt-4">
           <p className="text-[12px] sm:text-[13px] font-semibold mb-2" style={{ color: theme.text }}>First, who is your phone carrier?</p>
           <div className="space-y-2">
@@ -418,6 +419,7 @@ export function CallForwardingCard({ callsThisMonth = 0 }: CallForwardingCardPro
             The forwarding code is different on each carrier, so we show the right one for yours.
           </p>
         </div>
+        )}
       </div>
     );
   }

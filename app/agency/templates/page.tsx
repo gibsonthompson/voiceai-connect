@@ -24,9 +24,10 @@ import { INDUSTRY_ICON_MAP as ICON_MAP, INDUSTRIES } from '@/lib/industries';
 import { CustomSelect } from '@/components/ui/custom-select';
 
 const MODEL_OPTIONS = [
-  { id: 'gpt-4o-mini', name: 'GPT-4o Mini', desc: 'Fastest response time, lowest cost - best for real-time voice conversations', tag: 'Default' },
-  { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', desc: 'Latest model, better instruction following - same speed tier as 4o Mini', tag: 'Latest' },
-  { id: 'gpt-4o', name: 'GPT-4o', desc: 'Strongest reasoning but slower - use for complex industries like legal or medical', tag: 'Premium' },
+  { id: 'gpt-4.1', name: 'GPT-4.1', desc: 'Full GPT-4.1 - best instruction following and reasoning for voice. Production default.', tag: 'Recommended' },
+  { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', desc: 'Lighter 4.1, faster and cheaper - same speed tier as 4o Mini', tag: 'Fast' },
+  { id: 'gpt-4o-mini', name: 'GPT-4o Mini', desc: 'Fastest response time, lowest cost - leanest option for simple call flows', tag: 'Budget' },
+  { id: 'gpt-4o', name: 'GPT-4o', desc: 'Strong reasoning but slower - legacy option for complex industries', tag: 'Legacy' },
 ];
 
 const COMPLIANCE_GREETING = 'This call may be recorded for quality and training purposes.';
@@ -42,7 +43,27 @@ interface AssistantConfig {
   id: string; model: string; voice: string; voiceProvider: string;
   firstMessage: string; systemPrompt: string; temperature: number; speed: number;
   tools: string[]; toolIds: string[];
+  // ── voice pipeline (added 2026-10-07) ──
+  transcriberMode: string; fluxLanguage: string; fluxEotThreshold: number;
+  fluxEotTimeoutMs: number; endpointingProvider: string; backgroundDenoising: boolean;
 }
+
+const VOICE_PROVIDER_OPTIONS = [
+  { value: '11labs', label: 'ElevenLabs (Flash v2.5)' },
+  { value: 'cartesia', label: 'Cartesia (Sonic 3.5)' },
+];
+const TRANSCRIBER_OPTIONS = [
+  { value: 'nova', label: 'Deepgram Nova (multi, EN+ES)' },
+  { value: 'flux', label: 'Deepgram Flux (native end-of-turn)' },
+];
+const FLUX_LANGUAGE_OPTIONS = [
+  { value: 'multi', label: 'Multilingual (EN+ES)' },
+  { value: 'en', label: 'English only' },
+];
+const ENDPOINTING_OPTIONS = [
+  { value: 'vapi', label: 'VAPI (multi-safe, default)' },
+  { value: 'livekit', label: 'LiveKit (English-oriented)' },
+];
 
 interface VoiceOption {
   id: string; name: string; description: string; gender: string;
@@ -218,6 +239,14 @@ export default function AILabPage() {
   const [editModel, setEditModel] = useState('');
   const [editTemp, setEditTemp] = useState(0.7);
   const [editSpeed, setEditSpeed] = useState(1);
+  // ── voice pipeline edit state (added 2026-10-07) ──
+  const [editVoiceProvider, setEditVoiceProvider] = useState('11labs');
+  const [editTranscriberMode, setEditTranscriberMode] = useState('nova');
+  const [editFluxLanguage, setEditFluxLanguage] = useState('multi');
+  const [editFluxEot, setEditFluxEot] = useState(0.6);
+  const [editFluxEotTimeout, setEditFluxEotTimeout] = useState(3000);
+  const [editEndpointing, setEditEndpointing] = useState('vapi');
+  const [editDenoising, setEditDenoising] = useState(true);
   const [editCallMode, setEditCallMode] = useState<'primary' | 'secondary'>('primary');
   const [editTransferPhone, setEditTransferPhone] = useState('');
   const [promptExpanded, setPromptExpanded] = useState(false);
@@ -260,6 +289,7 @@ export default function AILabPage() {
   const eventLogEndRef = useRef<HTMLDivElement>(null);
   const getToken = () => localStorage.getItem('auth_token') || '';
   const inputStyle = { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text };
+  const selectUi = { inputStyle, text: theme.text, muted: theme.textMuted, panelBg: theme.isDark ? '#232321' : '#ffffff', panelBorder: theme.border, hover: theme.hover, accent: theme.primary, isDark: theme.isDark };
 
   const addEvent = useCallback((type: string, message: string, level: EventLogEntry['level']) => {
     setEventLog(prev => [...prev, { id: uid(), type, timestamp: Date.now(), message, level }]);
@@ -345,8 +375,9 @@ export default function AILabPage() {
         setEditCallMode((d.client?.call_mode as 'primary' | 'secondary') || 'primary');
         setEditTransferPhone(d.client?.owner_phone || '');
         if (d.assistant) {
-          const c: AssistantConfig = { id: d.assistant.id, model: d.assistant.model || 'gpt-4o-mini', voice: d.assistant.voice || '', voiceProvider: d.assistant.voiceProvider || '11labs', firstMessage: d.assistant.firstMessage || '', systemPrompt: d.assistant.systemPrompt || '', temperature: d.assistant.temperature ?? 0.7, speed: d.assistant.speed ?? 1, tools: d.assistant.tools || [], toolIds: d.assistant.toolIds || [] };
+          const c: AssistantConfig = { id: d.assistant.id, model: d.assistant.model || 'gpt-4.1', voice: d.assistant.voice || '', voiceProvider: d.assistant.voiceProvider || '11labs', firstMessage: d.assistant.firstMessage || '', systemPrompt: d.assistant.systemPrompt || '', temperature: d.assistant.temperature ?? 0.7, speed: d.assistant.speed ?? 1, tools: d.assistant.tools || [], toolIds: d.assistant.toolIds || [], transcriberMode: d.assistant.transcriberMode || 'nova', fluxLanguage: d.assistant.fluxLanguage || 'multi', fluxEotThreshold: d.assistant.fluxEotThreshold ?? 0.6, fluxEotTimeoutMs: d.assistant.fluxEotTimeoutMs ?? 3000, endpointingProvider: d.assistant.endpointingProvider || 'vapi', backgroundDenoising: d.assistant.backgroundDenoising !== false };
           setConfig(c); setEditPrompt(c.systemPrompt); setEditGreeting(c.firstMessage); setEditVoice(c.voice); setVoiceFilter('all'); setEditModel(c.model); setEditTemp(c.temperature); setEditSpeed(c.speed);
+          setEditVoiceProvider(c.voiceProvider); setEditTranscriberMode(c.transcriberMode); setEditFluxLanguage(c.fluxLanguage); setEditFluxEot(c.fluxEotThreshold); setEditFluxEotTimeout(c.fluxEotTimeoutMs); setEditEndpointing(c.endpointingProvider); setEditDenoising(c.backgroundDenoising);
           addEvent('loaded', 'AI config loaded', 'success');
           fetchKB(client.id);
         }
@@ -360,17 +391,27 @@ export default function AILabPage() {
     setConfigSaving(true); setConfigSaved(false); setConfigError('');
     try {
       const body: Record<string, any> = {};
-      if (config) { body.system_prompt = editPrompt; body.first_message = editGreeting; body.voice_id = editVoice; body.model = editModel; body.temperature = editTemp; body.speed = editSpeed; }
+      if (config) {
+        body.system_prompt = editPrompt; body.first_message = editGreeting; body.voice_id = editVoice; body.model = editModel; body.temperature = editTemp; body.speed = editSpeed;
+        // ── voice pipeline ──
+        body.voice_provider = editVoiceProvider;
+        body.transcriber_mode = editTranscriberMode;
+        body.flux_language = editFluxLanguage;
+        body.flux_eot_threshold = editFluxEot;
+        body.flux_eot_timeout_ms = editFluxEotTimeout;
+        body.endpointing_provider = editEndpointing;
+        body.background_denoising = editDenoising;
+      }
       body.call_mode = editCallMode;
       if (editTransferPhone.trim()) body.transfer_phone = editTransferPhone.trim();
       const r = await fetch(`${api}/api/agency/${agency.id}/clients/${selectedClient.id}/prompt`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` }, body: JSON.stringify(body) });
-      if (r.ok) { setConfigSaved(true); addEvent('saved', 'Config saved to VAPI', 'success'); setTimeout(() => setConfigSaved(false), 3000); if (config) setConfig({ ...config, systemPrompt: editPrompt, firstMessage: editGreeting, voice: editVoice, model: editModel, temperature: editTemp, speed: editSpeed }); }
+      if (r.ok) { setConfigSaved(true); addEvent('saved', 'Config saved to VAPI', 'success'); setTimeout(() => setConfigSaved(false), 3000); if (config) setConfig({ ...config, systemPrompt: editPrompt, firstMessage: editGreeting, voice: editVoice, model: editModel, temperature: editTemp, speed: editSpeed, voiceProvider: editVoiceProvider, transcriberMode: editTranscriberMode, fluxLanguage: editFluxLanguage, fluxEotThreshold: editFluxEot, fluxEotTimeoutMs: editFluxEotTimeout, endpointingProvider: editEndpointing, backgroundDenoising: editDenoising }); }
       else { const d = await r.json(); setConfigError(d.error || 'Save failed'); addEvent('error', d.error || 'Save failed', 'error'); }
     } catch { setConfigError('Network error'); }
     finally { setConfigSaving(false); }
   };
 
-  const hasChanges = config ? (editPrompt !== config.systemPrompt || editGreeting !== config.firstMessage || editVoice !== config.voice || editModel !== config.model || editTemp !== config.temperature || editSpeed !== config.speed || editCallMode !== ((selectedClient?.call_mode as any) || 'primary') || editTransferPhone !== (selectedClient?.owner_phone || '')) : editCallMode !== ((selectedClient?.call_mode as any) || 'primary');
+  const hasChanges = config ? (editPrompt !== config.systemPrompt || editGreeting !== config.firstMessage || editVoice !== config.voice || editModel !== config.model || editTemp !== config.temperature || editSpeed !== config.speed || editVoiceProvider !== config.voiceProvider || editTranscriberMode !== config.transcriberMode || editFluxLanguage !== config.fluxLanguage || editFluxEot !== config.fluxEotThreshold || editFluxEotTimeout !== config.fluxEotTimeoutMs || editEndpointing !== config.endpointingProvider || editDenoising !== config.backgroundDenoising || editCallMode !== ((selectedClient?.call_mode as any) || 'primary') || editTransferPhone !== (selectedClient?.owner_phone || '')) : editCallMode !== ((selectedClient?.call_mode as any) || 'primary');
 
   const startCall = async () => { if (!vapiRef.current || !selectedClient?.vapi_assistant_id) return; setCallState('connecting'); setTranscript([]); setEventLog([]); setCallDuration(0); setShowCallModal(true); addEvent('dialing', `Calling ${selectedClient.business_name}...`, 'info'); try { await vapiRef.current.start(selectedClient.vapi_assistant_id); startTimer(); } catch (e: any) { addEvent('error', e?.message || 'Call failed', 'error'); setCallState('idle'); setShowCallModal(false); } };
   const endCall = () => { vapiRef.current?.stop(); stopTimer(); setCallState('ended'); };
@@ -495,7 +536,60 @@ export default function AILabPage() {
                     <div><label className="block text-sm font-medium mb-2" style={{ color: theme.textMuted }}>Temperature: {editTemp}</label><input type="range" min="0" max="1" step="0.1" value={editTemp} onChange={e => setEditTemp(parseFloat(e.target.value))} className="w-full mt-2" style={{ accentColor: theme.primary }} /><div className="flex justify-between text-[11px] mt-1" style={{ color: theme.textMuted }}><span>Precise</span><span>Creative</span></div></div><div><label className="block text-sm font-medium mb-2" style={{ color: theme.textMuted }}>Voice Speed: {editSpeed.toFixed(2)}x</label><input type="range" min="0.7" max="1.2" step="0.05" value={editSpeed} onChange={e => setEditSpeed(parseFloat(e.target.value))} className="w-full mt-2" style={{ accentColor: theme.primary }} /><div className="flex justify-between text-[11px] mt-1" style={{ color: theme.textMuted }}><span>Slower</span><span>Faster</span></div></div>
                   </div>
 
-                  <VoicePicker theme={theme} voices={allVoices} value={editVoice} onChange={setEditVoice} filter={voiceFilter} onFilter={setVoiceFilter} playingVoiceId={playingVoiceId} onPlay={playPreview} />
+                  {/* ═══ Voice Pipeline (added 2026-10-07) ═══
+                      Provider, transcriber, endpointing and denoising. These map
+                      to per-client columns the live-call builder reads, so changes
+                      here reach real calls (not just the test call). */}
+                  <div className="rounded-lg p-4" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : '#f9fafb', border: `1px solid ${theme.border}` }}>
+                    <div className="flex items-center gap-2 mb-4"><Sparkles className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-sm font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Voice Pipeline</span></div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div><label className="block text-sm font-medium mb-2" style={{ color: theme.textMuted }}>Voice Provider</label><CustomSelect value={editVoiceProvider} onChange={(v) => setEditVoiceProvider(v)} options={VOICE_PROVIDER_OPTIONS} ui={selectUi} /></div>
+                      <div><label className="block text-sm font-medium mb-2" style={{ color: theme.textMuted }}>Transcriber</label><CustomSelect value={editTranscriberMode} onChange={(v) => setEditTranscriberMode(v)} options={TRANSCRIBER_OPTIONS} ui={selectUi} /></div>
+                    </div>
+
+                    {editTranscriberMode === 'flux' ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                        <div><label className="block text-sm font-medium mb-2" style={{ color: theme.textMuted }}>Flux Language</label><CustomSelect value={editFluxLanguage} onChange={(v) => setEditFluxLanguage(v)} options={FLUX_LANGUAGE_OPTIONS} ui={selectUi} /></div>
+                        <div><label className="block text-sm font-medium mb-2" style={{ color: theme.textMuted }}>End-of-turn sensitivity: {editFluxEot.toFixed(2)}</label><input type="range" min="0.5" max="1" step="0.05" value={editFluxEot} onChange={e => setEditFluxEot(parseFloat(e.target.value))} className="w-full mt-2" style={{ accentColor: theme.primary }} /><div className="flex justify-between text-[11px] mt-1" style={{ color: theme.textMuted }}><span>Snappier</span><span>Safer</span></div></div>
+                        <div><label className="block text-sm font-medium mb-2" style={{ color: theme.textMuted }}>End-of-turn timeout (ms)</label><input type="number" min="500" max="30000" step="100" value={editFluxEotTimeout} onChange={e => setEditFluxEotTimeout(parseInt(e.target.value || '3000', 10))} className="w-full rounded-lg px-3 py-2.5 text-sm" style={inputStyle} /></div>
+                        <div><label className="block text-sm font-medium mb-2" style={{ color: theme.textMuted }}>Background Denoising (Krisp)</label>
+                          <div className="flex rounded-lg overflow-hidden" style={{ border: `1px solid ${theme.inputBorder}` }}>
+                            <button type="button" onClick={() => setEditDenoising(true)} className="flex-1 px-3 py-2.5 text-sm font-medium transition" style={{ backgroundColor: editDenoising ? theme.primary : 'transparent', color: editDenoising ? theme.primaryText : theme.textMuted }}>On</button>
+                            <button type="button" onClick={() => setEditDenoising(false)} className="flex-1 px-3 py-2.5 text-sm font-medium transition" style={{ backgroundColor: !editDenoising ? theme.primary : 'transparent', color: !editDenoising ? theme.primaryText : theme.textMuted }}>Off</button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                        <div><label className="block text-sm font-medium mb-2" style={{ color: theme.textMuted }}>Endpointing</label><CustomSelect value={editEndpointing} onChange={(v) => setEditEndpointing(v)} options={ENDPOINTING_OPTIONS} ui={selectUi} /></div>
+                        <div><label className="block text-sm font-medium mb-2" style={{ color: theme.textMuted }}>Background Denoising (Krisp)</label>
+                          <div className="flex rounded-lg overflow-hidden" style={{ border: `1px solid ${theme.inputBorder}` }}>
+                            <button type="button" onClick={() => setEditDenoising(true)} className="flex-1 px-3 py-2.5 text-sm font-medium transition" style={{ backgroundColor: editDenoising ? theme.primary : 'transparent', color: editDenoising ? theme.primaryText : theme.textMuted }}>On</button>
+                            <button type="button" onClick={() => setEditDenoising(false)} className="flex-1 px-3 py-2.5 text-sm font-medium transition" style={{ backgroundColor: !editDenoising ? theme.primary : 'transparent', color: !editDenoising ? theme.primaryText : theme.textMuted }}>Off</button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <p className="text-[11px] mt-3 leading-relaxed" style={{ color: theme.textMuted }}>
+                      {editTranscriberMode === 'flux'
+                        ? 'Flux handles end-of-turn itself, so VAPI/LiveKit endpointing is disabled while it is on. Flux is English-oriented; keep Spanish-heavy clients on Nova.'
+                        : 'LiveKit endpointing is English-oriented; keep Spanish-heavy clients on VAPI. Denoising strips background voices before transcription.'}
+                    </p>
+                  </div>
+
+                  {/* Voice selection. ElevenLabs uses the voice library picker;
+                      Cartesia takes a voice id (its voices are not in /api/voices). */}
+                  {editVoiceProvider === 'cartesia' ? (
+                    <div>
+                      <label className="block text-sm font-medium mb-2" style={{ color: theme.textMuted }}>Cartesia Voice ID</label>
+                      <input type="text" value={editVoice} onChange={e => setEditVoice(e.target.value)} placeholder="e.g. a0e99841-438c-4a64-b679-ae501e7d6091" className="w-full rounded-lg px-3 py-2.5 text-sm font-mono" style={inputStyle} />
+                      <p className="text-[11px] mt-1.5" style={{ color: theme.textMuted }}>Paste a Cartesia voice id from the VAPI voice library or the Cartesia playground. Custom/cloned Cartesia voices must be set public. Voice speed does not apply to Cartesia.</p>
+                    </div>
+                  ) : (
+                    <VoicePicker theme={theme} voices={allVoices} value={editVoice} onChange={setEditVoice} filter={voiceFilter} onFilter={setVoiceFilter} playingVoiceId={playingVoiceId} onPlay={playPreview} />
+                  )}
 
                   <div>
                     <div className="flex items-center justify-between mb-2"><label className="text-sm font-medium" style={{ color: theme.textMuted }}>Opening Greeting</label><button onClick={copyCompliance} className="flex items-center gap-1 text-sm font-medium px-2 py-0.5 rounded transition" style={{ color: theme.primary, backgroundColor: hexToRgba(theme.primary, 0.08) }}>{copiedCompliance ? <><Check className="h-3 w-3" /> Copied</> : <><Copy className="h-3 w-3" /> Compliance text</>}</button></div>

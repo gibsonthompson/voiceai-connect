@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Search, Check } from 'lucide-react';
 import { searchTimezones, getTimezoneLabel } from '@/lib/timezones';
 
@@ -27,15 +28,43 @@ export function TimezoneSelect({ value, onChange, ui, disabled, placeholder = 'S
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const rootRef = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; width: number; maxH: number } | null>(null);
 
   const results = useMemo(() => searchTimezones(query, value), [query, value]);
   const selectedLabel = value ? getTimezoneLabel(value) : '';
 
+  // Position the panel in a body-level portal so it is never clipped by an
+  // overflow-hidden ancestor (the rounded section cards clip absolutely
+  // positioned children). Opens below the trigger, flips above when tight.
+  const measure = useCallback(() => {
+    const r = btnRef.current?.getBoundingClientRect();
+    if (!r) return;
+    const gap = 6;
+    const below = window.innerHeight - r.bottom - gap - 8;
+    const above = r.top - gap - 8;
+    const openUp = below < 240 && above > below;
+    const maxH = Math.max(160, Math.min(320, openUp ? above : below));
+    setPos({ top: openUp ? Math.max(8, r.top - gap - maxH) : r.bottom + gap, left: r.left, width: r.width, maxH });
+  }, []);
+
+  useEffect(() => {
+    if (!open) { setPos(null); return; }
+    measure();
+    const onScroll = () => measure();
+    window.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', measure);
+    return () => { window.removeEventListener('scroll', onScroll, true); window.removeEventListener('resize', measure); };
+  }, [open, measure]);
+
   useEffect(() => {
     if (!open) return;
     const onDocClick = (e: MouseEvent) => {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+      const t = e.target as Node;
+      if (rootRef.current?.contains(t) || panelRef.current?.contains(t)) return;
+      setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
     document.addEventListener('mousedown', onDocClick);
@@ -53,6 +82,7 @@ export function TimezoneSelect({ value, onChange, ui, disabled, placeholder = 'S
   return (
     <div ref={rootRef} className="relative">
       <button
+        ref={btnRef}
         type="button"
         disabled={disabled}
         onClick={() => !disabled && setOpen((o) => !o)}
@@ -62,13 +92,14 @@ export function TimezoneSelect({ value, onChange, ui, disabled, placeholder = 'S
         <span className="truncate" style={{ color: selectedLabel ? ui.text : ui.muted }}>
           {selectedLabel || placeholder}
         </span>
-        <ChevronDown className="h-4 w-4 flex-shrink-0" style={{ color: ui.muted }} />
+        <ChevronDown className={`h-4 w-4 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} style={{ color: ui.muted }} />
       </button>
 
-      {open && (
+      {open && pos && typeof document !== 'undefined' && createPortal(
         <div
-          className="absolute z-50 mt-1 w-full rounded-xl overflow-hidden shadow-xl"
-          style={{ backgroundColor: ui.panelBg, border: `1px solid ${ui.panelBorder}` }}
+          ref={panelRef}
+          className="rounded-xl overflow-hidden shadow-xl"
+          style={{ position: 'fixed', top: pos.top, left: pos.left, width: pos.width, zIndex: 9999, backgroundColor: ui.panelBg, border: `1px solid ${ui.panelBorder}`, display: 'flex', flexDirection: 'column', maxHeight: pos.maxH }}
         >
           <div className="p-2" style={{ borderBottom: `1px solid ${ui.panelBorder}` }}>
             <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg" style={{ backgroundColor: ui.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }}>
@@ -83,7 +114,7 @@ export function TimezoneSelect({ value, onChange, ui, disabled, placeholder = 'S
               />
             </div>
           </div>
-          <div className="max-h-64 overflow-y-auto py-1">
+          <div className="overflow-y-auto py-1" style={{ flex: 1 }}>
             {results.length === 0 ? (
               <div className="px-3 py-3 text-xs text-center" style={{ color: ui.muted }}>No matches</div>
             ) : (
@@ -106,7 +137,8 @@ export function TimezoneSelect({ value, onChange, ui, disabled, placeholder = 'S
               })
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

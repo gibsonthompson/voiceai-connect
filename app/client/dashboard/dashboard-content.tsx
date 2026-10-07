@@ -535,9 +535,16 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
               <PhoneCall className="h-7 w-7" style={{ color: theme.textMuted4 }} />
             </div>
             <p className="font-medium text-sm" style={{ color: theme.textMuted }}>No calls yet</p>
-            <p className="text-xs mt-1 max-w-[240px] mx-auto" style={{ color: theme.textMuted4 }}>
-              {isProvisioned ? 'Forward calls to your AI number to get started.' : 'Your AI receptionist is being set up...'}
+            <p className="text-xs mt-1 max-w-[260px] mx-auto" style={{ color: theme.textMuted4 }}>
+              {isProvisioned ? 'Give your AI number a call to hear it answer, or forward your calls to it.' : 'Your AI receptionist is being set up...'}
             </p>
+            {isProvisioned && hasPhoneNumber && (
+              <a href={`tel:${client.vapi_phone_number}`}
+                className="mt-4 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]"
+                style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+                <PhoneCall className="h-4 w-4" /> Tap to call your AI · {formattedPhone}
+              </a>
+            )}
           </div>
         ) : (
           <div>

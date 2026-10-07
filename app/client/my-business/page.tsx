@@ -57,7 +57,7 @@ function parseAiKnowledge(content: string | null): AiKnowledge | null {
   if (start === -1) return null;
 
   const rest = content.slice(start + marker.length);
-  const nextTop = rest.search(/\n#\s+/); // the "# {business} — Website Content" header
+  const nextTop = rest.search(/\n#\s+/); // the "# {business} - Website Content" header
   const block = nextTop === -1 ? rest : rest.slice(0, nextTop);
 
   const facts: { label: string; value: string }[] = [];
@@ -134,20 +134,19 @@ export default function MyBusinessPage() {
   const [additionalInfo, setAdditionalInfo] = useState('');
   const [existingServicesText, setExistingServicesText] = useState('');
 
-  // Service areas — stored on the client AI-settings record, moved here from
+  // Service areas, stored on the client AI-settings record, moved here from
   // the AI Agent tab. Feeds the assistant system prompt at call time.
   const [serviceAreas, setServiceAreas] = useState<string[]>([]);
   const [origServiceAreas, setOrigServiceAreas] = useState<string[]>([]);
   const [newArea, setNewArea] = useState('');
   const [savingAreas, setSavingAreas] = useState(false);
 
-  // Read-only "What Your AI Knows" view — the assembled KB document the AI
+  // Read-only "What Your AI Knows" view: the assembled KB document the AI
   // actually uses on calls (from the website scrape), fetched separately from
   // the editable jsonb fields above.
   const [aiKnowsContent, setAiKnowsContent] = useState<string | null>(null);
   const [aiKnowsLoading, setAiKnowsLoading] = useState(false);
   const [aiKnowsUpdated, setAiKnowsUpdated] = useState<string | null>(null);
-  const [aiKnowsOpen, setAiKnowsOpen] = useState(false);
 
   const getAuthToken = () => localStorage.getItem('auth_token');
   const getBackendUrl = () => process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
@@ -390,7 +389,7 @@ export default function MyBusinessPage() {
           </SectionCard>
         </div>
 
-        {/* What Your AI Knows — read-only view of the live KB the AI uses */}
+        {/* What Your AI Knows: read-only view of the live KB the AI uses */}
         <div className="fu fu2">
           <SectionCard theme={theme} primaryColor={primaryColor} icon={Sparkles} title="What Your AI Knows" subtitle="Pulled from your website, this is what your receptionist already knows about you">
             {aiKnowsLoading ? (
@@ -398,13 +397,16 @@ export default function MyBusinessPage() {
             ) : aiKnowledge ? (
               <div className="space-y-4">
                 {aiKnowledge.facts.length > 0 && (
-                  <div className="space-y-1">
-                    {aiKnowledge.facts.map((f, i) => (
-                      <div key={i} className="flex gap-2 text-[13px]">
-                        <span style={{ color: theme.textMuted4 }}>{f.label}:</span>
-                        <span className="font-medium" style={{ color: theme.text }}>{f.value}</span>
-                      </div>
-                    ))}
+                  <div className="grid grid-cols-2 gap-2">
+                    {aiKnowledge.facts.map((f, i) => {
+                      const lastOdd = i === aiKnowledge.facts.length - 1 && aiKnowledge.facts.length % 2 === 1;
+                      return (
+                        <div key={i} className={`rounded-xl px-3 py-2.5 ${lastOdd ? 'col-span-2' : ''}`} style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)'}` }}>
+                          <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: theme.textMuted4 }}>{f.label}</p>
+                          <p className="text-[13px] font-medium mt-0.5 break-words" style={{ color: theme.text }}>{f.value}</p>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
 
@@ -432,31 +434,12 @@ export default function MyBusinessPage() {
                   );
                 })}
 
-                <div>
-                  <button onClick={() => setAiKnowsOpen(v => !v)} className="flex items-center gap-1 text-[12px] font-medium" style={{ color: primaryColor }}>
-                    {aiKnowsOpen ? 'Hide' : 'View'} the full document your AI reads
-                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${aiKnowsOpen ? 'rotate-180' : ''}`} />
-                  </button>
-                  {aiKnowsOpen && aiKnowsContent && (
-                    <pre className="mt-2 max-h-80 overflow-auto rounded-xl p-3 text-[11px] leading-relaxed whitespace-pre-wrap break-words" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', color: theme.textMuted, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>{aiKnowsContent}</pre>
-                  )}
-                </div>
-
                 {aiKnowsUpdated && (
                   <p className="text-[11px]" style={{ color: theme.textMuted4 }}>Last refreshed from your website on {new Date(aiKnowsUpdated).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}.</p>
                 )}
               </div>
             ) : aiKnowsContent ? (
-              <div className="space-y-3">
-                <p className="text-[13px]" style={{ color: theme.textMuted }}>Your AI is set up with a starter knowledge base for your industry. Add your website in the <button onClick={scrollToKb} className="underline font-medium" style={{ color: primaryColor }}>Knowledge Base section</button> below and save to personalize what it knows about your business.</p>
-                <button onClick={() => setAiKnowsOpen(v => !v)} className="flex items-center gap-1 text-[12px] font-medium" style={{ color: primaryColor }}>
-                  {aiKnowsOpen ? 'Hide' : 'View'} the full document your AI reads
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${aiKnowsOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {aiKnowsOpen && (
-                  <pre className="mt-2 max-h-80 overflow-auto rounded-xl p-3 text-[11px] leading-relaxed whitespace-pre-wrap break-words" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', color: theme.textMuted, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>{aiKnowsContent}</pre>
-                )}
-              </div>
+              <p className="text-[13px]" style={{ color: theme.textMuted }}>Your AI is set up with a starter knowledge base for your industry. Add your website in the <button onClick={scrollToKb} className="underline font-medium" style={{ color: primaryColor }}>Knowledge Base section</button> below and save to personalize what it knows about your business.</p>
             ) : (
               <p className="text-[13px]" style={{ color: theme.textMuted }}>Your AI does not have a website-based knowledge base yet. Add your website in the <button onClick={scrollToKb} className="underline font-medium" style={{ color: primaryColor }}>Knowledge Base section</button> below and save, and it will learn your hours, services, and more.</p>
             )}
