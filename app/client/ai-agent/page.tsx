@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   Phone, Loader2, Bot, Mic, MessageSquare, Calendar, Shield,
-  Play, Pause, Check, RotateCcw, AlertCircle, Link2
+  Play, Pause, Check, RotateCcw, AlertCircle
 } from 'lucide-react';
 import { useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
@@ -13,7 +13,7 @@ import AISettingsSection from '@/components/client/AISettingsSection';
 import ToolConfigSection from '@/components/client/ToolConfigSection';
 
 interface VoiceOption { id: string; name: string; gender: 'male' | 'female'; accent: string; style: string; description: string; previewUrl: string; recommended?: boolean; }
-interface CalendarStatus { connected: boolean; token_valid: boolean; plan_allowed: boolean; plan_message: string | null; }
+interface CalendarStatus { connected: boolean; token_valid: boolean; plan_allowed: boolean; plan_message: string | null; email?: string | null; }
 
 function hexToRgba(hex: string, alpha: number): string {
   const r = parseInt(hex.slice(1, 3), 16);
@@ -343,7 +343,7 @@ export default function ClientAIAgentPage() {
                   <div className="flex items-center gap-3">
                     <div className="relative flex-shrink-0">
                       <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-                        <GoogleCalendarIcon className="w-6 h-6" />
+                        <GoogleGIcon className="w-6 h-6" />
                       </div>
                       <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ backgroundColor: theme.success }} />
@@ -352,20 +352,12 @@ export default function ClientAIAgentPage() {
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-semibold leading-tight" style={{ color: theme.successText }}>Calendar connected</p>
-                      <p className="text-[11px] sm:text-xs mt-0.5 leading-relaxed" style={{ color: theme.textMuted }}>Your AI books appointments straight into your calendar, around the clock.</p>
+                      {calendarStatus?.email ? (
+                        <p className="text-[11px] sm:text-xs mt-0.5 truncate" style={{ color: theme.textMuted }} title={calendarStatus.email}>Booking into {calendarStatus.email}</p>
+                      ) : (
+                        <p className="text-[11px] sm:text-xs mt-0.5 leading-relaxed" style={{ color: theme.textMuted }}>Your AI books appointments straight into your calendar, around the clock.</p>
+                      )}
                     </div>
-                  </div>
-                </div>
-
-                {/* Two balanced detail chips */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="flex items-center gap-2 p-2.5 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
-                    <Calendar className="w-4 h-4 flex-shrink-0" style={{ color: primaryColor }} />
-                    <div className="min-w-0"><p className="text-[10px] uppercase tracking-wide font-semibold" style={{ color: theme.textMuted4 }}>Calendar</p><p className="text-xs font-semibold truncate" style={{ color: theme.text }}>Primary</p></div>
-                  </div>
-                  <div className="flex items-center gap-2 p-2.5 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
-                    <Link2 className="w-4 h-4 flex-shrink-0" style={{ color: primaryColor }} />
-                    <div className="min-w-0"><p className="text-[10px] uppercase tracking-wide font-semibold" style={{ color: theme.textMuted4 }}>Sync</p><p className="text-xs font-semibold truncate" style={{ color: theme.text }}>Real time</p></div>
                   </div>
                 </div>
 
@@ -389,7 +381,7 @@ export default function ClientAIAgentPage() {
                 <div className="relative overflow-hidden rounded-xl p-3.5 sm:p-4" style={{ border: `1px solid ${theme.border}`, background: `linear-gradient(135deg, ${hexToRgba(primaryColor, 0.08)}, ${theme.card})` }}>
                   <div className="flex items-center gap-3">
                     <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-                      <GoogleCalendarIcon className="w-6 h-6" />
+                      <GoogleGIcon className="w-6 h-6" />
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-semibold leading-tight" style={{ color: theme.text }}>Turn calls into booked jobs</p>
