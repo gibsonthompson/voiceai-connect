@@ -412,7 +412,7 @@ export default function OutreachPage() {
         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.hover)}
         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = theme.card)}>
         <div className="flex items-center gap-3 min-w-0">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Megaphone className="h-4 w-4" style={{ color: theme.primary }} /></div>
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0 overflow-hidden" style={{ backgroundColor: theme.primary15 }}>{(agency as any)?.logo_url ? <img src={(agency as any).logo_url} alt="" className="h-6 w-6 object-contain" /> : <Megaphone className="h-4 w-4" style={{ color: theme.primary }} />}</div>
           <div className="min-w-0">
             <p className="text-sm font-semibold" style={{ color: theme.text }}>Marketing Kit</p>
             <p className="text-xs truncate" style={{ color: theme.textMuted }}>Branded QR codes, a print-ready one-pager, and scripts to land clients.</p>

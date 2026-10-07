@@ -288,7 +288,7 @@ export default function AgencyDashboardPage() {
           <span className="text-sm font-medium" style={{ color: theme.text }}>Pricing</span>
         </a>
         <a href="/agency/marketing-kit" className="rounded-xl p-4 flex flex-col items-center gap-2.5 text-center transition-all" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${theme.primary}40`; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = 'none'; }}>
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden" style={{ backgroundColor: `${theme.primary}10` }}>{agency?.logo_url ? <img src={agency.logo_url} alt="" className="h-7 w-7 object-contain" /> : <Megaphone className="h-5 w-5" style={{ color: theme.primary }} />}</div>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: `${theme.primary}10` }}><Megaphone className="h-5 w-5" style={{ color: theme.primary }} /></div>
           <span className="text-sm font-medium" style={{ color: theme.text }}>Marketing Kit</span>
         </a>
         {testClient ? (
