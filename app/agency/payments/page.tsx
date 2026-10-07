@@ -219,9 +219,12 @@ export default function AgencyPaymentsPage() {
   if (sessionExpired) {
     return (
       <div className="p-4 sm:p-6 lg:p-8">
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Payments</h1>
-          <p className="mt-1 text-sm sm:text-base" style={{ color: theme.textMuted }}>Your balance, payouts, and client payments.</p>
+        <div className="flex items-center gap-3 mb-6 sm:mb-8">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Wallet className="h-5 w-5" style={{ color: theme.primary }} /></div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Payments</h1>
+            <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>Your balance, payouts, and client payments.</p>
+          </div>
         </div>
 
         <div className="rounded-2xl p-6 sm:p-8 text-center" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
@@ -263,9 +266,12 @@ export default function AgencyPaymentsPage() {
   if (!data?.connected) {
     return (
       <div className="p-4 sm:p-6 lg:p-8">
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Payments</h1>
-          <p className="mt-1 text-sm sm:text-base" style={{ color: theme.textMuted }}>Your balance, payouts, and client payments.</p>
+        <div className="flex items-center gap-3 mb-6 sm:mb-8">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Wallet className="h-5 w-5" style={{ color: theme.primary }} /></div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Payments</h1>
+            <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>Your balance, payouts, and client payments.</p>
+          </div>
         </div>
 
         {error && (
@@ -312,9 +318,12 @@ export default function AgencyPaymentsPage() {
     <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="mb-6 sm:mb-8 flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Payments</h1>
-          <p className="mt-1 text-sm sm:text-base" style={{ color: theme.textMuted }}>Your balance, payouts, and client payments.</p>
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Wallet className="h-5 w-5" style={{ color: theme.primary }} /></div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Payments</h1>
+            <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>Your balance, payouts, and client payments.</p>
+          </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <button

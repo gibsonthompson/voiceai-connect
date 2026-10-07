@@ -94,7 +94,7 @@ export default function ReferralsPage() {
           'One-click payout requests via Stripe Connect',
         ]}
       >
-        <div className="p-6 md:p-8 max-w-7xl mx-auto">
+        <div className="p-4 sm:p-6 lg:p-8 max-w-7xl">
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-2">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: theme.primary + '20', color: theme.primary }}>

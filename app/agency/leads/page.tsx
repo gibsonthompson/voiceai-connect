@@ -721,14 +721,17 @@ export default function AgencyLeadsPage() {
       {/* Header */}
       <div className="mb-6 sm:mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[var(--lp-text)]">Leads</h1>
-            <p className="mt-1 text-sm text-[var(--lp-muted)]">
-              {stats?.total || 0} total leads
-              {stats && stats.overdueFollowUps > 0 && (
-                <span className="ml-2 text-[var(--lp-warning)]">{stats.overdueFollowUps} overdue</span>
-              )}
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0 bg-[var(--lp-primary-15)]"><Users className="h-5 w-5 text-[var(--lp-primary)]" /></div>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[var(--lp-text)]">Leads</h1>
+              <p className="mt-0.5 text-sm text-[var(--lp-muted)]">
+                {stats?.total || 0} total leads
+                {stats && stats.overdueFollowUps > 0 && (
+                  <span className="ml-2 text-[var(--lp-warning)]">{stats.overdueFollowUps} overdue</span>
+                )}
+              </p>
+            </div>
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">

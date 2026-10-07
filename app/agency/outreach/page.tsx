@@ -162,9 +162,12 @@ export default function OutreachPage() {
         ]}
       >
         <div className="p-4 sm:p-6 lg:p-8">
-          <div className="mb-6">
-            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Outreach</h1>
-            <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>13 conversion-tested templates</p>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Mail className="h-5 w-5" style={{ color: theme.primary }} /></div>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Outreach</h1>
+              <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>13 conversion-tested templates</p>
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Email column */}

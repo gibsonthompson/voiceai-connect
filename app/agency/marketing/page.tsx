@@ -380,7 +380,7 @@ export default function MarketingWebsitePage() {
   // Free plan, and as the direct return for Pro/Scale agencies.
   const pageContent = (
     <div className="p-4 sm:p-6 lg:p-8">
-      <div className="mb-6 sm:mb-8"><h1 data-tour="tour-marketing" className="text-xl sm:text-2xl font-semibold">Marketing Website</h1><p className="mt-1 text-sm" style={{ color: mutedTextColor }}>Your public website where clients learn about your service</p></div>
+      <div className="flex items-center gap-3 mb-6 sm:mb-8"><div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: agencyPrimaryColor + '15' }}><Globe className="h-5 w-5" style={{ color: agencyPrimaryColor }} /></div><div><h1 data-tour="tour-marketing" className="text-xl sm:text-2xl font-semibold">Marketing Website</h1><p className="mt-0.5 text-sm" style={{ color: mutedTextColor }}>Your public website where clients learn about your service</p></div></div>
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">

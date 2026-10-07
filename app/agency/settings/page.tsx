@@ -886,7 +886,7 @@ function AgencySettingsContent() {
         />
       )}
 
-      <div className="mb-6 sm:mb-8"><h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Settings</h1><p className="mt-1 text-sm" style={{ color: theme.textMuted }}>Manage your agency settings</p></div>
+      <div className="flex items-center gap-3 mb-6 sm:mb-8"><div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Settings className="h-5 w-5" style={{ color: theme.primary }} /></div><div><h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Settings</h1><p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>Manage your agency settings</p></div></div>
 
       <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
         <div className="lg:w-48 flex-shrink-0"><nav className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0">{settingsTabs.map((tab) => (<button key={tab.id} onClick={() => handleTabChange(tab.id)} className={`flex items-center gap-2 sm:gap-3 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${activeTab !== tab.id ? (theme.isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]') : ''}`} style={activeTab === tab.id ? { backgroundColor: theme.primary15, color: theme.primary } : { color: theme.textMuted }}><tab.icon className="h-4 w-4" />{tab.label}{tab.id === 'demo' && demoMode && (<div className="w-2 h-2 rounded-full ml-auto flex-shrink-0" style={{ backgroundColor: theme.primary }} />)}</button>))}</nav></div>

@@ -474,11 +474,14 @@ export default function LeadDetailPage() {
         </Link>
         
         <div className="flex flex-col gap-4">
-          <div className="min-w-0">
-            <h1 className="text-lg sm:text-2xl font-semibold tracking-tight truncate" style={{ color: theme.text }}>{lead?.business_name}</h1>
-            <p className="text-sm mt-0.5" style={{ color: theme.textMuted }}>
-              {lead?.industry ? `${lead.industry} · ` : ''}Added {lead?.created_at ? new Date(lead.created_at).toLocaleDateString() : '\u2014'}
-            </p>
+          <div className="flex items-start gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><span className="text-lg font-semibold" style={{ color: theme.primary }}>{lead?.business_name?.charAt(0) || '?'}</span></div>
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-2xl font-semibold tracking-tight truncate" style={{ color: theme.text }}>{lead?.business_name}</h1>
+              <p className="text-sm mt-0.5" style={{ color: theme.textMuted }}>
+                {lead?.industry ? `${lead.industry} · ` : ''}Added {lead?.created_at ? new Date(lead.created_at).toLocaleDateString() : '\u2014'}
+              </p>
+            </div>
           </div>
           
           {!demoMode && (

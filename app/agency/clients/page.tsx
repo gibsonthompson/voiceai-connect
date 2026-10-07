@@ -265,14 +265,17 @@ export default function AgencyClientsPage() {
       {/* Header */}
       <div className="mb-6 sm:mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 data-tour="tour-clients" className="text-xl sm:text-2xl font-semibold tracking-tight">Clients</h1>
-            <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>
-              {billableClients.length} client{billableClients.length !== 1 ? 's' : ''}
-              {testClients.length > 0 && (
-                <span> · {testClients.length} test</span>
-              )}
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Users className="h-5 w-5" style={{ color: theme.primary }} /></div>
+            <div>
+              <h1 data-tour="tour-clients" className="text-xl sm:text-2xl font-semibold tracking-tight">Clients</h1>
+              <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>
+                {billableClients.length} client{billableClients.length !== 1 ? 's' : ''}
+                {testClients.length > 0 && (
+                  <span> · {testClients.length} test</span>
+                )}
+              </p>
+            </div>
           </div>
           
           <div className="flex items-center gap-2 w-full sm:w-auto">

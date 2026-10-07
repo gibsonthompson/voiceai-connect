@@ -224,11 +224,14 @@ export default function AgencyInboxPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8" style={{ backgroundColor: theme.bg, minHeight: '100vh' }}>
-      <div className="mb-5 max-w-[1400px]">
-        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Inbox</h1>
-        <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>
-          Messages from your clients and website visitors, and from VoiceAI Connect.
-        </p>
+      <div className="flex items-start gap-3 mb-5 max-w-[1400px]">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0 mt-0.5" style={{ backgroundColor: theme.primary15 }}><Inbox className="h-5 w-5" style={{ color: theme.primary }} /></div>
+        <div>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Inbox</h1>
+          <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>
+            Messages from your clients and website visitors, and from VoiceAI Connect.
+          </p>
+        </div>
       </div>
 
       {/* Channel toggle: client/prospect inbox vs two-way platform threads */}

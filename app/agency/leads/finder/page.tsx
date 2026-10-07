@@ -860,15 +860,17 @@ export default function LeadFinderPage() {
         <Link href="/agency/leads" className="inline-flex items-center gap-1.5 text-xs font-medium mb-4 no-underline transition-colors" style={{ color: theme.textMuted }}>
           <ArrowLeft className="h-3.5 w-3.5" /> Back to Leads
         </Link>
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${theme.primary}20` }}>
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>
             <Target className="h-5 w-5" style={{ color: theme.primary }} />
           </div>
-          <h1 className="text-xl font-bold" style={{ color: theme.text }}>Lead Finder</h1>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Lead Finder</h1>
+            <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>
+              Find local businesses in a vertical and enrich each with phone, email, website, and hours.
+            </p>
+          </div>
         </div>
-        <p className="text-sm pl-12" style={{ color: theme.textMuted }}>
-          Find local businesses in a vertical and enrich each with phone, email, website, and hours.
-        </p>
       </div>
 
       {/* What it does */}

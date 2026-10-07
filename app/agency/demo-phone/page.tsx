@@ -700,11 +700,14 @@ export default function DemoPhonePage() {
         ]}
       >
         <div className="p-4 sm:p-6 lg:p-8">
-          <div className="mb-6 sm:mb-8">
-            <h1 className="text-xl sm:text-2xl font-semibold" style={{ color: theme.text }}>Demo Phone</h1>
-            <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>
-              A dedicated phone number that showcases AI receptionist capabilities to prospects
-            </p>
+          <div className="flex items-center gap-3 mb-6 sm:mb-8">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Phone className="h-5 w-5" style={{ color: theme.primary }} /></div>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-semibold" style={{ color: theme.text }}>Demo Phone</h1>
+              <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>
+                A dedicated phone number that showcases AI receptionist capabilities to prospects
+              </p>
+            </div>
           </div>
           <HowItWorksCard theme={theme} />
         </div>
@@ -725,11 +728,14 @@ export default function DemoPhonePage() {
 
     return (
       <div className="p-4 sm:p-6 lg:p-8">
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-xl sm:text-2xl font-semibold">Demo Phone</h1>
-          <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>
-            Your dedicated demo line for showcasing AI receptionist capabilities
-          </p>
+        <div className="flex items-center gap-3 mb-6 sm:mb-8">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Phone className="h-5 w-5" style={{ color: theme.primary }} /></div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-semibold">Demo Phone</h1>
+            <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>
+              Your dedicated demo line for showcasing AI receptionist capabilities
+            </p>
+          </div>
         </div>
 
         <div
@@ -816,11 +822,14 @@ export default function DemoPhonePage() {
 
     return (
       <div className="p-4 sm:p-6 lg:p-8">
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-xl sm:text-2xl font-semibold">Demo Phone</h1>
-          <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>
-            Your dedicated demo line for showcasing AI receptionist capabilities
-          </p>
+        <div className="flex items-center gap-3 mb-6 sm:mb-8">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Phone className="h-5 w-5" style={{ color: theme.primary }} /></div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-semibold">Demo Phone</h1>
+            <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>
+              Your dedicated demo line for showcasing AI receptionist capabilities
+            </p>
+          </div>
         </div>
 
         {/* Active Demo Card */}
@@ -975,11 +984,14 @@ export default function DemoPhonePage() {
   // ============================================================================
   return (
     <div className="p-4 sm:p-6 lg:p-8">
-      <div className="mb-6 sm:mb-8">
-        <h1 className="text-xl sm:text-2xl font-semibold">Demo Phone</h1>
-        <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>
-          Create a dedicated phone number that showcases AI receptionist capabilities to prospects
-        </p>
+      <div className="flex items-center gap-3 mb-6 sm:mb-8">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Phone className="h-5 w-5" style={{ color: theme.primary }} /></div>
+        <div>
+          <h1 className="text-xl sm:text-2xl font-semibold">Demo Phone</h1>
+          <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>
+            Create a dedicated phone number that showcases AI receptionist capabilities to prospects
+          </p>
+        </div>
       </div>
 
       <div
