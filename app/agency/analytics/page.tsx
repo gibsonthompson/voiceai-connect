@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   TrendingUp, DollarSign, Users, Wallet, CreditCard, 
-  ChevronRight, Loader2, Phone, CalendarCheck, PhoneForwarded, Moon, ShieldX, Clock, Mail, AlertTriangle
+  ChevronRight, Loader2, Phone, CalendarCheck, PhoneForwarded, Moon, ShieldX, Clock, Mail, AlertTriangle, Copy, Check, X
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '../../../hooks/useTheme';
@@ -23,8 +23,8 @@ interface Stats {
 interface Billing {
   counts: { active: number; manual: number; trial: number; trialExpired: number; pendingPayment: number; pastDue: number; canceled: number };
   trials: { id?: string; business_name: string; email?: string | null; industry?: string | null; effective_price_cents?: number | null; trial_ends_at: string | null; days_left: number | null; billing_mode: string }[];
-  pendingPayment: { id?: string; business_name: string; email?: string | null; industry?: string | null; effective_price_cents?: number | null; created_at: string; billing_mode: string; days_waiting: number }[];
-  pastDue: { id?: string; business_name: string; email?: string | null; industry?: string | null; effective_price_cents?: number | null; billing_mode: string }[];
+  pendingPayment: { id?: string; business_name: string; email?: string | null; industry?: string | null; effective_price_cents?: number | null; created_at: string; billing_mode: string; days_waiting: number; last_contacted_at?: string | null }[];
+  pastDue: { id?: string; business_name: string; email?: string | null; industry?: string | null; effective_price_cents?: number | null; billing_mode: string; last_contacted_at?: string | null }[];
   upcomingCharges: { business_name: string; provider: string; next_charge_at: string | null; days_until: number | null; billing_day: number | null }[];
 }
 
@@ -95,29 +95,41 @@ function ListCard({ title, count, empty, children, theme }: { title: string; cou
   );
 }
 
-function OutreachRow({ item, kind, agency, theme, first }: { item: any; kind: 'pastDue' | 'pending'; agency: any; theme: any; first: boolean }) {
+function buildOutreachDraft(item: any, kind: 'pastDue' | 'pending', agency: any): { email: string; subject: string; body: string } {
   const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
   const baseUrl = agency ? ((agency as any).marketing_domain && (agency as any).domain_verified ? `https://${(agency as any).marketing_domain}` : agency.slug ? `https://${agency.slug}.${platformDomain}` : `https://${platformDomain}`) : '';
-  const industry = String(item.industry || '').replace(/_/g, ' ');
-  const price = item.effective_price_cents != null ? `$${Math.round(item.effective_price_cents / 100)}/mo` : '';
-  const meta = [industry, price].filter(Boolean).join(' · ');
-  const statusLine = kind === 'pastDue' ? 'Payment failed' : `${item.days_waiting}d waiting`;
   const subject = kind === 'pastDue' ? `Your ${item.business_name} AI receptionist` : `Finishing your ${item.business_name} AI receptionist setup`;
-  const emailBody = kind === 'pastDue'
+  const body = kind === 'pastDue'
     ? `Hi,\n\nJust a heads up, the last payment for your AI receptionist didn't go through, so your calls may stop being answered soon. You can update your card here to keep everything running:\n\n${baseUrl}/client/login\n\nLet me know if you need a hand!`
     : `Hi,\n\nI saw you started setting up your AI receptionist but didn't finish. Here's the link to get it live and answering your calls:\n\n${baseUrl}/signup\n\nHappy to help if you have any questions!`;
-  const mailto = `mailto:${item.email || ''}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
+  return { email: item.email || '', subject, body };
+}
+
+function relTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60); if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24); return `${d}d ago`;
+}
+
+function OutreachRow({ item, kind, onEmail, loggedAt, theme, first }: { item: any; kind: 'pastDue' | 'pending'; onEmail: (item: any, kind: 'pastDue' | 'pending') => void; loggedAt?: string | null; theme: any; first: boolean }) {
+  const industry = String(item.industry || '').replace(/_/g, ' ');
+  const price = item.effective_price_cents != null ? `$${Math.round(item.effective_price_cents / 100)}/mo` : '';
+  const meta = [industry, price].filter(Boolean).join(' \u00b7 ');
+  const statusLine = kind === 'pastDue' ? 'Payment failed' : `${item.days_waiting}d waiting`;
   return (
     <div className="rounded-xl p-3" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, marginTop: first ? 0 : 8 }}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="text-sm font-medium truncate" style={{ color: theme.text }}>{item.business_name}</div>
           {meta && <div className="text-xs mt-0.5 capitalize truncate" style={{ color: theme.textMuted }}>{meta}</div>}
-          <div className="text-[11px] mt-1 font-medium" style={{ color: kind === 'pastDue' ? '#ef4444' : (theme.warning || '#f59e0b') }}>{statusLine}</div>
+          <div className="text-[11px] mt-1 font-medium" style={{ color: kind === 'pastDue' ? '#ef4444' : (theme.warning || '#f59e0b') }}>{statusLine}{loggedAt ? <span style={{ color: theme.textMuted }}> \u00b7 reached out {relTime(loggedAt)}</span> : null}</div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           {item.id && <Link href={`/agency/clients/${item.id}`} className="inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-medium transition-colors" style={{ backgroundColor: theme.card, color: theme.text, border: `1px solid ${theme.border}` }}>View</Link>}
-          {item.email && <a href={mailto} className="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Mail className="h-3.5 w-3.5" />Email</a>}
+          {item.email && <button onClick={() => onEmail(item, kind)} className="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Mail className="h-3.5 w-3.5" />Email</button>}
         </div>
       </div>
     </div>
@@ -159,6 +171,22 @@ export default function AgencyAnalyticsPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [billing, setBilling] = useState<Billing | null>(null);
   const [loading, setLoading] = useState(true);
+  const [outreach, setOutreach] = useState<{ item: any; kind: 'pastDue' | 'pending' } | null>(null);
+  const [draftBody, setDraftBody] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [logging, setLogging] = useState(false);
+  const [logged, setLogged] = useState<Record<string, string>>({});
+  const openOutreach = (item: any, kind: 'pastDue' | 'pending') => { setOutreach({ item, kind }); setDraftBody(buildOutreachDraft(item, kind, agency).body); setCopied(false); };
+  const logContact = async (clientId: string) => {
+    if (!agency || !clientId || logged[clientId]) return;
+    setLogging(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/agency/${agency.id}/clients/${clientId}/log-contact`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } });
+      if (r.ok) setLogged(prev => ({ ...prev, [clientId]: new Date().toISOString() }));
+    } catch {}
+    finally { setLogging(false); }
+  };
 
   // Agency's country for currency formatting
   const agencyCountry = agency?.country || 'US';
@@ -283,7 +311,7 @@ export default function AgencyAnalyticsPage() {
             <div className="mt-3 sm:mt-4">
               <ListCard title="Signed up, haven't paid yet" count={billing.pendingPayment.length} empty={null} theme={theme}>
                 {billing.pendingPayment.slice(0, 12).map((p, i) => (
-                  <OutreachRow key={i} first={i === 0} item={p} kind="pending" agency={agency} theme={theme} />
+                  <OutreachRow key={i} first={i === 0} item={p} kind="pending" onEmail={openOutreach} loggedAt={logged[p.id as string] || p.last_contacted_at} theme={theme} />
                 ))}
               </ListCard>
             </div>
@@ -292,7 +320,7 @@ export default function AgencyAnalyticsPage() {
             <div className="mt-3 sm:mt-4">
               <ListCard title="Overdue (payment failed)" count={billing.pastDue.length} empty={null} theme={theme}>
                 {billing.pastDue.slice(0, 12).map((p, i) => (
-                  <OutreachRow key={i} first={i === 0} item={p} kind="pastDue" agency={agency} theme={theme} />
+                  <OutreachRow key={i} first={i === 0} item={p} kind="pastDue" onEmail={openOutreach} loggedAt={logged[p.id as string] || p.last_contacted_at} theme={theme} />
                 ))}
               </ListCard>
             </div>
@@ -684,6 +712,37 @@ export default function AgencyAnalyticsPage() {
           </div>
         </div>
       )}
+      {outreach && (() => {
+        const d = buildOutreachDraft(outreach.item, outreach.kind, agency);
+        const mailto = `mailto:${d.email}?subject=${encodeURIComponent(d.subject)}&body=${encodeURIComponent(draftBody)}`;
+        const isLogged = !!logged[outreach.item.id];
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => setOutreach(null)}>
+            <div className="w-full max-w-lg rounded-2xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-start justify-between gap-3 p-4 sm:p-5" style={{ borderBottom: `1px solid ${theme.border}` }}>
+                <div className="min-w-0">
+                  <h3 className="text-sm sm:text-base font-semibold truncate" style={{ color: theme.text }}>Reach out to {outreach.item.business_name}</h3>
+                  <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{outreach.kind === 'pastDue' ? 'Payment failed, nudge them to update their card.' : "Signed up but didn't finish, nudge them to complete it."}</p>
+                </div>
+                <button onClick={() => setOutreach(null)} className="flex-shrink-0 rounded-lg p-1.5 transition-colors" style={{ color: theme.textMuted }}><X className="h-4 w-4" /></button>
+              </div>
+              <div className="p-4 sm:p-5 space-y-3">
+                <div className="flex items-center gap-2 text-xs"><span style={{ color: theme.textMuted }}>To</span><span className="font-medium truncate" style={{ color: theme.text }}>{d.email || 'No email on file'}</span></div>
+                <div className="flex items-center gap-2 text-xs"><span style={{ color: theme.textMuted }}>Subject</span><span className="font-medium truncate" style={{ color: theme.text }}>{d.subject}</span></div>
+                <div>
+                  <label className="text-[11px] font-medium" style={{ color: theme.textMuted }}>Message (edit before sending)</label>
+                  <textarea value={draftBody} onChange={(e) => setDraftBody(e.target.value)} rows={9} className="w-full mt-1 rounded-xl px-3 py-2 text-sm leading-relaxed resize-none focus:outline-none" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.text }} />
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 p-4 sm:p-5" style={{ borderTop: `1px solid ${theme.border}` }}>
+                <button onClick={() => { navigator.clipboard?.writeText(`${d.subject}\n\n${draftBody}`).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1800); }).catch(() => {}); }} className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium transition-colors" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{copied ? <><Check className="h-4 w-4" />Copied</> : <><Copy className="h-4 w-4" />Copy</>}</button>
+                {d.email && <a href={mailto} className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium transition-colors" style={{ backgroundColor: theme.hover, color: theme.text, border: `1px solid ${theme.border}` }}><Mail className="h-4 w-4" />Open in email</a>}
+                <button onClick={() => logContact(outreach.item.id)} disabled={logging || isLogged} className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-medium transition-colors ml-auto disabled:opacity-80" style={{ backgroundColor: isLogged ? theme.hover : theme.primary15, color: isLogged ? theme.textMuted : theme.primary, border: `1px solid ${isLogged ? theme.border : (theme.primary30 || theme.border)}` }}>{logging ? 'Logging...' : isLogged ? <><Check className="h-4 w-4" />Logged</> : 'Log outreach'}</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
