@@ -73,8 +73,9 @@ export default function MessagesPage() {
   const [providerUnread, setProviderUnread] = useState(0);
   const [providerLastAt, setProviderLastAt] = useState<string>('');
   const [providerLoading, setProviderLoading] = useState(false);
-  const agencyName = client?.agency?.name || 'Your provider';
-  const agencyLogo = (client?.agency as any)?.logo_url || null;
+  const [providerAgency, setProviderAgency] = useState<{ name: string; logo: string | null } | null>(null);
+  const agencyName = providerAgency?.name || client?.agency?.name || 'Your provider';
+  const agencyLogo = providerAgency?.logo || (client?.agency as any)?.logo_url || null;
 
   // ── Shared ──────────────────────────────────────────────────────────────
   const [active, setActive] = useState<Active>(null);
@@ -86,9 +87,17 @@ export default function MessagesPage() {
   const [composeName, setComposeName] = useState('');
   const [composeHandled, setComposeHandled] = useState(false);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const stickRef = useRef(true);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Track whether the user is parked near the bottom. Only then do we auto-stick
+  // to new messages, so scrolling up to read history is never yanked back down.
+  const onThreadScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    stickRef.current = (el.scrollHeight - el.scrollTop - el.clientHeight) < 80;
+  };
 
   const getBackendUrl = () => process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
   const getToken = () => localStorage.getItem('auth_token');
@@ -108,6 +117,7 @@ export default function MessagesPage() {
       const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/provider-inbox`, { headers: { Authorization: `Bearer ${getToken()}` } });
       if (r.ok) {
         const d = await r.json();
+        if (d.agency) setProviderAgency({ name: d.agency.name || 'Your provider', logo: d.agency.logo_url || null });
         setProviderMsgs(d.messages || []);
         const msgs: ProviderMessage[] = d.messages || [];
         setProviderLastAt(msgs.length ? msgs[msgs.length - 1].at : '');
@@ -149,7 +159,11 @@ export default function MessagesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active?.kind, active?.kind === 'customer' ? active.conv.id : 'provider']);
 
-  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, providerMsgs, active]);
+  // On a thread switch, start pinned to the bottom. Otherwise only auto-scroll
+  // the message container itself (never the page) and only while the user is
+  // near the bottom, so reading older messages during a poll is not interrupted.
+  useEffect(() => { stickRef.current = true; }, [active?.kind, active?.kind === 'customer' ? active.conv.id : 'provider']); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { const el = scrollRef.current; if (el && stickRef.current) el.scrollTop = el.scrollHeight; }, [messages, providerMsgs, active]);
 
   // ── Sending ──────────────────────────────────────────────────────────────
   const handleSendCustomer = async (conv: Conversation) => {
@@ -241,7 +255,7 @@ export default function MessagesPage() {
 
   const Avatar = ({ name, logo, size }: { name: string; logo: string | null; size: number }) => (
     logo
-      ? <img src={logo} alt="" className="rounded-full object-cover flex-shrink-0" style={{ width: size, height: size }} />
+      ? <div className="rounded-full overflow-hidden flex items-center justify-center flex-shrink-0" style={{ width: size, height: size, backgroundColor: theme.isDark ? 'rgba(255,255,255,0.08)' : '#ffffff', border: `1px solid ${hairline}` }}><img src={logo} alt="" className="object-contain" style={{ width: Math.round(size * 0.64), height: Math.round(size * 0.64) }} /></div>
       : <div className="rounded-full flex items-center justify-center flex-shrink-0 font-semibold" style={{ width: size, height: size, fontSize: size * 0.4, backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.12 : 0.08), color: primaryColor }}>{(name || '?').charAt(0).toUpperCase()}</div>
   );
 
@@ -250,7 +264,7 @@ export default function MessagesPage() {
       <div className="flex flex-1 min-h-0">
 
         {/* ── Conversation list ─────────────────────────────────────────── */}
-        <div className={`${showThread ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:w-96 lg:border-r`} style={{ borderColor: hairline }}>
+        <div className={`${showThread ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:w-96 lg:border-r min-h-0`} style={{ borderColor: hairline }}>
           <div className="px-4 pt-4 pb-2 flex items-center justify-between">
             <h1 className="text-xl font-semibold" style={{ color: theme.text }}>Messages</h1>
             <button onClick={() => { setComposePhone(''); setComposeName(''); setShowCompose(true); }} className="flex items-center justify-center h-9 w-9 rounded-full transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: '#fff' }} title="New message">
@@ -325,7 +339,7 @@ export default function MessagesPage() {
         </div>
 
         {/* ── Thread ────────────────────────────────────────────────────── */}
-        <div className={`${showThread ? 'flex' : 'hidden lg:flex'} flex-col flex-1`}>
+        <div className={`${showThread ? 'flex' : 'hidden lg:flex'} flex-col flex-1 min-h-0`}>
           {!active ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center px-6">
@@ -345,7 +359,7 @@ export default function MessagesPage() {
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
+              <div ref={scrollRef} onScroll={onThreadScroll} className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
                 {providerLoading && providerMsgs.length === 0 ? (
                   <div className="flex items-center justify-center py-12"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.textMuted4 }} /></div>
                 ) : providerMsgs.length === 0 ? (
@@ -370,7 +384,6 @@ export default function MessagesPage() {
                     );
                   })
                 )}
-                <div ref={messagesEndRef} />
               </div>
 
               <div className="px-4 py-3" style={{ borderTop: `1px solid ${hairline}` }}>
@@ -393,7 +406,7 @@ export default function MessagesPage() {
                 <a href={`tel:${active.conv.caller_phone}`} className="p-2 rounded-xl transition hover:opacity-80" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.1 : 0.06), color: primaryColor }}><Phone className="h-4 w-4" /></a>
               </div>
 
-              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
+              <div ref={scrollRef} onScroll={onThreadScroll} className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
                 {msgsLoading && messages.length === 0 ? (
                   <div className="flex items-center justify-center py-12"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.textMuted4 }} /></div>
                 ) : messages.length === 0 ? (
@@ -418,7 +431,6 @@ export default function MessagesPage() {
                     );
                   })
                 )}
-                <div ref={messagesEndRef} />
               </div>
 
               <div className="px-4 py-3" style={{ borderTop: `1px solid ${hairline}` }}>
@@ -440,6 +452,14 @@ export default function MessagesPage() {
               <h3 className="text-sm font-semibold" style={{ color: theme.text }}>New message</h3>
               <button onClick={() => setShowCompose(false)} style={{ color: theme.textMuted }}><ArrowLeft className="h-4 w-4" /></button>
             </div>
+            <button onClick={() => { setActive({ kind: 'provider' }); setShowCompose(false); }} className="w-full flex items-center gap-3 p-2 rounded-xl mb-3 transition hover:opacity-90" style={{ border: `1px solid ${hairline}`, backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.06 : 0.03) }}>
+              <Avatar name={agencyName} logo={agencyLogo} size={36} />
+              <div className="text-left min-w-0">
+                <p className="text-sm font-medium truncate" style={{ color: theme.text }}>{agencyName}</p>
+                <p className="text-[10px]" style={{ color: theme.textMuted4 }}>Your provider</p>
+              </div>
+            </button>
+            <div className="text-[10px] uppercase tracking-wide mb-2" style={{ color: theme.textMuted4 }}>Or text a customer</div>
             <label className="text-[10px] uppercase tracking-wide" style={{ color: theme.textMuted4 }}>Phone number</label>
             <input value={composePhone} onChange={(e) => setComposePhone(e.target.value)} placeholder="+1 555 123 4567" className="w-full mt-1 mb-3 px-3 py-2 rounded-xl text-sm focus:outline-none" style={{ ...glass, color: theme.text }} />
             <label className="text-[10px] uppercase tracking-wide" style={{ color: theme.textMuted4 }}>Name (optional)</label>
