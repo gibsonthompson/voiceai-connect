@@ -577,7 +577,7 @@ export default function MyBusinessPage() {
             </div>
             {hoursExpanded && (
               <div className="mt-4 space-y-2">
-                {(Object.keys(businessHours) as Array<keyof BusinessHours>).map(day => {
+                {DAY_KEYS.map(day => {
                   const d = businessHours[day];
                   const dayName = day.charAt(0).toUpperCase() + day.slice(1);
                   return (
