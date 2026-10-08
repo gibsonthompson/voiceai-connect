@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import '@/styles/marketing.css';
-import { markdownToHtml, replacePlaceholders } from '@/lib/legal-markdown';
+import { markdownToHtml } from '@/lib/legal-markdown';
+import { composeLegalDoc, type LegalFields } from '@/lib/legal-template';
 
 // ============================================================================
 // TYPES
@@ -24,15 +25,7 @@ interface Agency {
   display_currency: string | null;
   marketing_domain: string | null;
   domain_verified: boolean | null;
-  legal_overrides: Record<string, string> | null;
-}
-
-interface LegalTemplate {
-  type: string;
-  title: string;
-  content: string;
-  version: number;
-  updatedAt: string;
+  legal_overrides: Record<string, LegalFields | string> | null;
 }
 
 interface LegalPageProps {
@@ -96,7 +89,6 @@ function resolveHomepageUrl(agency: Agency): string {
 // ============================================================================
 export default function LegalPage({ type }: LegalPageProps) {
   const [agency, setAgency] = useState<Agency | null>(null);
-  const [template, setTemplate] = useState<LegalTemplate | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -125,45 +117,10 @@ export default function LegalPage({ type }: LegalPageProps) {
           agencyData = d.agency;
           try { sessionStorage.setItem(cacheKey, JSON.stringify({ data: d.agency, ts: Date.now() })); } catch {}
         }
+        // The page is composed from the canonical in-code template plus this
+        // agency's editable field values (agency.legal_overrides[type]). The
+        // protective clauses live in the template, so they always render.
         setAgency(agencyData);
-
-        // Check for agency-specific legal override
-        if (agencyData?.legal_overrides?.[type]) {
-          setTemplate({
-            type,
-            title: type === 'terms' ? 'Terms of Service' : 'Privacy Policy',
-            content: agencyData.legal_overrides[type],
-            version: 1,
-            updatedAt: new Date().toISOString(),
-          });
-          return;
-        }
-
-        // Fetch default template directly from Supabase (no backend route needed)
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-        if (!supabaseUrl || !supabaseKey) { setError('Configuration error'); return; }
-
-        const templateRes = await fetch(
-          `${supabaseUrl}/rest/v1/legal_templates?template_type=eq.${type}&select=template_type,title,content,version,updated_at`,
-          {
-            headers: {
-              'apikey': supabaseKey,
-              'Authorization': `Bearer ${supabaseKey}`,
-            },
-          }
-        );
-        if (!templateRes.ok) { setError('Legal page not found'); return; }
-        const rows = await templateRes.json();
-        if (!rows || rows.length === 0) { setError('Legal page not found'); return; }
-        const row = rows[0];
-        setTemplate({
-          type: row.template_type,
-          title: row.title,
-          content: row.content,
-          version: row.version,
-          updatedAt: row.updated_at,
-        });
       } catch (err) {
         console.error('Legal page load error:', err);
         setError('Failed to load');
@@ -182,12 +139,13 @@ export default function LegalPage({ type }: LegalPageProps) {
     document.title = `${pageTitle} | ${agency.name}`;
   }, [agency, type]);
 
-  // Process content: replace placeholders and convert markdown
+  // Compose the page from the canonical template + this agency's field values.
   const renderedHtml = useMemo(() => {
-    if (!template || !agency) return '';
-    const withPlaceholders = replacePlaceholders(template.content, agency);
-    return markdownToHtml(withPlaceholders);
-  }, [template, agency]);
+    if (!agency) return '';
+    const raw = agency.legal_overrides ? agency.legal_overrides[type] : undefined;
+    const fields = (raw && typeof raw === 'object') ? (raw as LegalFields) : undefined;
+    return markdownToHtml(composeLegalDoc(type, fields, agency));
+  }, [type, agency]);
 
   // Loading state
   if (loading) {
@@ -201,7 +159,7 @@ export default function LegalPage({ type }: LegalPageProps) {
   }
 
   // Error state
-  if (error || !agency || !template) {
+  if (error || !agency) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', fontFamily: 'system-ui' }}>
         <div style={{ textAlign: 'center' }}>
