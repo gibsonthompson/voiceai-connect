@@ -18,9 +18,49 @@ const TONE_OPTIONS = [
 
 const BOOKING_OPTIONS = [
   { value: 'auto_book', label: 'Auto-book', desc: 'Books appointments directly to your calendar in real time' },
-  { value: 'collect_request', label: 'Collect request', desc: "Collects the caller's preferred time — your team confirms" },
+  { value: 'collect_request', label: 'Collect request', desc: "Collects the caller's preferred time, your team confirms" },
   { value: 'disabled', label: 'Disabled', desc: 'No scheduling. AI focuses on messages and answering questions.' },
 ];
+
+// Minimum notice before the AI will offer a slot. null = inherit agency default.
+const NOTICE_OPTIONS: { value: number | null; label: string }[] = [
+  { value: null, label: 'Use agency default' },
+  { value: 0, label: 'No minimum (same-day OK)' },
+  { value: 30, label: '30 minutes' },
+  { value: 60, label: '1 hour' },
+  { value: 120, label: '2 hours' },
+  { value: 240, label: '4 hours' },
+  { value: 1440, label: '24 hours' },
+  { value: 2880, label: '48 hours' },
+];
+
+// How far ahead the AI will take bookings. null = inherit agency default.
+const HORIZON_OPTIONS: { value: number | null; label: string }[] = [
+  { value: null, label: 'Use agency default' },
+  { value: 7, label: '1 week' },
+  { value: 14, label: '2 weeks' },
+  { value: 30, label: '30 days' },
+  { value: 60, label: '60 days' },
+  { value: 90, label: '90 days' },
+  { value: 180, label: '6 months' },
+  { value: 365, label: '1 year' },
+];
+
+function formatNoticeLabel(mins: number | null | undefined): string {
+  const m = mins == null ? 30 : mins;
+  if (m <= 0) return 'no minimum';
+  if (m < 60) return `${m} minutes`;
+  if (m < 1440) { const h = m / 60; return `${h} hour${h !== 1 ? 's' : ''}`; }
+  const d = m / 1440; return `${d} day${d !== 1 ? 's' : ''}`;
+}
+
+function formatHorizonLabel(days: number | null | undefined): string {
+  const d = days == null ? 60 : days;
+  if (d % 365 === 0) { const y = d / 365; return `${y} year${y !== 1 ? 's' : ''}`; }
+  if (d % 30 === 0) { const mo = d / 30; return `${mo} month${mo !== 1 ? 's' : ''}`; }
+  if (d % 7 === 0) { const w = d / 7; return `${w} week${w !== 1 ? 's' : ''}`; }
+  return `${d} days`;
+}
 
 function hexToRgba(hex: string, alpha: number): string {
   try {
@@ -39,8 +79,18 @@ export default function AISettingsSection({ clientId, theme, compact = false }: 
   const [aiTone, setAiTone] = useState('professional');
   const [bookingMode, setBookingMode] = useState('auto_book');
 
+  const [minNotice, setMinNotice] = useState<number | null>(null);
+  const [maxDays, setMaxDays] = useState<number | null>(null);
+
   const [origTone, setOrigTone] = useState('professional');
   const [origBooking, setOrigBooking] = useState('auto_book');
+  const [origMinNotice, setOrigMinNotice] = useState<number | null>(null);
+  const [origMaxDays, setOrigMaxDays] = useState<number | null>(null);
+
+  // Agency defaults, shown in the "Use agency default (X)" option so the client
+  // knows what inheriting means. Null falls back to the platform default.
+  const [agencyNotice, setAgencyNotice] = useState<number | null>(null);
+  const [agencyMaxDays, setAgencyMaxDays] = useState<number | null>(null);
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -58,6 +108,12 @@ export default function AISettingsSection({ clientId, theme, compact = false }: 
           setBookingMode(s.booking_mode || 'auto_book');
           setOrigTone(s.ai_tone || 'professional');
           setOrigBooking(s.booking_mode || 'auto_book');
+          const mn = s.min_booking_notice_minutes ?? null;
+          const md = s.max_booking_days_ahead ?? null;
+          setMinNotice(mn); setOrigMinNotice(mn);
+          setMaxDays(md); setOrigMaxDays(md);
+          setAgencyNotice(s.agency_default_min_booking_notice_minutes ?? null);
+          setAgencyMaxDays(s.agency_default_max_booking_days_ahead ?? null);
         }
       } catch (err) {
         console.error('Failed to fetch AI settings:', err);
@@ -70,7 +126,9 @@ export default function AISettingsSection({ clientId, theme, compact = false }: 
 
   const hasChanges =
     aiTone !== origTone ||
-    bookingMode !== origBooking;
+    bookingMode !== origBooking ||
+    minNotice !== origMinNotice ||
+    maxDays !== origMaxDays;
 
   const handleSave = async () => {
     setSaving(true);
@@ -83,11 +141,15 @@ export default function AISettingsSection({ clientId, theme, compact = false }: 
         body: JSON.stringify({
           ai_tone: aiTone,
           booking_mode: bookingMode,
+          min_booking_notice_minutes: minNotice,
+          max_booking_days_ahead: maxDays,
         }),
       });
       if (r.ok) {
         setOrigTone(aiTone);
         setOrigBooking(bookingMode);
+        setOrigMinNotice(minNotice);
+        setOrigMaxDays(maxDays);
         setMessage('Settings saved! Changes take effect on the next call.');
         setTimeout(() => setMessage(''), 4000);
       } else {
@@ -207,6 +269,52 @@ export default function AISettingsSection({ clientId, theme, compact = false }: 
             })}
           </div>
         </div>
+
+        {/* Booking window, only relevant when the AI actually books */}
+        {bookingMode === 'auto_book' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <div>
+              <label className="block text-[10px] sm:text-xs font-medium mb-1.5" style={{ color: theme.textMuted || theme.textMuted4 }}>
+                Minimum booking notice
+              </label>
+              <select
+                value={minNotice === null ? '' : String(minNotice)}
+                onChange={(e) => setMinNotice(e.target.value === '' ? null : Number(e.target.value))}
+                className="w-full p-2.5 rounded-xl text-xs sm:text-sm font-medium outline-none"
+                style={inputStyle}
+              >
+                {NOTICE_OPTIONS.map(o => (
+                  <option key={o.value === null ? 'default' : o.value} value={o.value === null ? '' : String(o.value)}>
+                    {o.value === null ? `Use agency default (${formatNoticeLabel(agencyNotice)})` : o.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[10px] mt-1" style={{ color: theme.textMuted || theme.textMuted4 }}>
+                How soon from now the AI can book. It never blocks a day, it just moves the earliest offered time forward.
+              </p>
+            </div>
+            <div>
+              <label className="block text-[10px] sm:text-xs font-medium mb-1.5" style={{ color: theme.textMuted || theme.textMuted4 }}>
+                How far ahead
+              </label>
+              <select
+                value={maxDays === null ? '' : String(maxDays)}
+                onChange={(e) => setMaxDays(e.target.value === '' ? null : Number(e.target.value))}
+                className="w-full p-2.5 rounded-xl text-xs sm:text-sm font-medium outline-none"
+                style={inputStyle}
+              >
+                {HORIZON_OPTIONS.map(o => (
+                  <option key={o.value === null ? 'default' : o.value} value={o.value === null ? '' : String(o.value)}>
+                    {o.value === null ? `Use agency default (${formatHorizonLabel(agencyMaxDays)})` : o.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[10px] mt-1" style={{ color: theme.textMuted || theme.textMuted4 }}>
+                The furthest out a caller can book an appointment.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Save */}
         <button

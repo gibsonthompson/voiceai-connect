@@ -26,6 +26,7 @@ interface StaffMember {
   notes: string | null;
   is_active: boolean;
   transferable: boolean;
+  available_hours: any;
   google_calendar_id: string | null;
   created_at: string;
 }
@@ -56,7 +57,49 @@ const INDUSTRY_STAFF_PLACEHOLDERS: Record<string, { name: string; role: string; 
 };
 const DEFAULT_STAFF = { name: 'e.g. Jane Smith', role: 'e.g. Manager, Associate, Specialist', notes: 'e.g. Specialties, availability notes' };
 
-const EMPTY_FORM = { name: '', role: '', phone: '', email: '', notes: '', transferable: false };
+// Working-hours editor support. Hours are optional: when the toggle is off we
+// send {} so the staffer stays always-available (the AI treats no schedule as
+// always on). When on, we send the 7-day object the AI reads for "is X in?"
+// and for gating live transfers to on-shift people only.
+const WD: [string, string][] = [
+  ['monday', 'Monday'], ['tuesday', 'Tuesday'], ['wednesday', 'Wednesday'],
+  ['thursday', 'Thursday'], ['friday', 'Friday'], ['saturday', 'Saturday'], ['sunday', 'Sunday'],
+];
+const TIME_OPTIONS = [
+  '6:00 AM', '6:30 AM', '7:00 AM', '7:30 AM', '8:00 AM', '8:30 AM', '9:00 AM', '9:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
+  '12:00 PM', '12:30 PM', '1:00 PM', '1:30 PM', '2:00 PM', '2:30 PM', '3:00 PM', '3:30 PM', '4:00 PM', '4:30 PM', '5:00 PM', '5:30 PM',
+  '6:00 PM', '6:30 PM', '7:00 PM', '7:30 PM', '8:00 PM', '8:30 PM', '9:00 PM', '9:30 PM', '10:00 PM', '10:30 PM', '11:00 PM',
+];
+type DayHours = { open: string; close: string; closed: boolean };
+type WeekHours = Record<string, DayHours>;
+const DEFAULT_HOURS: WeekHours = {
+  monday: { open: '9:00 AM', close: '5:00 PM', closed: false },
+  tuesday: { open: '9:00 AM', close: '5:00 PM', closed: false },
+  wednesday: { open: '9:00 AM', close: '5:00 PM', closed: false },
+  thursday: { open: '9:00 AM', close: '5:00 PM', closed: false },
+  friday: { open: '9:00 AM', close: '5:00 PM', closed: false },
+  saturday: { open: '9:00 AM', close: '5:00 PM', closed: true },
+  sunday: { open: '9:00 AM', close: '5:00 PM', closed: true },
+};
+// Normalize whatever is stored (object shape, or legacy/empty) into the editor
+// shape, and report whether any real schedule exists.
+function parseStoredHours(stored: any): { enabled: boolean; hours: WeekHours } {
+  if (!stored || typeof stored !== 'object' || Array.isArray(stored) || Object.keys(stored).length === 0) {
+    return { enabled: false, hours: { ...DEFAULT_HOURS } };
+  }
+  const hours: WeekHours = { ...DEFAULT_HOURS };
+  for (const [key] of WD) {
+    const v = stored[key];
+    if (v && typeof v === 'object') {
+      hours[key] = { open: v.open || '9:00 AM', close: v.close || '5:00 PM', closed: v.closed === true || (!v.open && !v.close) };
+    } else if (v === 'off' || v === false) {
+      hours[key] = { ...DEFAULT_HOURS[key], closed: true };
+    }
+  }
+  return { enabled: true, hours };
+}
+
+const EMPTY_FORM = { name: '', role: '', phone: '', email: '', notes: '', transferable: false, hoursEnabled: false, availableHours: { ...DEFAULT_HOURS } as WeekHours };
 
 export default function StaffMembersSection({ clientId, theme, compact, industry, hideHeader }: Props) {
   const [staff, setStaff] = useState<StaffMember[]>([]);
@@ -86,7 +129,7 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
   useEffect(() => { fetchStaff(); }, [fetchStaff]);
 
   const openAdd = () => { setForm(EMPTY_FORM); setEditingId(null); setResolvingSuggestion(null); setError(''); setShowModal(true); };
-  const openEdit = (member: StaffMember) => { setForm({ name: member.name, role: member.role || '', phone: member.phone || '', email: member.email || '', notes: member.notes || '', transferable: !!member.transferable }); setEditingId(member.id); setResolvingSuggestion(null); setError(''); setShowModal(true); };
+  const openEdit = (member: StaffMember) => { const h = parseStoredHours(member.available_hours); setForm({ name: member.name, role: member.role || '', phone: member.phone || '', email: member.email || '', notes: member.notes || '', transferable: !!member.transferable, hoursEnabled: h.enabled, availableHours: h.hours }); setEditingId(member.id); setResolvingSuggestion(null); setError(''); setShowModal(true); };
 
   // Add a scraped staff suggestion: open the form prefilled with name + role so
   // the client can add a phone and confirm before saving. Dismissed on save.
@@ -116,7 +159,7 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
     try {
       const token = localStorage.getItem('auth_token');
       const url = editingId ? `${backendUrl}/api/client/${clientId}/staff/${editingId}` : `${backendUrl}/api/client/${clientId}/staff`;
-      const res = await fetch(url, { method: editingId ? 'PUT' : 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: form.name.trim(), role: form.role.trim() || null, phone: form.phone.trim() || null, email: form.email.trim() || null, notes: form.notes.trim() || null, transferable: !!form.transferable }) });
+      const res = await fetch(url, { method: editingId ? 'PUT' : 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: form.name.trim(), role: form.role.trim() || null, phone: form.phone.trim() || null, email: form.email.trim() || null, notes: form.notes.trim() || null, transferable: !!form.transferable, available_hours: form.hoursEnabled ? form.availableHours : {} }) });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Failed to save'); return; }
       if (resolvingSuggestion) { await dismissSuggestion(resolvingSuggestion); setResolvingSuggestion(null); }
@@ -175,6 +218,39 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
           <span className="pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transition" style={{ transform: form.transferable ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
         </button>
       </div>
+      {/* Working hours (optional): powers "is X in?" answers and gates transfers */}
+      <div className="rounded-xl px-3.5 py-3" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}` }}>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-medium" style={{ color: theme.text }}>Set working hours</p>
+            <p className="text-[11px] mt-0.5 leading-snug" style={{ color: theme.textMuted }}>Lets the AI say when this person is in, and only offer to transfer callers while they are on shift. Leave off to keep them always available.</p>
+          </div>
+          <button type="button" role="switch" aria-checked={form.hoursEnabled} onClick={() => setForm({ ...form, hoursEnabled: !form.hoursEnabled })} className="relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors focus:outline-none" style={{ backgroundColor: form.hoursEnabled ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
+            <span className="pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transition" style={{ transform: form.hoursEnabled ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
+          </button>
+        </div>
+        {form.hoursEnabled && (
+          <div className="mt-3 space-y-1.5">
+            {WD.map(([key, label]) => {
+              const day: DayHours = form.availableHours[key] || DEFAULT_HOURS[key];
+              const setDay = (patch: Partial<DayHours>) => setForm({ ...form, availableHours: { ...form.availableHours, [key]: { ...day, ...patch } } });
+              return (
+                <div key={key} className="flex items-center gap-2">
+                  <span className="w-16 text-[11px] font-medium flex-shrink-0" style={{ color: theme.text }}>{label}</span>
+                  <button type="button" onClick={() => setDay({ closed: !day.closed })} className="text-[10px] py-1 rounded-lg flex-shrink-0 font-medium" style={{ width: 60, backgroundColor: day.closed ? (theme.isDark ? 'rgba(239,68,68,0.12)' : '#fef2f2') : hexToRgba(theme.primary, 0.1), color: day.closed ? '#ef4444' : theme.primary }}>{day.closed ? 'Closed' : 'Open'}</button>
+                  {!day.closed && (
+                    <div className="flex items-center gap-1 flex-1 min-w-0">
+                      <select value={day.open} onChange={(e) => setDay({ open: e.target.value })} className="flex-1 min-w-0 rounded-lg px-2 py-1 text-[11px] focus:outline-none" style={inputStyle}>{TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}</select>
+                      <span className="text-[10px] flex-shrink-0" style={{ color: theme.textMuted }}>to</span>
+                      <select value={day.close} onChange={(e) => setDay({ close: e.target.value })} className="flex-1 min-w-0 rounded-lg px-2 py-1 text-[11px] focus:outline-none" style={inputStyle}>{TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}</select>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
       <div>
         <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>Notes</label>
         <textarea placeholder={ph.notes} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none resize-none" style={inputStyle} />
@@ -229,6 +305,7 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
                             {!member.is_active && <span className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: theme.isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2', color: '#ef4444' }}>Inactive</span>}
                             {member.google_calendar_id && <span className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: theme.isDark ? 'rgba(34,197,94,0.1)' : '#f0fdf4', color: '#22c55e' }}>Calendar</span>}
                             {member.transferable && member.phone && <span className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 inline-flex items-center gap-0.5" style={{ backgroundColor: hexToRgba(theme.primary, 0.1), color: theme.primary }}><Phone className="h-2 w-2" />Transfers</span>}
+                            {member.available_hours && typeof member.available_hours === 'object' && Object.keys(member.available_hours).length > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6', color: theme.textMuted }}>Hours set</span>}
                           </div>
                           <div className="flex items-center gap-3 mt-0.5">
                             {member.phone && <span className="text-[10px] flex items-center gap-1" style={{ color: theme.textMuted }}><Phone className="h-2.5 w-2.5" />{member.phone}</span>}
