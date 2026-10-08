@@ -57,7 +57,10 @@ interface NavItem { href: string; label: string; icon: LucideIcon; locked?: bool
 function AgencyFavicon() {
   const { branding } = useAgency();
   if (!branding.logoUrl) return null;
-  return <DynamicFavicon logoUrl={branding.logoUrl} />;
+  // appleIconUrl points at the square compositor so the iOS home-screen /
+  // link-preview icon is the agency's app icon (or logo, contained), never the
+  // raw wordmark stretched into a square.
+  return <DynamicFavicon logoUrl={branding.logoUrl} appleIconUrl="/api/agency-app-icon?size=180" />;
 }
 
 function TourLauncher({ theme }: { theme: any }) {
@@ -237,7 +240,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   if (loading) {
     return (
       <div className="vac-sk min-h-screen flex" style={{ backgroundColor: 'var(--sk-bg)', zoom: 0.8 }}>
-        <link rel="manifest" href="/manifest.json" />
+        <link rel="manifest" href="/api/agency-manifest" />
         {/* Skeleton colors are driven by CSS variables that flip on the
             html.theme-light / theme-dark class the root layout head script sets
             BEFORE first paint (resolved from the agency's real website_theme).
@@ -283,7 +286,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   if (agencyNeedsPlan) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: theme.bg, zoom: 0.8 }}>
-        <link rel="manifest" href="/manifest.json" />
+        <link rel="manifest" href="/api/agency-manifest" />
         <div className="max-w-md w-full rounded-2xl p-8 text-center" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, boxShadow: theme.isDark ? 'none' : '0 4px 24px rgba(0,0,0,0.06)' }}>
           <div className="mb-6">
             {branding.logoUrl ? (
@@ -306,7 +309,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     const handleSelectPlan = async (planId: string) => { setSelectedPlan(planId); setSubscribeLoading(true); try { const backendUrl = process.env.NEXT_PUBLIC_API_URL || ''; const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/checkout`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ agency_id: agency?.id, plan: planId, skipTrial: true }) }); const data = await response.json(); if (data.url) { window.location.href = data.url; } else { console.error('No URL returned from checkout:', data); setSubscribeLoading(false); setSelectedPlan(null); } } catch (err) { console.error('Failed to create checkout session:', err); setSubscribeLoading(false); setSelectedPlan(null); } };
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: theme.bg }}>
-        <link rel="manifest" href="/manifest.json" />
+        <link rel="manifest" href="/api/agency-manifest" />
         <div className="max-w-4xl w-full">
           <div className="text-center mb-8">
             <div className="mb-6">{branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} style={{ height: '48px', width: 'auto' }} className="object-contain mx-auto" />) : (<div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto" style={{ backgroundColor: theme.primary15 }}><WaveformIcon className="h-8 w-8" color={theme.primary} /></div>)}</div>
@@ -341,7 +344,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   if (shouldBlockAccess) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: theme.bg }}>
-        <link rel="manifest" href="/manifest.json" />
+        <link rel="manifest" href="/api/agency-manifest" />
         <div className="max-w-md w-full rounded-2xl p-8 text-center" style={{ backgroundColor: theme.card, border: `1px solid ${theme.isDark ? 'rgba(239,68,68,0.3)' : '#fecaca'}` }}>
           <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6" style={{ backgroundColor: theme.errorBg }}><CreditCard className="h-8 w-8 text-red-500" /></div>
           <h1 className="text-2xl font-bold mb-3" style={{ color: theme.text }}>Payment Required</h1>
@@ -357,7 +360,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   return (
     <TourProvider steps={tourSteps} storageKey={agency?.id || 'x'}>
     <div className="min-h-screen" style={{ backgroundColor: theme.bg, color: theme.text, zoom: 0.8, '--color-primary': primaryColor, '--color-secondary': secondaryColor, '--color-accent': accentColor } as React.CSSProperties}>
-      <link rel="manifest" href="/manifest.json" />
+      <link rel="manifest" href="/api/agency-manifest" />
       {/* DynamicFavicon is now rendered by AgencyFavicon in the layout wrapper */}
       {/*
         Dashboard selection color + the page-enter transition.

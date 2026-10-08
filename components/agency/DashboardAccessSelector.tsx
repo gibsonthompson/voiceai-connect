@@ -11,7 +11,7 @@ interface DashboardAccessProps {
 const ACCESS_OPTIONS = [
   { value: 'full', label: 'Full Access', desc: 'Client can view calls, edit settings, and manage their AI', icon: Eye },
   { value: 'read_only', label: 'Read Only', desc: 'Client can view calls and summaries but cannot change settings', icon: Lock },
-  { value: 'none', label: 'No Access', desc: 'Client cannot log in — agency manages everything on their behalf', icon: EyeOff },
+  { value: 'none', label: 'No Access', desc: 'Client cannot log in. Agency manages everything on their behalf.', icon: EyeOff },
 ];
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -93,12 +93,12 @@ export default function DashboardAccessSelector({ clientId, theme }: DashboardAc
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <Shield className="w-4 h-4" style={{ color: theme.primary }} />
-        <span className="text-[11px] font-medium" style={{ color: theme.textMuted }}>Client Dashboard Access</span>
+        <span className="text-sm font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Client Dashboard Access</span>
       </div>
 
       {message && (
         <div
-          className="p-2 rounded-lg text-[10px] font-medium"
+          className="p-2.5 rounded-lg text-xs font-medium"
           style={{
             backgroundColor: message.includes('updated') ? hexToRgba('#22c55e', 0.1) : hexToRgba('#ef4444', 0.1),
             color: message.includes('updated') ? '#22c55e' : '#ef4444',
@@ -117,19 +117,19 @@ export default function DashboardAccessSelector({ clientId, theme }: DashboardAc
               key={opt.value}
               onClick={() => { if (opt.value !== access) handleSave(opt.value); }}
               disabled={saving}
-              className="w-full text-left p-2.5 rounded-lg border transition disabled:opacity-60"
+              className="w-full text-left p-3 rounded-lg border transition disabled:opacity-60"
               style={{
                 borderColor: selected ? theme.primary : theme.border,
                 backgroundColor: selected ? hexToRgba(theme.primary, theme.isDark ? 0.08 : 0.03) : 'transparent',
               }}
             >
-              <div className="flex items-center gap-2">
-                <Icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: selected ? theme.primary : theme.textMuted }} />
-                <div>
-                  <span className="font-medium text-[11px]" style={{ color: selected ? theme.primary : theme.text }}>
+              <div className="flex items-start gap-2.5">
+                <Icon className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: selected ? theme.primary : theme.textMuted }} />
+                <div className="min-w-0">
+                  <span className="font-semibold text-sm" style={{ color: selected ? theme.primary : theme.text }}>
                     {opt.label}
                   </span>
-                  <p className="text-[9px]" style={{ color: theme.textMuted }}>{opt.desc}</p>
+                  <p className="text-xs leading-snug mt-0.5" style={{ color: theme.textMuted }}>{opt.desc}</p>
                 </div>
               </div>
             </button>
@@ -139,8 +139,8 @@ export default function DashboardAccessSelector({ clientId, theme }: DashboardAc
 
       {saving && (
         <div className="flex items-center justify-center gap-2 py-1">
-          <Loader2 className="w-3 h-3 animate-spin" style={{ color: theme.primary }} />
-          <span className="text-[10px]" style={{ color: theme.textMuted }}>Updating...</span>
+          <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: theme.primary }} />
+          <span className="text-xs" style={{ color: theme.textMuted }}>Updating...</span>
         </div>
       )}
     </div>

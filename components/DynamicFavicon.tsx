@@ -5,6 +5,14 @@ import { useEffect } from 'react';
 interface DynamicFaviconProps {
   logoUrl?: string | null;
   primaryColor?: string;
+  /**
+   * Dedicated square icon for the iOS apple-touch-icon (home-screen / link
+   * preview). When set, it is used instead of logoUrl so a wide wordmark logo
+   * is not stretched into the square home-screen slot. Typically points at
+   * /api/agency-app-icon, which composites the agency app icon onto a square.
+   * Falls back to logoUrl when not provided (unchanged behavior elsewhere).
+   */
+  appleIconUrl?: string | null;
 }
 
 /**
@@ -16,9 +24,25 @@ interface DynamicFaviconProps {
  * re-inserts them during hydration reconciliation. By modifying the href
  * attribute instead, the DOM nodes stay in place and Next.js doesn't interfere.
  */
-export default function DynamicFavicon({ logoUrl, primaryColor }: DynamicFaviconProps) {
+export default function DynamicFavicon({ logoUrl, primaryColor, appleIconUrl }: DynamicFaviconProps) {
   useEffect(() => {
-    if (!logoUrl && !primaryColor) return;
+    if (!logoUrl && !primaryColor && !appleIconUrl) return;
+
+    // Apple touch icon first, using the dedicated square icon when provided so
+    // it is never stretched. Done before the favicon early-return below so it
+    // still applies when only appleIconUrl is set.
+    const appleHref = appleIconUrl || logoUrl;
+    if (appleHref) {
+      const appleLinks = document.querySelectorAll("link[rel='apple-touch-icon']");
+      if (appleLinks.length > 0) {
+        appleLinks.forEach(link => link.setAttribute('href', appleHref));
+      } else {
+        const appleLink = document.createElement('link');
+        appleLink.rel = 'apple-touch-icon';
+        appleLink.href = appleHref;
+        document.head.appendChild(appleLink);
+      }
+    }
 
     let href: string;
 
@@ -39,27 +63,14 @@ export default function DynamicFavicon({ logoUrl, primaryColor }: DynamicFavicon
         link.setAttribute('type', logoUrl ? 'image/png' : 'image/svg+xml');
       });
     } else {
-      // No existing icon links — create one
+      // No existing icon links, create one
       const link = document.createElement('link');
       link.rel = 'icon';
       link.type = logoUrl ? 'image/png' : 'image/svg+xml';
       link.href = href;
       document.head.appendChild(link);
     }
-
-    // Handle apple-touch-icon
-    const appleLinks = document.querySelectorAll("link[rel='apple-touch-icon']");
-    if (logoUrl) {
-      if (appleLinks.length > 0) {
-        appleLinks.forEach(link => link.setAttribute('href', logoUrl));
-      } else {
-        const appleLink = document.createElement('link');
-        appleLink.rel = 'apple-touch-icon';
-        appleLink.href = logoUrl;
-        document.head.appendChild(appleLink);
-      }
-    }
-  }, [logoUrl, primaryColor]);
+  }, [logoUrl, primaryColor, appleIconUrl]);
 
   return null;
 }

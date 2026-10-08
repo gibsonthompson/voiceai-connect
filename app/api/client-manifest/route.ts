@@ -20,7 +20,6 @@ export async function GET(request: NextRequest) {
 
     let themeColor = '#3b82f6';
     let backgroundColor = '#f9fafb';
-    let iconUrl = '/icon.png';
 
     const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
     const subdomainMatch = hostname.match(new RegExp(`^([^.]+)\\.${platformDomain.replace('.', '\\.')}$`));
@@ -48,7 +47,6 @@ export async function GET(request: NextRequest) {
 
     if (agency) {
       themeColor = agency.primary_color || themeColor;
-      if (agency.logo_url) iconUrl = agency.logo_url;
       // Match the launch splash to the agency theme so the icon tap opens onto
       // the agency's own background instead of a generic light/dark flash.
       backgroundColor = agency.website_theme === 'light' ? '#ffffff' : '#0a0a0a';
@@ -69,7 +67,6 @@ export async function GET(request: NextRequest) {
         .single();
 
       if (client) {
-        if (client.logo_url) iconUrl = client.logo_url;
         if (client.primary_color) themeColor = client.primary_color;
       }
     }
@@ -79,7 +76,14 @@ export async function GET(request: NextRequest) {
     // so installs collide. Keying id by clientId keeps each client's install
     // distinct on the same origin.
     const manifestId = clientId ? `/client/app/${clientId}` : '/client/app';
-    const resolvedIcon = iconUrl.startsWith('http') ? iconUrl : `${fullOrigin}${iconUrl}`;
+    // Icons are rendered by the square compositor (/api/agency-app-icon) rather
+    // than pointing at the raw logo. A wide wordmark declared directly at
+    // 192x192 / 512x512 gets stretched by the OS; the compositor contains it on
+    // a square so it never distorts. The compositor resolves the client's own
+    // logo (via clientId) or the agency app icon by host, matching iconUrl above.
+    const iconQuery = clientId ? `&clientId=${encodeURIComponent(clientId)}` : '';
+    const icon192 = `${fullOrigin}/api/agency-app-icon?size=192${iconQuery}`;
+    const icon512 = `${fullOrigin}/api/agency-app-icon?size=512${iconQuery}`;
 
     const manifest = {
       id: manifestId,
@@ -101,10 +105,10 @@ export async function GET(request: NextRequest) {
       // purpose makes Android treat the icon as maskable and crop it to the
       // safe zone; splitting lets non-maskable contexts show it uncropped.
       icons: [
-        { src: resolvedIcon, sizes: '192x192', type: 'image/png', purpose: 'any' },
-        { src: resolvedIcon, sizes: '512x512', type: 'image/png', purpose: 'any' },
-        { src: resolvedIcon, sizes: '192x192', type: 'image/png', purpose: 'maskable' },
-        { src: resolvedIcon, sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+        { src: icon192, sizes: '192x192', type: 'image/png', purpose: 'any' },
+        { src: icon512, sizes: '512x512', type: 'image/png', purpose: 'any' },
+        { src: icon192, sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+        { src: icon512, sizes: '512x512', type: 'image/png', purpose: 'maskable' }
       ]
     };
 
