@@ -193,12 +193,30 @@ function ClientUpgradeContent() {
       return;
     }
 
-    // No live subscription (expired trial / canceled / never subscribed):
-    // create one via Stripe checkout.
+    // No live subscription (expired trial / canceled / never subscribed): start
+    // checkout on whatever provider the agency is actually set up with. Stripe,
+    // Paystack, and Flutterwave each have their own init endpoint; the backend
+    // resolves which one via client.payment_provider.
     setCheckoutLoading(planTier);
+    const token = localStorage.getItem('auth_token');
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
+    const provider = (client as any).payment_provider as string | undefined;
+
+    // Paystack / Flutterwave: each returns an authorization_url we send the
+    // client to. They price from the plan we pass and persist it server-side.
+    if (provider === 'paystack' || provider === 'flutterwave') {
+      try {
+        const r = await fetch(`${backendUrl}/api/client/${provider}/init`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ client_id: client.id, plan: planTier }) });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d.message || d.error || 'Checkout failed');
+        if (d.authorization_url) { window.location.href = d.authorization_url; return; }
+        throw new Error('No checkout URL returned');
+      } catch (err: any) { setError(err.message || 'Checkout failed'); setCheckoutLoading(null); }
+      return;
+    }
+
+    // Stripe (default).
     try {
-      const token = localStorage.getItem('auth_token');
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
       const r = await fetch(`${backendUrl}/api/client/checkout`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ client_id: client.id, plan: planTier }) });
 
       if (!r.ok) {
