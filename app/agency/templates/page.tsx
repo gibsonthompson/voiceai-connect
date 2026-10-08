@@ -246,8 +246,7 @@ export default function AILabPage() {
   const [allVoices, setAllVoices] = useState<VoiceOption[]>([]);
   const [voiceFilter, setVoiceFilter] = useState<'all' | 'female' | 'male'>('all');
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
-  // Custom ElevenLabs voice addition (shared with the industry template editor —
-  // both read/write agencies.custom_voices via /api/agency/:id/ai-templates/voices).
+  // Custom ElevenLabs voice addition (shared with the industry template editor, // both read/write agencies.custom_voices via /api/agency/:id/ai-templates/voices).
   const [showAddVoice, setShowAddVoice] = useState(false);
   const [newVoiceId, setNewVoiceId] = useState('');
   const [newVoiceName, setNewVoiceName] = useState('');
@@ -370,7 +369,7 @@ export default function AILabPage() {
   };
 
   // Synthesize a sample in the selected voice (same path the template editor
-  // uses), so every voice previews — presets and custom alike — not just ones
+  // uses), so every voice previews, presets and custom alike, not just ones
   // with a stock sample URL. Falls back to a stored previewUrl if synthesis fails.
   const playPreview = async (voice: VoiceOption) => {
     if (playingVoiceId === voice.id && audioRef.current) { audioRef.current.pause(); audioRef.current = null; setPlayingVoiceId(null); return; }
@@ -427,6 +426,9 @@ export default function AILabPage() {
 
   const selectClient = async (client: ClientItem) => {
     setSelectedClient(client); setConfig(null); setTranscript([]); setEventLog([]); setCallState('idle');
+    // Persist the selection in the URL so a refresh reopens the same client
+    // instead of dropping back to the list.
+    try { window.history.replaceState(null, '', `?client=${client.id}`); } catch {}
     setConfigSaved(false); setConfigError(''); setPromptExpanded(false);
     setKbExpanded(false); setKbWebsite(''); setKbServices([{id:'1',name:'',price:'',description:''}]); setKbFaqs([{id:'1',question:'',answer:''}]); setKbAdditionalInfo(''); setKbHours(''); setKbLastUpdated(null);
     setNotifPhone(client.owner_phone || ''); setOrigPhone(client.owner_phone || '');
@@ -539,9 +541,6 @@ export default function AILabPage() {
   return (
     <>
       <style>{`::selection { background-color: #3b82f640; color: inherit; }`}</style>
-      {showCallModal && selectedClient && (
-        <CallModal callState={callState} callDuration={callDuration} isMuted={isMuted} transcript={transcript} eventLog={eventLog} theme={theme} onEnd={endCall} onToggleMute={toggleMute} onClose={closeModal} clientName={selectedClient.business_name} transcriptEndRef={transcriptEndRef} eventLogEndRef={eventLogEndRef} />
-      )}
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="flex items-center justify-between mb-6"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: theme.primary15 }}><FlaskConical className="h-5 w-5" style={{ color: theme.primary }} /></div><div><h1 data-tour="tour-templates" className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>AI Lab</h1><p className="text-sm sm:text-sm" style={{ color: theme.textMuted }}>Configure, test, and ship AI receptionists</p></div></div></div>
 
@@ -589,7 +588,7 @@ export default function AILabPage() {
 
         {selectedClient && (
           <div style={{ zoom: 0.9 }}>
-            <button onClick={() => { setSelectedClient(null); setConfig(null); }} className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium transition hover:opacity-80" style={{ color: theme.textMuted }}><ChevronLeft className="h-4 w-4" /> Back to packaged receptionists</button>
+            <button onClick={() => { setSelectedClient(null); setConfig(null); try { window.history.replaceState(null, '', window.location.pathname); } catch {} }} className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium transition hover:opacity-80" style={{ color: theme.textMuted }}><ChevronLeft className="h-4 w-4" /> Back to packaged receptionists</button>
             <div className="rounded-xl p-4 sm:p-5 mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0"><div className="flex h-12 w-12 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Building className="h-6 w-6" style={{ color: theme.primary }} /></div><div className="min-w-0"><p className="font-semibold text-base truncate" style={{ color: theme.text }}>{selectedClient.business_name}</p><p className="text-sm flex items-center gap-1.5 flex-wrap" style={{ color: theme.textMuted }}>{(() => { const ind = INDUSTRIES.find(i => i.value === selectedClient.industry); const Ic = ind ? ICON_MAP[ind.icon] : null; return (<>{Ic && <Ic className="h-4 w-4" style={{ color: theme.primary }} />}<span className="font-medium" style={{ color: theme.text }}>{ind?.label || selectedClient.industry}</span> · {selectedClient.business_city}, {selectedClient.business_state}</>); })()}</p><p className="text-sm mt-1 flex items-center gap-1.5" style={{ color: theme.textMuted }}><Building2 className="h-3 w-3" /> Agency: <span className="font-medium" style={{ color: theme.text }}>{agency?.name}</span></p></div></div>
@@ -601,7 +600,10 @@ export default function AILabPage() {
               <div className="rounded-xl p-10 flex items-center justify-center mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.primary }} /><span className="ml-3 text-sm" style={{ color: theme.textMuted }}>Loading AI configuration...</span></div>
             ) : config ? (
               <div className="rounded-xl p-4 sm:p-5 mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-                <div className="flex items-center gap-2 mb-5"><Pencil className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-sm font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>AI Configuration</span></div>
+                <div className="flex items-center justify-between gap-3 mb-5">
+                  <div className="flex items-center gap-2"><Pencil className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-sm font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>AI Configuration</span></div>
+                  <div className="flex items-center gap-3">{configSaved && <span className="text-sm font-medium" style={{ color: '#22c55e' }}>Saved!</span>}{configError && <span className="text-sm" style={{ color: '#ef4444' }}>{configError}</span>}<button onClick={saveConfig} disabled={configSaving || !hasChanges} className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-40" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{configSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} Save Changes</button></div>
+                </div>
                 <div className="flex flex-col lg:flex-row gap-4">
                   <div className="flex-1 min-w-0 space-y-6">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -677,9 +679,9 @@ export default function AILabPage() {
                   {config.tools.filter(t => !['transferCall', 'endCall'].includes(t)).length > 0 && (<div className="flex items-center gap-2 flex-wrap"><span className="text-sm font-medium" style={{ color: theme.textMuted }}>Other Tools:</span>{config.tools.filter(t => !['transferCall', 'endCall'].includes(t)).map(t => <span key={t} className="text-sm font-mono px-2 py-0.5 rounded" style={{ backgroundColor: theme.hover, color: theme.text }}>{t}</span>)}</div>)}
                   </div>
                   <div className="lg:w-[45%] xl:w-[50%] flex-shrink-0">
-                    <div className="rounded-xl p-4 lg:sticky lg:top-4" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : '#f9fafb', border: `1px solid ${theme.border}` }}>
-                      <div className="flex items-center justify-between mb-2"><div className="flex items-center gap-3"><label className="text-sm font-medium" style={{ color: theme.textMuted }}>System Prompt</label><a href="https://myvoiceaiconnect.com/blog/ai-receptionist-prompt-guide" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm font-medium transition hover:opacity-80" style={{ color: theme.primary }}><ArrowUpRight className="h-2.5 w-2.5" /> Prompting Guide</a></div><div className="flex items-center gap-3"><span className="text-sm font-mono" style={{ color: theme.textMuted }}>{editPrompt.length.toLocaleString()} chars</span><button onClick={() => setPromptExpanded(!promptExpanded)} className="flex items-center gap-1 text-sm font-medium transition" style={{ color: theme.primary }}>{promptExpanded ? <><Minimize2 className="h-3 w-3" /> Collapse</> : <><Maximize2 className="h-3 w-3" /> Expand</>}</button></div></div>
-                      <textarea value={editPrompt} onChange={e => setEditPrompt(e.target.value)} className="w-full rounded-lg px-3 py-2.5 text-sm font-mono leading-relaxed" style={{ ...inputStyle, resize: 'vertical', minHeight: '400px', height: promptExpanded ? '85vh' : '68vh', maxHeight: '90vh' }} />
+                    <div className="rounded-xl p-4" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : '#f9fafb', border: `1px solid ${theme.border}` }}>
+                      <div className="flex items-center justify-between mb-2"><div className="flex items-center gap-3"><label className="text-sm font-medium" style={{ color: theme.textMuted }}>System Prompt</label><a href="https://myvoiceaiconnect.com/blog/ai-receptionist-prompt-guide" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm font-medium transition hover:opacity-80" style={{ color: theme.primary }}><ArrowUpRight className="h-2.5 w-2.5" /> Prompting Guide</a></div><div className="flex items-center gap-3"><span className="text-sm font-mono" style={{ color: theme.textMuted }}>{editPrompt.length.toLocaleString()} chars</span></div></div>
+                      <textarea value={editPrompt} onChange={e => setEditPrompt(e.target.value)} rows={26} className="w-full rounded-lg px-3 py-2.5 text-sm font-mono leading-relaxed" style={{ ...inputStyle, resize: 'vertical', minHeight: '620px' }} />
                       <div className="flex items-center justify-end gap-3 mt-3">{configSaved && <span className="text-sm font-medium" style={{ color: '#22c55e' }}>Saved!</span>}{configError && <span className="text-sm" style={{ color: '#ef4444' }}>{configError}</span>}<button onClick={saveConfig} disabled={configSaving || !hasChanges} className="flex items-center gap-1.5 rounded-lg px-5 py-2 text-sm font-medium disabled:opacity-40" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{configSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} Save Changes</button></div>
                     </div>
                   </div>
@@ -737,12 +739,6 @@ export default function AILabPage() {
                 <DashboardAccessSelector clientId={selectedClient.id} theme={theme} />
               </div>
             )}
-
-            {/* Start Test Call */}
-            <div className="rounded-xl p-6 text-center mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-              <button onClick={startCall} disabled={!selectedClient?.vapi_assistant_id || !vapiKey} className="inline-flex items-center justify-center gap-3 rounded-2xl px-10 py-4 text-base font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:hover:scale-100" style={{ backgroundColor: theme.primary, color: theme.primaryText, boxShadow: `0 0 40px ${theme.primary}20` }}><PhoneCall className="h-5 w-5" /> Start Test Call</button>
-              <p className="text-sm mt-3" style={{ color: theme.textMuted }}>Opens a live browser call to this client&apos;s AI assistant</p>
-            </div>
 
             {/* SMS Notifications */}
             <div className="rounded-xl p-4 mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
