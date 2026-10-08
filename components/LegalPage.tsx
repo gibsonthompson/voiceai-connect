@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import '@/styles/marketing.css';
+import { markdownToHtml, replacePlaceholders } from '@/lib/legal-markdown';
 
 // ============================================================================
 // TYPES
@@ -88,158 +89,6 @@ function resolveHomepageUrl(agency: Agency): string {
     if (currentHost === domain.replace(/^www\./, '')) return '/';
   }
   return `https://${domain}`;
-}
-
-// ============================================================================
-// PLACEHOLDER REPLACEMENT
-// ============================================================================
-function replacePlaceholders(content: string, agency: Agency): string {
-  const cs = agency.display_currency === 'GBP' ? '£' : agency.display_currency === 'EUR' ? '€' : '$';
-  const lowestPrice = agency.price_starter ? Math.round(agency.price_starter / 100) : 49;
-  const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-
-  return content
-    .replace(/\{\{AGENCY_NAME\}\}/g, agency.name)
-    .replace(/\{\{SUPPORT_EMAIL\}\}/g, agency.support_email || 'support@myvoiceaiconnect.com')
-    .replace(/\{\{SUPPORT_PHONE\}\}/g, agency.support_phone || '')
-    .replace(/\{\{CURRENCY_SYMBOL\}\}/g, cs)
-    .replace(/\{\{LOWEST_PRICE\}\}/g, String(lowestPrice))
-    .replace(/\{\{EFFECTIVE_DATE\}\}/g, today);
-}
-
-// ============================================================================
-// SIMPLE MARKDOWN → HTML RENDERER
-// Handles: headings, bold, italic, lists, tables, horizontal rules, links,
-//          paragraphs. Safe for controlled content (not user input).
-// ============================================================================
-function markdownToHtml(md: string): string {
-  const lines = md.split('\n');
-  const html: string[] = [];
-  // Track the OPEN list type so ordered and unordered lists close with the
-  // correct tag and consecutive same-type items stay in ONE list. The old code
-  // shared a single inList boolean and always closed with </ul>, then tried to
-  // patch ordered lists with a regex afterward, which split every numbered item
-  // into its own single-item <ol>. Tracking the type fixes that at the source.
-  let listType: 'ul' | 'ol' | null = null;
-  let inTable = false;
-  let tableHeaderDone = false;
-  let inParagraph = false;
-
-  function closeParagraph() {
-    if (inParagraph) { html.push('</p>'); inParagraph = false; }
-  }
-  function closeList() {
-    if (listType) { html.push(`</${listType}>`); listType = null; }
-  }
-  function closeTable() {
-    if (inTable) { html.push('</tbody></table></div>'); inTable = false; tableHeaderDone = false; }
-  }
-
-  function inlineFormat(text: string): string {
-    // Bold
-    text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    // Italic
-    text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
-    // Inline code
-    text = text.replace(/`(.+?)`/g, '<code>$1</code>');
-    // Links
-    text = text.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>');
-    return text;
-  }
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const trimmed = line.trim();
-
-    // Blank line
-    if (trimmed === '') {
-      closeParagraph();
-      closeList();
-      closeTable();
-      continue;
-    }
-
-    // Horizontal rule
-    if (/^-{3,}$/.test(trimmed)) {
-      closeParagraph(); closeList(); closeTable();
-      html.push('<hr/>');
-      continue;
-    }
-
-    // Headings
-    const headingMatch = trimmed.match(/^(#{1,6})\s+(.+)$/);
-    if (headingMatch) {
-      closeParagraph(); closeList(); closeTable();
-      const level = headingMatch[1].length;
-      const text = inlineFormat(headingMatch[2]);
-      const id = headingMatch[2].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-      html.push(`<h${level} id="${id}">${text}</h${level}>`);
-      continue;
-    }
-
-    // Table row
-    if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
-      closeParagraph(); closeList();
-      const cells = trimmed.slice(1, -1).split('|').map(c => c.trim());
-
-      // Separator row (|---|---|)
-      if (cells.every(c => /^-+$/.test(c))) {
-        tableHeaderDone = true;
-        continue;
-      }
-
-      if (!inTable) {
-        html.push('<div class="legal-table-wrapper"><table class="legal-table"><thead><tr>');
-        cells.forEach(c => html.push(`<th>${inlineFormat(c)}</th>`));
-        html.push('</tr></thead><tbody>');
-        inTable = true;
-        continue;
-      }
-
-      html.push('<tr>');
-      cells.forEach(c => html.push(`<td>${inlineFormat(c)}</td>`));
-      html.push('</tr>');
-      continue;
-    }
-
-    // Unordered list
-    if (/^[-*]\s+/.test(trimmed)) {
-      closeParagraph(); closeTable();
-      // If a different list type is open (ordered), close it before starting
-      // the unordered one; otherwise keep appending to the open <ul>.
-      if (listType !== 'ul') { closeList(); html.push('<ul>'); listType = 'ul'; }
-      const text = inlineFormat(trimmed.replace(/^[-*]\s+/, ''));
-      html.push(`<li>${text}</li>`);
-      continue;
-    }
-
-    // Ordered list
-    if (/^\d+\.\s+/.test(trimmed)) {
-      closeParagraph(); closeTable();
-      // Same rule as above, mirrored: only open a new <ol> when one is not
-      // already open, so 1./2./3. stay in a single ordered list.
-      if (listType !== 'ol') { closeList(); html.push('<ol>'); listType = 'ol'; }
-      const text = inlineFormat(trimmed.replace(/^\d+\.\s+/, ''));
-      html.push(`<li>${text}</li>`);
-      continue;
-    }
-
-    // Regular paragraph text
-    closeList(); closeTable();
-    if (!inParagraph) {
-      html.push('<p>');
-      inParagraph = true;
-    } else {
-      html.push(' ');
-    }
-    html.push(inlineFormat(trimmed));
-  }
-
-  closeParagraph();
-  closeList();
-  closeTable();
-
-  return html.join('\n');
 }
 
 // ============================================================================
@@ -330,7 +179,7 @@ export default function LegalPage({ type }: LegalPageProps) {
     if (!agency) return;
     if (agency.logo_url) setFavicon(agency.logo_url);
     const pageTitle = type === 'terms' ? 'Terms of Service' : 'Privacy Policy';
-    document.title = `${pageTitle} — ${agency.name}`;
+    document.title = `${pageTitle} | ${agency.name}`;
   }, [agency, type]);
 
   // Process content: replace placeholders and convert markdown

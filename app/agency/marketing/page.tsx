@@ -6,14 +6,15 @@ import {
   Globe, ExternalLink, Copy, Check, Eye, Link as LinkIcon,
   AlertCircle, CheckCircle2, Loader2, RefreshCw, Palette, Type, Save, Upload,
   Wand2, BarChart3, Share2, Layout, DollarSign, Code,
-  ChevronUp, ChevronDown, Trash2, Plus, LayoutDashboard
+  ChevronUp, ChevronDown, Trash2, Plus, LayoutDashboard, FileText
 } from 'lucide-react';
+import LegalEditor from '@/components/agency/LegalEditor';
 import LockedFeature from '@/components/LockedFeature';
 import { useAgency } from '../context';
 import { usePlanFeatures } from '../../../hooks/usePlanFeatures';
 import MarketingContentEditor from '@/components/agency/MarketingContentEditor';
 
-type ActiveTab = 'overview' | 'template' | 'sections' | 'content' | 'colors' | 'domain' | 'tracking' | 'seo' | 'navigation';
+type ActiveTab = 'overview' | 'template' | 'sections' | 'content' | 'colors' | 'domain' | 'tracking' | 'seo' | 'navigation' | 'legal';
 
 function isLightColor(hex: string): boolean {
   const c = hex.replace('#', '');
@@ -217,12 +218,36 @@ export default function MarketingWebsitePage() {
   const inputBorder = isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb';
   const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.myvoiceaiconnect.com';
+  // Adapter so the shared LegalEditor (built against the dashboard theme token
+  // set) renders correctly inside this page's raw color-variable styling.
+  const legalTheme = {
+    primary: agencyPrimaryColor,
+    primary15: agencyPrimaryColor + '26',
+    primary30: agencyPrimaryColor + '4D',
+    primaryText: isLightColor(agencyPrimaryColor) ? '#1f2937' : '#ffffff',
+    text: textColor,
+    textMuted: mutedTextColor,
+    card: cardBg,
+    input: inputBg,
+    inputBorder: inputBorder,
+    border: borderColor,
+    isDark,
+    errorBg: isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2',
+    errorText: isDark ? '#f87171' : '#dc2626',
+    errorBorder: isDark ? 'rgba(239,68,68,0.2)' : '#fecaca',
+    successBg: isDark ? 'rgba(52,211,153,0.12)' : 'rgba(52,211,153,0.1)',
+    successText: isDark ? '#34d399' : '#059669',
+    successBorder: isDark ? 'rgba(52,211,153,0.2)' : 'rgba(52,211,153,0.2)',
+    warningBg: isDark ? 'rgba(245,158,11,0.12)' : 'rgba(245,158,11,0.1)',
+    warningText: isDark ? '#fbbf24' : '#92400e',
+    warningBorder: isDark ? 'rgba(245,158,11,0.2)' : 'rgba(245,158,11,0.2)',
+  };
   const subdomainUrl = `https://${agency?.slug || 'demo'}.${platformDomain}`;
   const signupUrl = agency?.marketing_domain && agency?.domain_verified ? `https://${agency.marketing_domain}/signup` : `${subdomainUrl}/signup`;
   const hasAccess = canUseMarketingSite || demoMode;
 
   // ── Inline embed widget snippet ──
-  // This is the canonical embed.js snippet — same one Free agencies see in
+  // This is the canonical embed.js snippet, same one Free agencies see in
   // Settings → Embed. Pro/Scale agencies get it here in Marketing so the
   // widget lives next to all the other marketing-site config (colors, domain,
   // tracking) rather than buried under Settings.
@@ -234,7 +259,7 @@ export default function MarketingWebsitePage() {
   // makes it adopt this agency's brand, theme, and pricing.
   const widgetPreviewSrc = `https://${platformDomain}/signup?embed=true&agency=${agency?.id || ''}`;
 
-  // Button-link snippet — separate const so the JSX stays readable and we
+  // Button-link snippet, separate const so the JSX stays readable and we
   // don't recompute it twice (once for the <pre>, once for the copy button).
   const embedButtonSnippet = `<a href="${signupUrl}" style="display:inline-block;padding:14px 32px;background:${agencyPrimaryColor};color:${isLightColor(agencyPrimaryColor) ? '#050505' : '#ffffff'};border-radius:8px;text-decoration:none;font-weight:600;font-size:16px">Start Free Trial</a>`;
 
@@ -372,11 +397,12 @@ export default function MarketingWebsitePage() {
     { id: 'domain' as ActiveTab, label: 'Domain', icon: LinkIcon },
     { id: 'tracking' as ActiveTab, label: 'Tracking', icon: BarChart3 },
     { id: 'seo' as ActiveTab, label: 'Link Preview', icon: Share2 },
+    { id: 'legal' as ActiveTab, label: 'Legal Pages', icon: FileText },
   ];
 
   if (agencyLoading && !agency) return (<div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-neutral-400" /></div>);
 
-  // Full marketing page UI — used as the LockedFeature children when on
+  // Full marketing page UI, used as the LockedFeature children when on
   // Free plan, and as the direct return for Pro/Scale agencies.
   const pageContent = (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -391,7 +417,7 @@ export default function MarketingWebsitePage() {
         </div>
         <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
           <div className="flex items-start justify-between mb-3"><div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg" style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}><Layout className="h-4 w-4 sm:h-5 sm:w-5" /></div></div>
-          <h3 className="font-medium text-sm sm:text-base mb-1">Active Template</h3><p className="text-xs sm:text-sm mb-3 sm:mb-4 capitalize" style={{ color: mutedTextColor }}>{TEMPLATES.find(t => t.id === selectedTemplate)?.name || 'Classic'} — {TEMPLATES.find(t => t.id === selectedTemplate)?.style || 'Professional'}</p>
+          <h3 className="font-medium text-sm sm:text-base mb-1">Active Template</h3><p className="text-xs sm:text-sm mb-3 sm:mb-4 capitalize" style={{ color: mutedTextColor }}>{TEMPLATES.find(t => t.id === selectedTemplate)?.name || 'Classic'} · {TEMPLATES.find(t => t.id === selectedTemplate)?.style || 'Professional'}</p>
           <button onClick={() => setActiveTab('template')} className={`w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium transition-colors ${isDark ? 'hover:bg-white/[0.1]' : 'hover:bg-black/[0.05]'}`} style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}><Layout className="h-4 w-4" />Change Template</button>
         </div>
       </div>
@@ -493,7 +519,7 @@ export default function MarketingWebsitePage() {
           <div className="flex items-center gap-2 mb-1.5"><LinkIcon className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: agencyPrimaryColor }} /><h3 className="font-semibold text-base sm:text-lg" style={{ color: textColor }}>Embed on Your Own Website</h3></div>
           <p className="text-xs sm:text-sm mb-5 sm:mb-6" style={{ color: mutedTextColor }}>This is for <strong style={{ color: textColor, fontWeight: 600 }}>new clients signing up</strong> (not existing clients logging in, that&apos;s the card above). Drop one of the snippets below onto your existing site and prospects join through your branded form without leaving the page.</p>
 
-          {/* Signup URL row — handy reference even if they pick the widget */}
+          {/* Signup URL row, handy reference even if they pick the widget */}
           <div className="mb-6"><label className="block text-xs font-medium mb-1.5" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Your client signup URL</label><div className="flex items-center gap-2 p-3 rounded-lg" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}><Globe className="h-4 w-4 flex-shrink-0" style={{ color: mutedTextColor }} /><span className="flex-1 text-xs sm:text-sm font-mono truncate" style={{ color: textColor }}>{signupUrl}</span><button onClick={() => copyToClipboard(signupUrl, 'signup-url')} className="flex-shrink-0" style={{ color: mutedTextColor }}>{copied === 'signup-url' ? <Check className="h-4 w-4" style={{ color: agencyPrimaryColor }} /> : <Copy className="h-4 w-4" />}</button></div><p className="text-[10px] sm:text-xs mt-1.5" style={{ color: mutedTextColor }}>{agency?.marketing_domain && agency?.domain_verified ? `Using your custom domain: ${agency.marketing_domain}` : 'Connect a custom domain in the Domain tab for a branded URL'}</p></div>
 
           <div className="mb-6">
@@ -527,7 +553,7 @@ export default function MarketingWebsitePage() {
             </div>
             <p className="text-xs sm:text-sm mb-3" style={{ color: mutedTextColor }}>The full signup form, right on your page. It adopts your brand colors, theme, and pricing automatically, and resizes to fit its content.</p>
 
-            {/* Live preview — the real embedded form (same iframe embed.js injects) */}
+            {/* Live preview, the real embedded form (same iframe embed.js injects) */}
             <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${inputBorder}` }}>
               <div className="flex items-center gap-2 px-3 py-2" style={{ backgroundColor: inputBg, borderBottom: `1px solid ${inputBorder}` }}>
                 <span className="flex gap-1.5">
@@ -608,7 +634,7 @@ export default function MarketingWebsitePage() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <h3 className="text-sm sm:text-base font-semibold mb-1 flex items-center gap-2" style={{ color: isDark ? '#fafaf9' : '#111827' }}>Public marketing site{savingSite && <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: agencyPrimaryColor }} />}</h3>
-              <p className="text-xs sm:text-sm" style={{ color: isDark ? 'rgba(250,250,249,0.6)' : '#6b7280' }}>When off, your site address becomes a client login page — no public marketing and no pricing on show. Use this if you onboard every client yourself (white-glove).</p>
+              <p className="text-xs sm:text-sm" style={{ color: isDark ? 'rgba(250,250,249,0.6)' : '#6b7280' }}>When off, your site address becomes a client login page, no public marketing and no pricing on show. Use this if you onboard every client yourself (white-glove).</p>
             </div>
             <button onClick={toggleSiteEnabled} disabled={savingSite || demoMode} className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 shrink-0 mt-0.5" style={{ backgroundColor: siteEnabled ? agencyPrimaryColor : (isDark ? 'rgba(255,255,255,0.15)' : '#d1d5db') }} aria-pressed={siteEnabled} aria-label="Toggle public marketing site">
               <span className="inline-block h-4 w-4 rounded-full bg-white transition-transform" style={{ transform: siteEnabled ? 'translateX(22px)' : 'translateX(4px)' }} />
@@ -687,12 +713,12 @@ export default function MarketingWebsitePage() {
         <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
           <div className="flex items-center justify-between mb-1 sm:mb-2"><h3 className="font-medium text-sm sm:text-base">Custom Domain</h3>{domainStatus === 'verified' && (<span className="flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-full" style={{ backgroundColor: `${agencyPrimaryColor}15`, color: agencyPrimaryColor }}><CheckCircle2 className="h-3.5 w-3.5" />Verified</span>)}{domainStatus === 'pending' && (<span className="flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-full" style={{ backgroundColor: 'rgba(245,158,11,0.1)', color: isDark ? '#fbbf24' : '#d97706' }}><AlertCircle className="h-3.5 w-3.5" />Pending</span>)}</div>
           <p className="text-xs sm:text-sm mb-3 sm:mb-4" style={{ color: mutedTextColor }}>Connect your own domain or subdomain (e.g. yourdomain.com or ai.yourdomain.com)</p>
-          <div className="space-y-3 sm:space-y-4"><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Domain Name</label><input type="text" value={customDomain} onChange={(e) => setCustomDomain(e.target.value)} placeholder="yourdomain.com or ai.yourdomain.com" className="w-full rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-sm transition-colors focus:outline-none" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }} /><p className="text-[10px] mt-1.5" style={{ color: mutedTextColor }}>Already using your root domain for another website? Use a subdomain like ai.yourdomain.com instead — your existing site stays untouched.</p></div>
+          <div className="space-y-3 sm:space-y-4"><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Domain Name</label><input type="text" value={customDomain} onChange={(e) => setCustomDomain(e.target.value)} placeholder="yourdomain.com or ai.yourdomain.com" className="w-full rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-sm transition-colors focus:outline-none" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }} /><p className="text-[10px] mt-1.5" style={{ color: mutedTextColor }}>Already using your root domain for another website? Use a subdomain like ai.yourdomain.com instead, and your existing site stays untouched.</p></div>
             <div className="flex flex-wrap gap-2">{domainStatus === 'none' && (<button onClick={handleSaveCustomDomain} disabled={!customDomain.trim() || savingDomain} className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors" style={{ backgroundColor: agencyPrimaryColor }}>{savingDomain ? <Loader2 className="h-4 w-4 animate-spin" /> : <LinkIcon className="h-4 w-4" />}Add Domain</button>)}{domainStatus === 'pending' && (<><button onClick={handleVerifyDomain} disabled={verifyingDomain} className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium text-white disabled:opacity-50 transition-colors" style={{ backgroundColor: agencyPrimaryColor }}>{verifyingDomain ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}Verify DNS</button><button onClick={handleRemoveDomain} disabled={savingDomain} className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium transition-colors" style={{ color: isDark ? '#f87171' : '#dc2626', backgroundColor: isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2', border: isDark ? '1px solid rgba(239,68,68,0.2)' : '1px solid #fecaca' }}>Remove</button></>)}{domainStatus === 'verified' && (<button onClick={handleRemoveDomain} disabled={savingDomain} className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium transition-colors" style={{ color: isDark ? '#f87171' : '#dc2626', backgroundColor: isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2', border: isDark ? '1px solid rgba(239,68,68,0.2)' : '1px solid #fecaca' }}>Remove Domain</button>)}</div>
           </div>
-          {domainStatus === 'pending' && verificationRecords.length > 0 && (<div className="mt-4 rounded-lg p-4" style={{ backgroundColor: isDark ? 'rgba(245,158,11,0.06)' : '#fffbeb', border: '1px solid rgba(245,158,11,0.2)' }}><p className="text-xs font-medium mb-3 flex items-center gap-1.5" style={{ color: isDark ? '#fbbf24' : '#b45309' }}><AlertCircle className="h-3.5 w-3.5" />Domain Ownership Verification Required</p><p className="text-[10px] mb-3" style={{ color: isDark ? '#fbbf24' : '#92400e' }}>This domain was previously used on another hosting account. Add the TXT record below at your domain registrar to verify ownership, then click Verify DNS.</p><div className="space-y-2">{verificationRecords.map((record: any, i: number) => (<div key={i} className="rounded p-2 text-xs font-mono space-y-1" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}><div className="flex items-center justify-between"><span style={{ color: mutedTextColor }}>TXT Record — Name: <strong style={{ color: textColor }}>_vercel</strong></span><button onClick={() => copyToClipboard(record.value, `txt-${i}`)} style={{ color: mutedTextColor }}>{copied === `txt-${i}` ? <Check className="h-3.5 w-3.5" style={{ color: agencyPrimaryColor }} /> : <Copy className="h-3.5 w-3.5" />}</button></div><div className="break-all" style={{ color: textColor }}>{record.value}</div></div>))}</div></div>)}
+          {domainStatus === 'pending' && verificationRecords.length > 0 && (<div className="mt-4 rounded-lg p-4" style={{ backgroundColor: isDark ? 'rgba(245,158,11,0.06)' : '#fffbeb', border: '1px solid rgba(245,158,11,0.2)' }}><p className="text-xs font-medium mb-3 flex items-center gap-1.5" style={{ color: isDark ? '#fbbf24' : '#b45309' }}><AlertCircle className="h-3.5 w-3.5" />Domain Ownership Verification Required</p><p className="text-[10px] mb-3" style={{ color: isDark ? '#fbbf24' : '#92400e' }}>This domain was previously used on another hosting account. Add the TXT record below at your domain registrar to verify ownership, then click Verify DNS.</p><div className="space-y-2">{verificationRecords.map((record: any, i: number) => (<div key={i} className="rounded p-2 text-xs font-mono space-y-1" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}><div className="flex items-center justify-between"><span style={{ color: mutedTextColor }}>TXT Record, Name: <strong style={{ color: textColor }}>_vercel</strong></span><button onClick={() => copyToClipboard(record.value, `txt-${i}`)} style={{ color: mutedTextColor }}>{copied === `txt-${i}` ? <Check className="h-3.5 w-3.5" style={{ color: agencyPrimaryColor }} /> : <Copy className="h-3.5 w-3.5" />}</button></div><div className="break-all" style={{ color: textColor }}>{record.value}</div></div>))}</div></div>)}
           {domainStatus === 'pending' && dnsConfig?.misconfigured && (<div className="mt-4 rounded-lg p-4" style={{ backgroundColor: isDark ? 'rgba(239,68,68,0.06)' : '#fef2f2', border: isDark ? '1px solid rgba(239,68,68,0.15)' : '1px solid #fecaca' }}><p className="text-xs font-medium flex items-center gap-1.5 mb-2" style={{ color: isDark ? '#f87171' : '#dc2626' }}><AlertCircle className="h-3.5 w-3.5" />Domain Misconfigured</p><p className="text-xs" style={{ color: isDark ? '#fca5a5' : '#991b1b' }}>Your domain has conflicting DNS records. Remove any existing A, AAAA, or CNAME records for {dnsConfig.isSubdomain ? `the "${dnsConfig.subdomainPrefix}" subdomain` : 'this domain'} at your registrar before adding the records below.</p></div>)}
-          {domainStatus === 'pending' && dnsConfig && (<div className="mt-4 rounded-lg p-4" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${borderColor}` }}><p className="text-xs font-medium mb-1" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Add {dnsConfig.isSubdomain ? 'this DNS record' : 'these DNS records'} at your domain registrar:</p><p className="text-[10px] mb-3" style={{ color: mutedTextColor }}>{dnsConfig.isSubdomain ? `Remove any existing CNAME record for "${dnsConfig.subdomainPrefix}" first.` : 'Remove any existing A, AAAA, or CNAME records for the root domain first.'}</p><div className="space-y-2 text-xs font-mono">{!dnsConfig.isSubdomain && (<div className="p-2 rounded space-y-1" style={{ backgroundColor: inputBg }}><div className="flex items-center justify-between"><span style={{ color: mutedTextColor }}>A Record — Name: <strong style={{ color: textColor }}>@</strong> (root domain)</span><button onClick={() => copyToClipboard(dnsConfig.aRecord, 'a-record')} style={{ color: mutedTextColor }}>{copied === 'a-record' ? <Check className="h-3.5 w-3.5" style={{ color: agencyPrimaryColor }} /> : <Copy className="h-3.5 w-3.5" />}</button></div><div style={{ color: textColor }}>{dnsConfig.aRecord}</div></div>)}<div className="p-2 rounded space-y-1" style={{ backgroundColor: inputBg }}><div className="flex items-center justify-between"><span style={{ color: mutedTextColor }}>CNAME Record — Name: <strong style={{ color: textColor }}>{dnsConfig.isSubdomain ? dnsConfig.subdomainPrefix : 'www'}</strong>{!dnsConfig.isSubdomain && <span style={{ color: mutedTextColor }}> — creates www.yourdomain so visitors who type www also reach your site</span>}</span><button onClick={() => copyToClipboard(dnsConfig.cname, 'cname')} style={{ color: mutedTextColor }}>{copied === 'cname' ? <Check className="h-3.5 w-3.5" style={{ color: agencyPrimaryColor }} /> : <Copy className="h-3.5 w-3.5" />}</button></div><div className="break-all" style={{ color: textColor }}>{dnsConfig.cname}</div></div></div>{dnsConfig.cname && dnsConfig.cname !== 'cname.vercel-dns.com' && (<p className="text-[10px] mt-2" style={{ color: agencyPrimaryColor }}>✓ Project-specific CNAME detected — use this exact value.</p>)}</div>)}
+          {domainStatus === 'pending' && dnsConfig && (<div className="mt-4 rounded-lg p-4" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${borderColor}` }}><p className="text-xs font-medium mb-1" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Add {dnsConfig.isSubdomain ? 'this DNS record' : 'these DNS records'} at your domain registrar:</p><p className="text-[10px] mb-3" style={{ color: mutedTextColor }}>{dnsConfig.isSubdomain ? `Remove any existing CNAME record for "${dnsConfig.subdomainPrefix}" first.` : 'Remove any existing A, AAAA, or CNAME records for the root domain first.'}</p><div className="space-y-2 text-xs font-mono">{!dnsConfig.isSubdomain && (<div className="p-2 rounded space-y-1" style={{ backgroundColor: inputBg }}><div className="flex items-center justify-between"><span style={{ color: mutedTextColor }}>A Record, Name: <strong style={{ color: textColor }}>@</strong> (root domain)</span><button onClick={() => copyToClipboard(dnsConfig.aRecord, 'a-record')} style={{ color: mutedTextColor }}>{copied === 'a-record' ? <Check className="h-3.5 w-3.5" style={{ color: agencyPrimaryColor }} /> : <Copy className="h-3.5 w-3.5" />}</button></div><div style={{ color: textColor }}>{dnsConfig.aRecord}</div></div>)}<div className="p-2 rounded space-y-1" style={{ backgroundColor: inputBg }}><div className="flex items-center justify-between"><span style={{ color: mutedTextColor }}>CNAME Record, Name: <strong style={{ color: textColor }}>{dnsConfig.isSubdomain ? dnsConfig.subdomainPrefix : 'www'}</strong>{!dnsConfig.isSubdomain && <span style={{ color: mutedTextColor }}>, which creates www.yourdomain so visitors who type www also reach your site</span>}</span><button onClick={() => copyToClipboard(dnsConfig.cname, 'cname')} style={{ color: mutedTextColor }}>{copied === 'cname' ? <Check className="h-3.5 w-3.5" style={{ color: agencyPrimaryColor }} /> : <Copy className="h-3.5 w-3.5" />}</button></div><div className="break-all" style={{ color: textColor }}>{dnsConfig.cname}</div></div></div>{dnsConfig.cname && dnsConfig.cname !== 'cname.vercel-dns.com' && (<p className="text-[10px] mt-2" style={{ color: agencyPrimaryColor }}>✓ Project-specific CNAME detected, use this exact value.</p>)}</div>)}
         </div>
       </div>)}
 
@@ -707,6 +733,24 @@ export default function MarketingWebsitePage() {
       {activeTab === 'seo' && (<div className="space-y-4 sm:space-y-6">
         <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}><h3 className="font-medium text-sm sm:text-base mb-1 sm:mb-2">Link preview (text, social &amp; chat)</h3><p className="text-xs sm:text-sm mb-4 sm:mb-6" style={{ color: mutedTextColor }}>This is the card people see when you share your signup or site link anywhere, by text, on social, or in a chat app. Edit it below, or upload your own card image.</p><div className="mb-5 sm:mb-6 rounded-xl overflow-hidden max-w-md" style={{ border: `1px solid ${borderColor}` }}>{ogImageUrl ? (<img src={ogImageUrl} alt="Link preview" style={{ display: 'block', width: '100%', aspectRatio: '1200 / 630', objectFit: 'cover' }} />) : (<div style={{ position: 'relative', width: '100%', aspectRatio: '1200 / 630', background: ogCardBg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>{agency?.logo_url ? (<img src={agency.logo_url} alt="" style={{ width: ((ogTitle || '').trim() || (ogDescription || '').trim()) ? '42%' : '62%', aspectRatio: '1', objectFit: 'contain' }} />) : (<div style={{ width: '22%', aspectRatio: '1', borderRadius: '18%', background: agencyPrimaryColor, color: '#fff', fontWeight: 700, fontSize: '4vw', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{(agency?.name?.[0] || 'A').toUpperCase()}</div>)}{((ogTitle || '').trim() || (agency?.logo_url ? '' : (agency?.name || 'Your Business'))) ? (<div style={{ color: ogCardFg, fontWeight: 700, textAlign: 'center', padding: '0 6%', marginTop: '4%', fontSize: 'clamp(13px, 3vw, 30px)', lineHeight: 1.1 }}>{(ogTitle || '').trim() || (agency?.name || 'Your Business')}</div>) : null}{(ogDescription || '').trim() ? (<div style={{ color: ogCardSub, textAlign: 'center', padding: '0 6%', marginTop: '2%', fontSize: 'clamp(9px, 1.6vw, 16px)' }}>{(ogDescription || '').trim()}</div>) : null}</div>)}<div style={{ padding: '10px 12px', backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f3f4f6' }}><div className="text-[10px] uppercase tracking-wide truncate" style={{ color: mutedTextColor }}>{(agency as any)?.marketing_domain || `${agency?.slug || 'your'}.myvoiceaiconnect.com`}</div><div className="text-xs font-semibold truncate mt-0.5" style={{ color: textColor }}>{ogTitle || ogTitleDefault}</div>{(ogDescription || '').trim() ? (<div className="text-[11px] mt-0.5" style={{ color: mutedTextColor, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{(ogDescription || '').trim()}</div>) : null}</div></div><div className="space-y-4 sm:space-y-5"><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Title</label><input type="text" value={ogTitle} onChange={(e) => setOgTitle(e.target.value)} placeholder={ogTitleDefault} className="w-full rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-sm transition-colors focus:outline-none" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }} /></div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Description</label><textarea value={ogDescription} onChange={(e) => setOgDescription(e.target.value)} placeholder="Add a short description (optional)" rows={3} className="w-full rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-sm transition-colors focus:outline-none resize-y" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }} /></div><div><label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Card image (optional)</label><p className="text-[10px] sm:text-xs mb-2" style={{ color: mutedTextColor }}>Upload your own image, or leave it blank to use your logo and title on a branded card.</p><input ref={ogFileInputRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handleOgImageUpload} className="hidden" /><div className="flex items-center gap-2 sm:gap-3 flex-wrap"><button type="button" onClick={() => ogFileInputRef.current?.click()} disabled={ogUploading} className="inline-flex items-center gap-2 rounded-lg px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}>{ogUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}{ogUploading ? 'Uploading...' : (ogImageUrl ? 'Replace image' : 'Upload image')}</button>{ogImageUrl && !ogUploading && (<button type="button" onClick={() => setOgImageUrl('')} className="inline-flex items-center gap-2 rounded-lg px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: mutedTextColor }}><Trash2 className="h-4 w-4" />Remove</button>)}</div>{ogUploadError && (<p className="mt-1.5 text-[10px] sm:text-xs" style={{ color: '#ef4444' }}>{ogUploadError}</p>)}<p className="mt-1.5 text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>PNG, JPG, or WEBP up to 5MB. 1200x630 looks best. Save to apply.</p></div></div></div>
         <div className="rounded-xl p-4 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-3" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}><p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>Social sharing previews update when saved.</p><div className="flex items-center gap-3 w-full sm:w-auto">{seoSaved && (<span className="flex items-center gap-2 text-xs sm:text-sm" style={{ color: agencyPrimaryColor }}><Check className="h-4 w-4" />Saved!</span>)}<button onClick={handleSaveSeo} disabled={savingSeo} className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium text-white disabled:opacity-50 transition-colors w-full sm:w-auto" style={{ backgroundColor: agencyPrimaryColor }}>{savingSeo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save SEO</button></div></div>
+      </div>)}
+
+      {activeTab === 'legal' && (<div className="space-y-4 sm:space-y-6">
+        <LegalEditor
+          agencyId={agency?.id || ''}
+          backendUrl={backendUrl}
+          theme={legalTheme}
+          agency={{
+            name: agency?.name,
+            support_email: (agency as any)?.support_email,
+            support_phone: (agency as any)?.support_phone,
+            display_currency: (agency as any)?.display_currency,
+            price_starter: (agency as any)?.price_starter,
+            slug: agency?.slug,
+            marketing_domain: (agency as any)?.marketing_domain,
+            domain_verified: (agency as any)?.domain_verified,
+          }}
+        />
       </div>)}
     </div>
   );
