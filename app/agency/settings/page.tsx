@@ -470,7 +470,12 @@ function AgencySettingsContent() {
   // the local input), so a rate typed but not yet saved does not unlock it.
   const connectChargesReady = !!(stripeStatus?.charges_enabled || (agency as any)?.stripe_charges_enabled);
   const savedRateCents = Number((agency as any)?.client_minute_rate_cents) || 0;
-  const canEnableMinutePassThrough = connectChargesReady && savedRateCents > 0;
+  // Per-minute billing works on any connected client-billing provider: Stripe
+  // (metered) or Paystack/Flutterwave (overage folded into their recurring
+  // charge). So the toggle is enabled once any provider is connected and a rate
+  // is set, not Stripe-only.
+  const minuteProviderReady = connectChargesReady || paystackConnected || flutterwaveConnected;
+  const canEnableMinutePassThrough = minuteProviderReady && savedRateCents > 0;
 
   // Slug derived state. Normalized against the stored value so the Save button
   // only enables on a real, well-formed change.
@@ -1482,16 +1487,16 @@ function AgencySettingsContent() {
                     </div>
                   )}
 
-                  {!connectChargesReady && (
+                  {!minuteProviderReady && (
                     <div className="mt-3 rounded-xl p-3 flex items-start gap-2.5" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
                       <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.warningText }} />
                       <div className="text-xs sm:text-sm" style={{ color: theme.warningText }}>
-                        <p className="font-medium mb-0.5">Connect Stripe first</p>
-                        <p style={{ color: theme.textMuted }}>Finish Stripe Connect setup above before you can charge clients per minute.</p>
+                        <p className="font-medium mb-0.5">Connect a payment provider first</p>
+                        <p style={{ color: theme.textMuted }}>Connect Stripe, Paystack, or Flutterwave above before you can charge clients per minute.</p>
                       </div>
                     </div>
                   )}
-                  {connectChargesReady && savedRateCents <= 0 && !minutePassThrough && (
+                  {minuteProviderReady && savedRateCents <= 0 && !minutePassThrough && (
                     <div className="mt-3 rounded-xl p-3 flex items-start gap-2.5" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
                       <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
                       <p className="text-xs sm:text-sm" style={{ color: theme.infoText }}>Set a rate above 0 and save it before turning this on.</p>
