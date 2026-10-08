@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
+import { getCallBadges } from '@/lib/call-badges';
 
 function hexToRgba(hex: string, alpha: number): string {
   const r = parseInt(hex.slice(1, 3), 16);
@@ -303,10 +304,23 @@ export default function ClientCallsPage() {
                       {LANGUAGE_LABELS[langCode] || langCode.toUpperCase()}
                     </span>
                   )}
-                  <span className="rounded-full px-2.5 py-[3px] text-[10px] sm:text-[11px] font-semibold capitalize"
-                    style={{ backgroundColor: badge.backgroundColor, color: badge.color }}>
-                    {badge.label}
-                  </span>
+                  {(() => {
+                    const statusBadges = getCallBadges(call, theme);
+                    if (statusBadges.length === 0) {
+                      return (
+                        <span className="rounded-full px-2.5 py-[3px] text-[10px] sm:text-[11px] font-semibold capitalize"
+                          style={{ backgroundColor: badge.backgroundColor, color: badge.color }}>
+                          {badge.label}
+                        </span>
+                      );
+                    }
+                    return statusBadges.map(b => (
+                      <span key={b.key} className="inline-flex items-center gap-1 rounded-full px-2.5 py-[3px] text-[10px] sm:text-[11px] font-semibold whitespace-nowrap"
+                        style={{ backgroundColor: b.bg, color: b.color }}>
+                        <b.Icon className="h-3 w-3 flex-shrink-0" />{b.label}
+                      </span>
+                    ));
+                  })()}
                 </div>
               </a>
             );

@@ -4,9 +4,10 @@ import { useState } from 'react';
 import { 
   Phone, PhoneCall, Copy, ChevronRight, CheckCircle,
   Loader2, PhoneOff, TrendingUp, Clock,
-  PhoneForwarded, ShieldX, Sparkles, ArrowRight, CreditCard
+  PhoneForwarded, ShieldX, Sparkles, ArrowRight, CreditCard, CalendarCheck
 } from 'lucide-react';
 import { useClientTheme } from '@/hooks/useClientTheme';
+import { getCallBadges } from '@/lib/call-badges';
 import { CallForwardingCard } from './forwarding-card';
 
 interface Branding {
@@ -554,6 +555,8 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
             {recentCalls.slice(0, 5).map((call, idx) => {
               const isSpam = call.is_spam || call.call_status === 'spam';
               const wasTransferred = call.call_status === 'transferred' || call.transfer_status === 'transferred';
+              const wasBooked = !!call.appointment_booked;
+              const statusBadges = getCallBadges(call, theme);
 
               const badgeStyle =
                 isSpam ? { backgroundColor: theme.errorBg, color: theme.error }
@@ -569,9 +572,10 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
                   style={{ borderBottom: idx < Math.min(recentCalls.length, 5) - 1 ? `1px solid ${theme.isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'}` : 'none' }}>
 
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0"
-                    style={{ backgroundColor: isSpam ? theme.errorBg : hexToRgba(theme.primary, theme.isDark ? 0.1 : 0.06) }}>
+                    style={{ backgroundColor: isSpam ? theme.errorBg : (wasBooked && !wasTransferred) ? theme.successBg : hexToRgba(theme.primary, theme.isDark ? 0.1 : 0.06) }}>
                     {isSpam ? <ShieldX className="h-[18px] w-[18px]" style={{ color: theme.error }} />
                       : wasTransferred ? <PhoneForwarded className="h-[18px] w-[18px]" style={{ color: theme.primary }} />
+                      : wasBooked ? <CalendarCheck className="h-[18px] w-[18px]" style={{ color: theme.success }} />
                       : <PhoneCall className="h-[18px] w-[18px]" style={{ color: theme.primary }} />}
                   </div>
 
@@ -586,9 +590,22 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
                     <p className="text-[10px] sm:hidden mt-0.5" style={{ color: theme.textMuted4 }}>{formatRelativeDate(call.created_at)}</p>
                   </div>
 
-                  <span className="rounded-full px-2.5 py-[3px] text-[10px] sm:text-[11px] font-semibold capitalize flex-shrink-0" style={badgeStyle}>
-                    {isSpam ? 'spam' : (call.urgency_level || 'normal')}
-                  </span>
+                  {statusBadges.length > 0 ? (
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      {statusBadges.map((b) => (
+                        <span key={b.key}
+                          className="inline-flex items-center gap-1 rounded-full px-2 py-[3px] text-[10px] sm:text-[11px] font-semibold whitespace-nowrap"
+                          style={{ backgroundColor: b.bg, color: b.color }}>
+                          <b.Icon className="h-3 w-3 flex-shrink-0" />
+                          <span className="hidden sm:inline">{b.label}</span>
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="rounded-full px-2.5 py-[3px] text-[10px] sm:text-[11px] font-semibold capitalize flex-shrink-0" style={badgeStyle}>
+                      {call.urgency_level || 'normal'}
+                    </span>
+                  )}
 
                   <ChevronRight className="h-4 w-4 hidden sm:block flex-shrink-0" style={{ color: theme.textMuted4 }} />
                 </a>

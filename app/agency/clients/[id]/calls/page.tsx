@@ -3,9 +3,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { 
-  PhoneCall, Search, Filter, ChevronRight, Loader2, ArrowLeft, Download, X
+import {
+  PhoneCall, Search, Filter, ChevronRight, Loader2, ArrowLeft, Download, X,
+  PhoneForwarded, CalendarCheck, AlertTriangle, ShieldX
 } from 'lucide-react';
+import { getCallBadges } from '@/lib/call-badges';
 import { useAgency } from '../../../context';
 import { DEMO_CLIENTS, DEMO_CLIENT_CALLS } from '../../../demoData';
 
@@ -181,7 +183,7 @@ export default function AgencyClientCallsPage() {
               Call History
             </h1>
             <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>
-              {client?.business_name ? `${client.business_name} — ` : ''}{calls.length} total calls
+              {client?.business_name ? `${client.business_name} · ` : ''}{calls.length} total calls
             </p>
           </div>
           
@@ -295,6 +297,18 @@ export default function AgencyClientCallsPage() {
             {filteredCalls.map((call) => {
               const langCode = call.call_language;
               const showLangBadge = langCode && langCode !== 'en';
+              // Resolve the shared call-status badges against this agency theme's
+              // palette so transferred / booked / spam render the same everywhere.
+              const statusBadges = getCallBadges(call, {
+                primary: primaryColor,
+                primary15: hexToRgba(primaryColor, isDark ? 0.2 : 0.1),
+                successBg: isDark ? 'rgba(52, 211, 153, 0.18)' : 'rgba(5, 150, 105, 0.1)',
+                successText: isDark ? '#34d399' : '#059669',
+                warningBg: isDark ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.1)',
+                warningText: isDark ? '#fbbf24' : '#d97706',
+                errorBg: isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)',
+                errorText: '#ef4444',
+              });
 
               return (
               <Link
@@ -343,18 +357,29 @@ export default function AgencyClientCallsPage() {
                               {LANGUAGE_LABELS[langCode] || langCode.toUpperCase()}
                             </span>
                           )}
-                          <span
-                            className="rounded-full px-2 py-0.5 text-[10px] font-medium"
-                            style={
-                              call.urgency_level === 'high' || call.urgency_level === 'emergency'
-                                ? { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }
-                                : call.urgency_level === 'medium'
-                                ? { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }
-                                : { backgroundColor: hexToRgba(primaryColor, isDark ? 0.2 : 0.1), color: theme.textMuted }
-                            }
-                          >
-                            {call.urgency_level || 'normal'}
-                          </span>
+                          {statusBadges.length > 0 ? (
+                            statusBadges.map((b) => (
+                              <span key={b.key}
+                                className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap"
+                                style={{ backgroundColor: b.bg, color: b.color }}>
+                                <b.Icon className="h-3 w-3 flex-shrink-0" />
+                                {b.label}
+                              </span>
+                            ))
+                          ) : (
+                            <span
+                              className="rounded-full px-2 py-0.5 text-[10px] font-medium"
+                              style={
+                                call.urgency_level === 'high' || call.urgency_level === 'emergency'
+                                  ? { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }
+                                  : call.urgency_level === 'medium'
+                                  ? { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }
+                                  : { backgroundColor: hexToRgba(primaryColor, isDark ? 0.2 : 0.1), color: theme.textMuted }
+                              }
+                            >
+                              {call.urgency_level || 'normal'}
+                            </span>
+                          )}
                         </div>
                       </div>
                       <p className="text-xs truncate" style={{ color: theme.textMuted }}>
@@ -415,7 +440,7 @@ export default function AgencyClientCallsPage() {
                         {call.service_requested || 'General inquiry'}
                       </p>
                       <p className="text-xs" style={{ color: theme.textMuted4 }}>
-                        {call.duration_seconds ? `${Math.floor(call.duration_seconds / 60)}m ${call.duration_seconds % 60}s` : call.duration ? `${Math.floor(call.duration / 60)}m ${call.duration % 60}s` : '—'}
+                        {call.duration_seconds ? `${Math.floor(call.duration_seconds / 60)}m ${call.duration_seconds % 60}s` : call.duration ? `${Math.floor(call.duration / 60)}m ${call.duration % 60}s` : '-'}
                       </p>
                     </div>
                     
@@ -427,18 +452,29 @@ export default function AgencyClientCallsPage() {
                             {LANGUAGE_LABELS[langCode] || langCode.toUpperCase()}
                           </span>
                         )}
-                        <span
-                          className="rounded-full px-2 lg:px-3 py-0.5 lg:py-1 text-[10px] lg:text-xs font-medium"
-                          style={
-                            call.urgency_level === 'high' || call.urgency_level === 'emergency'
-                              ? { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }
-                              : call.urgency_level === 'medium'
-                              ? { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }
-                              : { backgroundColor: hexToRgba(primaryColor, isDark ? 0.2 : 0.1), color: theme.textMuted }
-                          }
-                        >
-                          {call.urgency_level || 'normal'}
-                        </span>
+                        {statusBadges.length > 0 ? (
+                          statusBadges.map((b) => (
+                            <span key={b.key}
+                              className="inline-flex items-center gap-1 rounded-full px-2 lg:px-3 py-0.5 lg:py-1 text-[10px] lg:text-xs font-semibold whitespace-nowrap"
+                              style={{ backgroundColor: b.bg, color: b.color }}>
+                              <b.Icon className="h-3 w-3 lg:h-3.5 lg:w-3.5 flex-shrink-0" />
+                              {b.label}
+                            </span>
+                          ))
+                        ) : (
+                          <span
+                            className="rounded-full px-2 lg:px-3 py-0.5 lg:py-1 text-[10px] lg:text-xs font-medium"
+                            style={
+                              call.urgency_level === 'high' || call.urgency_level === 'emergency'
+                                ? { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }
+                                : call.urgency_level === 'medium'
+                                ? { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }
+                                : { backgroundColor: hexToRgba(primaryColor, isDark ? 0.2 : 0.1), color: theme.textMuted }
+                            }
+                          >
+                            {call.urgency_level || 'normal'}
+                          </span>
+                        )}
                       </div>
                       <p className="mt-1 text-[10px] lg:text-xs" style={{ color: theme.textMuted4 }}>
                         {new Date(call.created_at).toLocaleDateString()}
