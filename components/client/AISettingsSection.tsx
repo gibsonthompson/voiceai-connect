@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Loader2, Save, Bot, AlertTriangle, Calendar } from 'lucide-react';
+import { CustomSelect } from '@/components/ui/custom-select';
 
 interface AISettingsProps {
   clientId: string;
@@ -184,6 +185,27 @@ export default function AISettingsSection({ clientId, theme, compact = false }: 
     color: theme.text,
   };
 
+  // Themed dropdown styling for CustomSelect (matches the rest of the app).
+  const dropdownUi = {
+    inputStyle,
+    text: theme.text,
+    muted: theme.textMuted || theme.textMuted4,
+    panelBg: theme.isDark ? '#232321' : '#ffffff',
+    panelBorder: theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb',
+    hover: theme.isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6',
+    accent: theme.primary,
+    isDark: !!theme.isDark,
+  };
+
+  const noticeSelectOptions = NOTICE_OPTIONS.map(o => ({
+    value: o.value === null ? '' : String(o.value),
+    label: o.value === null ? `Use agency default (${formatNoticeLabel(agencyNotice)})` : o.label,
+  }));
+  const horizonSelectOptions = HORIZON_OPTIONS.map(o => ({
+    value: o.value === null ? '' : String(o.value),
+    label: o.value === null ? `Use agency default (${formatHorizonLabel(agencyMaxDays)})` : o.label,
+  }));
+
   return (
     <section className={compact ? '' : 'mb-4 sm:mb-6'}>
       {!compact && (
@@ -277,18 +299,13 @@ export default function AISettingsSection({ clientId, theme, compact = false }: 
               <label className="block text-[10px] sm:text-xs font-medium mb-1.5" style={{ color: theme.textMuted || theme.textMuted4 }}>
                 Minimum booking notice
               </label>
-              <select
+              <CustomSelect
+                size="sm"
                 value={minNotice === null ? '' : String(minNotice)}
-                onChange={(e) => setMinNotice(e.target.value === '' ? null : Number(e.target.value))}
-                className="w-full p-2.5 rounded-xl text-xs sm:text-sm font-medium outline-none"
-                style={inputStyle}
-              >
-                {NOTICE_OPTIONS.map(o => (
-                  <option key={o.value === null ? 'default' : o.value} value={o.value === null ? '' : String(o.value)}>
-                    {o.value === null ? `Use agency default (${formatNoticeLabel(agencyNotice)})` : o.label}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => setMinNotice(v === '' ? null : Number(v))}
+                options={noticeSelectOptions}
+                ui={dropdownUi}
+              />
               <p className="text-[10px] mt-1" style={{ color: theme.textMuted || theme.textMuted4 }}>
                 How soon from now the AI can book. It never blocks a day, it just moves the earliest offered time forward.
               </p>
@@ -297,18 +314,13 @@ export default function AISettingsSection({ clientId, theme, compact = false }: 
               <label className="block text-[10px] sm:text-xs font-medium mb-1.5" style={{ color: theme.textMuted || theme.textMuted4 }}>
                 How far ahead
               </label>
-              <select
+              <CustomSelect
+                size="sm"
                 value={maxDays === null ? '' : String(maxDays)}
-                onChange={(e) => setMaxDays(e.target.value === '' ? null : Number(e.target.value))}
-                className="w-full p-2.5 rounded-xl text-xs sm:text-sm font-medium outline-none"
-                style={inputStyle}
-              >
-                {HORIZON_OPTIONS.map(o => (
-                  <option key={o.value === null ? 'default' : o.value} value={o.value === null ? '' : String(o.value)}>
-                    {o.value === null ? `Use agency default (${formatHorizonLabel(agencyMaxDays)})` : o.label}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => setMaxDays(v === '' ? null : Number(v))}
+                options={horizonSelectOptions}
+                ui={dropdownUi}
+              />
               <p className="text-[10px] mt-1" style={{ color: theme.textMuted || theme.textMuted4 }}>
                 The furthest out a caller can book an appointment.
               </p>

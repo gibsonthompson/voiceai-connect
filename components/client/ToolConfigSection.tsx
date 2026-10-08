@@ -218,6 +218,13 @@ export default function ToolConfigSection({ clientId, theme, compact }: Props) {
       enabled: config.spamDetection,
     },
     {
+      key: 'smsToCaller' as const,
+      icon: Send,
+      label: 'Text Callers',
+      description: 'Let the AI text the caller during a call (booking links, confirmations, addresses, reminders). Sends to the number they called from.',
+      enabled: config.smsToCaller,
+    },
+    {
       key: 'transferCall' as const,
       icon: PhoneForwarded,
       label: 'Call Transfer',
@@ -228,16 +235,9 @@ export default function ToolConfigSection({ clientId, theme, compact }: Props) {
       key: 'businessHoursRouting' as const,
       icon: Moon,
       label: 'After-Hours Mode',
-      description: 'Different behavior when your business is closed: message-taking only, no transfers',
+      description: 'Different behavior when your business is closed: booking and messages still work, no live transfers',
       enabled: config.businessHoursRouting,
-      details: "When this is on, the AI uses your Business Hours to know when you're open. Outside those hours it won't transfer calls to anyone, it takes a message and lets the caller know when you'll get back to them. Leave it off if you take calls 24/7. (Set your open hours under Business Hours.)",
-    },
-    {
-      key: 'smsToCaller' as const,
-      icon: Send,
-      label: 'Text Callers',
-      description: 'Let the AI text the caller during a call (booking links, confirmations, addresses, reminders). Sends to the number they called from.',
-      enabled: config.smsToCaller,
+      details: "When this is on, the AI uses your Business Hours to know when you're open. Outside those hours it still books appointments, answers questions, and takes messages (and tells callers when you'll follow up), it just won't transfer them to a live person. Appointments are always scheduled within your open hours. Leave it off only if you take live calls 24/7.",
     },
   ];
 
