@@ -1,500 +1,400 @@
 'use client';
 
 // ============================================================================
-// AGENCY INBOX (client / prospect -> agency messages)
-// Destination: app/agency/inbox/page.tsx
-// ----------------------------------------------------------------------------
-// One-tier-down mirror of the admin Support page. Lists messages sent to THIS
-// agency from its clients (dashboard "Contact your agency") and prospects (the
-// marketing-site support widget), with status (new / in_progress / resolved)
-// and private agency notes. Reply is a mailto: / tel: / sms: link (the agency
-// reaches out on their own); the app sends no email or SMS from here.
-//
-// Reads/writes:
-//   GET   /api/agency/:agencyId/support-requests
-//   PATCH /api/agency/:agencyId/support-requests/:id
-// Auth: the agency auth_token. Backend enforces caller-owns-:agencyId.
-//
-// Styled with the agency theme tokens (useTheme + branding primary), NOT the
-// admin emerald tokens, so it inherits each agency's white-label palette.
+// AGENCY INBOX, the unified iMessage-style messaging center.
+// One conversation list across every channel the agency talks on:
+//   - VoiceAI Connect (platform support thread), pinned on top
+//   - each client (in-app two-way thread)
+//   - prospects (in-app contact-form requests)
+//   - carrier SMS on the agency demo number (follow-ups + replies)
+// Compose can start a thread with a client, any phone number (SMS from the demo
+// number), or VoiceAI Connect. Backend: GET /inbox, POST /inbox/send,
+// POST /inbox/read on agencyRouter.
 // ============================================================================
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  Inbox, Search, Loader2, Loader, User, Mail, Phone,
-  MessageSquare, ArrowLeft, ArrowRight, Check, Globe,
+  Search, Loader2, ArrowLeft, Send, Plus, MessageSquare, Phone, X, Sparkles, Building2, Hash
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
-import PlatformMessages from '@/components/agency/PlatformMessages';
-import AgencyClientThread from '@/components/agency/AgencyClientThread';
 
-interface SupportRequest {
-  id: string;
-  agency_id: string;
-  client_id: string | null;
-  user_type: string | null;
-  requester_name: string | null;
-  contact: string | null;
-  message: string;
-  source: string | null;
-  status: string;
-  agency_notes: string | null;
-  created_at: string;
-  resolved_at: string | null;
+interface InboxMessage { id: string; sender: 'in' | 'out'; body: string; at: string; }
+interface Conversation {
+  key: string;
+  type: 'platform' | 'client' | 'prospect' | 'sms';
+  name: string | null;
+  phone: string | null;
+  clientId?: string;
+  pinned?: boolean;
+  target: string | null;
+  messages: InboxMessage[];
+  unread: number;
+  lastAt: string | null;
+  lastDirection: 'in' | 'out' | null;
+  lastPreview: string;
+  needsReply: boolean;
 }
-
-const STATUS_OPTIONS = [
-  { value: 'new', label: 'New' },
-  { value: 'in_progress', label: 'In Progress' },
-  { value: 'resolved', label: 'Resolved' },
-];
-
-function timeAgo(date: string): string {
-  const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
-  if (seconds < 60) return 'just now';
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
-  return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
-function formatDateTime(date: string): string {
-  return new Date(date).toLocaleString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
-  });
-}
+interface ClientRow { id: string; business_name: string | null; owner_name: string | null; owner_phone: string | null; }
 
 function hexToRgba(hex: string, alpha: number): string {
   const c = (hex || '#10b981').replace('#', '');
   const full = c.length === 3 ? c.split('').map(x => x + x).join('') : c;
-  const r = parseInt(full.slice(0, 2), 16);
-  const g = parseInt(full.slice(2, 4), 16);
-  const b = parseInt(full.slice(4, 6), 16);
+  const r = parseInt(full.slice(0, 2), 16), g = parseInt(full.slice(2, 4), 16), b = parseInt(full.slice(4, 6), 16);
   if ([r, g, b].some(Number.isNaN)) return `rgba(16,185,129,${alpha})`;
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
-
-const isEmail = (c: string | null): boolean => !!c && c.includes('@');
-const telHref = (c: string): string => `tel:${c.replace(/[^\d+]/g, '')}`;
-const smsHref = (c: string): string => `sms:${c.replace(/[^\d+]/g, '')}`;
+function formatPhone(phone: string): string {
+  if (!phone) return '';
+  const d = phone.replace(/\D/g, '');
+  if (d.length === 11 && d.startsWith('1')) return `(${d.slice(1,4)}) ${d.slice(4,7)}-${d.slice(7)}`;
+  if (d.length === 10) return `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`;
+  return phone;
+}
+function listTime(dateStr: string | null): string {
+  if (!dateStr) return '';
+  const d = new Date(dateStr), now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const msgDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diff = Math.floor((today.getTime() - msgDay.getTime()) / 86400000);
+  if (diff === 0) return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  if (diff === 1) return 'Yesterday';
+  if (diff < 7) return d.toLocaleDateString('en-US', { weekday: 'short' });
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+function msgTime(dateStr: string): string {
+  if (!dateStr) return '';
+  return new Date(dateStr).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+}
 
 export default function AgencyInboxPage() {
   const { agency, loading: agencyLoading } = useAgency();
   const theme = useTheme();
-  // The agency theme may not expose a success token; fall back to a fixed green.
-  const successColor = (theme as any).success || '#10b981';
+  const primaryColor = theme.primary || '#10b981';
+  const textMuted2 = (theme as any).textMuted4 || theme.textMuted;
+  const hairline = theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  const glass = { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.8)', border: `1px solid ${hairline}` };
 
-  const [loading, setLoading] = useState(true);
-  const [requests, setRequests] = useState<SupportRequest[]>([]);
-  const [total, setTotal] = useState(0);
-  const [counts, setCounts] = useState({ new: 0, in_progress: 0, resolved: 0, total: 0 });
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState('');
-  const [sourceFilter, setSourceFilter] = useState('');
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(0);
-  const [savingId, setSavingId] = useState<string | null>(null);
-  const [noteDraft, setNoteDraft] = useState('');
-  const limit = 30;
-  const [channel, setChannel] = useState<'clients' | 'platform'>('clients');
-  const [platformUnread, setPlatformUnread] = useState(0);
-
-  const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
   const agencyId = agency?.id;
 
-  // Status chip colors. Fixed accessible accents (amber / blue) plus the
-  // theme's success green for resolved, so they read on light or dark.
-  const statusStyle = (status: string) => {
-    switch (status) {
-      case 'new':
-        return { color: '#b45309', bg: hexToRgba('#f59e0b', theme.isDark ? 0.16 : 0.12), border: hexToRgba('#f59e0b', 0.5), label: 'New' };
-      case 'in_progress':
-        return { color: '#1d4ed8', bg: hexToRgba('#3b82f6', theme.isDark ? 0.16 : 0.12), border: hexToRgba('#3b82f6', 0.5), label: 'In Progress' };
-      case 'resolved':
-        return { color: successColor, bg: hexToRgba(successColor, theme.isDark ? 0.16 : 0.12), border: hexToRgba(successColor, 0.5), label: 'Resolved' };
-      default:
-        return { color: theme.textMuted, bg: hexToRgba('#94a3b8', 0.12), border: theme.border, label: status };
-    }
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [active, setActive] = useState<Conversation | null>(null);
+  const [newMessage, setNewMessage] = useState('');
+  const [sending, setSending] = useState(false);
+  const [search, setSearch] = useState('');
+
+  // Compose
+  const [showCompose, setShowCompose] = useState(false);
+  const [composeMode, setComposeMode] = useState<'root' | 'client' | 'number'>('root');
+  const [composeNumber, setComposeNumber] = useState('');
+  const [clients, setClients] = useState<ClientRow[]>([]);
+  const [clientsLoaded, setClientsLoaded] = useState(false);
+  const [clientSearch, setClientSearch] = useState('');
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const stickRef = useRef(true);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const pollRef = useRef<NodeJS.Timeout | null>(null);
+
+  const token = () => localStorage.getItem('auth_token');
+
+  const onThreadScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    stickRef.current = (el.scrollHeight - el.scrollTop - el.clientHeight) < 80;
   };
 
-  const fetchRequests = useCallback(async () => {
+  const fetchInbox = useCallback(async () => {
     if (!agencyId) return;
-    setLoading(true);
     try {
-      const token = localStorage.getItem('auth_token');
-      const params = new URLSearchParams();
-      params.set('limit', limit.toString());
-      params.set('offset', (page * limit).toString());
-      if (statusFilter) params.set('status', statusFilter);
-      if (sourceFilter) params.set('source', sourceFilter);
-      if (search) params.set('search', search);
-      const res = await fetch(`${backendUrl}/api/agency/${agencyId}/support-requests?${params}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error('Failed to fetch messages');
-      const data = await res.json();
-      setRequests(data.requests || []);
-      setTotal(data.total || 0);
-      if (data.counts) setCounts(data.counts);
-    } catch (e) {
-      console.error('Inbox fetch error:', e);
-    } finally {
-      setLoading(false);
-    }
-  }, [agencyId, backendUrl, page, statusFilter, sourceFilter, search]);
-
-  useEffect(() => { fetchRequests(); }, [fetchRequests]);
-  useEffect(() => { setPage(0); }, [statusFilter, sourceFilter, search]);
-
-  // Platform (VoiceAI Connect) unread, for the channel toggle badge. Kept in
-  // sync by PlatformMessages via onUnreadChange once that channel is open.
-  useEffect(() => {
-    if (!agencyId) return;
-    (async () => {
-      try {
-        const token = localStorage.getItem('auth_token');
-        const res = await fetch(`${backendUrl}/api/agency/${agencyId}/platform-threads`, { headers: { Authorization: `Bearer ${token}` } });
-        if (res.ok) { const d = await res.json(); setPlatformUnread(d.unread_total || 0); }
-      } catch { /* non-blocking */ }
-    })();
+      const r = await fetch(`${backendUrl}/api/agency/${agencyId}/inbox`, { headers: { Authorization: `Bearer ${token()}` } });
+      if (r.ok) {
+        const d = await r.json();
+        const convos: Conversation[] = d.conversations || [];
+        setConversations(convos);
+        setActive(cur => {
+          if (!cur) return cur;
+          const fresh = convos.find(c => c.key === cur.key);
+          // Keep a virtual (not-yet-persisted) conversation until it appears.
+          return fresh ? fresh : cur;
+        });
+      }
+    } catch {} finally { setLoading(false); }
   }, [agencyId, backendUrl]);
 
-  // Deep link from the dashboard nudge: /agency/inbox?channel=platform opens
-  // straight on the VoiceAI Connect channel.
+  useEffect(() => { if (agencyId) fetchInbox(); }, [agencyId, fetchInbox]);
+
   useEffect(() => {
-    try {
-      if (new URLSearchParams(window.location.search).get('channel') === 'platform') setChannel('platform');
-    } catch { /* ignore */ }
-  }, []);
+    if (pollRef.current) clearInterval(pollRef.current);
+    pollRef.current = setInterval(() => { fetchInbox(); }, 8000);
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [fetchInbox]);
 
-  const totalPages = Math.ceil(total / limit);
+  useEffect(() => { stickRef.current = true; }, [active?.key]);
+  useEffect(() => { const el = scrollRef.current; if (el && stickRef.current) el.scrollTop = el.scrollHeight; }, [active]);
 
-  const toggleRow = (req: SupportRequest) => {
-    if (expandedId === req.id) setExpandedId(null);
-    else { setExpandedId(req.id); setNoteDraft(req.agency_notes || ''); }
+  const markRead = async (c: Conversation) => {
+    if (c.type === 'sms' || !c.unread) return;
+    try { await fetch(`${backendUrl}/api/agency/${agencyId}/inbox/read`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` }, body: JSON.stringify({ type: c.type, target: c.type === 'client' ? (c.clientId || c.target) : c.target }) }); } catch {}
+    setConversations(prev => prev.map(x => x.key === c.key ? { ...x, unread: 0 } : x));
   };
 
-  const patchRequest = async (id: string, body: { status?: string; agency_notes?: string }) => {
-    if (!agencyId) return;
-    setSavingId(id);
+  const openConvo = (c: Conversation) => { setActive(c); setNewMessage(''); markRead(c); };
+
+  const handleSend = async () => {
+    if (!active || !newMessage.trim() || sending) return;
+    setSending(true);
+    const text = newMessage.trim();
+    setNewMessage('');
+    const optimistic: InboxMessage = { id: `temp-${Date.now()}`, sender: 'out', body: text, at: new Date().toISOString() };
+    setActive(prev => prev ? { ...prev, messages: [...prev.messages, optimistic] } : prev);
     try {
-      const token = localStorage.getItem('auth_token');
-      const res = await fetch(`${backendUrl}/api/agency/${agencyId}/support-requests/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(body),
+      const target = active.type === 'client' ? (active.clientId || active.target) : active.target;
+      const r = await fetch(`${backendUrl}/api/agency/${agencyId}/inbox/send`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
+        body: JSON.stringify({ type: active.type, target, body: text }),
       });
-      if (!res.ok) throw new Error('Failed to update');
-      await fetchRequests();
-    } catch (e) {
-      console.error('Inbox update error:', e);
-    } finally {
-      setSavingId(null);
-    }
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.success) {
+        setActive(prev => prev ? { ...prev, messages: prev.messages.filter(m => m.id !== optimistic.id) } : prev);
+        setNewMessage(text);
+      } else {
+        await fetchInbox();
+      }
+    } catch {
+      setActive(prev => prev ? { ...prev, messages: prev.messages.filter(m => m.id !== optimistic.id) } : prev);
+      setNewMessage(text);
+    } finally { setSending(false); inputRef.current?.focus(); }
   };
 
-  const cardBorder = theme.border;
-  const panelStyle: React.CSSProperties = {
-    backgroundColor: theme.card,
-    border: `1px solid ${cardBorder}`,
-    borderRadius: 16,
-    overflow: 'hidden',
+  const handleKeyDown = (e: React.KeyboardEvent) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } };
+
+  const loadClients = useCallback(async () => {
+    if (clientsLoaded || !agencyId) return;
+    try {
+      const r = await fetch(`${backendUrl}/api/agency/${agencyId}/clients`, { headers: { Authorization: `Bearer ${token()}` } });
+      if (r.ok) { const d = await r.json(); setClients(d.clients || []); }
+    } catch {} finally { setClientsLoaded(true); }
+  }, [agencyId, backendUrl, clientsLoaded]);
+
+  const openCompose = () => { setComposeMode('root'); setComposeNumber(''); setClientSearch(''); setShowCompose(true); };
+
+  const startPlatform = () => {
+    setShowCompose(false);
+    const existing = conversations.find(c => c.type === 'platform');
+    openConvo(existing || { key: 'platform', type: 'platform', name: 'VoiceAI Connect', phone: null, pinned: true, target: null, messages: [], unread: 0, lastAt: null, lastDirection: null, lastPreview: '', needsReply: false });
   };
-  const inputStyle: React.CSSProperties = {
-    backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : theme.card,
-    border: `1px solid ${cardBorder}`,
-    color: theme.text,
+  const startClient = (c: ClientRow) => {
+    setShowCompose(false);
+    const existing = conversations.find(x => x.key === `client-${c.id}`);
+    openConvo(existing || { key: `client-${c.id}`, type: 'client', name: c.business_name || c.owner_name || 'Client', phone: c.owner_phone, clientId: c.id, target: c.id, messages: [], unread: 0, lastAt: null, lastDirection: null, lastPreview: '', needsReply: false });
+  };
+  const startNumber = () => {
+    const digits = composeNumber.replace(/\D/g, '');
+    if (digits.length < 10) return;
+    setShowCompose(false);
+    const key = `sms-${digits.slice(-10)}`;
+    const existing = conversations.find(x => x.key === key);
+    openConvo(existing || { key, type: 'sms', name: null, phone: composeNumber.trim(), target: composeNumber.trim(), messages: [], unread: 0, lastAt: null, lastDirection: null, lastPreview: '', needsReply: false });
   };
 
-  if (agencyLoading || !agency) {
-    return (
-      <div className="p-8 flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.primary }} />
-      </div>
-    );
-  }
+  const typeLabel = (t: Conversation['type']) => t === 'platform' ? 'VoiceAI Connect' : t === 'client' ? 'Client' : t === 'sms' ? 'Text' : 'Prospect';
+  const convoTitle = (c: Conversation) => c.name || (c.phone ? formatPhone(c.phone) : 'Conversation');
+  const avatarInitial = (c: Conversation) => c.type === 'platform' ? 'V' : (convoTitle(c).charAt(0).toUpperCase() || '?');
+
+  const Avatar = ({ c, size }: { c: Conversation; size: number }) => (
+    <div className="rounded-full flex items-center justify-center flex-shrink-0 font-semibold" style={{ width: size, height: size, fontSize: size * 0.4, backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.14 : 0.1), color: primaryColor }}>
+      {c.type === 'platform' ? <Sparkles style={{ width: size * 0.5, height: size * 0.5 }} /> : c.type === 'sms' ? <Hash style={{ width: size * 0.5, height: size * 0.5 }} /> : avatarInitial(c)}
+    </div>
+  );
+
+  const filtered = conversations.filter(c => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return convoTitle(c).toLowerCase().includes(q) || (c.phone || '').includes(q) || c.lastPreview.toLowerCase().includes(q);
+  });
+  const filteredClients = clients.filter(c => {
+    if (!clientSearch) return true;
+    const q = clientSearch.toLowerCase();
+    return (c.business_name || '').toLowerCase().includes(q) || (c.owner_name || '').toLowerCase().includes(q) || (c.owner_phone || '').includes(q);
+  });
+
+  if (agencyLoading || !agency) return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" style={{ color: textMuted2 }} /></div>;
+
+  const showThread = !!active;
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8" style={{ backgroundColor: theme.bg, minHeight: '100vh' }}>
-      <div className="flex items-start gap-3 mb-5 max-w-[1400px]">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0 mt-0.5" style={{ backgroundColor: theme.primary15 }}><Inbox className="h-5 w-5" style={{ color: theme.primary }} /></div>
-        <div>
-          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Inbox</h1>
-          <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>
-            Messages from your clients and website visitors, and from VoiceAI Connect.
-          </p>
+    <div className="flex flex-col h-[calc(100vh-64px)]" style={{ backgroundColor: theme.bg }}>
+      <div className="flex flex-1 min-h-0">
+
+        {/* List */}
+        <div className={`${showThread ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:w-96 lg:border-r min-h-0`} style={{ borderColor: hairline }}>
+          <div className="px-4 pt-4 pb-2 flex items-center justify-between">
+            <h1 className="text-xl font-semibold" style={{ color: theme.text }}>Inbox</h1>
+            <button onClick={openCompose} className="flex items-center justify-center h-9 w-9 rounded-full transition hover:opacity-90" style={{ backgroundColor: primaryColor, color: theme.primaryText || '#fff' }} title="New message"><Plus className="h-4 w-4" /></button>
+          </div>
+          <div className="px-4 pb-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: textMuted2 }} />
+              <input type="text" placeholder="Search" value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-9 pr-3 py-2 rounded-xl text-sm focus:outline-none" style={{ ...glass, color: theme.text }} />
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto">
+            {loading ? (
+              <div className="flex items-center justify-center py-12"><Loader2 className="h-5 w-5 animate-spin" style={{ color: textMuted2 }} /></div>
+            ) : filtered.length === 0 ? (
+              <div className="text-center py-12 px-6">
+                <MessageSquare className="h-9 w-9 mx-auto mb-2" style={{ color: textMuted2, opacity: 0.4 }} />
+                <p className="text-sm font-medium" style={{ color: theme.textMuted }}>No conversations yet</p>
+                <p className="text-xs mt-1" style={{ color: textMuted2 }}>Start one with the + button</p>
+              </div>
+            ) : (
+              filtered.map(c => (
+                <button key={c.key} onClick={() => openConvo(c)}
+                  className="w-full text-left px-4 py-3 flex items-center gap-3 transition-colors"
+                  style={{ backgroundColor: active?.key === c.key ? hexToRgba(primaryColor, theme.isDark ? 0.08 : 0.04) : c.pinned ? hexToRgba(primaryColor, theme.isDark ? 0.03 : 0.02) : 'transparent', borderBottom: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)'}` }}>
+                  <Avatar c={c} size={44} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-semibold truncate flex items-center gap-1.5" style={{ color: theme.text }}>
+                        {convoTitle(c)}
+                        <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, 0.12), color: primaryColor }}>{typeLabel(c.type)}</span>
+                      </span>
+                      <span className="text-[10px] flex-shrink-0" style={{ color: textMuted2 }}>{listTime(c.lastAt)}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 mt-0.5">
+                      <span className="text-xs truncate" style={{ color: (c.unread > 0 || c.needsReply) ? theme.text : textMuted2 }}>{c.lastDirection === 'out' ? 'You: ' : ''}{c.lastPreview || 'No messages yet'}</span>
+                      {c.unread > 0 ? (
+                        <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{ backgroundColor: primaryColor, color: theme.primaryText || '#fff' }}>{c.unread > 9 ? '9+' : c.unread}</span>
+                      ) : c.needsReply ? (
+                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: primaryColor }} />
+                      ) : null}
+                    </div>
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Thread */}
+        <div className={`${showThread ? 'flex' : 'hidden lg:flex'} flex-col flex-1 min-h-0`}>
+          {!active ? (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center px-6">
+                <MessageSquare className="h-12 w-12 mx-auto mb-3" style={{ color: textMuted2 }} />
+                <p className="text-sm font-medium" style={{ color: theme.textMuted }}>Select a conversation</p>
+                <p className="text-xs mt-1" style={{ color: textMuted2 }}>Clients, prospects, texts, and VoiceAI Connect, all here</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="px-4 py-3 flex items-center gap-3" style={{ borderBottom: `1px solid ${hairline}` }}>
+                <button onClick={() => setActive(null)} className="lg:hidden p-1" style={{ color: theme.textMuted }}><ArrowLeft className="h-5 w-5" /></button>
+                <Avatar c={active} size={36} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold truncate" style={{ color: theme.text }}>{convoTitle(active)}</p>
+                  <p className="text-[11px]" style={{ color: textMuted2 }}>{active.type === 'platform' ? 'Platform support' : active.type === 'client' ? 'Client' : active.type === 'sms' ? `Text, from your demo number` : 'Prospect'}{active.phone && active.type !== 'platform' ? ` · ${formatPhone(active.phone)}` : ''}</p>
+                </div>
+                {active.phone && active.type !== 'platform' && (
+                  <a href={`tel:${active.phone}`} className="p-2 rounded-xl transition hover:opacity-80" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.1 : 0.06), color: primaryColor }}><Phone className="h-4 w-4" /></a>
+                )}
+              </div>
+
+              <div ref={scrollRef} onScroll={onThreadScroll} className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
+                {active.messages.length === 0 ? (
+                  <div className="text-center py-12"><p className="text-xs" style={{ color: textMuted2 }}>No messages yet. Send the first one below.</p></div>
+                ) : (
+                  active.messages.map(m => {
+                    const out = m.sender === 'out';
+                    return (
+                      <div key={m.id} className={`flex ${out ? 'justify-end' : 'justify-start'}`}>
+                        <div className="max-w-[75%] sm:max-w-[65%]">
+                          <div className="rounded-2xl px-3.5 py-2.5" style={{ backgroundColor: out ? primaryColor : theme.isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6', color: out ? (theme.primaryText || '#fff') : theme.text, borderBottomRightRadius: out ? 4 : 16, borderBottomLeftRadius: out ? 16 : 4 }}>
+                            <p className="text-[13px] leading-relaxed whitespace-pre-wrap">{m.body}</p>
+                          </div>
+                          <div className={`mt-0.5 px-1 ${out ? 'text-right' : ''}`}><span className="text-[10px]" style={{ color: textMuted2 }}>{msgTime(m.at)}</span></div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              <div className="px-4 py-3" style={{ borderTop: `1px solid ${hairline}` }}>
+                <div className="flex items-end gap-2">
+                  <textarea ref={inputRef} value={newMessage} onChange={e => setNewMessage(e.target.value)} onKeyDown={handleKeyDown} placeholder={active.type === 'sms' ? 'Send a text...' : `Message ${convoTitle(active)}...`} rows={1} className="flex-1 px-4 py-2.5 rounded-2xl text-sm resize-none focus:outline-none max-h-24" style={{ ...glass, color: theme.text }} />
+                  <button onClick={handleSend} disabled={!newMessage.trim() || sending} className="p-2.5 rounded-xl transition-all hover:scale-105 active:scale-95 disabled:opacity-40 flex-shrink-0" style={{ backgroundColor: primaryColor, color: theme.primaryText || '#fff' }}>{sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}</button>
+                </div>
+                <p className="text-[10px] mt-1 text-center" style={{ color: textMuted2 }}>
+                  {active.type === 'sms' ? 'Sent as a text from your demo number' : active.type === 'platform' ? 'Goes to VoiceAI Connect support' : 'Delivered in-app, the recipient is notified'}
+                </p>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Channel toggle: client/prospect inbox vs two-way platform threads */}
-      <div className="mb-5 flex items-center gap-2 max-w-[1400px]">
-        {([
-          { key: 'clients', label: 'From clients' },
-          { key: 'platform', label: 'VoiceAI Connect' },
-        ] as const).map((opt) => {
-          const active = channel === opt.key;
-          return (
-            <button
-              key={opt.key}
-              onClick={() => setChannel(opt.key)}
-              className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors"
-              style={active
-                ? { backgroundColor: theme.primary, color: '#fff' }
-                : { backgroundColor: 'transparent', color: theme.textMuted, border: `1px solid ${theme.border}` }}
-            >
-              {opt.label}
-              {opt.key === 'platform' && platformUnread > 0 && (
-                <span className="inline-flex items-center justify-center h-5 min-w-[20px] px-1 rounded-full text-[11px] font-semibold"
-                  style={{ backgroundColor: active ? 'rgba(255,255,255,0.25)' : theme.primary, color: '#fff' }}>
-                  {platformUnread}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+      {/* Compose modal */}
+      {showCompose && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={() => setShowCompose(false)}>
+          <div className="w-full max-w-sm rounded-2xl p-5" style={{ backgroundColor: theme.isDark ? '#141414' : '#ffffff', border: `1px solid ${hairline}` }} onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold" style={{ color: theme.text }}>{composeMode === 'client' ? 'Message a client' : composeMode === 'number' ? 'Text a number' : 'New message'}</h3>
+              <button onClick={() => composeMode === 'root' ? setShowCompose(false) : setComposeMode('root')} style={{ color: theme.textMuted }}>{composeMode === 'root' ? <X className="h-4 w-4" /> : <ArrowLeft className="h-4 w-4" />}</button>
+            </div>
 
-      {channel === 'platform' && (
-        <PlatformMessages agencyId={agencyId as string} backendUrl={backendUrl} onUnreadChange={setPlatformUnread} />
-      )}
-
-      {channel === 'clients' && (() => {
-        const openReq = expandedId ? requests.find((r) => r.id === expandedId) || null : null;
-
-        // ---- Message detail (same panel + back-button layout as VoiceAI Connect) ----
-        if (openReq) {
-          const req = openReq;
-          const ss = statusStyle(req.status);
-          const isSaving = savingId === req.id;
-          const isClient = req.user_type === 'client' || req.source === 'client_login';
-          const sourceLabel = req.source === 'client_dashboard' ? 'Client dashboard' : req.source === 'client_login' ? 'Login page' : 'Website';
-          return (
-            <div className="max-w-[1400px]" style={panelStyle}>
-              <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: `1px solid ${cardBorder}` }}>
-                <button onClick={() => setExpandedId(null)} className="inline-flex items-center gap-1.5 text-sm" style={{ color: theme.textMuted }}>
-                  <ArrowLeft className="h-4 w-4" /> All messages
+            {composeMode === 'root' && (
+              <div className="space-y-2">
+                <button onClick={startPlatform} className="w-full flex items-center gap-3 p-2.5 rounded-xl transition hover:opacity-90" style={{ border: `1px solid ${hairline}` }}>
+                  <div className="h-9 w-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, 0.12), color: primaryColor }}><Sparkles className="h-4 w-4" /></div>
+                  <div className="text-left"><p className="text-sm font-medium" style={{ color: theme.text }}>VoiceAI Connect</p><p className="text-[10px]" style={{ color: textMuted2 }}>Message platform support</p></div>
                 </button>
-                <div className="ml-auto inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full"
-                  style={{ color: isClient ? theme.primary : '#7c3aed', backgroundColor: isClient ? hexToRgba(theme.primary, 0.1) : hexToRgba('#8b5cf6', 0.12), border: `1px solid ${isClient ? hexToRgba(theme.primary, 0.3) : hexToRgba('#8b5cf6', 0.4)}` }}>
-                  {isClient ? <User className="h-3.5 w-3.5" /> : <Globe className="h-3.5 w-3.5" />} {sourceLabel}
-                </div>
+                <button onClick={() => { setComposeMode('client'); loadClients(); }} className="w-full flex items-center gap-3 p-2.5 rounded-xl transition hover:opacity-90" style={{ border: `1px solid ${hairline}` }}>
+                  <div className="h-9 w-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, 0.12), color: primaryColor }}><Building2 className="h-4 w-4" /></div>
+                  <div className="text-left"><p className="text-sm font-medium" style={{ color: theme.text }}>A client</p><p className="text-[10px]" style={{ color: textMuted2 }}>Message one of your clients in-app</p></div>
+                </button>
+                <button onClick={() => setComposeMode('number')} className="w-full flex items-center gap-3 p-2.5 rounded-xl transition hover:opacity-90" style={{ border: `1px solid ${hairline}` }}>
+                  <div className="h-9 w-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, 0.12), color: primaryColor }}><Hash className="h-4 w-4" /></div>
+                  <div className="text-left"><p className="text-sm font-medium" style={{ color: theme.text }}>A phone number</p><p className="text-[10px]" style={{ color: textMuted2 }}>Text any number from your demo line</p></div>
+                </button>
               </div>
+            )}
 
-              <div className="px-4 py-4 max-h-[min(72vh,680px)] overflow-y-auto">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                  <div className="lg:col-span-2 space-y-4">
-                    <div>
-                      <h4 className="text-[10px] font-medium uppercase tracking-[0.1em] mb-2" style={{ color: theme.textMuted }}>Message</h4>
-                      <pre className="text-[12px] font-sans leading-relaxed whitespace-pre-wrap rounded-xl px-4 py-3 max-h-[300px] overflow-y-auto"
-                        style={{ color: theme.text, backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', border: `1px solid ${cardBorder}` }}>
-                        {req.message}
-                      </pre>
-                    </div>
-                    <div>
-                      <h4 className="text-[10px] font-medium uppercase tracking-[0.1em] mb-2" style={{ color: theme.textMuted }}>Set Status</h4>
-                      <div className="flex flex-wrap items-center gap-2">
-                        {STATUS_OPTIONS.map(opt => {
-                          const s = statusStyle(opt.value);
-                          const active = req.status === opt.value;
-                          return (
-                            <button
-                              key={opt.value}
-                              onClick={() => { if (!active) patchRequest(req.id, { status: opt.value }); }}
-                              disabled={isSaving || active}
-                              className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-default"
-                              style={{
-                                backgroundColor: active ? s.bg : 'transparent',
-                                borderColor: active ? s.border : cardBorder,
-                                color: active ? s.color : theme.textMuted,
-                              }}
-                            >
-                              {active && <Check className="h-3 w-3" />}
-                              {opt.label}
-                            </button>
-                          );
-                        })}
-                        {isSaving && <Loader className="h-3.5 w-3.5 animate-spin" style={{ color: theme.textMuted }} />}
-                      </div>
-                    </div>
-                    <div>
-                      <h4 className="text-[10px] font-medium uppercase tracking-[0.1em] mb-2" style={{ color: theme.textMuted }}>Private Notes</h4>
-                      <textarea
-                        value={noteDraft}
-                        onChange={(e) => setNoteDraft(e.target.value)}
-                        rows={3}
-                        placeholder="Notes for yourself (not shown to the sender)..."
-                        className="w-full rounded-xl px-3 py-2.5 text-xs focus:outline-none resize-none"
-                        style={inputStyle}
-                      />
-                      <div className="mt-2 flex justify-end">
-                        <button
-                          onClick={() => patchRequest(req.id, { agency_notes: noteDraft })}
-                          disabled={isSaving || noteDraft === (req.agency_notes || '')}
-                          className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-default"
-                          style={{ backgroundColor: hexToRgba(theme.primary, 0.12), border: `1px solid ${hexToRgba(theme.primary, 0.3)}`, color: theme.primary }}
-                        >
-                          {isSaving ? <Loader className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
-                          Save Notes
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <h4 className="text-[10px] font-medium uppercase tracking-[0.1em] mb-2" style={{ color: theme.textMuted }}>Details</h4>
-                    <div className="space-y-1.5 text-xs">
-                      <div className="flex items-center justify-between gap-3"><span style={{ color: theme.textMuted }}>Received</span><span className="text-right" style={{ color: theme.text }}>{formatDateTime(req.created_at)}</span></div>
-                      <div className="flex items-center justify-between gap-3"><span style={{ color: theme.textMuted }}>From</span><span style={{ color: theme.text }}>{isClient ? 'Client' : 'Website visitor'}</span></div>
-                      {req.requester_name && <div className="flex items-center justify-between gap-3"><span style={{ color: theme.textMuted }}>Name</span><span className="text-right truncate max-w-[150px]" style={{ color: theme.text }}>{req.requester_name}</span></div>}
-                      {req.contact && <div className="flex items-center justify-between gap-3"><span style={{ color: theme.textMuted }}>Contact</span><span className="text-right truncate max-w-[150px]" style={{ color: theme.text }}>{req.contact}</span></div>}
-                      <div className="flex items-center justify-between gap-3"><span style={{ color: theme.textMuted }}>Source</span><span style={{ color: theme.text }}>{sourceLabel}</span></div>
-                      <div className="flex items-center justify-between gap-3"><span style={{ color: theme.textMuted }}>Status</span><span style={{ color: ss.color }}>{ss.label}</span></div>
-                      {req.resolved_at && <div className="flex items-center justify-between gap-3"><span style={{ color: theme.textMuted }}>Resolved</span><span className="text-right" style={{ color: theme.text }}>{formatDateTime(req.resolved_at)}</span></div>}
-                    </div>
-
-                    {req.contact && (
-                      isEmail(req.contact) ? (
-                        <a href={`mailto:${req.contact}`}
-                          className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
-                          style={{ backgroundColor: theme.card, border: `1px solid ${cardBorder}`, color: theme.text }}>
-                          <Mail className="h-3 w-3" /> Reply by email
-                        </a>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <a href={telHref(req.contact)}
-                            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
-                            style={{ backgroundColor: theme.card, border: `1px solid ${cardBorder}`, color: theme.text }}>
-                            <Phone className="h-3 w-3" /> Call
-                          </a>
-                          <a href={smsHref(req.contact)}
-                            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
-                            style={{ backgroundColor: theme.card, border: `1px solid ${cardBorder}`, color: theme.text }}>
-                            <MessageSquare className="h-3 w-3" /> Text
-                          </a>
-                        </div>
-                      )
-                    )}
-                  </div>
+            {composeMode === 'client' && (
+              <div>
+                <div className="relative mb-2">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: textMuted2 }} />
+                  <input value={clientSearch} onChange={e => setClientSearch(e.target.value)} placeholder="Search clients" className="w-full pl-9 pr-3 py-2 rounded-xl text-sm focus:outline-none" style={{ ...glass, color: theme.text }} />
                 </div>
-                {(req.client_id || (req.contact && !isEmail(req.contact))) && (
-                  <div className="mt-5 pt-5" style={{ borderTop: `1px solid ${cardBorder}` }}>
-                    <AgencyClientThread agencyId={agencyId as string} backendUrl={backendUrl} requestId={req.id} requesterName={req.requester_name} recipientKind={(req.user_type === 'client' || req.client_id) ? 'client' : 'visitor'} onReplied={fetchRequests} />
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        }
-
-        // ---- Message list (same list-row style as VoiceAI Connect) ----
-        return (
-          <>
-            <div className="mb-5 text-sm max-w-[1400px]" style={{ color: theme.textMuted }}>
-              {counts.total} message{counts.total !== 1 ? 's' : ''}
-              {counts.new > 0 && <span> · <span style={{ color: '#b45309' }}>{counts.new} new</span></span>}
-              {counts.in_progress > 0 && <span> · <span style={{ color: '#1d4ed8' }}>{counts.in_progress} in progress</span></span>}
-              {counts.resolved > 0 && <span> · <span style={{ color: successColor }}>{counts.resolved} resolved</span></span>}
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3 mb-6 max-w-[1400px]">
-              <div className="relative flex-1">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted }} />
-                <input
-                  type="text"
-                  placeholder="Search message, contact, name..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none transition-colors"
-                  style={inputStyle}
-                />
-              </div>
-              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-                className="appearance-none rounded-xl px-4 py-2.5 text-sm focus:outline-none" style={inputStyle}>
-                <option value="">All Statuses</option>
-                <option value="new">New</option>
-                <option value="in_progress">In Progress</option>
-                <option value="resolved">Resolved</option>
-              </select>
-              <select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)}
-                className="appearance-none rounded-xl px-4 py-2.5 text-sm focus:outline-none" style={inputStyle}>
-                <option value="">All Sources</option>
-                <option value="client_dashboard">Clients</option>
-                <option value="marketing_site">Website</option>
-              </select>
-            </div>
-
-            <div className="max-w-[1400px]" style={panelStyle}>
-              {loading ? (
-                <div className="p-12 flex items-center justify-center">
-                  <Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.primary }} />
-                </div>
-              ) : requests.length === 0 ? (
-                <div className="p-16 text-center">
-                  <div className="relative inline-flex mb-4">
-                    <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl"
-                      style={{ backgroundColor: hexToRgba(theme.primary, 0.1), border: `1px solid ${hexToRgba(theme.primary, 0.25)}` }}>
-                      <Inbox className="h-7 w-7" style={{ color: theme.primary }} />
-                    </div>
-                  </div>
-                  <p className="text-sm" style={{ color: theme.textMuted }}>No messages yet</p>
-                  <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
-                    Messages from your clients and website visitors will appear here
-                  </p>
-                </div>
-              ) : (
-                <div className="divide-y" style={{ borderColor: cardBorder }}>
-                  {requests.map((req) => {
-                    const ss = statusStyle(req.status);
-                    const isClient = req.user_type === 'client' || req.source === 'client_login';
-                    const unread = req.status === 'new';
-                    return (
-                      <button key={req.id} onClick={() => toggleRow(req)}
-                        className="w-full text-left px-4 py-4 flex items-start gap-3 transition-colors"
-                        style={{ borderColor: cardBorder, backgroundColor: unread ? hexToRgba(theme.primary, 0.05) : 'transparent' }}>
-                        <div className="mt-1.5">
-                          <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: unread ? ss.color : 'transparent', border: unread ? 'none' : `1px solid ${theme.border}` }} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            {isClient
-                              ? <User className="h-3.5 w-3.5 shrink-0" style={{ color: theme.textMuted }} />
-                              : <Globe className="h-3.5 w-3.5 shrink-0" style={{ color: theme.textMuted }} />}
-                            <span className="text-sm font-medium truncate" style={{ color: theme.text }}>{req.requester_name || (isClient ? 'Client' : 'Website visitor')}</span>
-                            <span className="inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-medium shrink-0"
-                              style={{ backgroundColor: ss.bg, borderColor: ss.border, color: ss.color }}>{ss.label}</span>
-                            <span className="ml-auto text-[11px] shrink-0" style={{ color: theme.textMuted }}>{timeAgo(req.created_at)}</span>
-                          </div>
-                          <p className="text-sm mt-0.5 truncate" style={{ color: unread ? theme.text : theme.textMuted, fontWeight: unread ? 500 : 400 }}>{req.message}</p>
-                          {req.contact && <p className="text-[11px] mt-0.5 truncate" style={{ color: theme.textMuted }}>{req.contact}</p>}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {totalPages > 1 && (
-              <div className="mt-4 flex items-center justify-between max-w-[1400px]">
-                <p className="text-xs" style={{ color: theme.textMuted }}>Page {page + 1} of {totalPages} · {total} total</p>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0}
-                    className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                    style={{ color: theme.textMuted }}>
-                    <ArrowLeft className="h-3 w-3" /> Prev
-                  </button>
-                  <button onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1}
-                    className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                    style={{ color: theme.textMuted }}>
-                    Next <ArrowRight className="h-3 w-3" />
-                  </button>
+                <div className="max-h-64 overflow-y-auto -mx-1">
+                  {!clientsLoaded ? (
+                    <div className="flex items-center justify-center py-8"><Loader2 className="h-4 w-4 animate-spin" style={{ color: textMuted2 }} /></div>
+                  ) : filteredClients.length === 0 ? (
+                    <p className="text-xs text-center py-6" style={{ color: textMuted2 }}>No clients found</p>
+                  ) : filteredClients.map(c => (
+                    <button key={c.id} onClick={() => startClient(c)} className="w-full flex items-center gap-3 p-2 rounded-lg text-left transition" onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                      <div className="h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-semibold" style={{ backgroundColor: hexToRgba(primaryColor, 0.1), color: primaryColor }}>{(c.business_name || c.owner_name || '?').charAt(0).toUpperCase()}</div>
+                      <div className="min-w-0"><p className="text-sm truncate" style={{ color: theme.text }}>{c.business_name || c.owner_name}</p>{c.owner_phone && <p className="text-[10px]" style={{ color: textMuted2 }}>{formatPhone(c.owner_phone)}</p>}</div>
+                    </button>
+                  ))}
                 </div>
               </div>
             )}
-          </>
-        );
-      })()}
+
+            {composeMode === 'number' && (
+              <div>
+                <label className="text-[10px] uppercase tracking-wide" style={{ color: textMuted2 }}>Phone number</label>
+                <input value={composeNumber} onChange={e => setComposeNumber(e.target.value)} placeholder="+1 555 123 4567" className="w-full mt-1 mb-4 px-3 py-2 rounded-xl text-sm focus:outline-none" style={{ ...glass, color: theme.text }} />
+                <button onClick={startNumber} disabled={composeNumber.replace(/\D/g, '').length < 10} className="w-full py-2.5 rounded-xl text-sm font-semibold transition disabled:opacity-50" style={{ backgroundColor: primaryColor, color: theme.primaryText || '#fff' }}>Open conversation</button>
+                <p className="text-[10px] mt-2 text-center" style={{ color: textMuted2 }}>Texts go out from your demo number.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
