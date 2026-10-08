@@ -242,6 +242,11 @@ export default function AILabPage() {
   const [editDenoising, setEditDenoising] = useState(true);
   const [editCallMode, setEditCallMode] = useState<'primary' | 'secondary'>('primary');
   const [editTransferPhone, setEditTransferPhone] = useState('');
+  // Call Transfer now saves on its own (its card lives at the bottom by the SMS
+  // card), so it has its own saving/saved state instead of riding the main
+  // config Save Changes button.
+  const [transferSaving, setTransferSaving] = useState(false);
+  const [transferSaved, setTransferSaved] = useState(false);
   const [promptExpanded, setPromptExpanded] = useState(false);
   const [allVoices, setAllVoices] = useState<VoiceOption[]>([]);
   const [voiceFilter, setVoiceFilter] = useState<'all' | 'female' | 'male'>('all');
@@ -478,7 +483,6 @@ export default function AILabPage() {
         body.background_denoising = editDenoising;
       }
       body.call_mode = editCallMode;
-      if (editTransferPhone.trim()) body.transfer_phone = editTransferPhone.trim();
       const r = await fetch(`${api}/api/agency/${agency.id}/clients/${selectedClient.id}/prompt`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` }, body: JSON.stringify(body) });
       if (r.ok) { setConfigSaved(true); addEvent('saved', 'Config saved to VAPI', 'success'); setTimeout(() => setConfigSaved(false), 3000); if (config) setConfig({ ...config, systemPrompt: editPrompt, firstMessage: editGreeting, voice: editVoice, model: editModel, temperature: editTemp, speed: editSpeed, ttsModel: editTtsModel, transcriberModel: editTranscriberModel, backgroundDenoising: editDenoising }); }
       else { const d = await r.json(); setConfigError(d.error || 'Save failed'); addEvent('error', d.error || 'Save failed', 'error'); }
@@ -486,7 +490,19 @@ export default function AILabPage() {
     finally { setConfigSaving(false); }
   };
 
-  const hasChanges = config ? (editPrompt !== config.systemPrompt || editGreeting !== config.firstMessage || editVoice !== config.voice || editModel !== config.model || editTemp !== config.temperature || editSpeed !== config.speed || editTtsModel !== config.ttsModel || editTranscriberModel !== config.transcriberModel || editDenoising !== config.backgroundDenoising || editCallMode !== ((selectedClient?.call_mode as any) || 'primary') || editTransferPhone !== (selectedClient?.owner_phone || '')) : editCallMode !== ((selectedClient?.call_mode as any) || 'primary');
+  // Call Transfer saves on its own (card at the bottom, by the SMS card).
+  const saveTransferPhone = async () => {
+    if (!agency || !selectedClient || !editTransferPhone.trim()) return;
+    setTransferSaving(true); setTransferSaved(false);
+    try {
+      const r = await fetch(`${api}/api/agency/${agency.id}/clients/${selectedClient.id}/prompt`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` }, body: JSON.stringify({ transfer_phone: editTransferPhone.trim() }) });
+      if (r.ok) { setTransferSaved(true); addEvent('saved', 'Transfer number saved', 'success'); setTimeout(() => setTransferSaved(false), 3000); }
+      else { const d = await r.json(); addEvent('error', d.error || 'Transfer save failed', 'error'); }
+    } catch { addEvent('error', 'Transfer save network error', 'error'); }
+    finally { setTransferSaving(false); }
+  };
+
+  const hasChanges = config ? (editPrompt !== config.systemPrompt || editGreeting !== config.firstMessage || editVoice !== config.voice || editModel !== config.model || editTemp !== config.temperature || editSpeed !== config.speed || editTtsModel !== config.ttsModel || editTranscriberModel !== config.transcriberModel || editDenoising !== config.backgroundDenoising || editCallMode !== ((selectedClient?.call_mode as any) || 'primary')) : editCallMode !== ((selectedClient?.call_mode as any) || 'primary');
 
   const startCall = async () => { if (!vapiRef.current || !selectedClient?.vapi_assistant_id) return; setCallState('connecting'); setTranscript([]); setEventLog([]); setCallDuration(0); setShowCallModal(true); addEvent('dialing', `Calling ${selectedClient.business_name}...`, 'info'); try { await vapiRef.current.start(selectedClient.vapi_assistant_id); startTimer(); } catch (e: any) { addEvent('error', e?.message || 'Call failed', 'error'); setCallState('idle'); setShowCallModal(false); } };
   const endCall = () => { vapiRef.current?.stop(); stopTimer(); setCallState('ended'); };
@@ -662,23 +678,15 @@ export default function AILabPage() {
                     </div>
                   </div>
 
-                  <div>
-                    <div className="flex items-center justify-between mb-2"><label className="text-sm font-medium" style={{ color: theme.textMuted }}>Opening Greeting</label><button onClick={copyCompliance} className="flex items-center gap-1 text-sm font-medium px-2 py-0.5 rounded transition" style={{ color: theme.primary, backgroundColor: hexToRgba(theme.primary, 0.08) }}>{copiedCompliance ? <><Check className="h-3 w-3" /> Copied</> : <><Copy className="h-3 w-3" /> Compliance text</>}</button></div>
-                    <input type="text" value={editGreeting} onChange={e => setEditGreeting(e.target.value)} className="w-full rounded-lg px-3 py-2.5 text-sm" style={inputStyle} />
-                    <div className="flex items-start gap-2 mt-2 p-2.5 rounded-lg" style={{ backgroundColor: theme.isDark ? 'rgba(251,191,36,0.05)' : '#fffbeb', border: `1px solid ${theme.isDark ? 'rgba(251,191,36,0.1)' : '#fef3c7'}` }}><Info className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" style={{ color: '#f59e0b' }} /><p className="text-sm leading-relaxed" style={{ color: theme.isDark ? '#fbbf24' : '#92400e' }}>For compliance, include: <em>&quot;{COMPLIANCE_GREETING}&quot;</em></p></div>
-                  </div>
-
-                  {config.tools.includes('transferCall') && (
-                    <div className="rounded-lg p-4" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : '#f9fafb', border: `1px solid ${theme.border}` }}>
-                      <div className="flex items-center gap-2 mb-3"><PhoneForwarded className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-sm font-medium" style={{ color: theme.text }}>Call Transfer</span><span className="text-sm px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.isDark ? 'rgba(34,197,94,0.1)' : '#f0fdf4', color: '#22c55e' }}>Active</span></div>
-                      <p className="text-sm mb-2" style={{ color: theme.textMuted }}>When callers request a real person or have urgent issues, the AI will transfer to this number.</p>
-                      <div className="flex gap-2"><input type="tel" value={editTransferPhone} onChange={e => setEditTransferPhone(e.target.value)} placeholder="(555) 123-4567" className="flex-1 rounded-lg px-3 py-2 text-sm font-mono" style={inputStyle} /></div>
-                      <p className="text-[11px] mt-1.5" style={{ color: theme.textMuted }}>Currently set to the client owner&apos;s phone. Changes save with the main &quot;Save Changes&quot; button.</p>
-                    </div>
-                  )}
                   {config.tools.filter(t => !['transferCall', 'endCall'].includes(t)).length > 0 && (<div className="flex items-center gap-2 flex-wrap"><span className="text-sm font-medium" style={{ color: theme.textMuted }}>Other Tools:</span>{config.tools.filter(t => !['transferCall', 'endCall'].includes(t)).map(t => <span key={t} className="text-sm font-mono px-2 py-0.5 rounded" style={{ backgroundColor: theme.hover, color: theme.text }}>{t}</span>)}</div>)}
                   </div>
-                  <div className="lg:w-[45%] xl:w-[50%] flex-shrink-0">
+                  <div className="lg:w-[45%] xl:w-[50%] flex-shrink-0 space-y-4">
+                    {/* Opening Greeting sits directly above the System Prompt. */}
+                    <div className="rounded-xl p-4" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : '#f9fafb', border: `1px solid ${theme.border}` }}>
+                      <div className="flex items-center justify-between mb-2"><label className="text-sm font-medium" style={{ color: theme.textMuted }}>Opening Greeting</label><button onClick={copyCompliance} className="flex items-center gap-1 text-sm font-medium px-2 py-0.5 rounded transition" style={{ color: theme.primary, backgroundColor: hexToRgba(theme.primary, 0.08) }}>{copiedCompliance ? <><Check className="h-3 w-3" /> Copied</> : <><Copy className="h-3 w-3" /> Compliance text</>}</button></div>
+                      <input type="text" value={editGreeting} onChange={e => setEditGreeting(e.target.value)} className="w-full rounded-lg px-3 py-2.5 text-sm" style={inputStyle} />
+                      <div className="flex items-start gap-2 mt-2 p-2.5 rounded-lg" style={{ backgroundColor: theme.isDark ? 'rgba(251,191,36,0.05)' : '#fffbeb', border: `1px solid ${theme.isDark ? 'rgba(251,191,36,0.1)' : '#fef3c7'}` }}><Info className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" style={{ color: '#f59e0b' }} /><p className="text-sm leading-relaxed" style={{ color: theme.isDark ? '#fbbf24' : '#92400e' }}>For compliance, include: <em>&quot;{COMPLIANCE_GREETING}&quot;</em></p></div>
+                    </div>
                     <div className="rounded-xl p-4" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : '#f9fafb', border: `1px solid ${theme.border}` }}>
                       <div className="flex items-center justify-between mb-2"><div className="flex items-center gap-3"><label className="text-sm font-medium" style={{ color: theme.textMuted }}>System Prompt</label><a href="https://myvoiceaiconnect.com/blog/ai-receptionist-prompt-guide" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm font-medium transition hover:opacity-80" style={{ color: theme.primary }}><ArrowUpRight className="h-2.5 w-2.5" /> Prompting Guide</a></div><div className="flex items-center gap-3"><span className="text-sm font-mono" style={{ color: theme.textMuted }}>{editPrompt.length.toLocaleString()} chars</span></div></div>
                       <textarea value={editPrompt} onChange={e => setEditPrompt(e.target.value)} rows={26} className="w-full rounded-lg px-3 py-2.5 text-sm font-mono leading-relaxed" style={{ ...inputStyle, resize: 'vertical', minHeight: '620px' }} />
@@ -741,6 +749,17 @@ export default function AILabPage() {
             {selectedClient && (
               <div className="rounded-xl p-4 sm:p-5 mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
                 <DashboardAccessSelector clientId={selectedClient.id} theme={theme} />
+              </div>
+            )}
+
+            {/* Call Transfer (moved out of AI Configuration; styled to match the
+                SMS card and saves on its own button). */}
+            {selectedClient?.vapi_assistant_id && config?.tools?.includes('transferCall') && (
+              <div className="rounded-xl p-4 mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+                <div className="flex items-center justify-between mb-3"><div className="flex items-center gap-2"><PhoneForwarded className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-sm font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Call Transfer</span></div><span className="text-sm px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.isDark ? 'rgba(34,197,94,0.1)' : '#f0fdf4', color: '#22c55e' }}>Active</span></div>
+                <p className="text-sm mb-3" style={{ color: theme.textMuted }}>When callers request a real person or have urgent issues, the AI transfers to this number.</p>
+                <div className="flex gap-2"><input type="tel" value={editTransferPhone} onChange={e => setEditTransferPhone(e.target.value)} placeholder="(555) 123-4567" className="flex-1 rounded-lg px-3 py-2 text-sm font-mono" style={inputStyle} /><button onClick={saveTransferPhone} disabled={transferSaving || !editTransferPhone.trim()} className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-40" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{transferSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />} Save</button></div>
+                <p className="text-sm mt-2" style={{ color: theme.textMuted }}>{transferSaved ? 'Transfer number saved.' : 'Defaults to the client owner’s phone. Use a line that is not forwarded to the AI.'}</p>
               </div>
             )}
 
