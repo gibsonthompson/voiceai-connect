@@ -6,7 +6,7 @@ import {
   Headphones, Sparkles, Lock, Check, AlertCircle, Copy,
   Bot, Users, Clock, Mic, ArrowRight, ChevronRight, X,
   Play, Pause, Building2, MapPin, Zap, ArrowLeft, Globe, ExternalLink,
-  PhoneOutgoing
+  PhoneOutgoing, Send
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
@@ -28,7 +28,7 @@ function formatPhoneDisplay(phone: string): string {
 }
 
 function formatDuration(seconds: number | null): string {
-  if (!seconds) return '—';
+  if (!seconds) return '-';
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return m > 0 ? `${m}m ${s}s` : `${s}s`;
@@ -431,6 +431,167 @@ function DemoCallsList({ agencyId, theme }: { agencyId: string; theme: any }) {
 }
 
 // ============================================================================
+// DEMO SMS INBOX, two-way texting on the agency demo number. Reads threads from
+// /demo-sms (sent follow-ups + inbound replies, grouped by prospect phone) and
+// replies via /demo-sms/send, which goes out FROM the demo number.
+// ============================================================================
+interface DemoSmsMessage { id: string; direction: 'inbound' | 'outbound'; body: string; at: string; status: string | null; messageType: string; }
+interface DemoSmsThread { key: string; phone: string; name: string | null; messages: DemoSmsMessage[]; lastAt: string; lastDirection: string | null; lastPreview: string; needsReply: boolean; }
+
+function DemoSmsInbox({ agencyId, theme }: { agencyId: string; theme: any }) {
+  const [threads, setThreads] = useState<DemoSmsThread[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [demoNumber, setDemoNumber] = useState<string | null>(null);
+  const [selected, setSelected] = useState<DemoSmsThread | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState('');
+
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.myvoiceaiconnect.com';
+
+  const fetchThreads = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/agency/${agencyId}/demo-sms`, { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) return;
+      const data = await res.json();
+      setThreads(data.threads || []);
+      setDemoNumber(data.demoNumber || null);
+      // Keep an open conversation in sync with the refreshed data (e.g. after a reply).
+      setSelected((cur) => cur ? ((data.threads || []).find((t: DemoSmsThread) => t.key === cur.key) || cur) : cur);
+    } catch (e) {
+      console.error('Failed to fetch demo texts:', e);
+    } finally {
+      setLoading(false);
+    }
+  }, [agencyId, backendUrl]);
+
+  useEffect(() => { fetchThreads(); }, [fetchThreads]);
+
+  const handleSend = async () => {
+    if (!selected || !replyText.trim() || sending) return;
+    setSending(true); setSendError('');
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/agency/${agencyId}/demo-sms/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ to: selected.phone, message: replyText.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setSendError(data.error || 'Could not send'); return; }
+      setReplyText('');
+      await fetchThreads();
+    } catch (e) {
+      setSendError('Could not send');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.primary }} />
+      </div>
+    );
+  }
+
+  if (threads.length === 0) {
+    return (
+      <div className="text-center py-10">
+        <MessageSquare className="h-8 w-8 mx-auto mb-2" style={{ color: theme.textMuted, opacity: 0.3 }} />
+        <p className="text-sm font-medium" style={{ color: theme.textMuted }}>No demo texts yet</p>
+        <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
+          Follow-up texts your demo line sends, and any replies from prospects, show up here. You can reply right from this number.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="divide-y" style={{ borderColor: theme.border }}>
+        {threads.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => { setSelected(t); setSendError(''); setReplyText(''); }}
+            className="w-full flex items-center justify-between px-4 py-3.5 text-left transition-colors"
+            style={{ borderColor: theme.border }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hover}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+          >
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.primary + '12' }}>
+                <MessageSquare className="h-4 w-4" style={{ color: theme.primary }} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium truncate">{t.name || formatPhoneDisplay(t.phone)}</p>
+                  {t.needsReply && (
+                    <span className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold flex-shrink-0" style={{ backgroundColor: theme.primary + '18', color: theme.primary }}>Needs reply</span>
+                  )}
+                </div>
+                <p className="text-xs truncate mt-0.5" style={{ color: theme.textMuted }}>{t.lastDirection === 'inbound' ? '' : 'You: '}{t.lastPreview}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 flex-shrink-0 ml-3">
+              <p className="text-xs" style={{ color: theme.textMuted }}>{formatTimeAgo(t.lastAt)}</p>
+              <ChevronRight className="h-4 w-4" style={{ color: theme.textMuted }} />
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => setSelected(null)}>
+          <div className="w-full max-w-lg rounded-2xl overflow-hidden flex flex-col" style={{ backgroundColor: theme.card, border: `2px solid ${theme.border}`, maxHeight: '85vh' }} onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 flex-shrink-0" style={{ borderBottom: `1px solid ${theme.border}` }}>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold truncate">{selected.name || formatPhoneDisplay(selected.phone)}</p>
+                <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{formatPhoneDisplay(selected.phone)}{demoNumber ? ` (via ${formatPhoneDisplay(demoNumber)})` : ''}</p>
+              </div>
+              <button onClick={() => setSelected(null)} className="flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.hover }}>
+                <X className="h-4 w-4" style={{ color: theme.textMuted }} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
+              {selected.messages.map((m) => (
+                <div key={m.id} className={`flex ${m.direction === 'outbound' ? 'justify-end' : 'justify-start'}`}>
+                  <div className="max-w-[80%] rounded-2xl px-3.5 py-2" style={m.direction === 'outbound' ? { backgroundColor: theme.primary, color: theme.primaryText || '#ffffff' } : { backgroundColor: theme.hover, color: theme.text }}>
+                    <p className="text-sm whitespace-pre-wrap leading-snug">{m.body}</p>
+                    <p className="text-[10px] mt-1" style={{ opacity: 0.7 }}>{formatTimeAgo(m.at)}{m.direction === 'outbound' && m.status ? ` (${m.status})` : ''}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="px-4 py-3 flex-shrink-0" style={{ borderTop: `1px solid ${theme.border}` }}>
+              {sendError && (<p className="text-xs mb-2" style={{ color: theme.errorText || '#ef4444' }}>{sendError}</p>)}
+              <div className="flex items-end gap-2">
+                <textarea
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  placeholder="Type a reply..."
+                  rows={1}
+                  className="flex-1 px-3 py-2 rounded-lg border text-sm focus:outline-none resize-none"
+                  style={{ borderColor: theme.inputBorder, backgroundColor: theme.input, color: theme.text }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                />
+                <button onClick={handleSend} disabled={sending || !replyText.trim()} className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0 disabled:opacity-40" style={{ backgroundColor: theme.primary, color: theme.primaryText || '#ffffff' }}>
+                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ============================================================================
 // MAIN PAGE COMPONENT
 // ============================================================================
 export default function DemoPhonePage() {
@@ -809,7 +970,7 @@ export default function DemoPhonePage() {
   }
 
   // ============================================================================
-  // ACTIVE STATE — Demo exists
+  // ACTIVE STATE, Demo exists
   // ----------------------------------------------------------------------------
   // Card reworked 2026-08-11: the number is a normal-height chip (not an
   // oversized gradient bar), the live status is a pill next to the icon, the two
@@ -946,7 +1107,7 @@ export default function DemoPhonePage() {
         </div>
 
         {/* ══════════════════════════════════════════════════════════════════
-            DEMO CALLS SECTION — Shows call history with full detail access
+            DEMO CALLS SECTION, Shows call history with full detail access
            ══════════════════════════════════════════════════════════════════ */}
         <HowItWorksCard theme={theme} />
 
@@ -964,6 +1125,23 @@ export default function DemoPhonePage() {
           </div>
 
           {agency?.id && <DemoCallsList agencyId={agency.id} theme={theme} />}
+        </div>
+
+        {/* ══════════════════════════════════════════════════════════════════
+            DEMO TEXT MESSAGES, sent follow-ups + inbound replies, reply inline
+           ══════════════════════════════════════════════════════════════════ */}
+        <div
+          className="rounded-xl overflow-hidden mb-6"
+          style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
+        >
+          <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: `1px solid ${theme.border}` }}>
+            <div className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" style={{ color: theme.primary }} />
+              <h3 className="font-semibold text-sm sm:text-base">Demo Text Messages</h3>
+            </div>
+          </div>
+
+          {agency?.id && <DemoSmsInbox agencyId={agency.id} theme={theme} />}
         </div>
 
         {error && (
@@ -1113,9 +1291,9 @@ function HowItWorksCard({ theme }: { theme: any }) {
       <div className="space-y-4 mb-6">
         {[
           { step: '1', icon: Mic, title: 'AI Greets The Caller', desc: 'A warm, professional voice answers and explains this is a live demo of your AI receptionist service.' },
-          { step: '2', icon: Users, title: 'Gathers Business Context', desc: 'The AI asks "What type of business do you run?" — plumber, dentist, lawyer, restaurant, anything.' },
-          { step: '3', icon: Bot, title: 'Roleplays As Their Receptionist', desc: 'Based on their answer, the AI acts out a realistic call scenario for their industry — taking a service request, scheduling an appointment, handling an intake call, etc.' },
-          { step: '4', icon: Sparkles, title: 'Showcases Key Features', desc: 'The AI naturally mentions instant text summaries, 24/7 availability, and how setup takes just minutes — all within the conversation.' },
+          { step: '2', icon: Users, title: 'Gathers Business Context', desc: 'The AI asks "What type of business do you run?", plumber, dentist, lawyer, restaurant, anything.' },
+          { step: '3', icon: Bot, title: 'Roleplays As Their Receptionist', desc: 'Based on their answer, the AI acts out a realistic call scenario for their industry, taking a service request, scheduling an appointment, handling an intake call, etc.' },
+          { step: '4', icon: Sparkles, title: 'Showcases Key Features', desc: 'The AI naturally mentions instant text summaries, 24/7 availability, and how setup takes just minutes, all within the conversation.' },
           { step: '5', icon: MessageSquare, title: 'Follow-Up SMS With Signup Link', desc: 'After the call ends, the caller automatically receives a text with your signup link so they can start their free trial.' },
         ].map((item) => (
           <div key={item.step} className="flex items-start gap-3">
@@ -1137,7 +1315,7 @@ function HowItWorksCard({ theme }: { theme: any }) {
         <p className="text-sm sm:text-base font-semibold mb-3" style={{ color: theme.text }}>Why this converts</p>
         <p className="text-sm sm:text-base leading-relaxed" style={{ color: theme.textMuted }}>
           Instead of explaining what an AI receptionist does, prospects <strong style={{ color: theme.text }}>experience it firsthand</strong>.
-          They hear the voice quality, feel the natural conversation flow, and see how it handles their specific industry —
+          They hear the voice quality, feel the natural conversation flow, and see how it handles their specific industry,
           all in a 60-second phone call. The follow-up text makes it effortless to convert from &quot;that was cool&quot; to &quot;I want this for my business.&quot;
         </p>
       </div>
