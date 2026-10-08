@@ -61,6 +61,7 @@ const NAV: { section: string | null; items: { href: string; label: string; icon:
     { href: '/admin/concierge', label: 'Concierge', icon: Headphones },
   ]},
   { section: null, items: [
+    { href: '/admin/inbox', label: 'Inbox', icon: MessageSquare },
     { href: '/admin/messaging', label: 'Messaging', icon: MessageSquare },
     { href: '/admin/support', label: 'Support', icon: LifeBuoy },
     { href: '/admin/alerts', label: 'Alerts', icon: AlertTriangle },
