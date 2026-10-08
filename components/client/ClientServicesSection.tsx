@@ -18,6 +18,8 @@ function hexToRgba(hex: string, alpha: number): string {
 interface ServiceItem {
   id: string;
   name: string;
+  price?: string | null;
+  description?: string | null;
   duration_minutes: number;
   buffer_minutes: number;
   booking_mode: string;
@@ -62,7 +64,7 @@ const INDUSTRY_SERVICE_EXAMPLES: Record<string, string> = {
 };
 const DEFAULT_SERVICE_EXAMPLE = 'e.g. Consultation, Follow-up, Service Call';
 
-const EMPTY_FORM = { name: '', duration_minutes: 30, buffer_minutes: 0, booking_mode: 'auto_book', assigned_staff: [] as string[] };
+const EMPTY_FORM = { name: '', price: '', description: '', duration_minutes: 30, buffer_minutes: 0, booking_mode: 'auto_book', assigned_staff: [] as string[] };
 
 export default function ClientServicesSection({ clientId, theme, compact, industry, hideHeader }: Props) {
   const [services, setServices] = useState<ServiceItem[]>([]);
@@ -115,7 +117,7 @@ export default function ClientServicesSection({ clientId, theme, compact, indust
   useEffect(() => { fetchServices(); fetchStaff(); }, [fetchServices, fetchStaff]);
 
   const openAdd = () => { setForm({ ...EMPTY_FORM, assigned_staff: [] }); setEditingId(null); setError(''); setShowModal(true); };
-  const openEdit = (svc: ServiceItem) => { setForm({ name: svc.name, duration_minutes: svc.duration_minutes, buffer_minutes: svc.buffer_minutes, booking_mode: svc.booking_mode, assigned_staff: svc.assigned_staff || [] }); setEditingId(svc.id); setError(''); setShowModal(true); };
+  const openEdit = (svc: ServiceItem) => { setForm({ name: svc.name, price: svc.price || '', description: svc.description || '', duration_minutes: svc.duration_minutes, buffer_minutes: svc.buffer_minutes, booking_mode: svc.booking_mode, assigned_staff: svc.assigned_staff || [] }); setEditingId(svc.id); setError(''); setShowModal(true); };
 
   const handleSave = async () => {
     if (!form.name.trim()) { setError('Service name is required'); return; }
@@ -123,7 +125,7 @@ export default function ClientServicesSection({ clientId, theme, compact, indust
     try {
       const token = localStorage.getItem('auth_token');
       const url = editingId ? `${backendUrl}/api/client/${clientId}/services/${editingId}` : `${backendUrl}/api/client/${clientId}/services`;
-      const res = await fetch(url, { method: editingId ? 'PUT' : 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: form.name.trim(), duration_minutes: form.duration_minutes, buffer_minutes: form.buffer_minutes, booking_mode: form.booking_mode, assigned_staff: form.assigned_staff }) });
+      const res = await fetch(url, { method: editingId ? 'PUT' : 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: form.name.trim(), price: form.price.trim(), description: form.description.trim(), duration_minutes: form.duration_minutes, buffer_minutes: form.buffer_minutes, booking_mode: form.booking_mode, assigned_staff: form.assigned_staff }) });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Failed to save'); return; }
       setShowModal(false); fetchServices();
@@ -155,6 +157,15 @@ export default function ClientServicesSection({ clientId, theme, compact, indust
       <div>
         <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>Service Name *</label>
         <input type="text" placeholder={servicePlaceholder} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none" style={inputStyle} />
+      </div>
+      <div>
+        <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>Price</label>
+        <input type="text" placeholder="$45, $50-100, or Varies" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none" style={inputStyle} />
+        <p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>What the AI quotes callers. Free text, so ranges or &quot;Varies&quot; are fine. Leave blank to not quote a price.</p>
+      </div>
+      <div>
+        <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>Description</label>
+        <textarea placeholder="A short blurb the AI can share about this service" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none resize-none" style={inputStyle} />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -188,7 +199,7 @@ export default function ClientServicesSection({ clientId, theme, compact, indust
               <button key={s.id} onClick={() => toggleStaffAssignment(s.id)} className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all" style={{ backgroundColor: isAssigned ? hexToRgba(theme.primary, theme.isDark ? 0.15 : 0.08) : (theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6'), color: isAssigned ? theme.primary : theme.textMuted, border: `1px solid ${isAssigned ? hexToRgba(theme.primary, 0.3) : 'transparent'}` }}>{isAssigned ? <Check className="h-3 w-3" /> : <Plus className="h-3 w-3" />}{s.name}</button>
             ); })}
           </div>
-          {form.assigned_staff.length === 0 && <p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>No staff assigned — any available provider can handle this service</p>}
+          {form.assigned_staff.length === 0 && <p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>No staff assigned, any available provider can handle this service</p>}
         </div>
       )}
       {error && <p className="text-sm" style={{ color: '#ef4444' }}>{error}</p>}
@@ -233,12 +244,13 @@ export default function ClientServicesSection({ clientId, theme, compact, indust
                         <div key={svc.id} className="rounded-xl p-3 flex items-center gap-3 transition-all" style={{ ...glass, opacity: svc.is_active ? 1 : 0.5 }}>
                           <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.12 : 0.06) }}><Briefcase className="h-4 w-4" style={{ color: theme.primary }} /></div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap"><p className="text-xs sm:text-sm font-medium truncate" style={{ color: theme.text }}>{svc.name}</p><span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: modeStyle.bg, color: modeStyle.color }}>{modeStyle.label}</span></div>
+                            <div className="flex items-center gap-2 flex-wrap"><p className="text-xs sm:text-sm font-medium truncate" style={{ color: theme.text }}>{svc.name}</p>{svc.price && <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.14 : 0.08), color: theme.primary }}>{svc.price}</span>}<span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: modeStyle.bg, color: modeStyle.color }}>{modeStyle.label}</span></div>
                             <div className="flex items-center gap-3 mt-0.5 flex-wrap">
                               <span className="text-[10px] flex items-center gap-1" style={{ color: theme.textMuted }}><Clock className="h-2.5 w-2.5" />{svc.duration_minutes}min</span>
                               {svc.buffer_minutes > 0 && <span className="text-[10px] flex items-center gap-1" style={{ color: theme.textMuted }}><Shield className="h-2.5 w-2.5" />{svc.buffer_minutes}min buffer</span>}
                               {assignedNames.length > 0 && <span className="text-[10px] flex items-center gap-1" style={{ color: theme.textMuted }}><Users className="h-2.5 w-2.5" />{assignedNames.join(', ')}</span>}
                             </div>
+                            {svc.description && <p className="text-[10px] mt-0.5 truncate" style={{ color: theme.textMuted }}>{svc.description}</p>}
                           </div>
                           <div className="flex items-center gap-1 flex-shrink-0">
                             <button onClick={() => openEdit(svc)} className="p-1.5 rounded-lg transition hover:opacity-70" style={{ color: theme.textMuted }} title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
