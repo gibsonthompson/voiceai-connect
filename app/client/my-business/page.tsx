@@ -572,7 +572,7 @@ export default function MyBusinessPage() {
               </div>
             )}
             <div className="flex gap-2">
-              <input type="text" value={newArea} onChange={e => setNewArea(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addArea(); } }} placeholder="e.g. Atlanta, Marietta, Decatur" className="flex-1 px-4 py-2.5 rounded-xl text-sm focus:outline-none" style={inputStyle} />
+              <input type="text" value={newArea} onChange={e => setNewArea(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addArea(); } }} placeholder={client?.business_city ? `e.g. ${client.business_city} and nearby areas` : 'e.g. the cities and neighborhoods you serve'} className="flex-1 px-4 py-2.5 rounded-xl text-sm focus:outline-none" style={inputStyle} />
               <button onClick={addArea} disabled={!newArea.trim()} className="flex items-center gap-1 px-3 py-2.5 rounded-xl text-sm font-medium disabled:opacity-40 transition" style={{ backgroundColor: hexToRgba(primaryColor, 0.1), color: primaryColor }}><Plus className="w-4 h-4" /> Add</button>
             </div>
             {areaSuggestions.length > 0 && (
