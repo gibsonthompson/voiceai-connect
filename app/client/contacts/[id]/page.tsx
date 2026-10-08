@@ -1,20 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import {
   ArrowLeft, Phone, Mail, MapPin, User, PhoneCall,
   MessageSquare, Clock, Loader2, ChevronRight,
-  Edit3, Check, X,
+  Edit3, Check, X, CalendarCheck, Sparkles, PhoneForwarded, ShieldX,
 } from 'lucide-react';
 import { useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
 
 function hexToRgba(hex: string, alpha: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  try {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  } catch { return `rgba(0,0,0,${alpha})`; }
 }
 
 function formatPhone(phone: string): string {
@@ -27,10 +29,22 @@ function formatPhone(phone: string): string {
 
 function formatDuration(s: number): string { return `${Math.floor(s / 60)}m ${s % 60}s`; }
 
+function relativeDate(iso: string | null): string {
+  if (!iso) return '';
+  const then = new Date(iso).getTime();
+  const days = Math.floor((Date.now() - then) / 86400000);
+  if (days <= 0) return 'today';
+  if (days === 1) return 'yesterday';
+  if (days < 7) return `${days} days ago`;
+  if (days < 30) return `${Math.floor(days / 7)}w ago`;
+  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
+  return `${Math.floor(days / 365)}y ago`;
+}
+
 const TAG_COLORS: Record<string, string> = { emergency: '#ef4444', high_priority: '#f59e0b', repeat_caller: '#8b5cf6', appointment_booked: '#10b981' };
 
 interface Contact { id: string; name: string; phone: string; email: string | null; address: string | null; tags: string[]; total_calls: number; last_call_at: string | null; ai_summary: string | null; notes: string | null; source: string; created_at: string; }
-interface Call { id: string; customer_name: string | null; customer_phone: string | null; caller_phone: string | null; service_requested: string | null; urgency_level: string | null; ai_summary: string | null; duration_seconds: number | null; created_at: string; }
+interface Call { id: string; customer_name: string | null; customer_phone: string | null; caller_phone: string | null; service_requested: string | null; urgency_level: string | null; ai_summary: string | null; duration_seconds: number | null; created_at: string; appointment_booked?: boolean | null; appointment_time?: string | null; call_status?: string | null; transfer_status?: string | null; is_spam?: boolean | null; }
 
 const ANIM_CSS = `@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}.fu{animation:fadeUp .45s ease-out both}.fu1{animation-delay:40ms}.fu2{animation-delay:80ms}.fu3{animation-delay:120ms}`;
 
@@ -77,6 +91,45 @@ export default function ContactDetailPage() {
     finally { setSaving(false); }
   };
 
+  // Newest-first (backend already sorts, but guarantee it client-side too).
+  const sortedCalls = useMemo(
+    () => [...calls].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+    [calls]
+  );
+
+  // Auto "about this contact" line so the client knows who this is at a glance.
+  const about = useMemo(() => {
+    if (!contact) return '';
+    const bits: string[] = [];
+    const n = contact.total_calls || sortedCalls.length || 0;
+    if (n >= 5) bits.push(`Frequent caller (${n} calls)`);
+    else if (n >= 2) bits.push(`Called ${n} times`);
+    else if (n === 1) bits.push('First-time caller');
+
+    const bookedCount = sortedCalls.filter(c => c.appointment_booked).length;
+    const hasBooked = bookedCount > 0 || (contact.tags || []).includes('appointment_booked');
+    if (hasBooked) bits.push(bookedCount > 1 ? `booked ${bookedCount} appointments` : 'booked an appointment');
+
+    // Most common service they ask about.
+    const counts: Record<string, number> = {};
+    for (const c of sortedCalls) { const s = (c.service_requested || '').trim(); if (s) counts[s] = (counts[s] || 0) + 1; }
+    const topService = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
+    if (topService) bits.push(`usually asks about ${topService.toLowerCase()}`);
+
+    if ((contact.tags || []).includes('emergency')) bits.push('has had an emergency');
+
+    if (bits.length === 0) return '';
+    // Sentence-case the first bit, lowercase the joins.
+    const first = bits[0];
+    const rest = bits.slice(1);
+    let s = first;
+    if (rest.length === 1) s += `, ${rest[0]}`;
+    else if (rest.length > 1) s += `, ${rest.slice(0, -1).join(', ')}, and ${rest[rest.length - 1]}`;
+    return s + '.';
+  }, [contact, sortedCalls]);
+
+  const messagesHref = contact ? `/client/messages?to=${encodeURIComponent(contact.phone)}&name=${encodeURIComponent(contact.name || '')}` : '/client/messages';
+
   const glass = {
     backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.8)',
     border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
@@ -102,6 +155,8 @@ export default function ContactDetailPage() {
   if (pageLoading) return <div className="flex items-center justify-center min-h-[50vh]" style={{ backgroundColor: theme.bg }}><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.textMuted4 }} /><span className="ml-2 text-sm" style={{ color: theme.textMuted }}>Loading contact...</span></div>;
   if (!contact) return <div className="p-6 text-center min-h-screen" style={{ backgroundColor: theme.bg }}><p style={{ color: theme.textMuted }}>Contact not found</p><a href="/client/contacts" className="text-sm mt-2 inline-block" style={{ color: theme.primary }}>← Back</a></div>;
 
+  const lastCallIso = contact.last_call_at || sortedCalls[0]?.created_at || null;
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 min-h-screen" style={{ backgroundColor: theme.bg }}>
       <style dangerouslySetInnerHTML={{ __html: ANIM_CSS + `.cr{transition:background .15s ease}.cr:hover{background:${theme.hover} !important}` }} />
@@ -111,13 +166,13 @@ export default function ContactDetailPage() {
       </a>
 
       {/* Header */}
-      <div className="mb-5 sm:mb-7 fu fu1">
-        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-          <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full flex-shrink-0 text-lg sm:text-xl font-bold"
+      <div className="mb-5 sm:mb-6 fu fu1">
+        <div className="flex items-start gap-3 sm:gap-4 min-w-0">
+          <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full flex-shrink-0 text-lg sm:text-xl font-bold mt-0.5"
             style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.12 : 0.06), color: theme.primary }}>
             {(contact.name || '?').charAt(0).toUpperCase()}
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             {editingName ? (
               <div className="flex items-center gap-2">
                 <input type="text" value={nameValue} onChange={(e) => setNameValue(e.target.value)} autoFocus
@@ -132,29 +187,50 @@ export default function ContactDetailPage() {
                 <button onClick={() => { setNameValue(contact.name || ''); setEditingName(true); }} className="p-1 rounded" style={{ color: theme.textMuted4 }}><Edit3 className="h-3.5 w-3.5" /></button>
               </div>
             )}
-            <p className="text-[13px]" style={{ color: theme.textMuted }}>{formatPhone(contact.phone)} · {contact.total_calls} call{contact.total_calls !== 1 ? 's' : ''}</p>
+            <p className="text-[13px] mt-0.5" style={{ color: theme.textMuted }}>
+              {formatPhone(contact.phone)} · {contact.total_calls} call{contact.total_calls !== 1 ? 's' : ''}
+              {lastCallIso ? ` · last ${relativeDate(lastCallIso)}` : ''}
+            </p>
+            {/* Auto description */}
+            {about && (
+              <div className="flex items-start gap-1.5 mt-2.5">
+                <Sparkles className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" style={{ color: theme.primary }} />
+                <p className="text-[13px] leading-snug" style={{ color: theme.text }}>{about}</p>
+              </div>
+            )}
           </div>
         </div>
+      </div>
+
+      {/* Primary actions */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mb-5 sm:mb-6 fu fu1">
+        <a href={`tel:${contact.phone}`} className="flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+          <Phone className="h-4 w-4" /> Call
+        </a>
+        <a href={messagesHref} className="flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition" style={{ ...glass, color: theme.text }}>
+          <MessageSquare className="h-4 w-4" style={{ color: theme.primary }} /> Message
+        </a>
+        <a href={contact.email ? `mailto:${contact.email}` : messagesHref}
+          className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition ${contact.email ? '' : 'pointer-events-none opacity-40'} col-span-2 sm:col-span-1`}
+          style={{ ...glass, color: theme.textMuted }}>
+          <Mail className="h-4 w-4" /> Email
+        </a>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-4 sm:gap-5">
         {/* Main */}
         <div className="lg:col-span-2 space-y-4 sm:space-y-5">
 
-          {/* AI Summary */}
+          {/* Summary */}
           {contact.ai_summary && (
             <div className="rounded-2xl p-5 sm:p-6 fu fu2" style={glass}>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.1 : 0.06) }}>
-                  <MessageSquare className="h-5 w-5" style={{ color: theme.primary }} />
-                </div>
-                <h2 className="font-semibold text-sm sm:text-[15px] tracking-tight" style={{ color: theme.text }}>AI Call Summaries</h2>
+              <div className="flex items-center gap-2.5 mb-3">
+                <MessageSquare className="h-4 w-4" style={{ color: theme.primary }} />
+                <h2 className="font-semibold text-sm sm:text-[15px] tracking-tight" style={{ color: theme.text }}>Summary</h2>
               </div>
-              <div className="space-y-2.5">
-                {contact.ai_summary.split('\n\n').map((entry, i) => (
-                  <div key={i} className="rounded-xl p-3.5" style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.2)' : '#f9fafb', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.04)' : '#e5e7eb'}` }}>
-                    <p className="text-[13px] leading-relaxed" style={{ color: theme.textMuted }}>{entry}</p>
-                  </div>
+              <div className="space-y-2">
+                {contact.ai_summary.split('\n\n').filter(Boolean).map((entry, i) => (
+                  <p key={i} className="text-[13px] leading-relaxed pl-3" style={{ color: theme.textMuted, borderLeft: `2px solid ${hexToRgba(theme.primary, 0.3)}` }}>{entry}</p>
                 ))}
               </div>
             </div>
@@ -162,41 +238,48 @@ export default function ContactDetailPage() {
 
           {/* Call History */}
           <div className="rounded-2xl overflow-hidden fu fu2" style={glass}>
-            <div className="flex items-center justify-between px-5 sm:px-6 py-4 sm:py-5"
+            <div className="flex items-center justify-between px-5 sm:px-6 py-4"
               style={{ borderBottom: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}` }}>
-              <h2 className="font-semibold text-sm sm:text-[15px] tracking-tight" style={{ color: theme.text }}>Call History ({calls.length})</h2>
+              <h2 className="font-semibold text-sm sm:text-[15px] tracking-tight" style={{ color: theme.text }}>Call History</h2>
+              <span className="text-[11px] font-medium rounded-full px-2 py-0.5" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.12 : 0.08), color: theme.primary }}>{sortedCalls.length}</span>
             </div>
 
-            {calls.length === 0 ? (
+            {sortedCalls.length === 0 ? (
               <div className="py-14 text-center">
                 <PhoneCall className="h-8 w-8 mx-auto mb-3" style={{ color: theme.textMuted4 }} />
                 <p className="text-sm" style={{ color: theme.textMuted }}>No calls recorded yet</p>
               </div>
             ) : (
               <div>
-                {calls.map((call, idx) => {
-                  const urgColor = (call.urgency_level === 'high' || call.urgency_level === 'emergency') ? theme.error : call.urgency_level === 'medium' ? theme.warning : theme.primary;
-                  const urgBg = (call.urgency_level === 'high' || call.urgency_level === 'emergency') ? theme.errorBg : call.urgency_level === 'medium' ? theme.warningBg : hexToRgba(theme.primary, theme.isDark ? 0.1 : 0.06);
+                {sortedCalls.map((call, idx) => {
+                  const isSpam = call.is_spam || call.call_status === 'spam';
+                  const booked = !!call.appointment_booked;
+                  const transferred = call.transfer_status === 'transferred' || call.call_status === 'transferred';
+                  const high = call.urgency_level === 'high' || call.urgency_level === 'emergency';
+                  const urgColor = isSpam ? theme.error : high ? theme.error : call.urgency_level === 'medium' ? theme.warning : theme.primary;
+                  const urgBg = isSpam ? theme.errorBg : high ? theme.errorBg : call.urgency_level === 'medium' ? theme.warningBg : hexToRgba(theme.primary, theme.isDark ? 0.1 : 0.06);
+                  const LeadIcon = isSpam ? ShieldX : transferred ? PhoneForwarded : booked ? CalendarCheck : PhoneCall;
 
                   return (
                     <a key={call.id} href={`/client/calls/${call.id}`} className="block cr"
-                      style={{ borderBottom: idx < calls.length - 1 ? `1px solid ${theme.isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'}` : 'none' }}>
+                      style={{ borderBottom: idx < sortedCalls.length - 1 ? `1px solid ${theme.isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'}` : 'none' }}>
                       <div className="flex items-start gap-3 px-5 sm:px-6 py-4">
                         <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0 mt-0.5" style={{ backgroundColor: urgBg }}>
-                          <PhoneCall className="h-4 w-4" style={{ color: urgColor }} />
+                          <LeadIcon className="h-4 w-4" style={{ color: urgColor }} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2 mb-1">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <p className="text-[13px] font-medium truncate" style={{ color: theme.text }}>{call.service_requested || 'General inquiry'}</p>
-                              <span className="rounded-full px-2 py-[2px] text-[10px] font-semibold flex-shrink-0" style={{ backgroundColor: urgBg, color: urgColor }}>
-                                {call.urgency_level || 'normal'}
-                              </span>
-                            </div>
+                            <p className="text-[13px] font-medium truncate" style={{ color: theme.text }}>{isSpam ? 'Spam call' : (call.service_requested || 'General inquiry')}</p>
                             <div className="flex items-center gap-2 flex-shrink-0">
-                              {call.duration_seconds && <span className="text-[11px]" style={{ color: theme.textMuted4 }}>{formatDuration(call.duration_seconds)}</span>}
+                              {call.duration_seconds ? <span className="text-[11px]" style={{ color: theme.textMuted4 }}>{formatDuration(call.duration_seconds)}</span> : null}
                               <ChevronRight className="h-3.5 w-3.5" style={{ color: theme.textMuted4 }} />
                             </div>
+                          </div>
+                          {/* status chips */}
+                          <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+                            {booked && <span className="inline-flex items-center gap-1 rounded-full px-2 py-[2px] text-[10px] font-semibold" style={{ backgroundColor: theme.successBg, color: theme.successText || theme.success }}><CalendarCheck className="h-2.5 w-2.5" /> Booked</span>}
+                            {transferred && <span className="inline-flex items-center gap-1 rounded-full px-2 py-[2px] text-[10px] font-semibold" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.12 : 0.08), color: theme.primary }}><PhoneForwarded className="h-2.5 w-2.5" /> Transferred</span>}
+                            {!isSpam && (high || call.urgency_level === 'medium') && <span className="rounded-full px-2 py-[2px] text-[10px] font-semibold" style={{ backgroundColor: urgBg, color: urgColor }}>{call.urgency_level}</span>}
                           </div>
                           {call.ai_summary && <p className="text-xs leading-relaxed line-clamp-2" style={{ color: theme.textMuted }}>{call.ai_summary}</p>}
                           <p className="text-[10px] mt-1.5" style={{ color: theme.textMuted4 }}>
@@ -265,25 +348,9 @@ export default function ContactDetailPage() {
                 </div>
               </div>
             ) : (
-              <p className="text-[13px] leading-relaxed" style={{ color: contact.notes ? theme.textMuted : theme.textMuted4 }}>
+              <p className="text-[13px] leading-relaxed whitespace-pre-wrap" style={{ color: contact.notes ? theme.textMuted : theme.textMuted4 }}>
                 {contact.notes || 'No notes yet. Tap edit to add some.'}
               </p>
-            )}
-          </div>
-
-          {/* Actions */}
-          <div className="space-y-2.5 fu fu3">
-            <a href={`tel:${contact.phone}`}
-              className="flex items-center justify-center gap-2 w-full rounded-xl px-4 py-3 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]"
-              style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
-              <Phone className="h-4 w-4" /> Call {contact.name !== 'Unknown' ? contact.name.split(' ')[0] : 'Contact'}
-            </a>
-            {contact.email && (
-              <a href={`mailto:${contact.email}`}
-                className="flex items-center justify-center gap-2 w-full rounded-xl px-4 py-3 text-sm font-medium transition"
-                style={{ ...glass, color: theme.textMuted }}>
-                <Mail className="h-4 w-4" /> Send Email
-              </a>
             )}
           </div>
         </div>

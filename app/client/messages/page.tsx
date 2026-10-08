@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
-  MessageSquare, Search, Send, ArrowLeft, Loader2, Phone, Check, CheckCheck, Plus
+  MessageSquare, Search, Send, ArrowLeft, Loader2, Phone, Check, CheckCheck, Plus, Users
 } from 'lucide-react';
 import { useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
@@ -20,6 +20,8 @@ interface Message {
 }
 
 interface ProviderMessage { id: string; sender: 'agency' | 'client'; body: string; at: string; kind: 'sms' | 'thread'; }
+
+interface Contact { id: string; name: string | null; phone: string; email: string | null; total_calls: number | null; }
 
 // A single list row, customer SMS conversation or the pinned provider thread.
 type Active = { kind: 'customer'; conv: Conversation } | { kind: 'provider' } | null;
@@ -86,6 +88,11 @@ export default function MessagesPage() {
   const [composePhone, setComposePhone] = useState('');
   const [composeName, setComposeName] = useState('');
   const [composeHandled, setComposeHandled] = useState(false);
+  const [composeSearch, setComposeSearch] = useState('');
+
+  // ── Contacts (mini-CRM), used to put names on numbers and to pick a saved
+  //    contact when starting a new message ─────────────────────────────────
+  const [contacts, setContacts] = useState<Contact[]>([]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickRef = useRef(true);
@@ -141,7 +148,15 @@ export default function MessagesPage() {
     } catch {} finally { setMsgsLoading(false); }
   }, [client]);
 
-  useEffect(() => { if (client) { fetchConversations(); fetchProvider(); } }, [client, fetchConversations, fetchProvider]);
+  const fetchContacts = useCallback(async () => {
+    if (!client) return;
+    try {
+      const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/contacts?limit=500&sort=name`, { headers: { Authorization: `Bearer ${getToken()}` } });
+      if (r.ok) { const d = await r.json(); setContacts(d.contacts || []); }
+    } catch {}
+  }, [client]);
+
+  useEffect(() => { if (client) { fetchConversations(); fetchProvider(); fetchContacts(); } }, [client, fetchConversations, fetchProvider, fetchContacts]);
 
   // Poll the open thread + keep the list fresh.
   useEffect(() => {
@@ -219,12 +234,40 @@ export default function MessagesPage() {
 
   const digits = (p: string) => (p || '').replace(/\D/g, '');
 
+  // Map every saved contact's number (by last 10 digits) to its name, so a
+  // conversation that arrived without a caller_name still shows who it is.
+  const contactNameByPhone = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const c of contacts) {
+      const key = digits(c.phone).slice(-10);
+      if (key && c.name && c.name.trim()) m.set(key, c.name.trim());
+    }
+    return m;
+  }, [contacts]);
+
+  const nameForPhone = useCallback((phone: string) => {
+    const key = digits(phone).slice(-10);
+    return (key && contactNameByPhone.get(key)) || '';
+  }, [contactNameByPhone]);
+
+  // Contacts offered in the composer, filtered by its own search box.
+  const composeFilteredContacts = useMemo(() => {
+    const withPhone = contacts.filter(c => digits(c.phone).length >= 7);
+    const q = composeSearch.trim().toLowerCase();
+    if (!q) return withPhone;
+    const qd = digits(composeSearch);
+    return withPhone.filter(c =>
+      (c.name || '').toLowerCase().includes(q) || (qd.length >= 3 && digits(c.phone).includes(qd))
+    );
+  }, [contacts, composeSearch]);
+
   const openCompose = (to: string, name: string) => {
     if (!to) return;
     const target = digits(to).slice(-10);
     const existing = conversations.find(c => digits(c.caller_phone).slice(-10) === target);
     if (existing) { setActive({ kind: 'customer', conv: existing }); return; }
-    setActive({ kind: 'customer', conv: { id: '', client_id: client?.id || '', caller_phone: to, caller_name: name || null, last_message_at: '', last_message_preview: null, last_direction: '', unread_count: 0, is_archived: false, created_at: '' } });
+    const resolvedName = name || nameForPhone(to) || null;
+    setActive({ kind: 'customer', conv: { id: '', client_id: client?.id || '', caller_phone: to, caller_name: resolvedName, last_message_at: '', last_message_preview: null, last_direction: '', unread_count: 0, is_archived: false, created_at: '' } });
     setMessages([]);
   };
 
@@ -238,10 +281,14 @@ export default function MessagesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [client, convsLoading, composeHandled]);
 
+  // Display name for a customer conversation: the name on the thread, else the
+  // matching saved contact, else the formatted number.
+  const convName = (c: Conversation) => c.caller_name || nameForPhone(c.caller_phone) || formatPhone(c.caller_phone);
+
   const filteredConvs = conversations.filter(c => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
-    return (c.caller_name?.toLowerCase().includes(q) || (c.caller_phone || '').includes(q) || c.last_message_preview?.toLowerCase().includes(q));
+    return (convName(c).toLowerCase().includes(q) || (c.caller_phone || '').includes(q) || c.last_message_preview?.toLowerCase().includes(q));
   });
 
   const glass = { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.8)', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`, backdropFilter: theme.isDark ? 'blur(20px)' : 'blur(12px)' };
@@ -267,7 +314,7 @@ export default function MessagesPage() {
         <div className={`${showThread ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:w-96 lg:border-r min-h-0`} style={{ borderColor: hairline }}>
           <div className="px-4 pt-4 pb-2 flex items-center justify-between">
             <h1 className="text-xl font-semibold" style={{ color: theme.text }}>Messages</h1>
-            <button onClick={() => { setComposePhone(''); setComposeName(''); setShowCompose(true); }} className="flex items-center justify-center h-9 w-9 rounded-full transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: '#fff' }} title="New message">
+            <button onClick={() => { setComposePhone(''); setComposeName(''); setComposeSearch(''); setShowCompose(true); }} className="flex items-center justify-center h-9 w-9 rounded-full transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: '#fff' }} title="New message">
               <Plus className="h-4 w-4" />
             </button>
           </div>
@@ -319,10 +366,10 @@ export default function MessagesPage() {
                 <button key={conv.id || conv.caller_phone} onClick={() => setActive({ kind: 'customer', conv })}
                   className="w-full text-left px-4 py-3 flex items-center gap-3 transition-colors"
                   style={{ backgroundColor: active?.kind === 'customer' && active.conv.id === conv.id ? hexToRgba(primaryColor, theme.isDark ? 0.08 : 0.04) : 'transparent', borderBottom: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)'}` }}>
-                  <Avatar name={conv.caller_name || conv.caller_phone} logo={null} size={44} />
+                  <Avatar name={convName(conv)} logo={null} size={44} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-medium truncate" style={{ color: theme.text }}>{conv.caller_name || formatPhone(conv.caller_phone)}</span>
+                      <span className="text-sm font-medium truncate" style={{ color: theme.text }}>{convName(conv)}</span>
                       <span className="text-[10px] flex-shrink-0" style={{ color: theme.textMuted4 }}>{formatTime(conv.last_message_at)}</span>
                     </div>
                     <div className="flex items-center justify-between gap-2 mt-0.5">
@@ -345,7 +392,7 @@ export default function MessagesPage() {
               <div className="text-center px-6">
                 <MessageSquare className="h-12 w-12 mx-auto mb-3" style={{ color: theme.textMuted4 }} />
                 <p className="text-sm font-medium" style={{ color: theme.textMuted }}>Select a conversation</p>
-                <p className="text-xs mt-1" style={{ color: theme.textMuted4 }}>Your provider and your customers are all here</p>
+                <p className="text-xs mt-1" style={{ color: theme.textMuted4 }}>All your conversations, in one place</p>
               </div>
             </div>
           ) : active.kind === 'provider' ? (
@@ -355,7 +402,7 @@ export default function MessagesPage() {
                 <Avatar name={agencyName} logo={agencyLogo} size={36} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold truncate" style={{ color: theme.text }}>{agencyName}</p>
-                  <p className="text-[11px]" style={{ color: theme.textMuted4 }}>Your provider</p>
+                  <p className="text-[11px]" style={{ color: theme.textMuted4 }}>Account &amp; support</p>
                 </div>
               </div>
 
@@ -398,11 +445,18 @@ export default function MessagesPage() {
             <>
               <div className="px-4 py-3 flex items-center gap-3" style={{ borderBottom: `1px solid ${hairline}` }}>
                 <button onClick={() => setActive(null)} className="lg:hidden p-1" style={{ color: theme.textMuted }}><ArrowLeft className="h-5 w-5" /></button>
-                <Avatar name={active.conv.caller_name || active.conv.caller_phone} logo={null} size={36} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate" style={{ color: theme.text }}>{active.conv.caller_name || formatPhone(active.conv.caller_phone)}</p>
-                  <p className="text-[11px]" style={{ color: theme.textMuted4 }}>{formatPhone(active.conv.caller_phone)}</p>
-                </div>
+                {(() => {
+                  const resolved = active.conv.caller_name || nameForPhone(active.conv.caller_phone);
+                  return (
+                    <>
+                      <Avatar name={resolved || active.conv.caller_phone} logo={null} size={36} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold truncate" style={{ color: theme.text }}>{resolved || formatPhone(active.conv.caller_phone)}</p>
+                        {resolved && <p className="text-[11px]" style={{ color: theme.textMuted4 }}>{formatPhone(active.conv.caller_phone)}</p>}
+                      </div>
+                    </>
+                  );
+                })()}
                 <a href={`tel:${active.conv.caller_phone}`} className="p-2 rounded-xl transition hover:opacity-80" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.1 : 0.06), color: primaryColor }}><Phone className="h-4 w-4" /></a>
               </div>
 
@@ -456,18 +510,45 @@ export default function MessagesPage() {
               <Avatar name={agencyName} logo={agencyLogo} size={36} />
               <div className="text-left min-w-0">
                 <p className="text-sm font-medium truncate" style={{ color: theme.text }}>{agencyName}</p>
-                <p className="text-[10px]" style={{ color: theme.textMuted4 }}>Your provider</p>
+                <p className="text-[10px]" style={{ color: theme.textMuted4 }}>Account &amp; support</p>
               </div>
             </button>
-            <div className="text-[10px] uppercase tracking-wide mb-2" style={{ color: theme.textMuted4 }}>Or text a customer</div>
-            <label className="text-[10px] uppercase tracking-wide" style={{ color: theme.textMuted4 }}>Phone number</label>
-            <input value={composePhone} onChange={(e) => setComposePhone(e.target.value)} placeholder="+1 555 123 4567" className="w-full mt-1 mb-3 px-3 py-2 rounded-xl text-sm focus:outline-none" style={{ ...glass, color: theme.text }} />
-            <label className="text-[10px] uppercase tracking-wide" style={{ color: theme.textMuted4 }}>Name (optional)</label>
-            <input value={composeName} onChange={(e) => setComposeName(e.target.value)} placeholder="Contact name" className="w-full mt-1 mb-4 px-3 py-2 rounded-xl text-sm focus:outline-none" style={{ ...glass, color: theme.text }} />
+            <div className="text-[10px] uppercase tracking-wide mb-2" style={{ color: theme.textMuted4 }}>Text a contact</div>
+            <div className="relative mb-2">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: theme.textMuted4 }} />
+              <input value={composeSearch} onChange={(e) => setComposeSearch(e.target.value)} placeholder="Search contacts" className="w-full pl-9 pr-3 py-2 rounded-xl text-sm focus:outline-none" style={{ ...glass, color: theme.text }} />
+            </div>
+            <div className="max-h-52 overflow-y-auto -mx-1 px-1 mb-3">
+              {contacts.length === 0 ? (
+                <div className="flex flex-col items-center text-center py-6 px-2">
+                  <Users className="h-6 w-6 mb-2" style={{ color: theme.textMuted4, opacity: 0.5 }} />
+                  <p className="text-[11px]" style={{ color: theme.textMuted4 }}>No saved contacts yet. Enter a number below to text anyone.</p>
+                </div>
+              ) : composeFilteredContacts.length === 0 ? (
+                <p className="text-[11px] text-center py-6" style={{ color: theme.textMuted4 }}>No contacts match &ldquo;{composeSearch}&rdquo;.</p>
+              ) : (
+                composeFilteredContacts.map(c => (
+                  <button key={c.id} onClick={() => { openCompose(c.phone, c.name || ''); setShowCompose(false); }}
+                    className="w-full flex items-center gap-3 p-2 rounded-xl transition hover:opacity-90 text-left"
+                    style={{ backgroundColor: 'transparent' }}>
+                    <Avatar name={c.name || c.phone} logo={null} size={34} />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate" style={{ color: theme.text }}>{c.name || formatPhone(c.phone)}</p>
+                      <p className="text-[11px] truncate" style={{ color: theme.textMuted4 }}>{formatPhone(c.phone)}{c.total_calls ? ` · ${c.total_calls} call${c.total_calls === 1 ? '' : 's'}` : ''}</p>
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+
+            <div className="text-[10px] uppercase tracking-wide mb-2 pt-1" style={{ color: theme.textMuted4, borderTop: `1px solid ${hairline}` }}>Or enter a number</div>
+            <div className="flex gap-2 mb-3">
+              <input value={composePhone} onChange={(e) => setComposePhone(e.target.value)} placeholder="+1 555 123 4567" className="flex-1 min-w-0 px-3 py-2 rounded-xl text-sm focus:outline-none" style={{ ...glass, color: theme.text }} />
+              <input value={composeName} onChange={(e) => setComposeName(e.target.value)} placeholder="Name (optional)" className="flex-1 min-w-0 px-3 py-2 rounded-xl text-sm focus:outline-none" style={{ ...glass, color: theme.text }} />
+            </div>
             <button onClick={() => { if (composePhone.trim()) { openCompose(composePhone.trim(), composeName.trim()); setShowCompose(false); } }} disabled={!composePhone.trim()} className="w-full py-2.5 rounded-xl text-sm font-semibold transition" style={{ backgroundColor: theme.primary, color: '#fff', opacity: composePhone.trim() ? 1 : 0.5 }}>
               Start conversation
             </button>
-            <p className="text-[10px] mt-2 text-center" style={{ color: theme.textMuted4 }}>To text an existing contact, open Contacts and tap the message icon.</p>
           </div>
         </div>
       )}
