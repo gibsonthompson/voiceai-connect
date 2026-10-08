@@ -83,7 +83,11 @@ function parseAiKnowledge(content: string | null): AiKnowledge | null {
   return { facts, sections: filled };
 }
 
-const ANIM_CSS = `@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}.fu{animation:fadeUp .45s ease-out both}.fu1{animation-delay:40ms}.fu2{animation-delay:80ms}.fu3{animation-delay:120ms}.fu4{animation-delay:160ms}.fu5{animation-delay:200ms}`;
+const ANIM_CSS = `@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}.fu{animation:fadeUp .45s ease-out both}.fu1{animation-delay:40ms}.fu2{animation-delay:80ms}.fu3{animation-delay:120ms}.fu4{animation-delay:160ms}.fu5{animation-delay:200ms}@keyframes kbScan{0%{transform:translateX(-120%)}100%{transform:translateX(320%)}}.kb-scan-bar{width:38%;animation:kbScan 1.4s ease-in-out infinite}@keyframes kbStepIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}.kb-step{animation:kbStepIn .35s ease-out}`;
+
+// Steps shown in the website-scan loading panel. Purely cosmetic: they cycle on
+// a timer to make the multi-second scrape feel alive and show what it's doing.
+const SCAN_STEPS = ['Finding your pages', 'Reading your services and prices', 'Learning your hours and areas', 'Picking up common questions', 'Teaching your AI'];
 
 // Hoisted to module scope so they keep a stable identity across renders. When
 // these were defined inside the component, every keystroke gave them a new
@@ -107,6 +111,7 @@ export default function MyBusinessPage() {
   const primaryColor = theme.primary;
 
   const [message, setMessage] = useState('');
+  const [messageIsError, setMessageIsError] = useState(false);
 
   const [editingName, setEditingName] = useState(false);
   const [nameValue, setNameValue] = useState('');
@@ -129,6 +134,7 @@ export default function MyBusinessPage() {
   const [kbLoading, setKbLoading] = useState(false);
   const [savingKB, setSavingKB] = useState(false);
   const [learningKB, setLearningKB] = useState(false);
+  const [scanStep, setScanStep] = useState(0);
   const [kbLastUpdated, setKbLastUpdated] = useState<string | null>(null);
   const [website, setWebsite] = useState('');
   const [faqs, setFaqs] = useState<FAQ[]>([{ id: '1', question: '', answer: '' }]);
@@ -143,6 +149,7 @@ export default function MyBusinessPage() {
   // Website-scraped suggestions for service areas + hours ("Found on your website").
   const [areaSuggestions, setAreaSuggestions] = useState<string[]>([]);
   const [hoursSuggestion, setHoursSuggestion] = useState<BusinessHours | null>(null);
+  const [faqSuggestions, setFaqSuggestions] = useState<{ question: string; answer: string }[]>([]);
   const [savingAreas, setSavingAreas] = useState(false);
 
   // Read-only "What Your AI Knows" view: the assembled KB document the AI
@@ -165,11 +172,18 @@ export default function MyBusinessPage() {
     }
   }, [client]);
 
+  // Cycle the scan-step label while a website scrape runs.
+  useEffect(() => {
+    if (!learningKB) { setScanStep(0); return; }
+    const t = setInterval(() => setScanStep(s => (s + 1) % SCAN_STEPS.length), 1600);
+    return () => clearInterval(t);
+  }, [learningKB]);
+
   const fetchScrapeSuggestions = async () => {
     if (!client) return;
     try {
       const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/scrape-suggestions`, { headers: { Authorization: `Bearer ${getAuthToken()}` } });
-      if (r.ok) { const d = await r.json(); setAreaSuggestions(Array.isArray(d.areas) ? d.areas : []); setHoursSuggestion(d.hours || null); }
+      if (r.ok) { const d = await r.json(); setAreaSuggestions(Array.isArray(d.areas) ? d.areas : []); setHoursSuggestion(d.hours || null); setFaqSuggestions(Array.isArray(d.faqs) ? d.faqs : []); }
     } catch {}
   };
 
@@ -190,6 +204,25 @@ export default function MyBusinessPage() {
   const applyHoursSuggestion = () => {
     if (hoursSuggestion) { setBusinessHours(hoursSuggestion); setHoursExpanded(true); }
     dismissHoursSuggestion();
+  };
+
+  const dismissFaqSuggestion = async (question: string) => {
+    setFaqSuggestions(prev => prev.filter(f => f.question !== question));
+    try { await fetch(`${getBackendUrl()}/api/client/${client!.id}/scrape-suggestions/dismiss`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` }, body: JSON.stringify({ type: 'faq', name: question }) }); } catch {}
+  };
+  // Add a found FAQ into the editable FAQ list below (dropping the empty starter
+  // row and skipping an exact-question duplicate), open the editor so the client
+  // sees it, and nudge them to save. Mirrors the "Use these hours" flow: fill the
+  // editor, let them review, then Save writes it to the AI.
+  const addFaqSuggestion = (sugg: { question: string; answer: string }) => {
+    setFaqs(prev => {
+      const cleaned = prev.filter(f => f.question.trim() || f.answer.trim());
+      if (cleaned.some(f => f.question.trim().toLowerCase() === sugg.question.trim().toLowerCase())) return cleaned.length ? cleaned : prev;
+      return [...cleaned, { id: Date.now().toString(), question: sugg.question, answer: sugg.answer }];
+    });
+    setKbExpanded(true);
+    dismissFaqSuggestion(sugg.question);
+    showMsg('Added to your FAQs below. Review and press Update Knowledge Base to save.');
   };
 
   const fetchAiKnowledge = async () => {
@@ -267,7 +300,7 @@ export default function MyBusinessPage() {
   const formatFAQs = (): string => faqs.filter(f => f.question.trim() && f.answer.trim()).map(f => `Q: ${f.question}\nA: ${f.answer}`).join('\n\n');
   const formatBusinessHoursForSave = (): string => ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].map(d => { const day = businessHours[d as keyof BusinessHours]; return day.closed ? `${d.charAt(0).toUpperCase() + d.slice(1)}: Closed` : `${d.charAt(0).toUpperCase() + d.slice(1)}: ${day.open} - ${day.close}`; }).join('\n');
 
-  const showMsg = (text: string, isError = false) => { setMessage(isError ? `❌ ${text}` : `✅ ${text}`); setTimeout(() => setMessage(''), 3000); };
+  const showMsg = (text: string, isError = false) => { setMessage(text); setMessageIsError(isError); setTimeout(() => setMessage(''), 3000); };
   const scrollToKb = () => document.getElementById('kb-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   // The AI checks the structured business_hours JSONB, not the KB text, so the
@@ -317,7 +350,7 @@ export default function MyBusinessPage() {
     try {
       const r = await fetch(`${getBackendUrl()}/api/knowledge-base/update`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` }, body: JSON.stringify({ clientId: client.id, websiteUrl: website, businessHours: formatBusinessHoursForSave(), services: existingServicesText, faqs: formatFAQs(), additionalInfo }) });
       const d = await r.json();
-      if (d.success) { setKbLastUpdated(new Date().toISOString()); showMsg('Knowledge base updated!'); await fetchKnowledgeBase(); } else showMsg(d.error || 'Failed', true);
+      if (d.success) { setKbLastUpdated(new Date().toISOString()); showMsg('Knowledge base updated!'); await Promise.all([fetchKnowledgeBase(), fetchAiKnowledge(), fetchScrapeSuggestions()]); } else showMsg(d.error || 'Failed', true);
     } catch { showMsg('Error', true); }
     finally { setSavingKB(false); }
   };
@@ -332,7 +365,7 @@ export default function MyBusinessPage() {
     try {
       const r = await fetch(`${getBackendUrl()}/api/knowledge-base/update`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` }, body: JSON.stringify({ clientId: client.id, websiteUrl: website, businessHours: formatBusinessHoursForSave(), services: existingServicesText, faqs: formatFAQs(), additionalInfo, scrapeWebsite: true }) });
       const d = await r.json();
-      if (d.success) { setKbLastUpdated(new Date().toISOString()); showMsg('Learned from your website! Your AI now knows what is on it.'); await fetchKnowledgeBase(); } else showMsg(d.error || 'Could not read that website.', true);
+      if (d.success) { setKbLastUpdated(new Date().toISOString()); showMsg('Learned from your website! Your AI now knows what is on it.'); await Promise.all([fetchKnowledgeBase(), fetchAiKnowledge(), fetchScrapeSuggestions()]); } else showMsg(d.error || 'Could not read that website.', true);
     } catch { showMsg('Something went wrong reading that website.', true); }
     finally { setLearningKB(false); }
   };
@@ -371,6 +404,9 @@ export default function MyBusinessPage() {
     return days.map(d => { const day = businessHours[d as keyof BusinessHours]; const n = d.charAt(0).toUpperCase() + d.slice(1,3); return day.closed ? `${n}: Closed` : `${n}: ${day.open.replace(' ','')}-${day.close.replace(' ','')}`; });
   };
 
+  const fmtDayHours = (d: { open: string; close: string; closed: boolean }) => d.closed ? 'Closed' : `${d.open.replace(' ', '')} - ${d.close.replace(' ', '')}`;
+  const DAY_KEYS: (keyof BusinessHours)[] = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+
   const glass = { backgroundColor: theme.card, border: `1px solid ${theme.border}` };
   const inputStyle = { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#ffffff', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`, color: theme.text };
   const dropdownUi = { inputStyle, text: theme.text, muted: theme.textMuted4, panelBg: theme.isDark ? '#232321' : '#ffffff', panelBorder: theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb', hover: theme.isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6', accent: primaryColor, isDark: theme.isDark };
@@ -384,7 +420,7 @@ export default function MyBusinessPage() {
     <div className="p-4 sm:p-6 lg:p-8 pb-24 min-h-screen" style={{ backgroundColor: theme.bg }}>
       <style dangerouslySetInnerHTML={{ __html: ANIM_CSS }} />
 
-      <Toast message={message} isError={!message.includes('✅')} style={message.includes('✅') ? { backgroundColor: theme.successBg, color: theme.successText, border: `1px solid ${theme.successBorder}` } : { backgroundColor: theme.errorBg, color: theme.errorText, border: `1px solid ${theme.errorBorder}` }} />
+      <Toast message={message} isError={messageIsError} style={!messageIsError ? { backgroundColor: theme.successBg, color: theme.successText, border: `1px solid ${theme.successBorder}` } : { backgroundColor: theme.errorBg, color: theme.errorText, border: `1px solid ${theme.errorBorder}` }} />
 
       {/* Hero */}
       <div className="mb-5 sm:mb-7 text-center fu fu1">
@@ -501,8 +537,25 @@ export default function MyBusinessPage() {
                 <Globe className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: primaryColor }} />
                 <div className="flex-1 min-w-0">
                   <p className="text-[12px] font-semibold" style={{ color: primaryColor }}>Found hours on your website</p>
-                  <p className="text-[10px] mt-0.5 leading-relaxed" style={{ color: theme.textMuted }}>We pulled opening hours from your site. Use them to fill the editor below, then review and save.</p>
-                  <div className="flex items-center gap-2 mt-2">
+                  <p className="text-[10px] mt-0.5 leading-relaxed" style={{ color: theme.textMuted }}>Here is what we found. Days that differ from your current hours are highlighted. Use these to fill the editor, then review and save.</p>
+                  <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                    {DAY_KEYS.map((day, idx) => {
+                      const prop = hoursSuggestion[day];
+                      const cur = businessHours[day];
+                      const changed = prop.closed !== cur.closed || (!prop.closed && (prop.open !== cur.open || prop.close !== cur.close));
+                      return (
+                        <div key={day} className={`flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 ${idx === DAY_KEYS.length - 1 ? 'sm:col-span-2' : ''}`}
+                          style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#ffffff', border: `1px solid ${changed ? hexToRgba(primaryColor, 0.35) : (theme.isDark ? 'rgba(255,255,255,0.06)' : '#eef0f2')}` }}>
+                          <span className="text-[11px] font-medium" style={{ color: theme.text }}>{day.charAt(0).toUpperCase() + day.slice(1, 3)}</span>
+                          <span className="text-[11px] text-right leading-tight" style={{ color: changed ? primaryColor : theme.textMuted }}>
+                            {fmtDayHours(prop)}
+                            {changed && <span className="block text-[9px]" style={{ color: theme.textMuted4 }}>now {fmtDayHours(cur)}</span>}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="flex items-center gap-2 mt-2.5">
                     <button onClick={applyHoursSuggestion} className="px-3 py-1.5 rounded-lg text-[11px] font-semibold transition hover:opacity-90" style={{ backgroundColor: primaryColor, color: theme.buttonText || '#fff' }}>Use these hours</button>
                     <button onClick={dismissHoursSuggestion} className="px-3 py-1.5 rounded-lg text-[11px] font-medium transition hover:opacity-70" style={{ color: theme.textMuted }}>Dismiss</button>
                   </div>
@@ -608,8 +661,11 @@ export default function MyBusinessPage() {
         <div id="kb-section" className="fu fu4">
           <SectionCard theme={theme} primaryColor={primaryColor} icon={BookOpen} title="Knowledge Base" subtitle="Additional info your AI references on calls">
             <div onClick={() => setKbExpanded(!kbExpanded)} className="flex items-center justify-between cursor-pointer group">
-              <div className="text-[13px]" style={{ color: theme.textMuted }}>
-                {kbLoading ? 'Loading...' : `${faqs.filter(f => f.question.trim()).length} FAQs · ${additionalInfo ? 'Has additional info' : 'No additional info'}`}
+              <div className="flex items-center gap-2 text-[13px] min-w-0" style={{ color: theme.textMuted }}>
+                <span className="truncate">{kbLoading ? 'Loading...' : `${faqs.filter(f => f.question.trim()).length} FAQs · ${additionalInfo ? 'Has additional info' : 'No additional info'}`}</span>
+                {!kbExpanded && faqSuggestions.length > 0 && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.14 : 0.08), color: primaryColor }}><Globe className="w-3 h-3" /> {faqSuggestions.length} found on your website</span>
+                )}
               </div>
               <button className="flex items-center gap-1 text-[13px] font-medium" style={{ color: primaryColor }}>
                 {kbExpanded ? 'Hide' : 'Edit'} <ChevronDown className={`w-3.5 h-3.5 transition-transform ${kbExpanded ? 'rotate-180' : ''}`} />
@@ -623,12 +679,51 @@ export default function MyBusinessPage() {
                   <button onClick={handleLearnFromWebsite} disabled={learningKB || !website.trim()} className="mt-2 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold transition disabled:opacity-50" style={{ backgroundColor: primaryColor, color: theme.buttonText || '#fff' }}>
                     {learningKB ? <><Loader2 className="w-4 h-4 animate-spin" /> Reading your website...</> : <><Sparkles className="w-4 h-4" /> Learn from my website</>}
                   </button>
-                  <p className="mt-1.5 text-[11px] leading-relaxed" style={{ color: theme.textMuted }}>
-                    Reads your site and teaches your AI what is on it (hours, services, prices, your story). Do this whenever your site changes. Takes a few seconds.
-                  </p>
+                  {learningKB ? (
+                    <div className="mt-3 rounded-xl p-4 relative overflow-hidden" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.08 : 0.05), border: `1px solid ${hexToRgba(primaryColor, theme.isDark ? 0.2 : 0.14)}` }}>
+                      <div className="flex items-center gap-3">
+                        <div className="relative w-9 h-9 flex items-center justify-center flex-shrink-0">
+                          <span className="absolute inset-0 rounded-full animate-ping" style={{ backgroundColor: hexToRgba(primaryColor, 0.25) }} />
+                          <span className="absolute inset-0 rounded-full" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.15 : 0.1) }} />
+                          <Globe className="w-5 h-5 relative" style={{ color: primaryColor }} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[13px] font-semibold" style={{ color: theme.text }}>Reading your website</p>
+                          <p key={scanStep} className="kb-step text-[11px] mt-0.5" style={{ color: theme.textMuted }}>{SCAN_STEPS[scanStep]}...</p>
+                        </div>
+                      </div>
+                      <div className="mt-3 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.15 : 0.1) }}>
+                        <div className="h-full rounded-full kb-scan-bar" style={{ backgroundColor: primaryColor }} />
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="mt-1.5 text-[11px] leading-relaxed" style={{ color: theme.textMuted }}>
+                      Reads your site and teaches your AI what is on it (hours, services, prices, your story). Do this whenever your site changes. Takes a few seconds.
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="flex items-center gap-2 text-[13px] font-medium mb-2" style={{ color: theme.text }}><HelpCircle className="w-4 h-4" style={{ color: primaryColor }} /> FAQs</label>
+                  {faqSuggestions.length > 0 && (
+                    <div className="mb-3 rounded-xl p-3" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.06 : 0.04), border: `1px solid ${hexToRgba(primaryColor, theme.isDark ? 0.15 : 0.12)}` }}>
+                      <div className="flex items-center gap-1.5 mb-1.5"><Globe className="w-3.5 h-3.5" style={{ color: primaryColor }} /><span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: primaryColor }}>Found on your website</span></div>
+                      <p className="text-[10px] mb-2.5 leading-relaxed" style={{ color: theme.textMuted }}>Common questions we spotted on your site. Add the ones you want your AI to answer, then save.</p>
+                      <div className="space-y-2">
+                        {faqSuggestions.map((f, i) => (
+                          <div key={`${f.question}-${i}`} className="rounded-lg p-2.5" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#ffffff', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}` }}>
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="text-[12px] font-medium flex-1 min-w-0" style={{ color: theme.text }}>{f.question}</p>
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                <button onClick={() => addFaqSuggestion(f)} title="Add this FAQ" className="inline-flex items-center justify-center w-6 h-6 rounded-full transition hover:opacity-90" style={{ backgroundColor: primaryColor, color: theme.buttonText || '#fff' }}><Plus className="w-3.5 h-3.5" /></button>
+                                <button onClick={() => dismissFaqSuggestion(f.question)} title="Dismiss" className="inline-flex items-center justify-center w-5 h-5 rounded-full transition hover:opacity-70" style={{ color: theme.textMuted }}><X className="w-3 h-3" /></button>
+                              </div>
+                            </div>
+                            <p className="text-[11px] mt-1 leading-relaxed" style={{ color: theme.textMuted }}>{f.answer}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <div className="space-y-2">
                     {faqs.map(f => (
                       <div key={f.id} className="p-3 rounded-xl space-y-2" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb' }}>
