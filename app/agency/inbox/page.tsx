@@ -203,11 +203,20 @@ export default function AgencyInboxPage() {
   const convoTitle = (c: Conversation) => c.name || (c.phone ? formatPhone(c.phone) : 'Conversation');
   const avatarInitial = (c: Conversation) => c.type === 'platform' ? 'V' : (convoTitle(c).charAt(0).toUpperCase() || '?');
 
-  const Avatar = ({ c, size }: { c: Conversation; size: number }) => (
-    <div className="rounded-full flex items-center justify-center flex-shrink-0 font-semibold" style={{ width: size, height: size, fontSize: size * 0.4, backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.14 : 0.1), color: primaryColor }}>
-      {c.type === 'platform' ? <Sparkles style={{ width: size * 0.5, height: size * 0.5 }} /> : c.type === 'sms' ? <Hash style={{ width: size * 0.5, height: size * 0.5 }} /> : avatarInitial(c)}
-    </div>
-  );
+  const Avatar = ({ c, size }: { c: Conversation; size: number }) => {
+    if (c.type === 'platform') {
+      return (
+        <div className="rounded-full overflow-hidden flex items-center justify-center flex-shrink-0" style={{ width: size, height: size, backgroundColor: theme.isDark ? 'rgba(255,255,255,0.08)' : '#ffffff', border: `1px solid ${hairline}` }}>
+          <img src="/icon-192x192.png" alt="VoiceAI Connect" className="object-contain" style={{ width: Math.round(size * 0.68), height: Math.round(size * 0.68) }} />
+        </div>
+      );
+    }
+    return (
+      <div className="rounded-full flex items-center justify-center flex-shrink-0 font-semibold" style={{ width: size, height: size, fontSize: size * 0.4, backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.14 : 0.1), color: primaryColor }}>
+        {c.type === 'sms' ? <Hash style={{ width: size * 0.5, height: size * 0.5 }} /> : avatarInitial(c)}
+      </div>
+    );
+  };
 
   const filtered = conversations.filter(c => {
     if (!search) return true;
@@ -225,7 +234,7 @@ export default function AgencyInboxPage() {
   const showThread = !!active;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)]" style={{ backgroundColor: theme.bg }}>
+    <div className="flex flex-col" style={{ backgroundColor: theme.bg, zoom: 1.2, height: 'calc((100vh - 64px) / 1.2)' }}>
       <div className="flex flex-1 min-h-0">
 
         {/* List */}
@@ -349,7 +358,7 @@ export default function AgencyInboxPage() {
             {composeMode === 'root' && (
               <div className="space-y-2">
                 <button onClick={startPlatform} className="w-full flex items-center gap-3 p-2.5 rounded-xl transition hover:opacity-90" style={{ border: `1px solid ${hairline}` }}>
-                  <div className="h-9 w-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, 0.12), color: primaryColor }}><Sparkles className="h-4 w-4" /></div>
+                  <div className="h-9 w-9 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.08)' : '#ffffff', border: `1px solid ${hairline}` }}><img src="/icon-192x192.png" alt="VoiceAI Connect" className="object-contain" style={{ width: 24, height: 24 }} /></div>
                   <div className="text-left"><p className="text-sm font-medium" style={{ color: theme.text }}>VoiceAI Connect</p><p className="text-[10px]" style={{ color: textMuted2 }}>Message platform support</p></div>
                 </button>
                 <button onClick={() => { setComposeMode('client'); loadClients(); }} className="w-full flex items-center gap-3 p-2.5 rounded-xl transition hover:opacity-90" style={{ border: `1px solid ${hairline}` }}>
