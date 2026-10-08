@@ -256,7 +256,17 @@ export default function ClientAIAgentPage() {
   const showMessage = (text: string, isError = false) => { setMessage(text); setMessageError(isError); setTimeout(() => setMessage(''), 5000); };
 
   const getAllVoices = (): VoiceOption[] => [...(voices.female || []), ...(voices.male || [])];
-  const getAvailableAccents = (): string[] => [...new Set(getAllVoices().map(v => v.accent))].sort();
+  // Fixed accent order (American, British, Australian), then any others A-Z.
+  const getAvailableAccents = (): string[] => {
+    const order = ['American', 'British', 'Australian'];
+    return [...new Set(getAllVoices().map(v => v.accent).filter(Boolean))].sort((a, b) => {
+      const ia = order.indexOf(a), ib = order.indexOf(b);
+      if (ia !== -1 && ib !== -1) return ia - ib;
+      if (ia !== -1) return -1;
+      if (ib !== -1) return 1;
+      return a.localeCompare(b);
+    });
+  };
   const getFilteredVoices = () => { let f: VoiceOption[]; if (voiceFilter === 'female') f = voices.female || []; else if (voiceFilter === 'male') f = voices.male || []; else f = getAllVoices(); if (accentFilter !== 'all') f = f.filter(v => v.accent === accentFilter); return f; };
 
   // Always show a voice as selected. If the client hasn't saved one yet, default
@@ -412,7 +422,7 @@ export default function ClientAIAgentPage() {
               )}
               {!voicesLoading && !voicesError && totalVoices > 0 && (<>
                 <div className="flex gap-1.5 mb-3">
-                  {(['all','female','male'] as const).map(f => (
+                  {(['female','male','all'] as const).map(f => (
                     <button key={f} onClick={() => setVoiceFilter(f)} className="px-3 py-1.5 rounded-xl text-[11px] font-semibold transition"
                       style={{ backgroundColor: voiceFilter === f ? primaryColor : theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6', color: voiceFilter === f ? theme.primaryText : theme.textMuted }}>
                       {f === 'all' ? `All (${totalVoices})` : f.charAt(0).toUpperCase() + f.slice(1)}
@@ -421,16 +431,16 @@ export default function ClientAIAgentPage() {
                 </div>
                 {availableAccents.length > 1 && (
                   <div className="flex flex-wrap gap-1.5 mb-4">
-                    <button onClick={() => setAccentFilter('all')} className="px-2.5 py-1 rounded-lg text-[11px] font-medium flex items-center gap-1 transition"
-                      style={{ backgroundColor: accentFilter === 'all' ? hexToRgba(primaryColor, 0.12) : 'transparent', color: accentFilter === 'all' ? primaryColor : theme.textMuted, border: `1px solid ${accentFilter === 'all' ? hexToRgba(primaryColor, 0.25) : 'transparent'}` }}>
-                      🌍 All
-                    </button>
                     {availableAccents.map(a => { const flag = a === 'British' ? '🇬🇧' : a === 'American' ? '🇺🇸' : a === 'Australian' ? '🇦🇺' : '🌍'; return (
                       <button key={a} onClick={() => setAccentFilter(a)} className="px-2.5 py-1 rounded-lg text-[11px] font-medium flex items-center gap-1 transition"
                         style={{ backgroundColor: accentFilter === a ? hexToRgba(primaryColor, 0.12) : 'transparent', color: accentFilter === a ? primaryColor : theme.textMuted, border: `1px solid ${accentFilter === a ? hexToRgba(primaryColor, 0.25) : 'transparent'}` }}>
                         {flag} {a}
                       </button>
                     ); })}
+                    <button onClick={() => setAccentFilter('all')} className="px-2.5 py-1 rounded-lg text-[11px] font-medium flex items-center gap-1 transition"
+                      style={{ backgroundColor: accentFilter === 'all' ? hexToRgba(primaryColor, 0.12) : 'transparent', color: accentFilter === 'all' ? primaryColor : theme.textMuted, border: `1px solid ${accentFilter === 'all' ? hexToRgba(primaryColor, 0.25) : 'transparent'}` }}>
+                      🌍 All
+                    </button>
                   </div>
                 )}
                 {filteredVoices.length > 0 ? (
