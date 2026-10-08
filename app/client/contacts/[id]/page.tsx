@@ -97,35 +97,83 @@ export default function ContactDetailPage() {
     [calls]
   );
 
-  // Auto "about this contact" line so the client knows who this is at a glance.
-  const about = useMemo(() => {
-    if (!contact) return '';
-    const bits: string[] = [];
+  // Auto "about this contact" insight: a narrative blurb (who they are) plus a
+  // row of status chips (what needs attention), computed from their call history
+  // so the client understands who is calling at a glance.
+  const insights = useMemo(() => {
+    const empty = { blurb: '', chips: [] as { label: string; tone: 'info' | 'success' | 'warning' | 'danger' | 'muted' }[] };
+    if (!contact) return empty;
+    const now = Date.now();
     const n = contact.total_calls || sortedCalls.length || 0;
-    if (n >= 5) bits.push(`Frequent caller (${n} calls)`);
-    else if (n >= 2) bits.push(`Called ${n} times`);
-    else if (n === 1) bits.push('First-time caller');
+    const tags = contact.tags || [];
+    const calls = sortedCalls;
 
-    const bookedCount = sortedCalls.filter(c => c.appointment_booked).length;
-    const hasBooked = bookedCount > 0 || (contact.tags || []).includes('appointment_booked');
-    if (hasBooked) bits.push(bookedCount > 1 ? `booked ${bookedCount} appointments` : 'booked an appointment');
+    // ── Narrative blurb ──────────────────────────────────────────────────
+    const clauses: string[] = [];
 
-    // Most common service they ask about.
+    // Volume + tenure lead.
+    const created = contact.created_at ? new Date(contact.created_at) : null;
+    const monthsKnown = created ? Math.floor((now - created.getTime()) / 2592000000) : 0;
+    const sinceLabel = created ? created.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '';
+    let lead = '';
+    if (n >= 5) lead = `Frequent caller (${n} calls)`;
+    else if (n >= 3) lead = `Regular caller (${n} calls)`;
+    else if (n === 2) lead = 'Called twice';
+    else if (n === 1) lead = 'First-time caller';
+    else lead = 'No calls logged yet';
+    if (sinceLabel && monthsKnown >= 1) lead += `, a contact since ${sinceLabel}`;
+    clauses.push(lead);
+
+    // Services they ask about (top two distinct, by frequency).
     const counts: Record<string, number> = {};
-    for (const c of sortedCalls) { const s = (c.service_requested || '').trim(); if (s) counts[s] = (counts[s] || 0) + 1; }
-    const topService = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
-    if (topService) bits.push(`usually asks about ${topService.toLowerCase()}`);
+    for (const c of calls) { const s = (c.service_requested || '').trim(); if (s) counts[s] = (counts[s] || 0) + 1; }
+    const services = Object.entries(counts).sort((a, b) => b[1] - a[1]).map(e => e[0].toLowerCase());
+    if (services.length === 1) clauses.push(`usually about ${services[0]}`);
+    else if (services.length >= 2) clauses.push(`asks about ${services[0]} and ${services[1]}`);
 
-    if ((contact.tags || []).includes('emergency')) bits.push('has had an emergency');
+    // Past bookings.
+    const bookedCount = calls.filter(c => c.appointment_booked).length;
+    if (bookedCount > 0) clauses.push(bookedCount > 1 ? `has booked ${bookedCount} appointments` : 'has booked an appointment');
+    else if (tags.includes('appointment_booked')) clauses.push('has booked an appointment');
 
-    if (bits.length === 0) return '';
-    // Sentence-case the first bit, lowercase the joins.
-    const first = bits[0];
-    const rest = bits.slice(1);
-    let s = first;
-    if (rest.length === 1) s += `, ${rest[0]}`;
-    else if (rest.length > 1) s += `, ${rest.slice(0, -1).join(', ')}, and ${rest[rest.length - 1]}`;
-    return s + '.';
+    let blurb = clauses[0];
+    const rest = clauses.slice(1);
+    if (rest.length === 1) blurb += `, ${rest[0]}`;
+    else if (rest.length > 1) blurb += `, ${rest.slice(0, -1).join(', ')}, and ${rest[rest.length - 1]}`;
+    if (blurb) blurb += '.';
+
+    // ── Status chips (additive, actionable flags) ────────────────────────
+    const chips: { label: string; tone: 'info' | 'success' | 'warning' | 'danger' | 'muted' }[] = [];
+
+    // Upcoming appointment (future appointment_time on any call).
+    const upcoming = calls
+      .map(c => c.appointment_time ? new Date(c.appointment_time).getTime() : NaN)
+      .filter(t => !isNaN(t) && t > now)
+      .sort((a, b) => a - b)[0];
+    if (upcoming) chips.push({ label: `Appt ${new Date(upcoming).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`, tone: 'success' });
+
+    // Emergency / urgency pattern.
+    const emergencyCalls = calls.filter(c => c.urgency_level === 'emergency').length;
+    const highCalls = calls.filter(c => c.urgency_level === 'high' || c.urgency_level === 'emergency').length;
+    if (emergencyCalls > 0 || tags.includes('emergency')) chips.push({ label: 'Emergency history', tone: 'danger' });
+    else if (highCalls >= 2 || (calls.length >= 2 && highCalls / calls.length >= 0.5)) chips.push({ label: 'Often urgent', tone: 'warning' });
+
+    if (tags.includes('high_priority')) chips.push({ label: 'High priority', tone: 'warning' });
+
+    // Frequently needs a human.
+    const transferred = calls.filter(c => c.transfer_status === 'transferred' || c.call_status === 'transferred').length;
+    if (transferred >= 2 || (calls.length >= 2 && transferred / calls.length >= 0.5)) chips.push({ label: 'Often transferred', tone: 'info' });
+
+    // Spam history.
+    if (calls.some(c => c.is_spam || c.call_status === 'spam')) chips.push({ label: 'Flagged spam', tone: 'danger' });
+
+    // New vs dormant.
+    const lastIso = contact.last_call_at || calls[0]?.created_at || null;
+    const daysSinceLast = lastIso ? Math.floor((now - new Date(lastIso).getTime()) / 86400000) : null;
+    if (monthsKnown < 1 && n <= 1) chips.push({ label: 'New contact', tone: 'info' });
+    else if (daysSinceLast !== null && daysSinceLast >= 90) chips.push({ label: `Quiet ${Math.floor(daysSinceLast / 30)}mo`, tone: 'muted' });
+
+    return { blurb, chips: chips.slice(0, 6) };
   }, [contact, sortedCalls]);
 
   const messagesHref = contact ? `/client/messages?to=${encodeURIComponent(contact.phone)}&name=${encodeURIComponent(contact.name || '')}` : '/client/messages';
@@ -191,11 +239,25 @@ export default function ContactDetailPage() {
               {formatPhone(contact.phone)} · {contact.total_calls} call{contact.total_calls !== 1 ? 's' : ''}
               {lastCallIso ? ` · last ${relativeDate(lastCallIso)}` : ''}
             </p>
-            {/* Auto description */}
-            {about && (
-              <div className="flex items-start gap-1.5 mt-2.5">
-                <Sparkles className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" style={{ color: theme.primary }} />
-                <p className="text-[13px] leading-snug" style={{ color: theme.text }}>{about}</p>
+            {/* Auto insight: narrative blurb + status chips */}
+            {(insights.blurb || insights.chips.length > 0) && (
+              <div className="mt-2.5 space-y-2">
+                {insights.blurb && (
+                  <div className="flex items-start gap-1.5">
+                    <Sparkles className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" style={{ color: theme.primary }} />
+                    <p className="text-[13px] leading-snug" style={{ color: theme.text }}>{insights.blurb}</p>
+                  </div>
+                )}
+                {insights.chips.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {insights.chips.map(chip => {
+                      const t = chip.tone;
+                      const bg = t === 'success' ? theme.successBg : t === 'warning' ? theme.warningBg : t === 'danger' ? theme.errorBg : t === 'muted' ? (theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)') : hexToRgba(theme.primary, theme.isDark ? 0.14 : 0.08);
+                      const color = t === 'success' ? (theme.successText || theme.success) : t === 'warning' ? theme.warning : t === 'danger' ? theme.error : t === 'muted' ? theme.textMuted : theme.primary;
+                      return <span key={chip.label} className="rounded-full px-2.5 py-[3px] text-[11px] font-semibold" style={{ backgroundColor: bg, color }}>{chip.label}</span>;
+                    })}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -220,21 +282,6 @@ export default function ContactDetailPage() {
       <div className="grid lg:grid-cols-3 gap-4 sm:gap-5">
         {/* Main */}
         <div className="lg:col-span-2 space-y-4 sm:space-y-5">
-
-          {/* Summary */}
-          {contact.ai_summary && (
-            <div className="rounded-2xl p-5 sm:p-6 fu fu2" style={glass}>
-              <div className="flex items-center gap-2.5 mb-3">
-                <MessageSquare className="h-4 w-4" style={{ color: theme.primary }} />
-                <h2 className="font-semibold text-sm sm:text-[15px] tracking-tight" style={{ color: theme.text }}>Summary</h2>
-              </div>
-              <div className="space-y-2">
-                {contact.ai_summary.split('\n\n').filter(Boolean).map((entry, i) => (
-                  <p key={i} className="text-[13px] leading-relaxed pl-3" style={{ color: theme.textMuted, borderLeft: `2px solid ${hexToRgba(theme.primary, 0.3)}` }}>{entry}</p>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Call History */}
           <div className="rounded-2xl overflow-hidden fu fu2" style={glass}>
@@ -293,6 +340,21 @@ export default function ContactDetailPage() {
               </div>
             )}
           </div>
+
+          {/* Summary (call-history recap) */}
+          {contact.ai_summary && (
+            <div className="rounded-2xl p-5 sm:p-6 fu fu3" style={glass}>
+              <div className="flex items-center gap-2.5 mb-3">
+                <Sparkles className="h-4 w-4" style={{ color: theme.primary }} />
+                <h2 className="font-semibold text-sm sm:text-[15px] tracking-tight" style={{ color: theme.text }}>Summary</h2>
+              </div>
+              <div className="space-y-2">
+                {contact.ai_summary.split('\n\n').filter(Boolean).map((entry, i) => (
+                  <p key={i} className="text-[13px] leading-relaxed pl-3" style={{ color: theme.textMuted, borderLeft: `2px solid ${hexToRgba(theme.primary, 0.3)}` }}>{entry}</p>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Sidebar */}
