@@ -5,18 +5,15 @@
 // dashboard editor (components/agency/LegalEditor) both render the same legal
 // markdown, so the renderer lives here and is imported by both. That way the
 // editor's live preview is guaranteed to match what the hosted page shows.
-// Placeholders ({{AGENCY_NAME}}, {{SUPPORT_EMAIL}}, etc.) are resolved from the
-// agency, so an agency can keep using them in custom text.
+// Page composition now lives in lib/legal-template.ts (composeLegalDoc). This
+// module keeps the markdown renderer plus a legacy placeholder filler, both
+// shared by the hosted page and the editor preview.
 // ============================================================================
+import { defaultLegalEmail, type LegalAgencyFields } from '@/lib/legal-template';
 
-export interface LegalAgencyFields {
-  name?: string | null;
-  support_email?: string | null;
-  support_phone?: string | null;
-  display_currency?: string | null;
-  price_starter?: number | null;
-}
-
+// Legacy placeholder filler, retained for backward compatibility with any
+// renderer that still composes raw template markdown directly. The contact
+// email uses the agency-derived default (never the platform name).
 export function replacePlaceholders(content: string, agency: LegalAgencyFields): string {
   const cs = agency.display_currency === 'GBP' ? '£' : agency.display_currency === 'EUR' ? '€' : '$';
   const lowestPrice = agency.price_starter ? Math.round(agency.price_starter / 100) : 49;
@@ -24,7 +21,7 @@ export function replacePlaceholders(content: string, agency: LegalAgencyFields):
 
   return content
     .replace(/\{\{AGENCY_NAME\}\}/g, agency.name || '')
-    .replace(/\{\{SUPPORT_EMAIL\}\}/g, agency.support_email || 'support@myvoiceaiconnect.com')
+    .replace(/\{\{SUPPORT_EMAIL\}\}/g, defaultLegalEmail(agency))
     .replace(/\{\{SUPPORT_PHONE\}\}/g, agency.support_phone || '')
     .replace(/\{\{CURRENCY_SYMBOL\}\}/g, cs)
     .replace(/\{\{LOWEST_PRICE\}\}/g, String(lowestPrice))

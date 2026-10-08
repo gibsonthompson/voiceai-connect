@@ -38,6 +38,9 @@ export interface LegalAgencyFields {
   stripe_charges_enabled?: boolean | null;
   paystack_connected?: boolean | null;
   flutterwave_connected?: boolean | null;
+  // used only to derive a default contact email when none is set
+  marketing_domain?: string | null;
+  domain_verified?: boolean | null;
 }
 
 // ----------------------------------------------------------------------------
@@ -82,6 +85,20 @@ export function defaultPaymentProcessor(agency: LegalAgencyFields): string {
   if (agency.flutterwave_connected) return 'Flutterwave';
   if (agency.paystack_connected) return 'Paystack';
   return 'Stripe';
+}
+
+// Default contact email when an agency has not set one. Stays on the AGENCY's
+// own brand, never the platform: the agency's support email if present, else
+// info@ their verified custom domain, else info@<their-name>.com. The platform
+// (VoiceAI Connect) is never named on an agency's legal pages.
+export function defaultLegalEmail(agency: LegalAgencyFields): string {
+  if (agency.support_email && agency.support_email.trim()) return agency.support_email.trim();
+  const domain = (agency.marketing_domain && agency.domain_verified)
+    ? String(agency.marketing_domain).replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '').trim()
+    : '';
+  if (domain) return `info@${domain}`;
+  const slug = (agency.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 63);
+  return slug ? `info@${slug}.com` : 'info@yourcompany.com';
 }
 
 // ----------------------------------------------------------------------------
@@ -552,7 +569,7 @@ export function composeLegalDoc(type: LegalType, fields: LegalFields | null | un
   const lowestPrice = agency.price_starter ? Math.round(agency.price_starter / 100) : 49;
   const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
-  const supportEmail = (f.support_email && f.support_email.trim()) || agency.support_email || 'support@myvoiceaiconnect.com';
+  const supportEmail = (f.support_email && f.support_email.trim()) || defaultLegalEmail(agency);
   const businessName = (f.business_name && f.business_name.trim()) || agency.name || 'Our Company';
   const processor = (f.payment_processor && f.payment_processor.trim()) || defaultPaymentProcessor(agency);
   const trialTerms = (f.trial_terms && f.trial_terms.trim()) || DEFAULT_TRIAL_TERMS;
@@ -573,7 +590,7 @@ export function composeLegalDoc(type: LegalType, fields: LegalFields | null | un
 export function effectiveFieldValue(key: keyof LegalFields, fields: LegalFields | null | undefined, agency: LegalAgencyFields): string {
   const f = fields || {};
   switch (key) {
-    case 'support_email': return (f.support_email ?? '') || (agency.support_email || '');
+    case 'support_email': return (f.support_email ?? '') || defaultLegalEmail(agency);
     case 'business_name': return (f.business_name ?? '') || (agency.name || '');
     case 'payment_processor': return (f.payment_processor ?? '') || defaultPaymentProcessor(agency);
     case 'trial_terms': return (f.trial_terms ?? '') || DEFAULT_TRIAL_TERMS;
