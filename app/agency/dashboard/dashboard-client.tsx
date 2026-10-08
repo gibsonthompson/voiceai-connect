@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { 
   Users, DollarSign, PhoneCall, Copy, Check,
   ChevronRight, ArrowUpRight, Loader2, MessageSquare, Send, X,
-  Phone, Headphones, Sparkles, Mail, MessageCircle, FlaskConical, Megaphone
+  Phone, Headphones, Sparkles, Mail, MessageCircle, FlaskConical, Megaphone,
+  CheckCircle2, Clock, CreditCard, AlertTriangle, XCircle, Ban
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '../../../hooks/useTheme';
@@ -44,6 +45,29 @@ function formatDemoPhone(phone: string): string {
 export default function AgencyDashboardPage() {
   const { agency, user, loading: contextLoading, demoMode } = useAgency();
   const theme = useTheme();
+
+  // Status label, color, and icon. Kept identical to the Clients page so a
+  // client reads the same on the dashboard as it does in the full list.
+  const getStatusMeta = (status: string): { label: string; bg: string; text: string; Icon: any } => {
+    switch (status) {
+      case 'active': return { label: 'Active', bg: theme.primary15, text: theme.primary, Icon: CheckCircle2 };
+      case 'manual': return { label: 'Manual', bg: theme.primary15, text: theme.primary, Icon: CheckCircle2 };
+      case 'trial':
+      case 'trialing': return { label: 'Trial', bg: theme.warningBg, text: theme.warningText, Icon: Clock };
+      case 'pending_payment':
+      case 'pending': return { label: 'Pending payment', bg: theme.warningBg, text: theme.warningText, Icon: CreditCard };
+      case 'past_due': return { label: 'Past due', bg: theme.errorBg, text: theme.errorText, Icon: AlertTriangle };
+      case 'trial_expired':
+      case 'expired': return { label: 'Trial expired', bg: theme.hover, text: theme.textMuted, Icon: XCircle };
+      case 'canceled':
+      case 'cancelled':
+      case 'agency_canceled': return { label: 'Canceled', bg: theme.hover, text: theme.textMuted, Icon: XCircle };
+      case 'manual_suspended':
+      case 'suspended': return { label: 'Suspended', bg: theme.errorBg, text: theme.errorText, Icon: Ban };
+      default: return { label: status ? (status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ')) : 'Unknown', bg: theme.hover, text: theme.textMuted, Icon: Clock };
+    }
+  };
+
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -422,7 +446,14 @@ export default function AgencyDashboardPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-                      <span className="rounded-full px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-medium" style={client.subscription_status === 'active' ? { backgroundColor: theme.successBg, color: theme.success } : client.subscription_status === 'trial' || client.subscription_status === 'trialing' ? { backgroundColor: theme.infoBg, color: theme.info } : { backgroundColor: theme.hover, color: theme.textMuted }}>{client.subscription_status === 'trialing' ? 'trial' : (client.subscription_status || 'pending')}</span>
+                      {(() => {
+                        const statusMeta = getStatusMeta(client.subscription_status || client.status);
+                        return (
+                          <span className="inline-flex items-center gap-1 rounded-full px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-medium whitespace-nowrap" style={{ backgroundColor: statusMeta.bg, color: statusMeta.text }}>
+                            <statusMeta.Icon className="h-3 w-3 flex-shrink-0" />{statusMeta.label}
+                          </span>
+                        );
+                      })()}
                       <ArrowUpRight className="h-4 w-4 hidden sm:block" style={{ color: theme.textMuted }} />
                     </div>
                   </a>
