@@ -260,7 +260,7 @@ export default function MessagesPage() {
   );
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)]" style={{ backgroundColor: theme.bg }}>
+    <div className="flex flex-col h-[calc(100dvh-64px)]" style={{ backgroundColor: theme.bg }}>
       <div className="flex flex-1 min-h-0">
 
         {/* ── Conversation list ─────────────────────────────────────────── */}

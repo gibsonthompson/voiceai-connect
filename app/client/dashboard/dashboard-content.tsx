@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import { useClientTheme } from '@/hooks/useClientTheme';
 import { CallForwardingCard } from './forwarding-card';
-import { ContactAgencyButton } from '@/components/ContactAgencyModal';
 
 interface Branding {
   primaryColor: string;
@@ -256,7 +255,6 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
             Here&apos;s how {client.business_name || 'your business'} is doing today.
           </p>
         </div>
-        <ContactAgencyButton client={client} agencyName={branding.agencyName} />
       </div>
 
       {/* NO-CARD TRIAL BANNER. Only for DB trials that simply expire with no
