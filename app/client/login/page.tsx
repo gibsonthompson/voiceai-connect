@@ -131,8 +131,9 @@ function ClientLoginContent() {
   // login page now yields an agency-branded PWA that opens this subdomain and
   // lands on this branded login.
   //
-  // Also pin the iOS home-screen name to "VoiceAI" (per request) regardless of
-  // which page the install was triggered from.
+  // iOS home-screen name is the agency's own brand (their custom PWA app name,
+  // else their agency name), so installing from the login page yields an
+  // agency-branded app, never "VoiceAI". Re-runs once the agency resolves.
   useEffect(() => {
     try {
       document.querySelectorAll('link[rel="manifest"]').forEach(el => el.remove());
@@ -141,16 +142,17 @@ function ClientLoginContent() {
       link.href = '/api/client-manifest';
       document.head.appendChild(link);
 
+      const pwaName = ((agency as any)?.app_name || agency?.name || 'VoiceAI');
       let m = document.querySelector('meta[name="apple-mobile-web-app-title"]');
-      if (m) { m.setAttribute('content', 'VoiceAI'); }
+      if (m) { m.setAttribute('content', pwaName); }
       else {
         m = document.createElement('meta');
         m.setAttribute('name', 'apple-mobile-web-app-title');
-        m.setAttribute('content', 'VoiceAI');
+        m.setAttribute('content', pwaName);
         document.head.appendChild(m);
       }
     } catch {}
-  }, []);
+  }, [agency?.name, (agency as any)?.app_name]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => { setFormData({ ...formData, [e.target.name]: e.target.value }); setError(''); };
 
@@ -214,7 +216,7 @@ function ClientLoginContent() {
   return (
     <div className="cl-login min-h-screen" style={{ backgroundColor: t.bg, color: t.text }}>
       <style dangerouslySetInnerHTML={{ __html: dynamicStyles }} />
-      <DynamicFavicon logoUrl={agency?.logo_url} primaryColor={primaryColor} />
+      <DynamicFavicon logoUrl={agency?.logo_url} primaryColor={primaryColor} appleIconUrl="/api/agency-app-icon?size=180" />
 
       {isDark && <div className="fixed inset-0 pointer-events-none opacity-[0.015] z-50" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />}
 

@@ -7,8 +7,10 @@
 //
 // Host-aware: the og:image URL resolves to the agency host (metadataBase is set
 // to the host in app/client/layout.tsx), so this handler runs on that host,
-// reads it, and renders that agency's name + color. No agency / platform host
-// falls back to a neutral "Client Portal" card (still no VoiceAI).
+// reads it, and renders that agency's logo. When the agency has a logo we show
+// just the logo on their background (no text, no "Client Dashboard" label). No
+// agency / platform host, or no logo, falls back to the agency name card (still
+// no VoiceAI).
 
 import { ImageResponse } from 'next/og';
 import { headers } from 'next/headers';
@@ -27,6 +29,9 @@ const BACKEND_URL =
 export default async function Image() {
   let name = 'Client Portal';
   let primary = '#6366f1';
+  let logoUrl: string | null = null;
+  let logoBg: string | null = null;
+  let isDark = false;
 
   try {
     const h = await headers();
@@ -44,13 +49,41 @@ export default async function Image() {
         if (a) {
           name = a.name || name;
           primary = a.primary_color || primary;
+          logoUrl = a.logo_url || null;
+          logoBg = a.logo_background_color || null;
+          isDark = a.website_theme === 'dark';
         }
       }
     }
   } catch {}
 
-  const initial = (name.trim()[0] || 'C').toUpperCase();
+  const bg = logoBg || (isDark ? '#0a0a0a' : '#ffffff');
 
+  // Logo present: just the logo, centered on the agency background, contained so
+  // it never stretches. This is what the share-sheet / link preview shows.
+  if (logoUrl) {
+    return new ImageResponse(
+      (
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: bg,
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={logoUrl} width={760} height={360} style={{ objectFit: 'contain' }} />
+        </div>
+      ),
+      { ...size }
+    );
+  }
+
+  // No logo: a clean agency-name card (still never VoiceAI).
+  const initial = (name.trim()[0] || 'C').toUpperCase();
   return new ImageResponse(
     (
       <div
@@ -61,22 +94,9 @@ export default async function Image() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#0a0a0a',
-          position: 'relative',
+          background: isDark ? '#0a0a0a' : '#ffffff',
         }}
       >
-        <div
-          style={{
-            position: 'absolute',
-            top: '-120px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: '640px',
-            height: '420px',
-            background: `radial-gradient(circle, ${primary}33 0%, transparent 70%)`,
-            borderRadius: '50%',
-          }}
-        />
         <div
           style={{
             width: '132px',
@@ -98,7 +118,7 @@ export default async function Image() {
           style={{
             fontSize: '64px',
             fontWeight: 700,
-            color: '#fafafa',
+            color: isDark ? '#fafafa' : '#111111',
             textAlign: 'center',
             maxWidth: '960px',
             lineHeight: 1.1,
@@ -106,16 +126,6 @@ export default async function Image() {
           }}
         >
           {name}
-        </div>
-        <div
-          style={{
-            marginTop: '20px',
-            fontSize: '28px',
-            color: 'rgba(250,250,250,0.55)',
-            display: 'flex',
-          }}
-        >
-          Client Dashboard
         </div>
       </div>
     ),

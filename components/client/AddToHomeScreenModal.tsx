@@ -19,6 +19,33 @@ interface Props {
   onClose?: () => void;
   manualTrigger?: boolean;
   appName?: string;
+  /** The real home-screen icon (the square compositor). When set, the mock
+   *  previews show this exact icon instead of a generic waveform, so the
+   *  walkthrough matches what actually lands on the home screen. */
+  iconUrl?: string;
+}
+
+// The real app icon in the mock previews, falling back to the agency-colored
+// waveform tile only when no icon URL is available. Keeps the walkthrough fully
+// white-labeled: the client sees their actual icon and name.
+function MockAppIcon({ iconUrl, theme, px, radius }: { iconUrl?: string; theme: any; px: number; radius: string }) {
+  if (iconUrl) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={iconUrl} alt="" width={px} height={px} style={{ borderRadius: radius, objectFit: 'cover' }} />;
+  }
+  return (
+    <div className="flex items-center justify-center flex-shrink-0" style={{ width: px, height: px, borderRadius: radius, backgroundColor: theme.primary }}>
+      <svg viewBox="0 0 24 24" fill="none" style={{ width: px * 0.5, height: px * 0.5 }}>
+        <rect x="2" y="9" width="2" height="6" rx="1" fill="#fff" opacity="0.6" />
+        <rect x="5" y="7" width="2" height="10" rx="1" fill="#fff" opacity="0.8" />
+        <rect x="8" y="4" width="2" height="16" rx="1" fill="#fff" />
+        <rect x="11" y="6" width="2" height="12" rx="1" fill="#fff" />
+        <rect x="14" y="3" width="2" height="18" rx="1" fill="#fff" />
+        <rect x="17" y="7" width="2" height="10" rx="1" fill="#fff" opacity="0.8" />
+        <rect x="20" y="9" width="2" height="6" rx="1" fill="#fff" opacity="0.6" />
+      </svg>
+    </div>
+  );
 }
 
 function detectPlatform(): Platform {
@@ -46,9 +73,9 @@ const INSTALLED_KEY = 'voiceai_pwa_installed';
 const TRIGGER_AFTER_VISITS = 3;
 
 // ============================================================================
-// MOCK IPHONE UI — renders themed to match agency branding
+// MOCK IPHONE UI, renders themed to match agency branding
 // ============================================================================
-function IPhoneMockStep({ step, theme, appName }: { step: number; theme: any; appName: string }) {
+function IPhoneMockStep({ step, theme, appName, iconUrl, domain }: { step: number; theme: any; appName: string; iconUrl?: string; domain: string }) {
   const isDark = theme.isDark;
   const mockBg = isDark ? '#1c1c1e' : '#f2f2f7';
   const mockCard = isDark ? '#2c2c2e' : '#ffffff';
@@ -59,28 +86,20 @@ function IPhoneMockStep({ step, theme, appName }: { step: number; theme: any; ap
   const accentBlue = '#007AFF';
 
   if (step === 0) {
-    // Step 1: Tap the Share button — show Safari bottom bar with share icon highlighted
+    // Step 1: Tap the Share button, show Safari bottom bar with share icon highlighted
     return (
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: mockBg, border: `1px solid ${mockBorder}` }}>
         {/* Mini browser chrome */}
         <div className="px-3 py-2 flex items-center gap-2" style={{ borderBottom: `1px solid ${mockBorder}` }}>
           <div className="flex-1 rounded-lg px-2.5 py-1.5 text-center" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)' }}>
-            <span className="text-[9px] font-medium" style={{ color: mockMuted }}>yourdomain.com</span>
+            <span className="text-[9px] font-medium" style={{ color: mockMuted }}>{domain}</span>
           </div>
         </div>
         {/* Page preview - shows the app with branding */}
         <div className="px-4 py-5 flex items-center justify-center" style={{ minHeight: '80px' }}>
           <div className="text-center">
-            <div className="w-10 h-10 rounded-xl mx-auto mb-2 flex items-center justify-center" style={{ backgroundColor: theme.primary }}>
-              <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5">
-                <rect x="2" y="9" width="2" height="6" rx="1" fill="#fff" opacity="0.6" />
-                <rect x="5" y="7" width="2" height="10" rx="1" fill="#fff" opacity="0.8" />
-                <rect x="8" y="4" width="2" height="16" rx="1" fill="#fff" />
-                <rect x="11" y="6" width="2" height="12" rx="1" fill="#fff" />
-                <rect x="14" y="3" width="2" height="18" rx="1" fill="#fff" />
-                <rect x="17" y="7" width="2" height="10" rx="1" fill="#fff" opacity="0.8" />
-                <rect x="20" y="9" width="2" height="6" rx="1" fill="#fff" opacity="0.6" />
-              </svg>
+            <div className="mb-2 flex justify-center">
+              <MockAppIcon iconUrl={iconUrl} theme={theme} px={40} radius="12px" />
             </div>
             <p className="text-[10px] font-semibold" style={{ color: mockText }}>{appName}</p>
           </div>
@@ -93,7 +112,7 @@ function IPhoneMockStep({ step, theme, appName }: { step: number; theme: any; ap
           <div className="w-5 h-5 opacity-30" style={{ color: mockText }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
           </div>
-          {/* Share button — highlighted */}
+          {/* Share button, highlighted */}
           <div className="relative">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: hexToRgba(accentBlue, 0.15) }}>
               <svg viewBox="0 0 24 24" fill="none" stroke={accentBlue} strokeWidth="2.5" className="w-4 h-4">
@@ -128,7 +147,7 @@ function IPhoneMockStep({ step, theme, appName }: { step: number; theme: any; ap
               </div>
             </div>
           ))}
-          {/* Add to Home Screen — highlighted */}
+          {/* Add to Home Screen, highlighted */}
           <div className="relative flex items-center justify-between px-4 py-2.5 rounded-lg" style={{ backgroundColor: hexToRgba(accentBlue, isDark ? 0.12 : 0.06), border: `1.5px solid ${hexToRgba(accentBlue, 0.3)}` }}>
             <span className="text-[11px] font-semibold" style={{ color: accentBlue }}>Add to Home Screen</span>
             <div className="w-5 h-5 rounded flex items-center justify-center" style={{ backgroundColor: hexToRgba(accentBlue, 0.15) }}>
@@ -143,7 +162,7 @@ function IPhoneMockStep({ step, theme, appName }: { step: number; theme: any; ap
   }
 
   if (step === 2) {
-    // Step 3: Tap "Add" — confirmation dialog with app icon
+    // Step 3: Tap "Add", confirmation dialog with app icon
     return (
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: mockBg, border: `1px solid ${mockBorder}` }}>
         {/* Top bar */}
@@ -157,20 +176,10 @@ function IPhoneMockStep({ step, theme, appName }: { step: number; theme: any; ap
         </div>
         {/* App preview */}
         <div className="flex items-center gap-3 px-4 py-4">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.primary }}>
-            <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6">
-              <rect x="2" y="9" width="2" height="6" rx="1" fill="#fff" opacity="0.6" />
-              <rect x="5" y="7" width="2" height="10" rx="1" fill="#fff" opacity="0.8" />
-              <rect x="8" y="4" width="2" height="16" rx="1" fill="#fff" />
-              <rect x="11" y="6" width="2" height="12" rx="1" fill="#fff" />
-              <rect x="14" y="3" width="2" height="18" rx="1" fill="#fff" />
-              <rect x="17" y="7" width="2" height="10" rx="1" fill="#fff" opacity="0.8" />
-              <rect x="20" y="9" width="2" height="6" rx="1" fill="#fff" opacity="0.6" />
-            </svg>
-          </div>
+          <MockAppIcon iconUrl={iconUrl} theme={theme} px={48} radius="12px" />
           <div>
             <p className="text-[12px] font-semibold" style={{ color: mockText }}>{appName}</p>
-            <p className="text-[10px]" style={{ color: mockMuted }}>yourdomain.com</p>
+            <p className="text-[10px]" style={{ color: mockMuted }}>{domain}</p>
           </div>
         </div>
         {/* Description */}
@@ -189,7 +198,7 @@ function IPhoneMockStep({ step, theme, appName }: { step: number; theme: any; ap
 // ============================================================================
 // MOCK ANDROID UI
 // ============================================================================
-function AndroidMockStep({ step, theme, appName }: { step: number; theme: any; appName: string }) {
+function AndroidMockStep({ step, theme, appName, iconUrl, domain }: { step: number; theme: any; appName: string; iconUrl?: string; domain: string }) {
   const mockBg = '#1f1f1f';
   const mockCard = '#2d2d2d';
   const mockText = '#e3e3e3';
@@ -208,10 +217,10 @@ function AndroidMockStep({ step, theme, appName }: { step: number; theme: any; a
               <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="rgba(255,255,255,0.4)" strokeWidth="2"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/></svg>
             </div>
             <div className="flex-1 rounded-full px-3 py-1" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
-              <span className="text-[9px]" style={{ color: mockMuted }}>yourdomain.com</span>
+              <span className="text-[9px]" style={{ color: mockMuted }}>{domain}</span>
             </div>
           </div>
-          {/* Three-dot menu — highlighted */}
+          {/* Three-dot menu, highlighted */}
           <div className="relative ml-2">
             <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ backgroundColor: hexToRgba(accentGreen, 0.15) }}>
               <MoreVertical className="w-4 h-4" style={{ color: accentGreen }} />
@@ -222,16 +231,8 @@ function AndroidMockStep({ step, theme, appName }: { step: number; theme: any; a
         {/* Page content */}
         <div className="px-4 py-6 flex items-center justify-center">
           <div className="text-center">
-            <div className="w-10 h-10 rounded-xl mx-auto mb-2 flex items-center justify-center" style={{ backgroundColor: theme.primary }}>
-              <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5">
-                <rect x="2" y="9" width="2" height="6" rx="1" fill="#fff" opacity="0.6" />
-                <rect x="5" y="7" width="2" height="10" rx="1" fill="#fff" opacity="0.8" />
-                <rect x="8" y="4" width="2" height="16" rx="1" fill="#fff" />
-                <rect x="11" y="6" width="2" height="12" rx="1" fill="#fff" />
-                <rect x="14" y="3" width="2" height="18" rx="1" fill="#fff" />
-                <rect x="17" y="7" width="2" height="10" rx="1" fill="#fff" opacity="0.8" />
-                <rect x="20" y="9" width="2" height="6" rx="1" fill="#fff" opacity="0.6" />
-              </svg>
+            <div className="mb-2 flex justify-center">
+              <MockAppIcon iconUrl={iconUrl} theme={theme} px={40} radius="12px" />
             </div>
             <p className="text-[10px] font-semibold" style={{ color: mockText }}>{appName}</p>
           </div>
@@ -252,7 +253,7 @@ function AndroidMockStep({ step, theme, appName }: { step: number; theme: any; a
               <span className="text-[11px]" style={{ color: mockText }}>{label}</span>
             </div>
           ))}
-          {/* Install App — highlighted */}
+          {/* Install App, highlighted */}
           <div className="relative flex items-center gap-3 px-4 py-2 mx-1 rounded-lg" style={{ backgroundColor: hexToRgba(accentGreen, 0.12), border: `1.5px solid ${hexToRgba(accentGreen, 0.3)}` }}>
             <Download className="w-4 h-4" style={{ color: accentGreen }} />
             <span className="text-[11px] font-semibold" style={{ color: accentGreen }}>Install app</span>
@@ -273,16 +274,8 @@ function AndroidMockStep({ step, theme, appName }: { step: number; theme: any; a
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: mockCard, border: `1px solid ${mockBorder}` }}>
         <div className="p-4 text-center">
           {/* App icon */}
-          <div className="w-14 h-14 rounded-2xl mx-auto mb-3 flex items-center justify-center" style={{ backgroundColor: theme.primary }}>
-            <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7">
-              <rect x="2" y="9" width="2" height="6" rx="1" fill="#fff" opacity="0.6" />
-              <rect x="5" y="7" width="2" height="10" rx="1" fill="#fff" opacity="0.8" />
-              <rect x="8" y="4" width="2" height="16" rx="1" fill="#fff" />
-              <rect x="11" y="6" width="2" height="12" rx="1" fill="#fff" />
-              <rect x="14" y="3" width="2" height="18" rx="1" fill="#fff" />
-              <rect x="17" y="7" width="2" height="10" rx="1" fill="#fff" opacity="0.8" />
-              <rect x="20" y="9" width="2" height="6" rx="1" fill="#fff" opacity="0.6" />
-            </svg>
+          <div className="mx-auto mb-3 flex justify-center">
+            <MockAppIcon iconUrl={iconUrl} theme={theme} px={56} radius="16px" />
           </div>
           <p className="text-[13px] font-semibold mb-1" style={{ color: mockText }}>Install {appName}?</p>
           <p className="text-[10px] mb-4" style={{ color: mockMuted }}>This app will be added to your home screen</p>
@@ -307,11 +300,14 @@ function AndroidMockStep({ step, theme, appName }: { step: number; theme: any; a
 // ============================================================================
 // MAIN MODAL
 // ============================================================================
-export default function AddToHomeScreenModal({ clientId, theme, isOpen: controlledOpen, onClose, manualTrigger, appName = 'Your App' }: Props) {
+export default function AddToHomeScreenModal({ clientId, theme, isOpen: controlledOpen, onClose, manualTrigger, appName = 'Your App', iconUrl }: Props) {
   const [open, setOpen] = useState(false);
   const [platform, setPlatform] = useState<Platform>('desktop');
   const [alreadyInstalled, setAlreadyInstalled] = useState(false);
   const [step, setStep] = useState(0);
+  // The real host shown in the mock previews, so the walkthrough matches this
+  // agency's actual address instead of a placeholder.
+  const domain = typeof window !== 'undefined' ? window.location.hostname : '';
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -477,9 +473,9 @@ export default function AddToHomeScreenModal({ clientId, theme, isOpen: controll
               {/* Themed mock phone UI */}
               <div className="mb-3">
                 {platform === 'ios' ? (
-                  <IPhoneMockStep step={step} theme={theme} appName={appName} />
+                  <IPhoneMockStep step={step} theme={theme} appName={appName} iconUrl={iconUrl} domain={domain} />
                 ) : (
-                  <AndroidMockStep step={step} theme={theme} appName={appName} />
+                  <AndroidMockStep step={step} theme={theme} appName={appName} iconUrl={iconUrl} domain={domain} />
                 )}
               </div>
 

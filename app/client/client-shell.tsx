@@ -119,10 +119,11 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
     };
   }, [theme.bg, theme.text, nav.bg]);
 
-  // Home-screen app name is pinned to "VoiceAI" (per request). The browser tab
-  // title stays branded (displayName); only the iOS apple-mobile-web-app-title,
-  // which is what "Add to Home Screen" reads for the icon label, is fixed.
-  useEffect(() => { if (displayName) { document.title = displayName; let metaTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]'); if (metaTitle) { metaTitle.setAttribute('content', 'VoiceAI'); } else { metaTitle = document.createElement('meta'); metaTitle.setAttribute('name', 'apple-mobile-web-app-title'); metaTitle.setAttribute('content', 'VoiceAI'); document.head.appendChild(metaTitle); } } }, [displayName]);
+  // Home-screen app name is the agency's own brand (displayName), the same name
+  // the browser tab shows. iOS "Add to Home Screen" reads this
+  // apple-mobile-web-app-title for the icon label, so a client installs an
+  // agency-branded app, never "VoiceAI".
+  useEffect(() => { if (displayName) { document.title = displayName; let metaTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]'); if (metaTitle) { metaTitle.setAttribute('content', displayName); } else { metaTitle = document.createElement('meta'); metaTitle.setAttribute('name', 'apple-mobile-web-app-title'); metaTitle.setAttribute('content', displayName); document.head.appendChild(metaTitle); } } }, [displayName]);
   useEffect(() => { if (!loading && clientTrialExpired && !isAccessibleRoute) { window.location.href = '/client/upgrade-required?expired=true'; } }, [loading, clientTrialExpired, isAccessibleRoute]);
   useEffect(() => { if (!loading && clientCanceled && !isAccessibleRoute) { window.location.href = '/client/upgrade-required?canceled=true'; } }, [loading, clientCanceled, isAccessibleRoute]);
 
@@ -357,7 +358,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
 
       <main className="lg:pl-64 min-h-screen" style={{ backgroundColor: theme.bg, paddingBottom: 'calc(env(safe-area-inset-bottom) + 6rem)' }}>{children}</main>
 
-      {client && (<AddToHomeScreenModal clientId={client.id} theme={theme} appName={branding.businessName || branding.agencyName || client.business_name || 'Your App'} />)}
+      {client && (<AddToHomeScreenModal clientId={client.id} theme={theme} appName={branding.businessName || branding.agencyName || client.business_name || 'Your App'} iconUrl={`/api/agency-app-icon?size=192&clientId=${client.id}`} />)}
       <SupportWidget theme={theme} userType="client" />
     </div>
   );

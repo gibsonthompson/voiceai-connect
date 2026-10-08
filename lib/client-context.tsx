@@ -397,7 +397,7 @@ export function ClientProvider({ children }: { children: ReactNode }) {
       isFeatureEnabled, getFeatureLabel,
       planType, effectivePlan, hasPermission,
     }}>
-      <DynamicFavicon logoUrl={branding.logoUrl} primaryColor={branding.primaryColor} />
+      <DynamicFavicon logoUrl={branding.logoUrl} primaryColor={branding.primaryColor} appleIconUrl="/api/agency-app-icon?size=180" />
       {children}
     </ClientContext.Provider>
   );

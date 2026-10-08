@@ -545,7 +545,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
         </SectionCard>
       </div>
 
-      <AddToHomeScreenModal clientId={client.id} theme={theme} isOpen={showPwaModal} onClose={() => setShowPwaModal(false)} manualTrigger appName={branding.agencyName || client.business_name || 'Your App'} />
+      <AddToHomeScreenModal clientId={client.id} theme={theme} isOpen={showPwaModal} onClose={() => setShowPwaModal(false)} manualTrigger appName={branding.agencyName || client.business_name || 'Your App'} iconUrl={`/api/agency-app-icon?size=192&clientId=${client.id}`} />
     </div>
   );
 }

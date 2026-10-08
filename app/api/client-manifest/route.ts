@@ -14,9 +14,10 @@ export async function GET(request: NextRequest) {
     const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
     const fullOrigin = `${protocol}://${hostname}`;
 
-    // Home-screen name is intentionally pinned to "VoiceAI" (per request). The
-    // icon and colors stay agency/client branded; only the text label is fixed.
-    const APP_NAME = 'VoiceAI';
+    // Home-screen name is the agency's own brand: their custom PWA app name if
+    // set, otherwise their agency name, with "VoiceAI" only as a last-resort
+    // fallback when no agency resolves. White-label: a client never sees VoiceAI.
+    let appName = 'VoiceAI';
 
     let themeColor = '#3b82f6';
     let backgroundColor = '#f9fafb';
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest) {
       const slug = subdomainMatch[1];
       const { data } = await supabase
         .from('agencies')
-        .select('id, name, slug, logo_url, primary_color, website_theme')
+        .select('id, name, slug, app_name, logo_url, primary_color, website_theme')
         .eq('slug', slug)
         .single();
       agency = data;
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
       const cleanHostname = hostname.replace('www.', '').split(':')[0];
       const { data } = await supabase
         .from('agencies')
-        .select('id, name, slug, logo_url, primary_color, website_theme')
+        .select('id, name, slug, app_name, logo_url, primary_color, website_theme')
         .eq('marketing_domain', cleanHostname)
         .eq('domain_verified', true)
         .single();
@@ -47,6 +48,9 @@ export async function GET(request: NextRequest) {
 
     if (agency) {
       themeColor = agency.primary_color || themeColor;
+      const custom = (agency.app_name || '').trim();
+      const fallbackName = (agency.name || '').trim();
+      appName = (custom || fallbackName || 'VoiceAI').slice(0, 45);
       // Match the launch splash to the agency theme so the icon tap opens onto
       // the agency's own background instead of a generic light/dark flash.
       backgroundColor = agency.website_theme === 'light' ? '#ffffff' : '#0a0a0a';
@@ -87,8 +91,8 @@ export async function GET(request: NextRequest) {
 
     const manifest = {
       id: manifestId,
-      name: APP_NAME,
-      short_name: APP_NAME,
+      name: appName,
+      short_name: appName.slice(0, 18),
       description: 'Manage your AI receptionist',
       // Open at the login route, not the dashboard. A fresh standalone install
       // has no session; starting at /client/dashboard mounts the dark dashboard
