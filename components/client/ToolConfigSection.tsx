@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { 
-  Loader2, Shield, PhoneForwarded, UserCheck, Moon, MessageSquare,
+  Loader2, Shield, PhoneForwarded, UserCheck, Moon,
   ChevronDown, Check, Send, X, MapPin, Globe, Star, DollarSign
 } from 'lucide-react';
 
@@ -36,7 +36,7 @@ const DEFAULT_CONFIG: ToolConfig = {
   callerRecognition: true,
   spamDetection: true,
   transferCall: true,
-  businessHoursRouting: false,
+  businessHoursRouting: true,
   afterHoursMessage: "We're currently closed, but I'd be happy to take a message and have someone call you back during business hours.",
   transferFallbackToMessage: true,
   smsToCaller: false,
@@ -61,6 +61,7 @@ export default function ToolConfigSection({ clientId, theme, compact }: Props) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [showTransferTip, setShowTransferTip] = useState(false);
+  const [openDetail, setOpenDetail] = useState<string | null>(null);
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -191,7 +192,17 @@ export default function ToolConfigSection({ clientId, theme, compact }: Props) {
     );
   }
 
-  const tools = [
+  type ToolRow = {
+    key: keyof ToolConfig;
+    icon: any;
+    label: string;
+    description: string;
+    enabled: boolean;
+    dependsOn?: keyof ToolConfig;
+    details?: string;
+  };
+
+  const tools: ToolRow[] = [
     {
       key: 'callerRecognition' as const,
       icon: UserCheck,
@@ -214,19 +225,12 @@ export default function ToolConfigSection({ clientId, theme, compact }: Props) {
       enabled: config.transferCall,
     },
     {
-      key: 'transferFallbackToMessage' as const,
-      icon: MessageSquare,
-      label: 'Transfer Fallback',
-      description: "If transfer isn't answered, AI stays on and takes a message instead",
-      enabled: config.transferFallbackToMessage,
-      dependsOn: 'transferCall' as const,
-    },
-    {
       key: 'businessHoursRouting' as const,
       icon: Moon,
       label: 'After-Hours Mode',
-      description: 'Different behavior when your business is closed — message-taking only, no transfers',
+      description: 'Different behavior when your business is closed: message-taking only, no transfers',
       enabled: config.businessHoursRouting,
+      details: "When this is on, the AI uses your Business Hours to know when you're open. Outside those hours it won't transfer calls to anyone, it takes a message and lets the caller know when you'll get back to them. Leave it off if you take calls 24/7. (Set your open hours under Business Hours.)",
     },
     {
       key: 'smsToCaller' as const,
@@ -303,7 +307,7 @@ export default function ToolConfigSection({ clientId, theme, compact }: Props) {
                   </button>
                 </div>
 
-                {/* Transfer troubleshooting tip — under Call Transfer */}
+                {/* Transfer troubleshooting tip, under Call Transfer */}
                 {tool.key === 'transferCall' && config.transferCall && (
                   <div className="ml-10 sm:ml-11 mt-1 mb-1">
                     <button
@@ -335,12 +339,37 @@ export default function ToolConfigSection({ clientId, theme, compact }: Props) {
                     )}
                   </div>
                 )}
+
+                {/* "What's this?" explainer for the subtler tools */}
+                {tool.details && (
+                  <div className="ml-10 sm:ml-11 mt-1 mb-1">
+                    <button
+                      onClick={() => setOpenDetail(openDetail === tool.key ? null : tool.key)}
+                      className="flex items-center gap-1.5 text-[10px] sm:text-xs transition hover:opacity-80"
+                      style={{ color: theme.textMuted4 }}
+                    >
+                      <ChevronDown
+                        className="w-3 h-3 transition-transform"
+                        style={{ transform: openDetail === tool.key ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                      />
+                      What&apos;s this?
+                    </button>
+                    {openDetail === tool.key && (
+                      <div
+                        className="mt-1.5 p-2.5 sm:p-3 rounded-lg text-[10px] sm:text-xs"
+                        style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}
+                      >
+                        <p style={{ color: theme.textMuted }}>{tool.details}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
 
-        {/* After-hours message — shown when businessHoursRouting is on */}
+        {/* After-hours message, shown when businessHoursRouting is on */}
         {config.businessHoursRouting && (
           <div className="px-3 sm:px-4 pb-3 sm:pb-4">
             <div className="p-2.5 sm:p-3 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
