@@ -128,6 +128,7 @@ export default function MyBusinessPage() {
   const [kbExpanded, setKbExpanded] = useState(false);
   const [kbLoading, setKbLoading] = useState(false);
   const [savingKB, setSavingKB] = useState(false);
+  const [learningKB, setLearningKB] = useState(false);
   const [kbLastUpdated, setKbLastUpdated] = useState<string | null>(null);
   const [website, setWebsite] = useState('');
   const [faqs, setFaqs] = useState<FAQ[]>([{ id: '1', question: '', answer: '' }]);
@@ -288,6 +289,21 @@ export default function MyBusinessPage() {
       if (d.success) { setKbLastUpdated(new Date().toISOString()); showMsg('Knowledge base updated!'); await fetchKnowledgeBase(); } else showMsg(d.error || 'Failed', true);
     } catch { showMsg('Error', true); }
     finally { setSavingKB(false); }
+  };
+
+  // "Learn from website": scrape the site now and fold it into the knowledge
+  // base (the normal Update never scrapes). Sends the same fields so the client's
+  // own hours/FAQs are kept, plus scrapeWebsite so the backend fetches the site.
+  const handleLearnFromWebsite = async () => {
+    if (!client) return;
+    if (!website.trim()) { showMsg('Add your website address first.', true); return; }
+    setLearningKB(true);
+    try {
+      const r = await fetch(`${getBackendUrl()}/api/knowledge-base/update`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` }, body: JSON.stringify({ clientId: client.id, websiteUrl: website, businessHours: formatBusinessHoursForSave(), services: existingServicesText, faqs: formatFAQs(), additionalInfo, scrapeWebsite: true }) });
+      const d = await r.json();
+      if (d.success) { setKbLastUpdated(new Date().toISOString()); showMsg('Learned from your website! Your AI now knows what is on it.'); await fetchKnowledgeBase(); } else showMsg(d.error || 'Could not read that website.', true);
+    } catch { showMsg('Something went wrong reading that website.', true); }
+    finally { setLearningKB(false); }
   };
 
   const addArea = () => {
@@ -531,6 +547,12 @@ export default function MyBusinessPage() {
                 <div>
                   <label className="flex items-center gap-2 text-[13px] font-medium mb-2" style={{ color: theme.text }}><Globe className="w-4 h-4" style={{ color: primaryColor }} /> Website</label>
                   <input type="url" value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://yourbusiness.com" className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none" style={inputStyle} />
+                  <button onClick={handleLearnFromWebsite} disabled={learningKB || !website.trim()} className="mt-2 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold transition disabled:opacity-50" style={{ backgroundColor: primaryColor, color: theme.buttonText || '#fff' }}>
+                    {learningKB ? <><Loader2 className="w-4 h-4 animate-spin" /> Reading your website...</> : <><Sparkles className="w-4 h-4" /> Learn from my website</>}
+                  </button>
+                  <p className="mt-1.5 text-[11px] leading-relaxed" style={{ color: theme.textMuted }}>
+                    Reads your site and teaches your AI what is on it (hours, services, prices, your story). Do this whenever your site changes. Takes a few seconds.
+                  </p>
                 </div>
                 <div>
                   <label className="flex items-center gap-2 text-[13px] font-medium mb-2" style={{ color: theme.text }}><HelpCircle className="w-4 h-4" style={{ color: primaryColor }} /> FAQs</label>

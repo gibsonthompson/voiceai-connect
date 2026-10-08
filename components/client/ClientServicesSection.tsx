@@ -3,8 +3,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Briefcase, Plus, Loader2, X, Check, Trash2, Clock, Shield,
-  Pencil, ChevronDown, ChevronUp, Calendar, Users,
+  Pencil, ChevronDown, ChevronUp, Calendar, Users, Globe,
 } from 'lucide-react';
+
+interface ServiceSuggestion { name: string; price?: string | null; }
 
 function hexToRgba(hex: string, alpha: number): string {
   try {
@@ -68,6 +70,10 @@ const EMPTY_FORM = { name: '', price: '', description: '', duration_minutes: 30,
 
 export default function ClientServicesSection({ clientId, theme, compact, industry, hideHeader }: Props) {
   const [services, setServices] = useState<ServiceItem[]>([]);
+  const [suggestions, setSuggestions] = useState<ServiceSuggestion[]>([]);
+  // When the open form is adding a scraped suggestion, its name so we can clear
+  // it from the suggestion list once it is saved as a real service.
+  const [resolvingSuggestion, setResolvingSuggestion] = useState<string | null>(null);
   const [staffMap, setStaffMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -91,6 +97,7 @@ export default function ClientServicesSection({ clientId, theme, compact, indust
         const data = await res.json();
         setServices(data.services || []);
         setStaffMap(data.staffMap || {});
+        setSuggestions(Array.isArray(data.suggestions) ? data.suggestions : []);
       }
     } catch (e) {
       console.error('Failed to fetch services:', e);
@@ -116,8 +123,30 @@ export default function ClientServicesSection({ clientId, theme, compact, indust
 
   useEffect(() => { fetchServices(); fetchStaff(); }, [fetchServices, fetchStaff]);
 
-  const openAdd = () => { setForm({ ...EMPTY_FORM, assigned_staff: [] }); setEditingId(null); setError(''); setShowModal(true); };
-  const openEdit = (svc: ServiceItem) => { setForm({ name: svc.name, price: svc.price || '', description: svc.description || '', duration_minutes: svc.duration_minutes, buffer_minutes: svc.buffer_minutes, booking_mode: svc.booking_mode, assigned_staff: svc.assigned_staff || [] }); setEditingId(svc.id); setError(''); setShowModal(true); };
+  const openAdd = () => { setForm({ ...EMPTY_FORM, assigned_staff: [] }); setEditingId(null); setResolvingSuggestion(null); setError(''); setShowModal(true); };
+  const openEdit = (svc: ServiceItem) => { setForm({ name: svc.name, price: svc.price || '', description: svc.description || '', duration_minutes: svc.duration_minutes, buffer_minutes: svc.buffer_minutes, booking_mode: svc.booking_mode, assigned_staff: svc.assigned_staff || [] }); setEditingId(svc.id); setResolvingSuggestion(null); setError(''); setShowModal(true); };
+
+  // Add a scraped suggestion: open the form prefilled with its name + price so
+  // the client can confirm a price before saving. On save it is dismissed.
+  const openSuggestion = (sugg: ServiceSuggestion) => {
+    setForm({ ...EMPTY_FORM, assigned_staff: [], name: sugg.name, price: sugg.price || '' });
+    setEditingId(null);
+    setResolvingSuggestion(sugg.name);
+    setError('');
+    setShowModal(true);
+  };
+
+  const dismissSuggestion = async (name: string) => {
+    setSuggestions(prev => prev.filter(s => s.name !== name)); // optimistic
+    try {
+      const token = localStorage.getItem('auth_token');
+      await fetch(`${backendUrl}/api/client/${clientId}/services/suggestions/dismiss`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+    } catch (e) { console.error('Dismiss suggestion failed:', e); }
+  };
 
   const handleSave = async () => {
     if (!form.name.trim()) { setError('Service name is required'); return; }
@@ -128,6 +157,8 @@ export default function ClientServicesSection({ clientId, theme, compact, indust
       const res = await fetch(url, { method: editingId ? 'PUT' : 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: form.name.trim(), price: form.price.trim(), description: form.description.trim(), duration_minutes: form.duration_minutes, buffer_minutes: form.buffer_minutes, booking_mode: form.booking_mode, assigned_staff: form.assigned_staff }) });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Failed to save'); return; }
+      // If this add came from a website suggestion, clear that suggestion.
+      if (resolvingSuggestion) { await dismissSuggestion(resolvingSuggestion); setResolvingSuggestion(null); }
       setShowModal(false); fetchServices();
     } catch { setError('Network error'); }
     finally { setSaving(false); }
@@ -259,6 +290,22 @@ export default function ClientServicesSection({ clientId, theme, compact, indust
                         </div>
                       );
                     })}
+                  </div>
+                )}
+                {suggestions.length > 0 && (
+                  <div className="mb-3 rounded-xl p-3" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.06 : 0.04), border: `1px solid ${hexToRgba(theme.primary, theme.isDark ? 0.15 : 0.12)}` }}>
+                    <div className="flex items-center gap-1.5 mb-1.5"><Globe className="w-3.5 h-3.5" style={{ color: theme.primary }} /><span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: theme.primary }}>Found on your website</span></div>
+                    <p className="text-[10px] mb-2.5 leading-relaxed" style={{ color: theme.textMuted }}>Services we spotted on your site. Add the ones you offer (you can set a price), or dismiss the rest. These never overwrite a service you already have.</p>
+                    <div className="flex flex-wrap gap-2">
+                      {suggestions.map((sg, i) => (
+                        <div key={`${sg.name}-${i}`} className="inline-flex items-center gap-1.5 rounded-full pl-3 pr-1 py-1" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#ffffff', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb'}` }}>
+                          <span className="text-[12px] font-medium" style={{ color: theme.text }}>{sg.name}</span>
+                          {sg.price && <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold" style={{ backgroundColor: hexToRgba(theme.primary, 0.12), color: theme.primary }}>{sg.price}</span>}
+                          <button onClick={() => openSuggestion(sg)} title="Add this service" className="inline-flex items-center justify-center w-6 h-6 rounded-full transition hover:opacity-90 flex-shrink-0" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Plus className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => dismissSuggestion(sg.name)} title="Dismiss" className="inline-flex items-center justify-center w-5 h-5 rounded-full transition hover:opacity-70 flex-shrink-0" style={{ color: theme.textMuted }}><X className="w-3 h-3" /></button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
                 <button onClick={openAdd} className="w-full flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-medium transition-all hover:scale-[1.01] active:scale-[0.99]" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.1 : 0.05), color: theme.primary, border: `1px dashed ${hexToRgba(theme.primary, 0.3)}` }}><Plus className="h-3.5 w-3.5" /> Add Service</button>
