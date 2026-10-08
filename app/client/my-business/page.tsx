@@ -140,6 +140,9 @@ export default function MyBusinessPage() {
   const [serviceAreas, setServiceAreas] = useState<string[]>([]);
   const [origServiceAreas, setOrigServiceAreas] = useState<string[]>([]);
   const [newArea, setNewArea] = useState('');
+  // Website-scraped suggestions for service areas + hours ("Found on your website").
+  const [areaSuggestions, setAreaSuggestions] = useState<string[]>([]);
+  const [hoursSuggestion, setHoursSuggestion] = useState<BusinessHours | null>(null);
   const [savingAreas, setSavingAreas] = useState(false);
 
   // Read-only "What Your AI Knows" view: the assembled KB document the AI
@@ -158,8 +161,36 @@ export default function MyBusinessPage() {
       fetchKnowledgeBase();
       fetchServiceAreas();
       fetchAiKnowledge();
+      fetchScrapeSuggestions();
     }
   }, [client]);
+
+  const fetchScrapeSuggestions = async () => {
+    if (!client) return;
+    try {
+      const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/scrape-suggestions`, { headers: { Authorization: `Bearer ${getAuthToken()}` } });
+      if (r.ok) { const d = await r.json(); setAreaSuggestions(Array.isArray(d.areas) ? d.areas : []); setHoursSuggestion(d.hours || null); }
+    } catch {}
+  };
+
+  const dismissAreaSuggestion = async (name: string) => {
+    setAreaSuggestions(prev => prev.filter(a => a !== name));
+    try { await fetch(`${getBackendUrl()}/api/client/${client!.id}/scrape-suggestions/dismiss`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` }, body: JSON.stringify({ type: 'area', name }) }); } catch {}
+  };
+  const addAreaSuggestion = async (name: string) => {
+    const next = serviceAreas.includes(name) ? serviceAreas : [...serviceAreas, name];
+    setServiceAreas(next); setOrigServiceAreas(next);
+    try { await fetch(`${getBackendUrl()}/api/client/${client!.id}/ai-settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` }, body: JSON.stringify({ service_areas: next }) }); } catch {}
+    dismissAreaSuggestion(name);
+  };
+  const dismissHoursSuggestion = async () => {
+    setHoursSuggestion(null);
+    try { await fetch(`${getBackendUrl()}/api/client/${client!.id}/scrape-suggestions/dismiss`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` }, body: JSON.stringify({ type: 'hours' }) }); } catch {}
+  };
+  const applyHoursSuggestion = () => {
+    if (hoursSuggestion) { setBusinessHours(hoursSuggestion); setHoursExpanded(true); }
+    dismissHoursSuggestion();
+  };
 
   const fetchAiKnowledge = async () => {
     if (!client) return;
@@ -465,6 +496,19 @@ export default function MyBusinessPage() {
         {/* Business Hours */}
         <div className="fu fu2">
           <SectionCard theme={theme} primaryColor={primaryColor} icon={Clock} title="Business Hours" subtitle="When your business is open">
+            {hoursSuggestion && (
+              <div className="mb-3 rounded-xl p-3 flex items-start gap-2.5" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.06 : 0.04), border: `1px solid ${hexToRgba(primaryColor, theme.isDark ? 0.15 : 0.12)}` }}>
+                <Globe className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: primaryColor }} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[12px] font-semibold" style={{ color: primaryColor }}>Found hours on your website</p>
+                  <p className="text-[10px] mt-0.5 leading-relaxed" style={{ color: theme.textMuted }}>We pulled opening hours from your site. Use them to fill the editor below, then review and save.</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <button onClick={applyHoursSuggestion} className="px-3 py-1.5 rounded-lg text-[11px] font-semibold transition hover:opacity-90" style={{ backgroundColor: primaryColor, color: theme.buttonText || '#fff' }}>Use these hours</button>
+                    <button onClick={dismissHoursSuggestion} className="px-3 py-1.5 rounded-lg text-[11px] font-medium transition hover:opacity-70" style={{ color: theme.textMuted }}>Dismiss</button>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="mb-3">
               <label className="block text-[11px] font-medium mb-1" style={{ color: theme.textMuted4 }}>Time zone</label>
               <TimezoneSelect value={timezone} onChange={setTimezone} ui={{ inputStyle, text: theme.text, muted: theme.textMuted4, panelBg: theme.isDark ? '#1c1c1b' : '#ffffff', panelBorder: theme.isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb', hover: theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', accent: theme.primary, isDark: theme.isDark }} />
@@ -480,19 +524,33 @@ export default function MyBusinessPage() {
             </div>
             {hoursExpanded && (
               <div className="mt-4 space-y-2">
-                {(Object.keys(businessHours) as Array<keyof BusinessHours>).map(day => (
-                  <div key={day} className="flex items-center gap-2 p-2 rounded-xl" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb' }}>
-                    <span className="w-10 sm:w-14 text-[11px] font-medium capitalize" style={{ color: theme.textMuted }}>{day.slice(0, 3)}</span>
-                    <label className="flex items-center gap-1"><input type="checkbox" checked={businessHours[day].closed} onChange={e => updateBusinessHoursField(day, 'closed', e.target.checked)} className="w-3.5 h-3.5 rounded" /><span className="text-[11px]" style={{ color: theme.textMuted }}>Closed</span></label>
-                    {!businessHours[day].closed && (
-                      <div className="flex items-center gap-1 ml-auto">
-                        <div className="w-24"><CustomSelect size="sm" value={businessHours[day].open} onChange={v => updateBusinessHoursField(day, 'open', v)} options={timeOptions} ui={dropdownUi} /></div>
-                        <span className="text-[10px]" style={{ color: theme.textMuted4 }}>–</span>
-                        <div className="w-24"><CustomSelect size="sm" value={businessHours[day].close} onChange={v => updateBusinessHoursField(day, 'close', v)} options={timeOptions} ui={dropdownUi} /></div>
+                {(Object.keys(businessHours) as Array<keyof BusinessHours>).map(day => {
+                  const d = businessHours[day];
+                  const dayName = day.charAt(0).toUpperCase() + day.slice(1);
+                  return (
+                    <div key={day} className="rounded-xl p-3" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.05)' : '#eef0f2'}` }}>
+                      {/* Day name + Open/Closed toggle */}
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[13px] font-semibold" style={{ color: theme.text }}>{dayName}</span>
+                        <button type="button" onClick={() => updateBusinessHoursField(day, 'closed', !d.closed)}
+                          className="px-2.5 py-1 rounded-full text-[11px] font-semibold transition"
+                          style={d.closed
+                            ? { backgroundColor: hexToRgba('#ef4444', theme.isDark ? 0.16 : 0.1), color: '#ef4444' }
+                            : { backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.16 : 0.1), color: primaryColor }}>
+                          {d.closed ? 'Closed' : 'Open'}
+                        </button>
                       </div>
-                    )}
-                  </div>
-                ))}
+                      {/* Time range: full-width selects so the time is never cut off */}
+                      {!d.closed && (
+                        <div className="flex items-center gap-2 mt-2.5">
+                          <div className="flex-1 min-w-0"><CustomSelect size="sm" value={d.open} onChange={v => updateBusinessHoursField(day, 'open', v)} options={timeOptions} ui={dropdownUi} /></div>
+                          <span className="text-[11px] flex-shrink-0" style={{ color: theme.textMuted }}>to</span>
+                          <div className="flex-1 min-w-0"><CustomSelect size="sm" value={d.close} onChange={v => updateBusinessHoursField(day, 'close', v)} options={timeOptions} ui={dropdownUi} /></div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
                 <SaveButton theme={theme} primaryColor={primaryColor} onClick={handleSaveBusinessHours} disabled={savingHours} loading={savingHours} label="Save Hours" />
               </div>
             )}
@@ -517,6 +575,21 @@ export default function MyBusinessPage() {
               <input type="text" value={newArea} onChange={e => setNewArea(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addArea(); } }} placeholder="e.g. Atlanta, Marietta, Decatur" className="flex-1 px-4 py-2.5 rounded-xl text-sm focus:outline-none" style={inputStyle} />
               <button onClick={addArea} disabled={!newArea.trim()} className="flex items-center gap-1 px-3 py-2.5 rounded-xl text-sm font-medium disabled:opacity-40 transition" style={{ backgroundColor: hexToRgba(primaryColor, 0.1), color: primaryColor }}><Plus className="w-4 h-4" /> Add</button>
             </div>
+            {areaSuggestions.length > 0 && (
+              <div className="mt-3 rounded-xl p-3" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.06 : 0.04), border: `1px solid ${hexToRgba(primaryColor, theme.isDark ? 0.15 : 0.12)}` }}>
+                <div className="flex items-center gap-1.5 mb-1.5"><Globe className="w-3.5 h-3.5" style={{ color: primaryColor }} /><span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: primaryColor }}>Found on your website</span></div>
+                <p className="text-[10px] mb-2.5 leading-relaxed" style={{ color: theme.textMuted }}>Areas we spotted on your site. Tap to add the ones you cover.</p>
+                <div className="flex flex-wrap gap-2">
+                  {areaSuggestions.map((a, i) => (
+                    <div key={`${a}-${i}`} className="inline-flex items-center gap-1.5 rounded-full pl-3 pr-1 py-1" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#ffffff', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb'}` }}>
+                      <span className="text-[12px] font-medium" style={{ color: theme.text }}>{a}</span>
+                      <button onClick={() => addAreaSuggestion(a)} title="Add this area" className="inline-flex items-center justify-center w-6 h-6 rounded-full transition hover:opacity-90 flex-shrink-0" style={{ backgroundColor: primaryColor, color: theme.buttonText || '#fff' }}><Plus className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => dismissAreaSuggestion(a)} title="Dismiss" className="inline-flex items-center justify-center w-5 h-5 rounded-full transition hover:opacity-70 flex-shrink-0" style={{ color: theme.textMuted }}><X className="w-3 h-3" /></button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             {hasAreaChanges && <SaveButton theme={theme} primaryColor={primaryColor} onClick={handleSaveServiceAreas} disabled={savingAreas} loading={savingAreas} label="Save Service Areas" />}
           </SectionCard>
         </div>

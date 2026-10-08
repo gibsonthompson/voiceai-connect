@@ -3,8 +3,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Users, Plus, Loader2, X, Check, Trash2, UserPlus,
-  Phone, Mail, Pencil, ChevronDown, ChevronUp, ToggleLeft, ToggleRight,
+  Phone, Mail, Pencil, ChevronDown, ChevronUp, ToggleLeft, ToggleRight, Globe,
 } from 'lucide-react';
+
+interface StaffSuggestion { name: string; role?: string | null; }
 
 function hexToRgba(hex: string, alpha: number): string {
   try {
@@ -23,6 +25,7 @@ interface StaffMember {
   email: string | null;
   notes: string | null;
   is_active: boolean;
+  transferable: boolean;
   google_calendar_id: string | null;
   created_at: string;
 }
@@ -53,10 +56,12 @@ const INDUSTRY_STAFF_PLACEHOLDERS: Record<string, { name: string; role: string; 
 };
 const DEFAULT_STAFF = { name: 'e.g. Jane Smith', role: 'e.g. Manager, Associate, Specialist', notes: 'e.g. Specialties, availability notes' };
 
-const EMPTY_FORM = { name: '', role: '', phone: '', email: '', notes: '' };
+const EMPTY_FORM = { name: '', role: '', phone: '', email: '', notes: '', transferable: false };
 
 export default function StaffMembersSection({ clientId, theme, compact, industry, hideHeader }: Props) {
   const [staff, setStaff] = useState<StaffMember[]>([]);
+  const [suggestions, setSuggestions] = useState<StaffSuggestion[]>([]);
+  const [resolvingSuggestion, setResolvingSuggestion] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -73,15 +78,37 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
     try {
       const token = localStorage.getItem('auth_token');
       const res = await fetch(`${backendUrl}/api/client/${clientId}/staff`, { headers: { Authorization: `Bearer ${token}` } });
-      if (res.ok) { const data = await res.json(); setStaff(data.staff || []); }
+      if (res.ok) { const data = await res.json(); setStaff(data.staff || []); setSuggestions(Array.isArray(data.suggestions) ? data.suggestions : []); }
     } catch (e) { console.error('Failed to fetch staff:', e); }
     finally { setLoading(false); }
   }, [clientId, backendUrl]);
 
   useEffect(() => { fetchStaff(); }, [fetchStaff]);
 
-  const openAdd = () => { setForm(EMPTY_FORM); setEditingId(null); setError(''); setShowModal(true); };
-  const openEdit = (member: StaffMember) => { setForm({ name: member.name, role: member.role || '', phone: member.phone || '', email: member.email || '', notes: member.notes || '' }); setEditingId(member.id); setError(''); setShowModal(true); };
+  const openAdd = () => { setForm(EMPTY_FORM); setEditingId(null); setResolvingSuggestion(null); setError(''); setShowModal(true); };
+  const openEdit = (member: StaffMember) => { setForm({ name: member.name, role: member.role || '', phone: member.phone || '', email: member.email || '', notes: member.notes || '', transferable: !!member.transferable }); setEditingId(member.id); setResolvingSuggestion(null); setError(''); setShowModal(true); };
+
+  // Add a scraped staff suggestion: open the form prefilled with name + role so
+  // the client can add a phone and confirm before saving. Dismissed on save.
+  const openSuggestion = (sg: StaffSuggestion) => {
+    setForm({ ...EMPTY_FORM, name: sg.name, role: sg.role || '' });
+    setEditingId(null);
+    setResolvingSuggestion(sg.name);
+    setError('');
+    setShowModal(true);
+  };
+
+  const dismissSuggestion = async (name: string) => {
+    setSuggestions(prev => prev.filter(s => s.name !== name));
+    try {
+      const token = localStorage.getItem('auth_token');
+      await fetch(`${backendUrl}/api/client/${clientId}/staff/suggestions/dismiss`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+    } catch (e) { console.error('Dismiss staff suggestion failed:', e); }
+  };
 
   const handleSave = async () => {
     if (!form.name.trim()) { setError('Name is required'); return; }
@@ -89,9 +116,10 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
     try {
       const token = localStorage.getItem('auth_token');
       const url = editingId ? `${backendUrl}/api/client/${clientId}/staff/${editingId}` : `${backendUrl}/api/client/${clientId}/staff`;
-      const res = await fetch(url, { method: editingId ? 'PUT' : 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: form.name.trim(), role: form.role.trim() || null, phone: form.phone.trim() || null, email: form.email.trim() || null, notes: form.notes.trim() || null }) });
+      const res = await fetch(url, { method: editingId ? 'PUT' : 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: form.name.trim(), role: form.role.trim() || null, phone: form.phone.trim() || null, email: form.email.trim() || null, notes: form.notes.trim() || null, transferable: !!form.transferable }) });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Failed to save'); return; }
+      if (resolvingSuggestion) { await dismissSuggestion(resolvingSuggestion); setResolvingSuggestion(null); }
       setShowModal(false); fetchStaff();
     } catch { setError('Network error'); }
     finally { setSaving(false); }
@@ -134,6 +162,19 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
           <input type="email" placeholder="name@business.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none" style={inputStyle} />
         </div>
       </div>
+      <div className="flex items-start justify-between gap-3 rounded-xl px-3.5 py-3" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}` }}>
+        <div className="min-w-0">
+          <p className="text-sm font-medium" style={{ color: theme.text }}>Can be transferred to</p>
+          <p className="text-[11px] mt-0.5 leading-snug" style={{ color: (form.transferable && !form.phone.trim()) ? '#f59e0b' : theme.textMuted }}>
+            {(form.transferable && !form.phone.trim())
+              ? 'Add a phone number above so the AI has somewhere to transfer.'
+              : 'Let the AI connect callers to this person during a call. Needs a phone number.'}
+          </p>
+        </div>
+        <button type="button" role="switch" aria-checked={form.transferable} onClick={() => setForm({ ...form, transferable: !form.transferable })} className="relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors focus:outline-none" style={{ backgroundColor: form.transferable ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
+          <span className="pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transition" style={{ transform: form.transferable ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
+        </button>
+      </div>
       <div>
         <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>Notes</label>
         <textarea placeholder={ph.notes} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none resize-none" style={inputStyle} />
@@ -152,7 +193,7 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
       )}
       {!compact && (
         <p className="text-[10px] sm:text-xs mb-2 sm:mb-3" style={{ color: theme.textMuted }}>
-          People your AI knows about — for call routing, scheduling, and referrals
+          People your AI knows about, for call routing, scheduling, and referrals
         </p>
       )}
       {compact && !hideHeader && (
@@ -187,6 +228,7 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
                             {member.role && <span className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: hexToRgba(theme.primary, 0.08), color: theme.primary }}>{member.role}</span>}
                             {!member.is_active && <span className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: theme.isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2', color: '#ef4444' }}>Inactive</span>}
                             {member.google_calendar_id && <span className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: theme.isDark ? 'rgba(34,197,94,0.1)' : '#f0fdf4', color: '#22c55e' }}>Calendar</span>}
+                            {member.transferable && member.phone && <span className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 inline-flex items-center gap-0.5" style={{ backgroundColor: hexToRgba(theme.primary, 0.1), color: theme.primary }}><Phone className="h-2 w-2" />Transfers</span>}
                           </div>
                           <div className="flex items-center gap-3 mt-0.5">
                             {member.phone && <span className="text-[10px] flex items-center gap-1" style={{ color: theme.textMuted }}><Phone className="h-2.5 w-2.5" />{member.phone}</span>}
@@ -200,6 +242,22 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
                         </div>
                       </div>
                     ))}
+                  </div>
+                )}
+                {suggestions.length > 0 && (
+                  <div className="mb-3 rounded-xl p-3" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.06 : 0.04), border: `1px solid ${hexToRgba(theme.primary, theme.isDark ? 0.15 : 0.12)}` }}>
+                    <div className="flex items-center gap-1.5 mb-1.5"><Globe className="w-3.5 h-3.5" style={{ color: theme.primary }} /><span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: theme.primary }}>Found on your website</span></div>
+                    <p className="text-[10px] mb-2.5 leading-relaxed" style={{ color: theme.textMuted }}>People we spotted on your site. Add the ones on your team (you can set a phone and role), or dismiss the rest.</p>
+                    <div className="flex flex-wrap gap-2">
+                      {suggestions.map((sg, i) => (
+                        <div key={`${sg.name}-${i}`} className="inline-flex items-center gap-1.5 rounded-full pl-3 pr-1 py-1" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#ffffff', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb'}` }}>
+                          <span className="text-[12px] font-medium" style={{ color: theme.text }}>{sg.name}</span>
+                          {sg.role && <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: hexToRgba(theme.primary, 0.12), color: theme.primary }}>{sg.role}</span>}
+                          <button onClick={() => openSuggestion(sg)} title="Add this person" className="inline-flex items-center justify-center w-6 h-6 rounded-full transition hover:opacity-90 flex-shrink-0" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Plus className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => dismissSuggestion(sg.name)} title="Dismiss" className="inline-flex items-center justify-center w-5 h-5 rounded-full transition hover:opacity-70 flex-shrink-0" style={{ color: theme.textMuted }}><X className="w-3 h-3" /></button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
                 <button onClick={openAdd} className="w-full flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-medium transition-all hover:scale-[1.01] active:scale-[0.99]" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.1 : 0.05), color: theme.primary, border: `1px dashed ${hexToRgba(theme.primary, 0.3)}` }}><UserPlus className="h-3.5 w-3.5" /> Add Staff Member</button>
