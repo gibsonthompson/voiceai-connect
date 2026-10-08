@@ -119,6 +119,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   return (
     <>
       <script dangerouslySetInnerHTML={{ __html: PREVIEW_AUTH_BOOTSTRAP }} />
+      {/* App-like scrolling: stop the page from rubber-band / overscrolling past
+          the top so the sticky nav stays pinned and you can't scroll above it. */}
+      <style dangerouslySetInnerHTML={{ __html: 'html,body{overscroll-behavior-y:none;}' }} />
       <ClientShell>{children}</ClientShell>
     </>
   );

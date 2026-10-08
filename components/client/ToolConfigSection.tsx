@@ -235,9 +235,9 @@ export default function ToolConfigSection({ clientId, theme, compact }: Props) {
       key: 'businessHoursRouting' as const,
       icon: Moon,
       label: 'After-Hours Mode',
-      description: 'Different behavior when your business is closed: booking and messages still work, no live transfers',
+      description: 'How the AI behaves when you’re closed: still books and takes messages, but won’t transfer to a person',
       enabled: config.businessHoursRouting,
-      details: "When this is on, the AI uses your Business Hours to know when you're open. Outside those hours it still books appointments, answers questions, and takes messages (and tells callers when you'll follow up), it just won't transfer them to a live person. Appointments are always scheduled within your open hours. Leave it off only if you take live calls 24/7.",
+      details: "This is the AI’s closed-hours mode, based on your Business Hours. When you’re closed, the AI still answers, books appointments, and takes messages, then tells the caller someone will follow up. The one thing it skips is transferring the caller to a live person, since no one is in to take the call. Appointments are always booked inside your open hours. Only turn this off if someone can take live transfers 24/7.",
     },
   ];
 

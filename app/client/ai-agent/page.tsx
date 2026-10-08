@@ -89,6 +89,7 @@ export default function ClientAIAgentPage() {
   const hideBilling = !!(client?.agency as any)?.hide_client_billing;
   const theme = useClientTheme();
   const [message, setMessage] = useState('');
+  const [messageError, setMessageError] = useState(false);
   const primaryColor = theme.primary;
 
   const [voices, setVoices] = useState<{ female: VoiceOption[]; male: VoiceOption[] }>({ female: [], male: [] });
@@ -252,7 +253,7 @@ export default function ClientAIAgentPage() {
   const handleSaveGreeting = async () => { if (greetingMessage === originalGreeting || !client) return; setSavingGreeting(true); setGreetingSaved(false); try { const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/greeting`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` }, body: JSON.stringify({ greeting_message: greetingMessage }) }); const d = await r.json(); if (d.success) { setOriginalGreeting(greetingMessage); setGreetingSaved(true); setTimeout(() => setGreetingSaved(false), 6000); showMessage('Greeting saved. Callers will hear it on the next call.'); } else { showMessage(d.error || 'Failed to save greeting. Please try again.', true); } } catch { showMessage('Error saving greeting. Please try again.', true); } finally { setSavingGreeting(false); } };
   const handleResetGreeting = () => { if (!client?.business_name) return; setGreetingMessage(`Hi, you've reached ${client.business_name}. This call may be recorded for quality and training purposes. How can I help you today?`); };
   const handleTestCall = () => { if (client?.vapi_phone_number) window.location.href = `tel:${client.vapi_phone_number}`; };
-  const showMessage = (text: string, isError = false) => { setMessage(isError ? `❌ ${text}` : `✅ ${text}`); setTimeout(() => setMessage(''), 5000); };
+  const showMessage = (text: string, isError = false) => { setMessage(text); setMessageError(isError); setTimeout(() => setMessage(''), 5000); };
 
   const getAllVoices = (): VoiceOption[] => [...(voices.female || []), ...(voices.male || [])];
   const getAvailableAccents = (): string[] => [...new Set(getAllVoices().map(v => v.accent))].sort();
@@ -293,8 +294,8 @@ export default function ClientAIAgentPage() {
           whenever the user saved a section lower down (voice, greeting), making
           every save look like it did nothing. */}
       {message && (
-        <div className="fixed top-4 left-1/2 z-[100] toast-in px-4 py-3 rounded-xl text-center font-semibold text-sm shadow-lg max-w-[90vw]"
-          style={message.includes('✅') ? { backgroundColor: theme.successBg, color: theme.successText, border: `1px solid ${theme.successBorder}` } : { backgroundColor: theme.errorBg, color: theme.errorText, border: `1px solid ${theme.errorBorder}` }}>
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] toast-in px-4 py-3 rounded-xl text-center font-semibold text-sm shadow-lg w-[calc(100vw-2rem)] max-w-sm"
+          style={{ ...(messageError ? { backgroundColor: theme.errorBg, color: theme.errorText, border: `1px solid ${theme.errorBorder}` } : { backgroundColor: theme.successBg, color: theme.successText, border: `1px solid ${theme.successBorder}` }), top: 'calc(env(safe-area-inset-top) + 1rem)' }}>
           {message}
         </div>
       )}
