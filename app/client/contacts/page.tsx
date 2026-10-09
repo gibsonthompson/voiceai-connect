@@ -128,11 +128,12 @@ export default function ClientContactsPage() {
   if (loading || !client) return <div className="flex items-center justify-center min-h-[50vh]" style={{ backgroundColor: theme.bg }}><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.textMuted4 }} /></div>;
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 min-h-screen" style={{ backgroundColor: theme.bg }}>
+    <div className="min-h-screen" style={{ backgroundColor: theme.bg }}>
       <style dangerouslySetInnerHTML={{ __html: ANIM_CSS + `.cr{transition:background .15s ease}.cr:hover{background:${theme.hover} !important}` }} />
 
-      {/* Header */}
-      <div className="mb-5 sm:mb-7 fu fu1">
+      {/* Header + search (sticky, so the list scrolls underneath, on desktop and PWA) */}
+      <div className="sticky top-14 sm:top-16 lg:top-0 z-30 px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 lg:pt-8 pb-3 sm:pb-4" style={{ backgroundColor: theme.bg, borderBottom: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}>
+      <div className="mb-4 fu fu1">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Contacts</h1>
@@ -159,7 +160,7 @@ export default function ClientContactsPage() {
       </div>
 
       {/* Search + Sort */}
-      <div className="flex items-center gap-3 mb-5 sm:mb-7 fu fu2">
+      <div className="flex items-center gap-3 fu fu2">
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted4 }} />
           <input type="text" placeholder="Search contacts..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
@@ -175,7 +176,10 @@ export default function ClientContactsPage() {
         </select>
       </div>
 
+      </div>
+
       {/* Contacts List */}
+      <div className="px-4 sm:px-6 lg:px-8 pt-4 sm:pt-5 pb-8">
       <div className="rounded-2xl overflow-hidden fu fu2" style={glass}>
         {contactsLoading ? (
           <div className="py-20 flex items-center justify-center">
@@ -252,6 +256,7 @@ export default function ClientContactsPage() {
             ))}
           </div>
         )}
+      </div>
       </div>
 
       {/* Add Contact Modal */}

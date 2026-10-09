@@ -185,14 +185,14 @@ export default function ClientCallsPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 min-h-screen" style={{ backgroundColor: theme.bg }}>
+    <div className="min-h-screen" style={{ backgroundColor: theme.bg }}>
       <style dangerouslySetInnerHTML={{ __html: ANIM_CSS + `
         .call-row{transition:background .15s ease}
         .call-row:hover{background:${theme.hover} !important}
       `}} />
 
-      {/* Header */}
-      <div className="mb-5 sm:mb-7 fu fu1">
+      {/* Header (sticky, so the list scrolls underneath it, on desktop and PWA) */}
+      <div className="sticky top-14 sm:top-16 lg:top-0 z-30 px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 lg:pt-8 pb-3 sm:pb-4 fu fu1" style={{ backgroundColor: theme.bg, borderBottom: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}>
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Call History</h1>
@@ -276,6 +276,7 @@ export default function ClientCallsPage() {
       </div>
 
       {/* Calls */}
+      <div className="px-4 sm:px-6 lg:px-8 pt-4 sm:pt-5 pb-8">
       {callsLoading ? (
         <div className="rounded-2xl py-20 flex items-center justify-center fu fu2" style={glass}>
           <Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.textMuted4 }} />
@@ -354,6 +355,7 @@ export default function ClientCallsPage() {
           })}
         </div>
       )}
+      </div>
     </div>
   );
 }

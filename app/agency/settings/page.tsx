@@ -22,26 +22,6 @@ type SettingsTab = 'profile' | 'pricing' | 'payments' | 'billing' | 'twilio' | '
 
 // Agency-wide booking-window defaults. '' = platform default (30 min / 60 days).
 // A client can still override either value on its own AI Settings.
-const AGENCY_NOTICE_OPTIONS = [
-  { value: '', label: 'Platform default (30 minutes)' },
-  { value: '0', label: 'No minimum (same-day OK)' },
-  { value: '30', label: '30 minutes' },
-  { value: '60', label: '1 hour' },
-  { value: '120', label: '2 hours' },
-  { value: '240', label: '4 hours' },
-  { value: '1440', label: '24 hours' },
-  { value: '2880', label: '48 hours' },
-];
-const AGENCY_HORIZON_OPTIONS = [
-  { value: '', label: 'Platform default (60 days)' },
-  { value: '7', label: '1 week' },
-  { value: '14', label: '2 weeks' },
-  { value: '30', label: '30 days' },
-  { value: '60', label: '60 days' },
-  { value: '90', label: '90 days' },
-  { value: '180', label: '6 months' },
-  { value: '365', label: '1 year' },
-];
 interface StripeStatus { connected: boolean; account_id?: string; onboarding_complete: boolean; charges_enabled: boolean; payouts_enabled: boolean; details_submitted?: boolean; }
 interface FeedbackItem { id: string; message: string; created_at: string; }
 function isTrialStatus(status: string | null | undefined): boolean { return status === 'trial' || status === 'trialing'; }
@@ -324,9 +304,6 @@ function AgencySettingsContent() {
   const validTabs: SettingsTab[] = ['profile', 'pricing', 'payments', 'billing', 'twilio', 'embed', 'team', 'demo', 'support', 'developer', 'webhooks'];
   const [activeTab, setActiveTab] = useState<SettingsTab>(validTabs.includes(initialTab) ? initialTab : 'profile');
   const [saving, setSaving] = useState(false); const [saved, setSaved] = useState(false); const [error, setError] = useState<string | null>(null);
-  // Agency booking-window defaults (stored as strings for the <select>; '' = platform default).
-  const [agencyMinNotice, setAgencyMinNotice] = useState<string>('');
-  const [agencyMaxDays, setAgencyMaxDays] = useState<string>('');
   const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null); const [loadingStripeStatus, setLoadingStripeStatus] = useState(false);
   const [connectingStripe, setConnectingStripe] = useState(false); const [disconnectingStripe, setDisconnectingStripe] = useState(false);
   // Country for a NEW Stripe Connect account. A connected account's country is
@@ -483,7 +460,7 @@ function AgencySettingsContent() {
   const slugChanged = slugNormalized !== (agency?.slug || '').toLowerCase();
   const slugFormatOk = isSlugFormatValid(slugNormalized);
 
-  useEffect(() => { if (agency) { setBillingMethod((agency as any).billing_method || ''); setCustomFeatures(Array.isArray((agency as any).custom_features) ? (agency as any).custom_features : []); setFeatureOverrides(((agency as any).feature_overrides && typeof (agency as any).feature_overrides === 'object') ? (agency as any).feature_overrides : {}); setAgencyName(agency.name || ''); setAgencyPhone((agency as any).phone || ''); setSlugInput(agency.slug || ''); setLogoUrl(agency.logo_url || ''); setLogoPreview(agency.logo_url); setAppName((agency as any).app_name || ''); setAppIconUrl((agency as any).app_icon_url || ''); setAppIconPreview((agency as any).app_icon_url || null); setPriceStarter(agency.price_starter != null ? (agency.price_starter / 100).toString() : ''); setPricePro(agency.price_pro != null ? (agency.price_pro / 100).toString() : ''); setPriceGrowth(agency.price_growth != null ? (agency.price_growth / 100).toString() : ''); const _legacyFee = Number((agency as any).setup_fee_cents) || 0; const _sfS = (agency as any).setup_fee_starter_cents; const _sfP = (agency as any).setup_fee_pro_cents; const _sfG = (agency as any).setup_fee_growth_cents; const _hasPerPlanFee = _sfS != null || _sfP != null || _sfG != null; const _seedFee = (v: any): { on: boolean; amt: string } => { const n = Number(v); if (n > 0) return { on: true, amt: (n / 100).toString() }; if (!_hasPerPlanFee && _legacyFee > 0) return { on: true, amt: (_legacyFee / 100).toString() }; return { on: false, amt: '' }; }; const _fs = _seedFee(_sfS); setSetupOnStarter(_fs.on); setSetupStarter(_fs.amt); const _fp = _seedFee(_sfP); setSetupOnPro(_fp.on); setSetupPro(_fp.amt); const _fg = _seedFee(_sfG); setSetupOnGrowth(_fg.on); setSetupGrowth(_fg.amt); const ls = agency.limit_starter; const lp = agency.limit_pro; const lg = agency.limit_growth; setUnlimitedStarter(ls === -1); setUnlimitedPro(lp === -1); setUnlimitedGrowth(lg === -1); setLimitStarter(ls === -1 ? '50' : (ls || 50).toString()); setLimitPro(lp === -1 ? '150' : (lp || 150).toString()); setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString()); setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES); setBrandColors({ primary: agency.primary_color || '#10b981', secondary: agency.secondary_color || '#059669', accent: agency.accent_color || '#34d399' }); setAllowClientBranding((agency as any).allow_client_branding || false); setPlanStarterName((agency as any).plan_starter_name || 'Starter'); setPlanProName((agency as any).plan_pro_name || 'Professional'); setPlanGrowthName((agency as any).plan_growth_name || 'Growth'); setPlanStarterDescription((agency as any).plan_starter_description || ''); setPlanProDescription((agency as any).plan_pro_description || ''); setPlanGrowthDescription((agency as any).plan_growth_description || ''); setRequireCardForTrial((agency as any).require_card_for_trial === true); setSetupFeeTiming((agency as any).setup_fee_timing === 'after_trial' ? 'after_trial' : 'upfront'); const _ctd0 = Number((agency as any).client_trial_days); const _ctd = Number.isFinite(_ctd0) && _ctd0 >= 0 ? Math.min(Math.floor(_ctd0), 365) : 7; setClientTrialDays(_ctd); setTrialCustomActive(![0, 7, 14, 30].includes(_ctd)); setMinutePassThrough((agency as any).minute_pass_through === true); setBillMinutesDuringTrial((agency as any).bill_minutes_during_trial === true); const _rc = Number((agency as any).client_minute_rate_cents); setClientMinuteRate(_rc > 0 ? (_rc / 100).toString() : ''); setClientBillingMode((agency as any).client_billing_mode === 'manual' ? 'manual' : 'connect'); setAllowClientPlanChanges((agency as any).allow_client_plan_changes === true); setHideClientBilling((agency as any).hide_client_billing === true); setAgencyMinNotice((agency as any).default_min_booking_notice_minutes != null ? String((agency as any).default_min_booking_notice_minutes) : ''); setAgencyMaxDays((agency as any).default_max_booking_days_ahead != null ? String((agency as any).default_max_booking_days_ahead) : ''); setPaystackConnected((agency as any).paystack_connected === true); setPaystackCurrency((agency as any).paystack_currency || null); setFlutterwaveConnected((agency as any).flutterwave_connected === true); setFlutterwaveCurrency((agency as any).flutterwave_currency || null); setPlans((((agency as any).plans) || []).map((p: any) => ({ _uid: 'p_' + (p.key || Math.random().toString(36).slice(2, 8)), key: p.key || '', name: p.name || '', price: p.price_cents != null ? (p.price_cents / 100).toString() : '', call_limit: p.call_limit === -1 ? '50' : String(p.call_limit != null ? p.call_limit : 50), unlimited: p.call_limit === -1, description: p.description || '', setupOn: p.setup_fee_cents != null && p.setup_fee_cents > 0, setupFee: (p.setup_fee_cents != null && p.setup_fee_cents > 0) ? (p.setup_fee_cents / 100).toString() : '', included_minutes: String((p.included_minutes != null && p.included_minutes > 0) ? p.included_minutes : optimalMinutes(p.call_limit)), features: p.features || {}, visible: p.visible !== false }))); } }, [agency?.branding_overrides]);
+  useEffect(() => { if (agency) { setBillingMethod((agency as any).billing_method || ''); setCustomFeatures(Array.isArray((agency as any).custom_features) ? (agency as any).custom_features : []); setFeatureOverrides(((agency as any).feature_overrides && typeof (agency as any).feature_overrides === 'object') ? (agency as any).feature_overrides : {}); setAgencyName(agency.name || ''); setAgencyPhone((agency as any).phone || ''); setSlugInput(agency.slug || ''); setLogoUrl(agency.logo_url || ''); setLogoPreview(agency.logo_url); setAppName((agency as any).app_name || ''); setAppIconUrl((agency as any).app_icon_url || ''); setAppIconPreview((agency as any).app_icon_url || null); setPriceStarter(agency.price_starter != null ? (agency.price_starter / 100).toString() : ''); setPricePro(agency.price_pro != null ? (agency.price_pro / 100).toString() : ''); setPriceGrowth(agency.price_growth != null ? (agency.price_growth / 100).toString() : ''); const _legacyFee = Number((agency as any).setup_fee_cents) || 0; const _sfS = (agency as any).setup_fee_starter_cents; const _sfP = (agency as any).setup_fee_pro_cents; const _sfG = (agency as any).setup_fee_growth_cents; const _hasPerPlanFee = _sfS != null || _sfP != null || _sfG != null; const _seedFee = (v: any): { on: boolean; amt: string } => { const n = Number(v); if (n > 0) return { on: true, amt: (n / 100).toString() }; if (!_hasPerPlanFee && _legacyFee > 0) return { on: true, amt: (_legacyFee / 100).toString() }; return { on: false, amt: '' }; }; const _fs = _seedFee(_sfS); setSetupOnStarter(_fs.on); setSetupStarter(_fs.amt); const _fp = _seedFee(_sfP); setSetupOnPro(_fp.on); setSetupPro(_fp.amt); const _fg = _seedFee(_sfG); setSetupOnGrowth(_fg.on); setSetupGrowth(_fg.amt); const ls = agency.limit_starter; const lp = agency.limit_pro; const lg = agency.limit_growth; setUnlimitedStarter(ls === -1); setUnlimitedPro(lp === -1); setUnlimitedGrowth(lg === -1); setLimitStarter(ls === -1 ? '50' : (ls || 50).toString()); setLimitPro(lp === -1 ? '150' : (lp || 150).toString()); setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString()); setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES); setBrandColors({ primary: agency.primary_color || '#10b981', secondary: agency.secondary_color || '#059669', accent: agency.accent_color || '#34d399' }); setAllowClientBranding((agency as any).allow_client_branding || false); setPlanStarterName((agency as any).plan_starter_name || 'Starter'); setPlanProName((agency as any).plan_pro_name || 'Professional'); setPlanGrowthName((agency as any).plan_growth_name || 'Growth'); setPlanStarterDescription((agency as any).plan_starter_description || ''); setPlanProDescription((agency as any).plan_pro_description || ''); setPlanGrowthDescription((agency as any).plan_growth_description || ''); setRequireCardForTrial((agency as any).require_card_for_trial === true); setSetupFeeTiming((agency as any).setup_fee_timing === 'after_trial' ? 'after_trial' : 'upfront'); const _ctd0 = Number((agency as any).client_trial_days); const _ctd = Number.isFinite(_ctd0) && _ctd0 >= 0 ? Math.min(Math.floor(_ctd0), 365) : 7; setClientTrialDays(_ctd); setTrialCustomActive(![0, 7, 14, 30].includes(_ctd)); setMinutePassThrough((agency as any).minute_pass_through === true); setBillMinutesDuringTrial((agency as any).bill_minutes_during_trial === true); const _rc = Number((agency as any).client_minute_rate_cents); setClientMinuteRate(_rc > 0 ? (_rc / 100).toString() : ''); setClientBillingMode((agency as any).client_billing_mode === 'manual' ? 'manual' : 'connect'); setAllowClientPlanChanges((agency as any).allow_client_plan_changes === true); setHideClientBilling((agency as any).hide_client_billing === true); setPaystackConnected((agency as any).paystack_connected === true); setPaystackCurrency((agency as any).paystack_currency || null); setFlutterwaveConnected((agency as any).flutterwave_connected === true); setFlutterwaveCurrency((agency as any).flutterwave_currency || null); setPlans((((agency as any).plans) || []).map((p: any) => ({ _uid: 'p_' + (p.key || Math.random().toString(36).slice(2, 8)), key: p.key || '', name: p.name || '', price: p.price_cents != null ? (p.price_cents / 100).toString() : '', call_limit: p.call_limit === -1 ? '50' : String(p.call_limit != null ? p.call_limit : 50), unlimited: p.call_limit === -1, description: p.description || '', setupOn: p.setup_fee_cents != null && p.setup_fee_cents > 0, setupFee: (p.setup_fee_cents != null && p.setup_fee_cents > 0) ? (p.setup_fee_cents / 100).toString() : '', included_minutes: String((p.included_minutes != null && p.included_minutes > 0) ? p.included_minutes : optimalMinutes(p.call_limit)), features: p.features || {}, visible: p.visible !== false }))); } }, [agency?.branding_overrides]);
   useEffect(() => { if (activeTab === 'payments' && agency?.id) fetchStripeStatus(); }, [activeTab, agency?.id]);
   useEffect(() => { const onFocus = () => { if (activeTab === 'payments' && agency?.id) fetchStripeStatus(); }; window.addEventListener('focus', onFocus); return () => window.removeEventListener('focus', onFocus); }, [activeTab, agency?.id]);
   useEffect(() => { if (agency) setConnectCountry(((((agency as any).country as string) || 'US')).toUpperCase()); }, [agency?.id]);
@@ -673,8 +650,6 @@ function AgencySettingsContent() {
         if (detectedWebsiteTheme) payload.website_theme = detectedWebsiteTheme;
         if (detectedLogoBgColor) payload.logo_background_color = detectedLogoBgColor;
         payload.allow_client_branding = allowClientBranding;
-        payload.default_min_booking_notice_minutes = agencyMinNotice === '' ? null : Number(agencyMinNotice);
-        payload.default_max_booking_days_ahead = agencyMaxDays === '' ? null : Number(agencyMaxDays);
       } else if (activeTab === 'pricing') {
         payload.custom_features = customFeatures.filter((f) => f.label.trim()).map((f) => ({ key: f.key, label: f.label.trim() }));
         payload.feature_overrides = featureOverrides;
@@ -1073,27 +1048,6 @@ function AgencySettingsContent() {
                   >
                     {changingPassword ? <><Loader2 className="h-4 w-4 animate-spin" />Changing...</> : <><Lock className="h-4 w-4" />Change Password</>}
                   </button>
-                </div>
-
-                <div className="rounded-xl p-3 sm:p-4" style={{ border: `1px solid ${theme.border}` }}>
-                  <h4 className="text-sm font-medium mb-1" style={{ color: theme.text }}>Booking defaults</h4>
-                  <p className="text-[10px] sm:text-xs mb-3" style={{ color: theme.textMuted }}>Applied to every client that has not set its own booking window. Each client can still override these on their AI Settings. Save with the button below.</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs sm:text-sm font-medium mb-1.5">Minimum booking notice</label>
-                      <select value={agencyMinNotice} onChange={(e) => setAgencyMinNotice(e.target.value)} className="w-full rounded-xl px-3 py-2.5 text-sm" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>
-                        {AGENCY_NOTICE_OPTIONS.map(o => (<option key={o.value || 'default'} value={o.value}>{o.label}</option>))}
-                      </select>
-                      <p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>How soon from now the AI can book. Never blocks a day, just moves the earliest offered time forward.</p>
-                    </div>
-                    <div>
-                      <label className="block text-xs sm:text-sm font-medium mb-1.5">How far ahead bookings are taken</label>
-                      <select value={agencyMaxDays} onChange={(e) => setAgencyMaxDays(e.target.value)} className="w-full rounded-xl px-3 py-2.5 text-sm" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>
-                        {AGENCY_HORIZON_OPTIONS.map(o => (<option key={o.value || 'default'} value={o.value}>{o.label}</option>))}
-                      </select>
-                      <p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>The furthest out a caller can book an appointment.</p>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>)}
