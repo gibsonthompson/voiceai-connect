@@ -146,6 +146,7 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
   const startDemo = useCallback(() => {
     if (!info?.client?.assistant_id) { setControlNote('This client has no assistant set up yet.'); return; }
     if (!VAPI_PUBLIC_KEY) { setControlNote('Live demo needs NEXT_PUBLIC_VAPI_PUBLIC_KEY set.'); return; }
+    const assistantId: string = info.client.assistant_id;
     resetFeed();
     setCallState('connecting');
     setStatusLabel('Connecting');
@@ -160,7 +161,7 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
       v.on('error', (err: any) => { setControlNote(err?.message || 'Call error'); setCallState('idle'); setStatusLabel('Ready'); });
       v.on('message', (msg: any) => handleVapiMessage(msg));
 
-      try { v.start(info.client!.assistant_id); } catch (e: any) { setControlNote(e?.message || 'Could not start the call'); setCallState('idle'); }
+      try { v.start(assistantId); } catch (e: any) { setControlNote(e?.message || 'Could not start the call'); setCallState('idle'); }
     }).catch((e) => { setControlNote(e?.message || 'Could not load the calling library'); setCallState('idle'); });
   }, [info, resetFeed]);
 
