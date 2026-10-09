@@ -9,6 +9,7 @@ import {
 import { useAgency } from '../context';
 import { useTheme } from '../../../hooks/useTheme';
 import PlatformUnreadNudge from '@/components/agency/PlatformUnreadNudge';
+import BroadcastBanner from '@/components/agency/BroadcastBanner';
 import NeedToSearch from '@/components/agency/NeedToSearch';
 import { DEMO_DASHBOARD } from '../demoData';
 import SetupChecklist from '@/components/agency/SetupChecklist';
@@ -176,6 +177,9 @@ export default function AgencyDashboardPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
+      {/* Platform announcement banner (admin broadcasts) */}
+      <BroadcastBanner />
+
       {/* Feedback Modal */}
       {showFeedbackModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
