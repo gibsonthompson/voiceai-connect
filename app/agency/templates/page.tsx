@@ -8,7 +8,7 @@ import {
   Radio, AlertTriangle, Undo2, Pencil, Sparkles, Building2, Package,
   Briefcase, X, Copy, Info,
   Play, Pause, ArrowUpRight, Maximize2, Minimize2, PhoneForwarded,
-  BookOpen, Plus, Trash2, Globe, HelpCircle, FileText
+  BookOpen, Plus, Trash2, Globe, HelpCircle, FileText, Headphones
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAgency } from '@/app/agency/context';
@@ -609,6 +609,11 @@ export default function AILabPage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0"><div className="flex h-12 w-12 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Building className="h-6 w-6" style={{ color: theme.primary }} /></div><div className="min-w-0"><p className="font-semibold text-base truncate" style={{ color: theme.text }}>{selectedClient.business_name}</p><p className="text-sm flex items-center gap-1.5 flex-wrap" style={{ color: theme.textMuted }}>{(() => { const ind = INDUSTRIES.find(i => i.value === selectedClient.industry); const Ic = ind ? ICON_MAP[ind.icon] : null; return (<>{Ic && <Ic className="h-4 w-4" style={{ color: theme.primary }} />}<span className="font-medium" style={{ color: theme.text }}>{ind?.label || selectedClient.industry}</span> · {selectedClient.business_city}, {selectedClient.business_state}</>); })()}</p><p className="text-sm mt-1 flex items-center gap-1.5" style={{ color: theme.textMuted }}><Building2 className="h-3 w-3" /> Agency: <span className="font-medium" style={{ color: theme.text }}>{agency?.name}</span></p></div></div>
                 {selectedClient.vapi_phone_number && (<div className="text-right flex-shrink-0"><p className="text-sm uppercase tracking-wider" style={{ color: theme.textMuted }}>AI Phone</p><p className="text-base font-mono font-semibold" style={{ color: theme.primary }}>{fmtPhone(selectedClient.vapi_phone_number)}</p></div>)}
+              </div>
+              <div className="mt-4 pt-4 flex flex-wrap items-center gap-2" style={{ borderTop: `1px solid ${theme.border}` }}>
+                <a href={`/live/${selectedClient.id}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Radio className="h-4 w-4" /> Live demo screen</a>
+                <a href={`/live/${selectedClient.id}?mode=monitor`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition hover:opacity-90" style={{ backgroundColor: theme.hover, color: theme.text, border: `1px solid ${theme.border}` }}><Headphones className="h-4 w-4" /> Monitor live call</a>
+                <span className="text-[11px]" style={{ color: theme.textMuted }}>Opens a clean, white-labeled screen to screenshare on a call.</span>
               </div>
             </div>
 
