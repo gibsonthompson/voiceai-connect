@@ -29,9 +29,12 @@ import {
   BookOpen, PhoneForwarded, MessageSquare, Sparkles, Send, Building2,
   ChevronRight, CircleDot, Headphones, VolumeX,
 } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
 
 const API = process.env.NEXT_PUBLIC_API_URL || '';
 const VAPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY || '';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 type Mode = 'demo' | 'monitor';
 type CallState = 'idle' | 'connecting' | 'live' | 'ended';
@@ -46,6 +49,7 @@ interface Info {
   client: { id: string; business_name: string; assistant_id: string | null; industry: string | null };
   branding: Branding;
   web_demo_available: boolean;
+  realtime_channel?: string;
 }
 
 interface Line { id: string; role: 'caller' | 'assistant'; text: string; }
@@ -135,11 +139,13 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
   const vapiRef = useRef<any>(null);
   const esRef = useRef<EventSource | null>(null);
   const callIdRef = useRef<string | null>(null);
+  const seenIdsRef = useRef<Set<string>>(new Set());
   const transcriptEndRef = useRef<HTMLDivElement | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const audioWsRef = useRef<WebSocket | null>(null);
   const nextTimeRef = useRef(0);
   const listenRateRef = useRef(16000);
+  const scrollQueuedRef = useRef(false);
 
   useEffect(() => { listenRateRef.current = listenRate; }, [listenRate]);
 
@@ -186,7 +192,15 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
   }, []);
 
   useEffect(() => {
-    transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Throttle to one scroll per animation frame and keep it instant, so rapid
+    // partial-transcript updates do not queue smooth-scroll animations (which
+    // read as lag). Keeps the newest line in view in real time.
+    if (scrollQueuedRef.current) return;
+    scrollQueuedRef.current = true;
+    requestAnimationFrame(() => {
+      scrollQueuedRef.current = false;
+      transcriptEndRef.current?.scrollIntoView({ block: 'end' });
+    });
   }, [lines, partial, activities]);
 
   // ---- DEMO mode: browser call via the Vapi web SDK ------------------------
@@ -246,6 +260,13 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
   // ---- MONITOR mode: SSE stream of a real call -----------------------------
   const applyServerEvent = useCallback((ev: any) => {
     if (!ev || !ev.type) return;
+    // The same event can arrive on both the SSE stream and the Supabase Realtime
+    // channel; de-duplicate by its stamped id so it renders once.
+    if (ev.id) {
+      if (seenIdsRef.current.has(ev.id)) return;
+      seenIdsRef.current.add(ev.id);
+      if (seenIdsRef.current.size > 1000) seenIdsRef.current.clear();
+    }
     if (ev.callId) callIdRef.current = ev.callId;
     if (ev.type === 'transcript') {
       if (ev.final) { setPartial(null); addLine(ev.role === 'caller' ? 'caller' : 'assistant', ev.text || ''); }
@@ -277,6 +298,26 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
     return () => { es.close(); esRef.current = null; };
   }, [mode, info, clientId, token, applyServerEvent, resetFeed]);
 
+  // Supabase Realtime: the cross-instance delivery path. Subscribes to the same
+  // events over a WebSocket straight to Supabase, so the monitor works even when
+  // the backend runs multiple instances (the webhook may be on a different one
+  // than this viewer's SSE). De-dup in applyServerEvent keeps events single.
+  useEffect(() => {
+    if (mode !== 'monitor' || !info?.realtime_channel || !SUPABASE_URL || !SUPABASE_ANON) return;
+    let client: any = null;
+    try {
+      client = createClient(SUPABASE_URL, SUPABASE_ANON, { realtime: { params: { eventsPerSecond: 40 } } });
+      const ch = client.channel(info.realtime_channel, { config: { broadcast: { self: false } } });
+      ch.on('broadcast', { event: 'event' }, (msg: any) => {
+        try { applyServerEvent(msg?.payload); } catch { /* ignore */ }
+      });
+      ch.subscribe();
+      return () => { try { client.removeChannel(ch); } catch {} };
+    } catch {
+      return;
+    }
+  }, [mode, info, applyServerEvent]);
+
   // ---- controls ------------------------------------------------------------
   const endDemo = useCallback(() => {
     try { vapiRef.current?.stop(); } catch {}
@@ -306,6 +347,9 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
       if (!Ctor) { setListenErr('This browser has no Web Audio support.'); return; }
       const ctx: AudioContext = new Ctor();
       audioCtxRef.current = ctx;
+      // Browsers can start the context suspended; resume it inside this click
+      // handler so the call audio actually plays through the speakers.
+      if (ctx.state === 'suspended') { try { ctx.resume(); } catch {} }
       nextTimeRef.current = ctx.currentTime + 0.25;
 
       const wsBase = API.replace(/^http/, 'ws'); // https -> wss, http -> ws
