@@ -66,6 +66,23 @@ function msgTime(dateStr: string): string {
   if (!dateStr) return '';
   return new Date(dateStr).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 }
+function factDate(iso: string | null): string {
+  if (!iso) return '';
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+function factMoney(cents: number): string {
+  const whole = cents % 100 === 0;
+  return `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: whole ? 0 : 2, maximumFractionDigits: 2 })}/mo`;
+}
+function trialDaysLeft(iso: string): number {
+  return Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000));
+}
+function prettyStatus(s: string | null): string {
+  if (!s) return '';
+  if (s === 'trialing') return 'Trial';
+  if (s === 'active') return 'Active';
+  return s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
 
 export default function AgencyInboxPage() {
   const { agency, loading: agencyLoading } = useAgency();
@@ -84,6 +101,10 @@ export default function AgencyInboxPage() {
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [search, setSearch] = useState('');
+
+  // Quick facts about the open thread's client or prospect, shown at the top of
+  // the thread so the agency has context while replying.
+  const [facts, setFacts] = useState<any>(null);
 
   // Compose
   const [showCompose, setShowCompose] = useState(false);
@@ -130,6 +151,26 @@ export default function AgencyInboxPage() {
     pollRef.current = setInterval(() => { fetchInbox(); }, 8000);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [fetchInbox]);
+
+  // Load quick facts when switching to a client or prospect thread. Keyed on
+  // active.key so the 8s inbox poll (which replaces the active object) does not
+  // refetch; a stale response for a thread we've left is dropped.
+  useEffect(() => {
+    if (!active || !agencyId || (active.type !== 'client' && active.type !== 'prospect')) { setFacts(null); return; }
+    const target = active.type === 'client' ? (active.clientId || active.target) : active.target;
+    if (!target) { setFacts(null); return; }
+    const forKey = active.key;
+    setFacts(null);
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch(`${backendUrl}/api/agency/${agencyId}/inbox/facts?type=${active.type}&target=${encodeURIComponent(String(target))}`, { headers: { Authorization: `Bearer ${token()}` } });
+        if (r.ok && !cancelled) { const d = await r.json(); if (!cancelled) setFacts(d.facts || null); }
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active?.key, agencyId]);
 
   useEffect(() => { stickRef.current = true; }, [active?.key]);
   useEffect(() => { const el = scrollRef.current; if (el && stickRef.current) el.scrollTop = el.scrollHeight; }, [active]);
@@ -313,6 +354,55 @@ export default function AgencyInboxPage() {
               </div>
 
               <div ref={scrollRef} onScroll={onThreadScroll} className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
+                {facts && (active.type === 'client' || active.type === 'prospect') && (() => {
+                  const rows: { label: string; value: string }[] = [];
+                  if (active.type === 'client') {
+                    if (facts.plan) rows.push({ label: 'Plan', value: facts.plan });
+                    const statusVal = (facts.status === 'trialing' && facts.trialEndsAt) ? `Trial, ${trialDaysLeft(facts.trialEndsAt)}d left` : prettyStatus(facts.status);
+                    if (statusVal) rows.push({ label: 'Status', value: statusVal });
+                    if (facts.priceCents != null) rows.push({ label: 'Billing', value: factMoney(facts.priceCents) });
+                    if (facts.aiPhone) rows.push({ label: 'AI number', value: formatPhone(facts.aiPhone) });
+                    if (facts.ownerPhone) rows.push({ label: 'Owner', value: formatPhone(facts.ownerPhone) });
+                    if (facts.memberSince) rows.push({ label: 'Client since', value: factDate(facts.memberSince) });
+                    if (facts.callsThisMonth != null) rows.push({ label: 'Calls this mo.', value: facts.monthlyCallLimit != null ? `${facts.callsThisMonth} / ${facts.monthlyCallLimit}` : `${facts.callsThisMonth}` });
+                    if (facts.lastCallAt) rows.push({ label: 'Last call', value: factDate(facts.lastCallAt) });
+                  } else {
+                    if (facts.contact) rows.push({ label: /@/.test(facts.contact) ? 'Email' : 'Phone', value: /@/.test(facts.contact) ? facts.contact : formatPhone(facts.contact) });
+                    if (facts.status) rows.push({ label: 'Status', value: prettyStatus(facts.status) });
+                    if (facts.createdAt) rows.push({ label: 'Requested', value: factDate(facts.createdAt) });
+                  }
+                  const hasMsg = active.type === 'prospect' && facts.firstMessage;
+                  if (rows.length === 0 && !hasMsg) return null;
+                  return (
+                    <div className="rounded-2xl p-3.5 mb-1" style={{ ...glass }}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: textMuted2 }}>{active.type === 'client' ? 'About this client' : 'About this prospect'}</span>
+                        {active.type === 'client' && facts.isTest && (
+                          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: hexToRgba(primaryColor, 0.12), color: primaryColor }}>Test</span>
+                        )}
+                      </div>
+                      {rows.length > 0 && (
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                          {rows.map((r, i) => {
+                            const lastOdd = i === rows.length - 1 && rows.length % 2 === 1;
+                            return (
+                              <div key={r.label} className={lastOdd ? 'col-span-2' : ''}>
+                                <p className="text-[10px] uppercase tracking-wide" style={{ color: textMuted2 }}>{r.label}</p>
+                                <p className="text-[13px] font-medium truncate" style={{ color: theme.text }}>{r.value}</p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {hasMsg && (
+                        <div className={`${rows.length > 0 ? 'mt-2 pt-2' : ''}`} style={rows.length > 0 ? { borderTop: `1px solid ${hairline}` } : undefined}>
+                          <p className="text-[10px] uppercase tracking-wide mb-0.5" style={{ color: textMuted2 }}>What they asked</p>
+                          <p className="text-[12px] leading-relaxed" style={{ color: theme.textMuted }}>{facts.firstMessage}</p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
                 {active.messages.length === 0 ? (
                   <div className="text-center py-12"><p className="text-xs" style={{ color: textMuted2 }}>No messages yet. Send the first one below.</p></div>
                 ) : (
