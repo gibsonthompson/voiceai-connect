@@ -62,6 +62,10 @@ export default function ToolConfigSection({ clientId, theme, compact }: Props) {
   const [saved, setSaved] = useState(false);
   const [showTransferTip, setShowTransferTip] = useState(false);
   const [openDetail, setOpenDetail] = useState<string | null>(null);
+  // Address + website the AI already knows (from the knowledge base), used to
+  // pre-fill the texting presets so the client doesn't re-type them.
+  const [kbContact, setKbContact] = useState<{ address: string; website: string }>({ address: '', website: '' });
+  const [autoFilled, setAutoFilled] = useState<Record<string, boolean>>({});
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -79,8 +83,25 @@ export default function ToolConfigSection({ clientId, theme, compact }: Props) {
         const data = await res.json();
         if (data.success) {
           const merged = { ...DEFAULT_CONFIG, ...data.tool_config };
-          setConfig(merged);
+          const kb = (data.kb_contact && typeof data.kb_contact === 'object')
+            ? { address: String(data.kb_contact.address || ''), website: String(data.kb_contact.website || '') }
+            : { address: '', website: '' };
+          setKbContact(kb);
+          // Snapshot the stored state first, so a pre-filled value shows as an
+          // unsaved change and nudges the client to Save.
           setSmsSnapshot(smsKey(merged));
+          // Pre-fill the address/website presets from the knowledge base when the
+          // client has not typed a value yet. Never overwrites an existing one.
+          const presets = { ...(merged.smsPresets || {}) };
+          const filled: Record<string, boolean> = {};
+          (['address', 'website'] as const).forEach((k) => {
+            const val = kb[k];
+            if (!val) return;
+            const cur = presets[k] || { enabled: false, value: '' };
+            if (!cur.value || !String(cur.value).trim()) { presets[k] = { ...cur, value: val }; filled[k] = true; }
+          });
+          setConfig({ ...merged, smsPresets: presets });
+          setAutoFilled(filled);
         }
       }
     } catch (e) {
@@ -143,6 +164,7 @@ export default function ToolConfigSection({ clientId, theme, compact }: Props) {
   const setPresetValue = (key: string, value: string) => {
     const cur = (config.smsPresets && config.smsPresets[key]) || { enabled: true, value: '' };
     setConfig({ ...config, smsPresets: { ...(config.smsPresets || {}), [key]: { ...cur, value } } });
+    setAutoFilled(prev => prev[key] ? { ...prev, [key]: false } : prev);
   };
 
   // Explicit save for the SMS details (presets / custom texts / instructions),
@@ -419,11 +441,20 @@ export default function ToolConfigSection({ clientId, theme, compact }: Props) {
                         <span className="absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all" style={{ left: p.enabled ? '18px' : '2px' }} />
                       </button>
                     </div>
-                    {p.enabled && (
-                      <div className="px-2.5 pb-2">
-                        <input value={p.value} onChange={(e) => setPresetValue(preset.key, e.target.value)} placeholder={preset.placeholder} className="w-full rounded-lg px-2.5 py-1.5 text-xs focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
-                      </div>
-                    )}
+                    {p.enabled && (() => {
+                      const kbVal = (preset.key === 'address' || preset.key === 'website') ? (kbContact[preset.key] || '') : '';
+                      const isEmpty = !p.value || !String(p.value).trim();
+                      return (
+                        <div className="px-2.5 pb-2">
+                          <input value={p.value} onChange={(e) => setPresetValue(preset.key, e.target.value)} placeholder={preset.placeholder} className="w-full rounded-lg px-2.5 py-1.5 text-xs focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                          {autoFilled[preset.key] && !isEmpty && p.value === kbVal ? (
+                            <p className="text-[9px] mt-1 font-medium" style={{ color: theme.primary }}>Pulled from your knowledge base. Save to keep it.</p>
+                          ) : (kbVal && isEmpty ? (
+                            <button type="button" onClick={() => setPresetValue(preset.key, kbVal)} className="text-[9px] mt-1 font-medium" style={{ color: theme.primary }}>Use the {preset.label.toLowerCase()} from your knowledge base</button>
+                          ) : null)}
+                        </div>
+                      );
+                    })()}
                   </div>
                 );
               })}
