@@ -14,9 +14,13 @@
 //   mode="monitor"  -> opens an SSE stream to the backend and renders a REAL
 //                      phone call in progress (transcript + status + tool
 //                      activity), with optional takeover (speak, mute, transfer,
-//                      end) proxied to Vapi's live control channel.
+//                      end) proxied to Vapi's live control channel, plus live
+//                      audio listen.
 //
-// White-labeled: the page wears the agency's brand, never the platform's.
+// White-labeled AND theme-matched: it follows the agency's light/dark setting
+// (read synchronously from localStorage so there is no mode flash) and the
+// agency's brand color. The full UI is not painted until branding has loaded,
+// so the agency never sees platform base colors before their logo appears.
 // ============================================================================
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -47,6 +51,8 @@ interface Info {
 interface Line { id: string; role: 'caller' | 'assistant'; text: string; }
 interface Activity { id: string; tool: string; label: string; detail: string | null; ts: number; }
 
+type Theme = ReturnType<typeof palette>;
+
 // Canonical tool -> friendly label + icon. Keeps the demo (client-side events)
 // and the monitor (server events) showing the same language.
 const TOOL_META: Record<string, { label: string; Icon: any }> = {
@@ -62,6 +68,43 @@ function toolMeta(tool: string, fallbackLabel?: string) {
 }
 
 const uid = () => `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+// Read the agency's light/dark choice the same way useTheme does, synchronously,
+// so the first paint is already in the right mode.
+function readPrefersDark(): boolean {
+  try { return localStorage.getItem('voiceai_ui_theme') === 'dark'; } catch { return false; }
+}
+function hexLuminance(hex: string): number {
+  const c = (hex || '').replace('#', '');
+  if (c.length < 6) return 0;
+  const r = parseInt(c.slice(0, 2), 16), g = parseInt(c.slice(2, 4), 16), b = parseInt(c.slice(4, 6), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+}
+function contrastOn(hex: string): string {
+  return hexLuminance(hex) > 0.6 ? '#0f172a' : '#ffffff';
+}
+
+function palette(dark: boolean) {
+  return dark
+    ? {
+        dark: true,
+        bg: '#0a0b0f', text: '#f3f4f6', textMuted: 'rgba(255,255,255,0.55)', textFaint: 'rgba(255,255,255,0.35)',
+        border: 'rgba(255,255,255,0.10)', borderSubtle: 'rgba(255,255,255,0.06)',
+        surface: 'rgba(255,255,255,0.03)', surfaceStrong: 'rgba(255,255,255,0.07)',
+        aiBubbleBg: 'rgba(255,255,255,0.07)', aiBubbleText: '#e5e7eb',
+        pillBg: 'rgba(255,255,255,0.05)', inputBg: 'rgba(255,255,255,0.05)', logoBg: 'rgba(255,255,255,0.06)',
+        err: '#fca5a5',
+      }
+    : {
+        dark: false,
+        bg: '#f6f7f9', text: '#0f172a', textMuted: '#64748b', textFaint: '#94a3b8',
+        border: 'rgba(15,23,42,0.10)', borderSubtle: 'rgba(15,23,42,0.06)',
+        surface: 'rgba(15,23,42,0.03)', surfaceStrong: 'rgba(15,23,42,0.06)',
+        aiBubbleBg: '#eceff3', aiBubbleText: '#0f172a',
+        pillBg: 'rgba(15,23,42,0.05)', inputBg: '#ffffff', logoBg: 'rgba(15,23,42,0.05)',
+        err: '#dc2626',
+      };
+}
 
 export default function LiveCallMonitor({ clientId, mode }: { clientId: string; mode: Mode }) {
   const [info, setInfo] = useState<Info | null>(null);
@@ -86,6 +129,9 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
   const [listenRate, setListenRate] = useState(16000);
   const [listenErr, setListenErr] = useState<string | null>(null);
 
+  const [prefersDark] = useState<boolean>(() => readPrefersDark());
+  const t = useMemo(() => palette(prefersDark), [prefersDark]);
+
   const vapiRef = useRef<any>(null);
   const esRef = useRef<EventSource | null>(null);
   const callIdRef = useRef<string | null>(null);
@@ -102,6 +148,7 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
   }, []);
 
   const accent = info?.branding?.primary_color || '#6366f1';
+  const accentText = useMemo(() => contrastOn(accent), [accent]);
   const agencyName = info?.branding?.agency_name || 'Live Receptionist';
   const businessName = info?.client?.business_name || 'your business';
 
@@ -259,7 +306,6 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
       if (!Ctor) { setListenErr('This browser has no Web Audio support.'); return; }
       const ctx: AudioContext = new Ctor();
       audioCtxRef.current = ctx;
-      // Small lead so we schedule into the future and avoid underruns.
       nextTimeRef.current = ctx.currentTime + 0.25;
 
       const wsBase = API.replace(/^http/, 'ws'); // https -> wss, http -> ws
@@ -328,14 +374,24 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
   // ---- render --------------------------------------------------------------
   if (loadErr) {
     return (
-      <div className="min-h-[100dvh] flex items-center justify-center bg-[#0a0b0f] text-white p-6">
+      <div className="min-h-[100dvh] flex items-center justify-center p-6" style={{ backgroundColor: t.bg, color: t.text }}>
         <div className="text-center max-w-sm">
           <div className="mx-auto mb-4 h-12 w-12 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(239,68,68,0.15)' }}>
-            <PhoneOff className="h-6 w-6 text-red-400" />
+            <PhoneOff className="h-6 w-6" style={{ color: '#ef4444' }} />
           </div>
           <p className="font-medium">{loadErr}</p>
-          <p className="text-sm text-white/50 mt-1">Check that you are signed in and this client belongs to you.</p>
+          <p className="text-sm mt-1" style={{ color: t.textMuted }}>Check that you are signed in and this client belongs to you.</p>
         </div>
+      </div>
+    );
+  }
+
+  // Do not paint the branded UI until branding has loaded, so the agency never
+  // sees platform base colors or a logo pop-in. The loader is theme-matched.
+  if (!info) {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center" style={{ backgroundColor: t.bg }}>
+        <Loader2 className="h-6 w-6 animate-spin" style={{ color: t.textMuted }} />
       </div>
     );
   }
@@ -344,20 +400,20 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
   const isDemo = mode === 'demo';
 
   return (
-    <div className="min-h-[100dvh] flex flex-col bg-[#0a0b0f] text-white" style={{ ['--accent' as any]: accent }}>
+    <div className="min-h-[100dvh] flex flex-col" style={{ backgroundColor: t.bg, color: t.text }}>
       {/* Header: white-label brand + status */}
-      <header className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3 border-b border-white/10">
+      <header className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3" style={{ borderBottom: `1px solid ${t.border}` }}>
         <div className="flex items-center gap-3 min-w-0">
-          {info?.branding?.logo_url ? (
-            <img src={info.branding.logo_url} alt={agencyName} className="h-8 w-8 rounded-lg object-contain bg-white/5" />
+          {info.branding?.logo_url ? (
+            <img src={info.branding.logo_url} alt={agencyName} className="h-8 w-8 rounded-lg object-contain" style={{ backgroundColor: t.logoBg }} />
           ) : (
             <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: accent }}>
-              <Phone className="h-4 w-4 text-white" />
+              <Phone className="h-4 w-4" style={{ color: accentText }} />
             </div>
           )}
           <div className="min-w-0">
             <p className="text-sm font-semibold truncate">{agencyName}</p>
-            <p className="text-xs text-white/50 truncate">{businessName}</p>
+            <p className="text-xs truncate" style={{ color: t.textMuted }}>{businessName}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -367,7 +423,8 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
                 value={listenRate}
                 onChange={(e) => setListenRate(Number(e.target.value))}
                 title="Audio pitch. If the voice sounds too fast (chipmunk) lower it, too slow raise it."
-                className="rounded-lg bg-white/5 border border-white/10 text-xs px-2 py-1.5 outline-none"
+                className="rounded-lg text-xs px-2 py-1.5 outline-none"
+                style={{ backgroundColor: t.inputBg, border: `1px solid ${t.border}`, color: t.text }}
               >
                 <option value={8000}>8 kHz</option>
                 <option value={16000}>16 kHz</option>
@@ -375,68 +432,69 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
               </select>
               {!listening ? (
                 <button onClick={startListen} disabled={callState !== 'live'}
-                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40"
-                        style={{ backgroundColor: accent }}>
+                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold disabled:opacity-40"
+                        style={{ backgroundColor: accent, color: accentText }}>
                   <Headphones className="h-4 w-4" /> Listen
                 </button>
               ) : (
                 <button onClick={stopListen}
-                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold bg-white/10">
+                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold"
+                        style={{ backgroundColor: t.surfaceStrong, color: t.text }}>
                   <VolumeX className="h-4 w-4" /> Stop
                 </button>
               )}
             </div>
           )}
-          <StatusPill state={callState} label={statusLabel} accent={accent} />
+          <StatusPill state={callState} label={statusLabel} t={t} />
         </div>
       </header>
 
       {/* Body */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-0 min-h-0">
         {/* Transcript */}
-        <section className="flex flex-col min-h-0 border-b lg:border-b-0 lg:border-r border-white/10">
-          <div className="px-4 sm:px-6 py-3 flex items-center gap-2 border-b border-white/5">
+        <section className="flex flex-col min-h-0 border-b lg:border-b-0 lg:border-r" style={{ borderColor: t.border }}>
+          <div className="px-4 sm:px-6 py-3 flex items-center gap-2" style={{ borderBottom: `1px solid ${t.borderSubtle}` }}>
             <Radio className="h-4 w-4" style={{ color: accent }} />
-            <span className="text-xs font-semibold uppercase tracking-wide text-white/60">Live transcript</span>
+            <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: t.textMuted }}>Live transcript</span>
           </div>
           <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-3">
             {lines.length === 0 && !partial && (
               <div className="h-full flex flex-col items-center justify-center text-center py-16">
-                <CircleDot className="h-8 w-8 text-white/20 mb-3" />
-                <p className="text-sm text-white/40">
+                <CircleDot className="h-8 w-8 mb-3" style={{ color: t.textFaint }} />
+                <p className="text-sm" style={{ color: t.textMuted }}>
                   {isDemo ? 'Press Start call and talk to the AI. Everything it hears, says, and does shows up here live.'
                           : 'Waiting for the next call. When one comes in, it will appear here in real time.'}
                 </p>
               </div>
             )}
-            {lines.map((l) => <Bubble key={l.id} role={l.role} text={l.text} accent={accent} />)}
-            {partial && <Bubble role={partial.role} text={partial.text} accent={accent} faded />}
+            {lines.map((l) => <Bubble key={l.id} role={l.role} text={l.text} t={t} accent={accent} accentText={accentText} />)}
+            {partial && <Bubble role={partial.role} text={partial.text} t={t} accent={accent} accentText={accentText} faded />}
             <div ref={transcriptEndRef} />
           </div>
         </section>
 
         {/* Activity rail */}
         <aside className="flex flex-col min-h-0">
-          <div className="px-4 sm:px-6 py-3 flex items-center gap-2 border-b border-white/5">
+          <div className="px-4 sm:px-6 py-3 flex items-center gap-2" style={{ borderBottom: `1px solid ${t.borderSubtle}` }}>
             <Sparkles className="h-4 w-4" style={{ color: accent }} />
-            <span className="text-xs font-semibold uppercase tracking-wide text-white/60">What the AI is doing</span>
+            <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: t.textMuted }}>What the AI is doing</span>
           </div>
           <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-2">
             {activities.length === 0 && (
-              <p className="text-sm text-white/40">Calendar checks, bookings, texts, and transfers appear here as they happen.</p>
+              <p className="text-sm" style={{ color: t.textMuted }}>Calendar checks, bookings, texts, and transfers appear here as they happen.</p>
             )}
             {activities.map((a, i) => {
               const meta = toolMeta(a.tool, a.label);
               const isLast = i === activities.length - 1;
               return (
                 <div key={a.id} className="flex items-start gap-3 rounded-xl px-3 py-2.5"
-                     style={{ backgroundColor: isLast && live ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                     style={{ backgroundColor: isLast && live ? t.surfaceStrong : t.surface, border: `1px solid ${t.borderSubtle}` }}>
                   <div className="h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${accent}22` }}>
                     <meta.Icon className="h-4 w-4" style={{ color: accent }} />
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium leading-tight">{a.label}</p>
-                    {a.detail && <p className="text-xs text-white/50 mt-0.5 truncate">{a.detail}</p>}
+                    {a.detail && <p className="text-xs mt-0.5 truncate" style={{ color: t.textMuted }}>{a.detail}</p>}
                   </div>
                 </div>
               );
@@ -445,9 +503,10 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
 
           {/* Takeover (monitor mode only) */}
           {mode === 'monitor' && (
-            <div className="border-t border-white/10 px-4 sm:px-6 py-3">
+            <div className="px-4 sm:px-6 py-3" style={{ borderTop: `1px solid ${t.border}` }}>
               <button onClick={() => setTakeoverOpen((v) => !v)}
-                      className="w-full flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-white/60 py-1">
+                      className="w-full flex items-center justify-between text-xs font-semibold uppercase tracking-wide py-1"
+                      style={{ color: t.textMuted }}>
                 Take over the call
                 <ChevronRight className={`h-4 w-4 transition-transform ${takeoverOpen ? 'rotate-90' : ''}`} />
               </button>
@@ -455,24 +514,26 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
                 <div className="mt-3 space-y-2">
                   <div className="flex gap-2">
                     <input value={sayText} onChange={(e) => setSayText(e.target.value)}
-                           placeholder="Make the AI say..." className="flex-1 rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm outline-none" />
+                           placeholder="Make the AI say..." className="flex-1 rounded-lg px-3 py-2 text-sm outline-none"
+                           style={{ backgroundColor: t.inputBg, border: `1px solid ${t.border}`, color: t.text }} />
                     <button disabled={controlBusy || !sayText.trim()} onClick={() => sendControl('say', { text: sayText })}
-                            className="rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-40" style={{ backgroundColor: accent }}>
+                            className="rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-40" style={{ backgroundColor: accent, color: accentText }}>
                       <Send className="h-4 w-4" />
                     </button>
                   </div>
                   <div className="flex gap-2">
                     <input value={transferNumber} onChange={(e) => setTransferNumber(e.target.value)}
-                           placeholder="Transfer to +1..." className="flex-1 rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm outline-none" />
+                           placeholder="Transfer to +1..." className="flex-1 rounded-lg px-3 py-2 text-sm outline-none"
+                           style={{ backgroundColor: t.inputBg, border: `1px solid ${t.border}`, color: t.text }} />
                     <button disabled={controlBusy || !transferNumber.trim()} onClick={() => sendControl('transfer', { number: transferNumber })}
-                            className="rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-40 bg-white/10">
+                            className="rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-40" style={{ backgroundColor: t.surfaceStrong, color: t.text }}>
                       <PhoneForwarded className="h-4 w-4" />
                     </button>
                   </div>
                   <div className="flex gap-2">
-                    <button disabled={controlBusy} onClick={() => sendControl('mute')} className="flex-1 rounded-lg px-3 py-2 text-sm font-medium bg-white/10 disabled:opacity-40">Mute AI</button>
-                    <button disabled={controlBusy} onClick={() => sendControl('unmute')} className="flex-1 rounded-lg px-3 py-2 text-sm font-medium bg-white/10 disabled:opacity-40">Unmute</button>
-                    <button disabled={controlBusy} onClick={() => sendControl('end')} className="flex-1 rounded-lg px-3 py-2 text-sm font-medium bg-red-500/80 disabled:opacity-40">End</button>
+                    <button disabled={controlBusy} onClick={() => sendControl('mute')} className="flex-1 rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-40" style={{ backgroundColor: t.surfaceStrong, color: t.text }}>Mute AI</button>
+                    <button disabled={controlBusy} onClick={() => sendControl('unmute')} className="flex-1 rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-40" style={{ backgroundColor: t.surfaceStrong, color: t.text }}>Unmute</button>
+                    <button disabled={controlBusy} onClick={() => sendControl('end')} className="flex-1 rounded-lg px-3 py-2 text-sm font-medium text-white disabled:opacity-40" style={{ backgroundColor: 'rgba(239,68,68,0.85)' }}>End</button>
                   </div>
                 </div>
               )}
@@ -482,30 +543,30 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
       </div>
 
       {/* Footer controls */}
-      <footer className="px-4 sm:px-6 py-4 border-t border-white/10 flex items-center justify-between gap-3">
-        <div className="min-h-[1.25rem] text-xs truncate" style={{ color: listenErr ? '#fca5a5' : 'rgba(255,255,255,0.5)' }}>
+      <footer className="px-4 sm:px-6 py-4 flex items-center justify-between gap-3" style={{ borderTop: `1px solid ${t.border}` }}>
+        <div className="min-h-[1.25rem] text-xs truncate" style={{ color: listenErr ? t.err : t.textMuted }}>
           {listenErr || controlNote || (listening ? 'Listening to the live call' : speaking === 'assistant' ? 'AI is speaking...' : live ? 'Call in progress' : '')}
         </div>
         {isDemo ? (
           <div className="flex items-center gap-2">
             {callState !== 'live' && callState !== 'connecting' ? (
-              <button onClick={startDemo} disabled={!info}
-                      className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50" style={{ backgroundColor: accent }}>
+              <button onClick={startDemo}
+                      className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold" style={{ backgroundColor: accent, color: accentText }}>
                 <Phone className="h-4 w-4" /> {callState === 'ended' ? 'Call again' : 'Start call'}
               </button>
             ) : (
               <>
-                <button onClick={toggleMuteDemo} className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold bg-white/10">
+                <button onClick={toggleMuteDemo} className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold" style={{ backgroundColor: t.surfaceStrong, color: t.text }}>
                   {isMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />} {isMuted ? 'Unmute' : 'Mute'}
                 </button>
-                <button onClick={endDemo} className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold bg-red-500/90 text-white">
+                <button onClick={endDemo} className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white" style={{ backgroundColor: 'rgba(239,68,68,0.9)' }}>
                   {callState === 'connecting' ? <Loader2 className="h-4 w-4 animate-spin" /> : <PhoneOff className="h-4 w-4" />} End
                 </button>
               </>
             )}
           </div>
         ) : (
-          <div className="flex items-center gap-2 text-xs text-white/40">
+          <div className="flex items-center gap-2 text-xs" style={{ color: t.textMuted }}>
             <Building2 className="h-4 w-4" /> Monitoring live calls
           </div>
         )}
@@ -514,33 +575,36 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
   );
 }
 
-function StatusPill({ state, label, accent }: { state: CallState; label: string; accent: string }) {
+function StatusPill({ state, label, t }: { state: CallState; label: string; t: Theme }) {
   const live = state === 'live';
   const connecting = state === 'connecting';
   const color = live ? '#22c55e' : connecting ? '#f59e0b' : state === 'ended' ? '#ef4444' : '#9ca3af';
   return (
-    <div className="flex items-center gap-2 rounded-full px-3 py-1.5" style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+    <div className="flex items-center gap-2 rounded-full px-3 py-1.5" style={{ backgroundColor: t.pillBg, border: `1px solid ${t.border}` }}>
       <span className="relative flex h-2.5 w-2.5">
         {live && <span className="absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping" style={{ backgroundColor: color }} />}
         <span className="relative inline-flex rounded-full h-2.5 w-2.5" style={{ backgroundColor: color }} />
       </span>
-      <span className="text-xs font-medium">{label}</span>
+      <span className="text-xs font-medium" style={{ color: t.text }}>{label}</span>
     </div>
   );
 }
 
-function Bubble({ role, text, accent, faded }: { role: 'caller' | 'assistant'; text: string; accent: string; faded?: boolean }) {
+function Bubble({ role, text, t, accent, accentText, faded }: { role: 'caller' | 'assistant'; text: string; t: Theme; accent: string; accentText: string; faded?: boolean }) {
   const isAI = role === 'assistant';
+  const labelColor = isAI
+    ? t.textFaint
+    : (accentText === '#ffffff' ? 'rgba(255,255,255,0.75)' : 'rgba(15,23,42,0.6)');
   return (
     <div className={`flex ${isAI ? 'justify-start' : 'justify-end'}`}>
       <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm leading-snug ${faded ? 'opacity-60' : ''}`}
            style={{
-             backgroundColor: isAI ? 'rgba(255,255,255,0.06)' : accent,
-             color: isAI ? '#e5e7eb' : '#fff',
+             backgroundColor: isAI ? t.aiBubbleBg : accent,
+             color: isAI ? t.aiBubbleText : accentText,
              borderBottomLeftRadius: isAI ? 4 : 16,
              borderBottomRightRadius: isAI ? 16 : 4,
            }}>
-        <p className="text-[10px] uppercase tracking-wide mb-0.5" style={{ color: isAI ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.7)' }}>
+        <p className="text-[10px] uppercase tracking-wide mb-0.5" style={{ color: labelColor }}>
           {isAI ? 'AI' : 'Caller'}
         </p>
         {text}

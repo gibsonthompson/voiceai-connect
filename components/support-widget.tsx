@@ -218,7 +218,7 @@ export default function SupportWidget() {
   }, [goFAQ, goChat]);
 
   // Hide on dashboard routes
-  if (pathname.startsWith('/agency') || pathname.startsWith('/client') || pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) return null;
+  if (pathname.startsWith('/agency') || pathname.startsWith('/client') || pathname.startsWith('/dashboard') || pathname.startsWith('/admin') || pathname.startsWith('/live')) return null;
 
   // Hide the FAB on the interactive demo in mobile view. The demo has its own
   // in-frame controls on phones and the floating button overlaps them.
