@@ -73,6 +73,38 @@ function toolMeta(tool: string, fallbackLabel?: string) {
 
 const uid = () => `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
+// ---- Live audio format detection -------------------------------------------
+// VAPI's listen stream does not announce its format and it varies (8/16/24/32
+// kHz, mono OR interleaved stereo). We detect it from the real-time byte rate
+// and a channel heuristic, then play it. Assuming a fixed mono rate is what made
+// the audio sound like garbled "waves" on a stereo or off-rate stream.
+const STANDARD_RATES = [8000, 16000, 22050, 24000, 32000, 44100, 48000];
+function nearestRate(r: number): number {
+  let best = STANDARD_RATES[0];
+  let bd = Infinity;
+  for (const s of STANDARD_RATES) { const d = Math.abs(s - r); if (d < bd) { bd = d; best = s; } }
+  return best;
+}
+// Interleaved stereo [L,R,L,R...] has neighbouring samples (cross-channel) less
+// correlated than samples two apart (same channel), so neighbour diffs run
+// bigger. Mono audio is the opposite.
+function looksStereo(samples: Int16Array): boolean {
+  const n = Math.min(samples.length - 2, 8000);
+  if (n < 200) return false;
+  let d1 = 0, d2 = 0;
+  for (let i = 0; i < n; i++) {
+    d1 += Math.abs(samples[i + 1] - samples[i]);
+    d2 += Math.abs(samples[i + 2] - samples[i]);
+  }
+  return d1 > d2 * 1.15;
+}
+function concatInt16(chunks: Int16Array[]): Int16Array {
+  let len = 0; for (const c of chunks) len += c.length;
+  const out = new Int16Array(len); let o = 0;
+  for (const c of chunks) { out.set(c, o); o += c.length; }
+  return out;
+}
+
 // Read the agency's light/dark choice the same way useTheme does, synchronously,
 // so the first paint is already in the right mode.
 function readPrefersDark(): boolean {
@@ -130,8 +162,12 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
   const [controlNote, setControlNote] = useState<string | null>(null);
 
   const [listening, setListening] = useState(false);
-  const [listenRate, setListenRate] = useState(16000);
+  const [listenRate, setListenRate] = useState(0); // 0 = auto-detect format
   const [listenErr, setListenErr] = useState<string | null>(null);
+  const [listenInfo, setListenInfo] = useState<string | null>(null);
+  // Deliberately delay the audio so it lines up with the transcript (which
+  // trails the live speech by the transcription lag). Seconds.
+  const [syncDelay, setSyncDelay] = useState(1.5);
 
   const [prefersDark] = useState<boolean>(() => readPrefersDark());
   const t = useMemo(() => palette(prefersDark), [prefersDark]);
@@ -143,11 +179,15 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
   const transcriptEndRef = useRef<HTMLDivElement | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const audioWsRef = useRef<WebSocket | null>(null);
+  const audioOutRef = useRef<AudioNode | null>(null);
   const nextTimeRef = useRef(0);
-  const listenRateRef = useRef(16000);
+  const listenRateRef = useRef(0);
+  const syncDelayRef = useRef(1.5);
+  const detectRef = useRef<{ started: number; bytes: number; pending: Int16Array[]; channels: number; rate: number; done: boolean } | null>(null);
   const scrollQueuedRef = useRef(false);
 
   useEffect(() => { listenRateRef.current = listenRate; }, [listenRate]);
+  useEffect(() => { syncDelayRef.current = syncDelay; }, [syncDelay]);
 
   const token = useMemo(() => {
     try { return localStorage.getItem('auth_token') || ''; } catch { return ''; }
@@ -335,22 +375,62 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
     try { audioWsRef.current?.close(); } catch {}
     try { audioCtxRef.current?.close(); } catch {}
     audioWsRef.current = null; audioCtxRef.current = null;
-    setListening(false);
+    audioOutRef.current = null; detectRef.current = null;
+    setListening(false); setListenInfo(null);
   }, []);
 
   const startListen = useCallback(() => {
     const callId = callIdRef.current;
     if (!callId) { setListenErr('No live call to listen to yet.'); return; }
-    setListenErr(null);
+    setListenErr(null); setListenInfo(null);
     try {
       const Ctor: any = (window as any).AudioContext || (window as any).webkitAudioContext;
       if (!Ctor) { setListenErr('This browser has no Web Audio support.'); return; }
       const ctx: AudioContext = new Ctor();
       audioCtxRef.current = ctx;
-      // Browsers can start the context suspended; resume it inside this click
-      // handler so the call audio actually plays through the speakers.
       if (ctx.state === 'suspended') { try { ctx.resume(); } catch {} }
-      nextTimeRef.current = ctx.currentTime + 0.25;
+
+      // Output chain: phone audio is quiet, so lift it and run a limiter so the
+      // boost never clips.
+      const gain = ctx.createGain(); gain.gain.value = 2.2;
+      const limiter = ctx.createDynamicsCompressor();
+      limiter.threshold.value = -6; limiter.knee.value = 6; limiter.ratio.value = 12;
+      limiter.attack.value = 0.003; limiter.release.value = 0.12;
+      gain.connect(limiter); limiter.connect(ctx.destination);
+      audioOutRef.current = gain;
+
+      nextTimeRef.current = 0;
+      // listenRateRef > 0 means the user forced a rate (mono); 0 means auto-detect.
+      const forced = listenRateRef.current;
+      detectRef.current = { started: 0, bytes: 0, pending: [], channels: 1, rate: forced || 0, done: forced > 0 };
+      if (forced > 0) setListenInfo(`${forced / 1000}kHz mono (manual)`);
+
+      const schedule = (int16: Int16Array) => {
+        const c = audioCtxRef.current; const d = detectRef.current;
+        if (!c || !d || !d.done || !d.rate) return;
+        let frames: number; let f32: Float32Array;
+        if (d.channels === 2) {
+          frames = int16.length >> 1;
+          f32 = new Float32Array(frames);
+          for (let i = 0; i < frames; i++) f32[i] = ((int16[2 * i] + int16[2 * i + 1]) * 0.5) / 32768;
+        } else {
+          frames = int16.length;
+          f32 = new Float32Array(frames);
+          for (let i = 0; i < frames; i++) f32[i] = int16[i] / 32768;
+        }
+        if (!frames) return;
+        const abuf = c.createBuffer(1, frames, d.rate);
+        abuf.getChannelData(0).set(f32);
+        const node = c.createBufferSource();
+        node.buffer = abuf;
+        node.connect(audioOutRef.current || c.destination);
+        // Lead time = the sync delay (so audio lines up with the transcript),
+        // floored at a small jitter buffer so playback never underruns.
+        if (nextTimeRef.current === 0) nextTimeRef.current = c.currentTime + Math.max(syncDelayRef.current, 0.15);
+        const at = Math.max(nextTimeRef.current, c.currentTime + 0.02);
+        node.start(at);
+        nextTimeRef.current = at + abuf.duration;
+      };
 
       const wsBase = API.replace(/^http/, 'ws'); // https -> wss, http -> ws
       const url = `${wsBase}/api/live/audio?client=${encodeURIComponent(clientId)}&call=${encodeURIComponent(callId)}&token=${encodeURIComponent(token)}`;
@@ -362,23 +442,29 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
           try { const m = JSON.parse(e.data); if (m.type === 'error') setListenErr(m.error || 'Listen error'); } catch {}
           return;
         }
-        const ctx2 = audioCtxRef.current;
-        if (!ctx2) return;
-        // Raw headerless PCM, signed 16-bit little-endian, mono. We choose the
-        // sample rate (VAPI does not send it); the selector lets you tune it.
-        const pcm = new Int16Array(e.data as ArrayBuffer);
-        if (!pcm.length) return;
-        const f32 = new Float32Array(pcm.length);
-        for (let i = 0; i < pcm.length; i++) f32[i] = pcm[i] / 32768;
-        const rate = listenRateRef.current;
-        const buf = ctx2.createBuffer(1, f32.length, rate);
-        buf.getChannelData(0).set(f32);
-        const node = ctx2.createBufferSource();
-        node.buffer = buf;
-        node.connect(ctx2.destination);
-        const startAt = Math.max(nextTimeRef.current, ctx2.currentTime + 0.02);
-        node.start(startAt);
-        nextTimeRef.current = startAt + buf.duration;
+        const raw = e.data as ArrayBuffer;
+        if (!raw || (raw.byteLength & 1)) return; // need whole 16-bit samples
+        const int16 = new Int16Array(raw);
+        if (!int16.length) return;
+        const d = detectRef.current;
+        if (!d) return;
+        if (d.done) { schedule(int16); return; }
+        // Detection window: measure the real-time byte rate + channel layout over
+        // the first ~1.5s, then derive the sample rate (bytes/sec / (2*channels)).
+        const now = performance.now();
+        if (d.started === 0) d.started = now; else d.bytes += int16.byteLength;
+        d.pending.push(int16);
+        if (now - d.started >= 1500 && d.bytes > 0) {
+          const flat = d.pending.length === 1 ? d.pending[0] : concatInt16(d.pending);
+          const channels = looksStereo(flat) ? 2 : 1;
+          const secs = (now - d.started) / 1000;
+          const rate = nearestRate((d.bytes / secs) / (2 * channels));
+          d.channels = channels; d.rate = rate; d.done = true;
+          setListenInfo(`${rate / 1000}kHz ${channels === 2 ? 'stereo' : 'mono'}`);
+          nextTimeRef.current = 0;
+          for (const chunk of d.pending) schedule(chunk);
+          d.pending = [];
+        }
       };
       ws.onclose = () => setListening(false);
       ws.onerror = () => setListenErr('Could not connect to the live audio.');
@@ -466,13 +552,29 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
               <select
                 value={listenRate}
                 onChange={(e) => setListenRate(Number(e.target.value))}
-                title="Audio pitch. If the voice sounds too fast (chipmunk) lower it, too slow raise it."
+                title="Audio format. Auto detects it; pick a kHz only if auto sounds wrong."
                 className="rounded-lg text-xs px-2 py-1.5 outline-none"
                 style={{ backgroundColor: t.inputBg, border: `1px solid ${t.border}`, color: t.text }}
               >
+                <option value={0}>Auto</option>
                 <option value={8000}>8 kHz</option>
                 <option value={16000}>16 kHz</option>
                 <option value={24000}>24 kHz</option>
+                <option value={32000}>32 kHz</option>
+              </select>
+              <select
+                value={syncDelay}
+                onChange={(e) => { setSyncDelay(Number(e.target.value)); nextTimeRef.current = 0; }}
+                title="Delay the audio so it lines up with the transcript. Raise it if the voice runs ahead of the text."
+                className="rounded-lg text-xs px-2 py-1.5 outline-none"
+                style={{ backgroundColor: t.inputBg, border: `1px solid ${t.border}`, color: t.text }}
+              >
+                <option value={0}>Live</option>
+                <option value={0.5}>Sync +0.5s</option>
+                <option value={1}>Sync +1s</option>
+                <option value={1.5}>Sync +1.5s</option>
+                <option value={2}>Sync +2s</option>
+                <option value={2.5}>Sync +2.5s</option>
               </select>
               {!listening ? (
                 <button onClick={startListen} disabled={callState !== 'live'}
@@ -589,7 +691,7 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
       {/* Footer controls */}
       <footer className="px-4 sm:px-6 py-4 flex items-center justify-between gap-3" style={{ borderTop: `1px solid ${t.border}` }}>
         <div className="min-h-[1.25rem] text-xs truncate" style={{ color: listenErr ? t.err : t.textMuted }}>
-          {listenErr || controlNote || (listening ? 'Listening to the live call' : speaking === 'assistant' ? 'AI is speaking...' : live ? 'Call in progress' : '')}
+          {listenErr || controlNote || (listening ? (listenInfo ? `Listening to the live call (${listenInfo})` : 'Listening to the live call...') : speaking === 'assistant' ? 'AI is speaking...' : live ? 'Call in progress' : '')}
         </div>
         {isDemo ? (
           <div className="flex items-center gap-2">
