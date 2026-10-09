@@ -247,9 +247,7 @@ export default function AgencyInboxPage() {
   const Avatar = ({ c, size }: { c: Conversation; size: number }) => {
     if (c.type === 'platform') {
       return (
-        <div className="rounded-full overflow-hidden flex items-center justify-center flex-shrink-0" style={{ width: size, height: size, backgroundColor: theme.isDark ? 'rgba(255,255,255,0.08)' : '#ffffff', border: `1px solid ${hairline}` }}>
-          <img src="/icon-192x192.png" alt="VoiceAI Connect" className="object-contain" style={{ width: Math.round(size * 0.68), height: Math.round(size * 0.68) }} />
-        </div>
+        <img src="/icon-512x512.png" alt="VoiceAI Connect" className="rounded-full object-cover flex-shrink-0" style={{ width: size, height: size }} />
       );
     }
     return (
@@ -448,7 +446,7 @@ export default function AgencyInboxPage() {
             {composeMode === 'root' && (
               <div className="space-y-2">
                 <button onClick={startPlatform} className="w-full flex items-center gap-3 p-2.5 rounded-xl transition hover:opacity-90" style={{ border: `1px solid ${hairline}` }}>
-                  <div className="h-9 w-9 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.08)' : '#ffffff', border: `1px solid ${hairline}` }}><img src="/icon-192x192.png" alt="VoiceAI Connect" className="object-contain" style={{ width: 24, height: 24 }} /></div>
+                  <img src="/icon-512x512.png" alt="VoiceAI Connect" className="h-9 w-9 rounded-full object-cover flex-shrink-0" />
                   <div className="text-left"><p className="text-sm font-medium" style={{ color: theme.text }}>VoiceAI Connect</p><p className="text-[10px]" style={{ color: textMuted2 }}>Message platform support</p></div>
                 </button>
                 <button onClick={() => { setComposeMode('client'); loadClients(); }} className="w-full flex items-center gap-3 p-2.5 rounded-xl transition hover:opacity-90" style={{ border: `1px solid ${hairline}` }}>
