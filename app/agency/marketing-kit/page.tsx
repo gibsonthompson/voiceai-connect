@@ -1,19 +1,28 @@
 'use client';
 
 // ============================================================================
-// MARKETING KIT (Phase 1)
+// MARKETING KIT
 //
 // Auto-branded, downloadable assets an agency hands out to land their first
 // clients: QR codes (call the demo, sign up, visit site), a print-ready
 // one-pager, a leave-behind, and a business card. Everything is branded from
 // the agency's logo / colors / demo number, no setup required.
 //
-// Customize panel: the agency picks the material color and toggles which
-// details (business name, demo number, contact phone, signup link) print on
-// the materials. Choices are saved per agency (localStorage) so they stick and
-// apply to every material here and any added later.
+// Customize panel:
+//   - Colors: pick the card Background, Accent (header band + highlights), and
+//     Text color independently. White is a first-class option on each, plus a
+//     custom picker. Text defaults to Auto (readable on whatever background is
+//     chosen). Dark backgrounds work (text + hairlines flip automatically).
+//   - Logo background: the logo sits on a white plaque on colored bands so it
+//     is always legible (transparent / dark logos no longer vanish).
+//   - Edit contents: turn on to edit any text inline and remove individual
+//     sections (headline, subhead, each bullet, QR blocks, labels). Removed
+//     sections show a Restore chip while editing. A single Reset restores
+//     every customization back to brand defaults.
 //
-// Lives in the get-clients area (linked from Outreach + a dashboard button).
+// All choices are saved per agency (localStorage) so they stick and apply to
+// every material here. Edit chrome never prints.
+//
 // QR images come from a public QR endpoint for now; we can move generation
 // in-house (reusing the Puppeteer render service) in a later phase.
 // ============================================================================
@@ -23,9 +32,10 @@ import Link from 'next/link';
 import {
   Megaphone, QrCode, Download, Copy, Check, Phone, ExternalLink,
   Printer, Sparkles, ArrowLeft, Loader2, Calculator, ChevronRight,
+  Pencil, RotateCcw,
 } from 'lucide-react';
 import { useAgency } from '../context';
-import { useTheme } from '@/hooks/useTheme';
+import { useTheme, isValidHex, isLightColor, withAlpha } from '@/hooks/useTheme';
 
 const PLATFORM_DOMAIN = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
 
@@ -52,6 +62,15 @@ function getContrastColor(hex: string): string {
   } catch { return '#ffffff'; }
 }
 
+// 0..1 relative luminance of a hex color (used for contrast fallbacks).
+function lum(hex: string): number {
+  try {
+    const c = hex.replace('#', '');
+    const r = parseInt(c.slice(0, 2), 16), g = parseInt(c.slice(2, 4), 16), b = parseInt(c.slice(4, 6), 16);
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  } catch { return 0; }
+}
+
 // Public QR image. encodeURIComponent so tel: URIs and query strings survive.
 function qrImg(data: string, size = 600): string {
   return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&margin=10&data=${encodeURIComponent(data)}`;
@@ -60,7 +79,7 @@ function qrImg(data: string, size = 600): string {
 // Print only the element with the given id (hide everything else). Injected on
 // demand and cleaned up after, so several printable pieces can share one page.
 function printOnly(id: string) {
-  const css = `@media print { body * { visibility: hidden !important; } #${id}, #${id} * { visibility: visible !important; } #${id} { position: absolute !important; inset: 0 !important; margin: 0 !important; width: 100% !important; box-shadow: none !important; border: none !important; } @page { margin: 0.5in; } }`;
+  const css = `@media print { body * { visibility: hidden !important; } #${id}, #${id} * { visibility: visible !important; } #${id} { position: absolute !important; inset: 0 !important; margin: 0 !important; width: 100% !important; box-shadow: none !important; border: none !important; } #${id} .no-print { display: none !important; } @page { margin: 0.5in; } }`;
   const el = document.createElement('style');
   el.textContent = css;
   document.head.appendChild(el);
@@ -83,34 +102,154 @@ function ToggleChip({ label, on, onClick, theme }: { label: string; on: boolean;
   );
 }
 
+// A row of color swatches + custom picker for one color setting. White is a
+// first-class swatch (with a visible ring so it's findable on a white panel).
+// An optional "Auto" chip clears the value back to automatic.
+function ColorRow({
+  label, value, swatches, onPick, autoLabel, theme,
+}: {
+  label: string; value: string; swatches: (string | null | undefined)[];
+  onPick: (c: string) => void; autoLabel?: string; theme: any;
+}) {
+  const isAuto = !value;
+  const uniq = (swatches.filter(Boolean) as string[])
+    .filter((c, i, a) => a.findIndex((x) => x.toLowerCase() === c.toLowerCase()) === i);
+  return (
+    <div>
+      <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: theme.textMuted }}>{label}</p>
+      <div className="flex items-center gap-2 flex-wrap">
+        {autoLabel && (
+          <button type="button" onClick={() => onPick('')} className="rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors"
+            style={{ backgroundColor: isAuto ? theme.primary15 : theme.hover, border: `1px solid ${isAuto ? theme.primary + '55' : theme.border}`, color: isAuto ? theme.primary : theme.textMuted }}>
+            {autoLabel}
+          </button>
+        )}
+        {uniq.map((c) => {
+          const active = !isAuto && value.toLowerCase() === c.toLowerCase();
+          const isWhite = c.toLowerCase() === '#ffffff' || c.toLowerCase() === '#fff';
+          return (
+            <button key={c} type="button" onClick={() => onPick(c)} aria-label={`Use ${c}`}
+              className="h-8 w-8 rounded-full transition-transform hover:scale-110"
+              style={{ backgroundColor: c, border: `2px solid ${active ? theme.text : (isWhite ? '#cbd5e1' : theme.border)}`, boxShadow: active ? `0 0 0 2px ${theme.card}` : 'none' }} />
+          );
+        })}
+        <label className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium cursor-pointer relative" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.textMuted }}>
+          <span style={{ width: 14, height: 14, borderRadius: 4, background: value || '#ffffff', display: 'inline-block', border: `1px solid ${theme.border}` }} />
+          Custom
+          <input type="color" value={isValidHex(value) ? value : '#ffffff'} onChange={(e) => onPick(e.target.value)} style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }} />
+        </label>
+      </div>
+    </div>
+  );
+}
+
+// Inline-editable text. Uncontrolled contentEditable: the DOM text is seeded
+// once per (value, nonce) and only read back on blur, so typing never triggers
+// a re-render and the caret never jumps. `nonce` bumps on Reset to re-seed the
+// defaults. Edit chrome and placeholders never print.
+function Editable({
+  value, editing, nonce, onSave, as = 'span', multiline = false, style, className, placeholder,
+}: {
+  value: string; editing: boolean; nonce: number; onSave: (v: string) => void;
+  as?: any; multiline?: boolean; style?: React.CSSProperties; className?: string; placeholder?: string;
+}) {
+  const ref = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (el && document.activeElement !== el && el.textContent !== value) {
+      el.textContent = value;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, nonce, editing]);
+  const Tag: any = as;
+  return (
+    <Tag
+      ref={ref as any}
+      data-mk-edit
+      data-ph={placeholder || ''}
+      contentEditable={editing}
+      suppressContentEditableWarning
+      spellCheck={false}
+      onBlur={(e: any) => onSave((e.currentTarget.textContent ?? '').replace(/\s+$/,''))}
+      onKeyDown={(e: any) => { if (!multiline && e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }}
+      className={className}
+      style={{ ...style, outline: 'none', cursor: editing ? 'text' : undefined }}
+    />
+  );
+}
+
+// Wraps a removable section. Hidden + not editing -> nothing renders (and never
+// prints). Hidden + editing -> a Restore chip. Visible + editing -> the content
+// with a small × in the corner. The × and chip carry `no-print`.
+function Removable({
+  id, hidden, editing, onToggle, label, children, style, inline = false,
+}: {
+  id: string; hidden: string[]; editing: boolean; onToggle: (id: string) => void;
+  label: string; children: React.ReactNode; style?: React.CSSProperties; inline?: boolean;
+}) {
+  const isHidden = hidden.includes(id);
+  if (isHidden && !editing) return null;
+  if (isHidden) {
+    return (
+      <button type="button" onClick={() => onToggle(id)} className="mk-restore no-print" title={`Restore ${label}`}>
+        <RotateCcw style={{ width: 11, height: 11 }} /> {label}
+      </button>
+    );
+  }
+  return (
+    <div style={{ position: 'relative', ...(inline ? { display: 'inline-block' } : {}), ...style }}>
+      {children}
+      {editing && (
+        <button type="button" onClick={() => onToggle(id)} aria-label={`Remove ${label}`} className="mk-x no-print">×</button>
+      )}
+    </div>
+  );
+}
+
 export default function MarketingKitPage() {
   const { agency, branding, loading } = useAgency();
   const theme = useTheme();
   const [copied, setCopied] = useState<string | null>(null);
   const [downloading, setDownloading] = useState<string | null>(null);
 
-  // Customize state. Defaults: show everything, color falls back to brand below.
-  const [matColor, setMatColor] = useState<string>('');
+  // Customize state. Defaults: Auto colors, logo plaque on, everything shown.
+  const [bgColor, setBgColor] = useState<string>('');        // card sheet background
+  const [accentColor, setAccentColor] = useState<string>(''); // header band + highlights
+  const [textColor, setTextColor] = useState<string>('');     // '' = auto (readable on bg)
+  const [logoPlaque, setLogoPlaque] = useState(true);
   const [showBusinessName, setShowBusinessName] = useState(true);
   const [showDemoNumber, setShowDemoNumber] = useState(true);
   const [showSignupLink, setShowSignupLink] = useState(true);
   const [showContactPhone, setShowContactPhone] = useState(true);
-  const skipSaveRef = useRef(true);
 
+  // Content editing: per-element text overrides + removed section ids.
+  const [editMode, setEditMode] = useState(false);
+  const [textOv, setTextOv] = useState<Record<string, string>>({});
+  const [hidden, setHidden] = useState<string[]>([]);
+  const [resetNonce, setResetNonce] = useState(0);
+
+  const skipSaveRef = useRef(true);
   const prefsKey = agency ? `mk_prefs_${agency.id}` : '';
 
-  // Load saved prefs once the agency is known.
+  // Load saved prefs once the agency is known. Migrates the old single
+  // `matColor` field onto `accentColor`.
   useEffect(() => {
     if (!prefsKey) return;
     try {
       const raw = localStorage.getItem(prefsKey);
       if (raw) {
         const p = JSON.parse(raw);
-        if (typeof p.matColor === 'string') setMatColor(p.matColor);
+        if (typeof p.accentColor === 'string') setAccentColor(p.accentColor);
+        else if (typeof p.matColor === 'string') setAccentColor(p.matColor); // migrate
+        if (typeof p.bgColor === 'string') setBgColor(p.bgColor);
+        if (typeof p.textColor === 'string') setTextColor(p.textColor);
+        if (typeof p.logoPlaque === 'boolean') setLogoPlaque(p.logoPlaque);
         if (typeof p.showBusinessName === 'boolean') setShowBusinessName(p.showBusinessName);
         if (typeof p.showDemoNumber === 'boolean') setShowDemoNumber(p.showDemoNumber);
         if (typeof p.showSignupLink === 'boolean') setShowSignupLink(p.showSignupLink);
         if (typeof p.showContactPhone === 'boolean') setShowContactPhone(p.showContactPhone);
+        if (p.textOv && typeof p.textOv === 'object') setTextOv(p.textOv);
+        if (Array.isArray(p.hidden)) setHidden(p.hidden.filter((x: any) => typeof x === 'string'));
       }
     } catch { /* ignore */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -121,9 +260,15 @@ export default function MarketingKitPage() {
   useEffect(() => {
     if (skipSaveRef.current) { skipSaveRef.current = false; return; }
     if (!prefsKey) return;
-    try { localStorage.setItem(prefsKey, JSON.stringify({ matColor, showBusinessName, showDemoNumber, showSignupLink, showContactPhone })); } catch { /* ignore */ }
+    try {
+      localStorage.setItem(prefsKey, JSON.stringify({
+        bgColor, accentColor, textColor, logoPlaque,
+        showBusinessName, showDemoNumber, showSignupLink, showContactPhone,
+        textOv, hidden,
+      }));
+    } catch { /* ignore */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matColor, showBusinessName, showDemoNumber, showSignupLink, showContactPhone]);
+  }, [bgColor, accentColor, textColor, logoPlaque, showBusinessName, showDemoNumber, showSignupLink, showContactPhone, textOv, hidden]);
 
   if (loading || !agency) {
     return (
@@ -148,15 +293,51 @@ export default function MarketingKitPage() {
   const siteUrl = base;
   const calcUrl = `${base}/tools/missed-call-calculator`;
 
-  // Material color (what prints on the assets) + readable text on top of it.
-  const mat = /^#[0-9a-fA-F]{6}$/.test(matColor) ? matColor : primary;
-  const matText = getContrastColor(mat);
+  // ── Resolved material colors ──────────────────────────────────────────
+  // sheetBg  = the card/paper background (default white)
+  // accent   = header band + highlights (default brand primary)
+  // text     = headings/body; '' means auto (readable on the chosen sheet)
+  const sheetBg = isValidHex(bgColor) ? bgColor : '#ffffff';
+  const sheetLight = isLightColor(sheetBg);
+  const accent = isValidHex(accentColor) ? accentColor : primary;
+  const accentText = getContrastColor(accent);
+  const headingColor = isValidHex(textColor) ? textColor : (sheetLight ? '#0f172a' : '#ffffff');
+  const bodyColor = isValidHex(textColor) ? withAlpha(textColor, 0.82) : (sheetLight ? '#475569' : 'rgba(255,255,255,0.82)');
+  const subtleColor = isValidHex(textColor) ? withAlpha(textColor, 0.6) : (sheetLight ? '#64748b' : 'rgba(255,255,255,0.6)');
+  const hairline = sheetLight ? '#e5e7eb' : 'rgba(255,255,255,0.14)';
+  // Number/emphasis uses the accent, unless it would be unreadable on the
+  // sheet (e.g. a white or very light accent on a white sheet).
+  const emphasis = Math.abs(lum(accent) - lum(sheetBg)) > 0.22 ? accent : headingColor;
 
-  // Color swatches offered in the Customize panel: the agency's own brand
-  // colors first, then a few neutral options, de-duped.
-  const swatches = ([primary, brandSecondary, brandAccent, '#0f172a', '#334155', '#1e3a8a']
-    .filter(Boolean) as string[])
-    .filter((c, i, a) => a.findIndex((x) => x.toLowerCase() === c.toLowerCase()) === i);
+  // Swatch palettes. Agency brand first, then neutrals + white. The platform's
+  // F1 neutrals are offered so an agency can reach that look, without forcing it.
+  const bgSwatches = ['#ffffff', '#0A0E0F', '#12181A', primary, brandSecondary, brandAccent];
+  const accentSwatches = [primary, brandSecondary, brandAccent, '#00A19B', '#0f172a', '#ffffff'];
+  const textSwatches = ['#ffffff', '#0f172a'];
+
+  // Content helpers.
+  const getText = (id: string, def: string) => (id in textOv ? textOv[id] : def);
+  const setText = (id: string, val: string, def: string) => setTextOv((prev) => {
+    const next = { ...prev };
+    if (val === def) delete next[id]; else next[id] = val;
+    return next;
+  });
+  const toggleHidden = (id: string) => setHidden((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
+  const hasCustomizations = !!(bgColor || accentColor || textColor || !logoPlaque
+    || Object.keys(textOv).length || hidden.length
+    || !showBusinessName || !showDemoNumber || !showSignupLink || !showContactPhone);
+
+  const resetAll = () => {
+    if (hasCustomizations && !window.confirm('Reset all customizations back to your brand defaults? This clears text edits, removed sections, and colors.')) return;
+    setBgColor(''); setAccentColor(''); setTextColor(''); setLogoPlaque(true);
+    setShowBusinessName(true); setShowDemoNumber(true); setShowSignupLink(true); setShowContactPhone(true);
+    setTextOv({}); setHidden([]);
+    setResetNonce((n) => n + 1);
+  };
+
+  // Color swatches offered for the material color (kept for compatibility with
+  // older behavior where `mat` drove the band).
 
   // Footer detail bits (everything except the business name, which renders bold).
   const contactBits = [
@@ -205,19 +386,44 @@ export default function MarketingKitPage() {
 
   const cardStyle: React.CSSProperties = { backgroundColor: theme.card, border: `1px solid ${theme.border}`, borderRadius: 16 };
 
+  // Logo rendered for a colored band: on a white plaque (default) so it is
+  // always legible, or bare if the plaque is turned off. Falls back to the
+  // business name when there's no logo.
+  const BandLogo = ({ h, maxW }: { h: number; maxW: number }) => {
+    if (!logoUrl) return <span style={{ fontSize: h >= 40 ? 24 : 20, fontWeight: 800, color: accentText }}>{name}</span>;
+    const img = <img src={logoUrl} alt={name} style={{ height: h, maxWidth: maxW, objectFit: 'contain', display: 'block' }} />;
+    return logoPlaque
+      ? <span style={{ background: '#ffffff', borderRadius: 10, padding: '8px 12px', display: 'inline-flex', alignItems: 'center' }}>{img}</span>
+      : img;
+  };
+
   // Shared footer renderer for the one-pager and leave-behind.
   const Footer = ({ style }: { style: React.CSSProperties }) => (
     showFooter ? (
       <div style={style}>
-        {showBusinessName && <strong style={{ color: '#0f172a' }}>{name}</strong>}
+        {showBusinessName && <strong style={{ color: headingColor }}>{name}</strong>}
         {showBusinessName && contactBits.length > 0 ? ' · ' : ''}
         {contactBits.join(' · ')}
       </div>
     ) : null
   );
 
+  const edProps = (id: string, def: string) => ({
+    value: getText(id, def), editing: editMode, nonce: resetNonce,
+    onSave: (v: string) => setText(id, v, def),
+  });
+
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-[1100px]">
+    <div className={`p-4 sm:p-6 lg:p-8 max-w-[1100px] ${editMode ? 'mk-editing' : ''}`}>
+      <style>{`
+        .mk-editing [data-mk-edit]:hover { box-shadow: inset 0 0 0 1px rgba(99,102,241,0.45); border-radius: 4px; }
+        [data-mk-edit]:focus { box-shadow: inset 0 0 0 2px #6366f1; border-radius: 4px; }
+        [data-mk-edit]:empty:before { content: attr(data-ph); color: #cbd5e1; }
+        .mk-x { position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; border-radius: 999px; background: #ef4444; color: #fff; font-size: 13px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.25); cursor: pointer; z-index: 6; }
+        .mk-restore { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; color: #6366f1; background: rgba(99,102,241,0.1); border: 1px dashed rgba(99,102,241,0.5); border-radius: 8px; padding: 5px 9px; cursor: pointer; margin: 4px 0; }
+        @media print { .no-print { display: none !important; } [data-mk-edit] { box-shadow: none !important; } [data-mk-edit]:empty:before { content: '' !important; } }
+      `}</style>
+
       <Link href="/agency/outreach" className="inline-flex items-center gap-2 text-sm mb-4 transition-colors" style={{ color: theme.textMuted }}>
         <ArrowLeft className="h-4 w-4" /> Back to Outreach
       </Link>
@@ -241,38 +447,46 @@ export default function MarketingKitPage() {
 
       {/* Customize */}
       <div className="mb-8 p-4 sm:p-5" style={cardStyle}>
-        <div className="flex items-center gap-2 mb-1">
-          <Sparkles className="h-4 w-4" style={{ color: theme.primary }} />
-          <h2 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>Customize</h2>
-        </div>
-        <p className="text-xs mb-4" style={{ color: theme.textMuted }}>These apply to every printable below and are saved for next time.</p>
-
-        <div className="mb-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: theme.textMuted }}>Color</p>
-          <div className="flex items-center gap-2 flex-wrap">
-            {swatches.map((c) => {
-              const active = mat.toLowerCase() === c.toLowerCase();
-              return (
-                <button key={c} type="button" onClick={() => setMatColor(c)} aria-label={`Use ${c}`}
-                  className="h-8 w-8 rounded-full transition-transform hover:scale-110"
-                  style={{ backgroundColor: c, border: `2px solid ${active ? theme.text : theme.border}`, boxShadow: active ? `0 0 0 2px ${theme.card}` : 'none' }} />
-              );
-            })}
-            <label className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium cursor-pointer relative" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.textMuted }}>
-              <span style={{ width: 14, height: 14, borderRadius: 4, background: mat, display: 'inline-block', border: `1px solid ${theme.border}` }} />
-              Custom
-              <input type="color" value={mat} onChange={(e) => setMatColor(e.target.value)} style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }} />
-            </label>
+        <div className="flex items-center justify-between gap-3 mb-1 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4" style={{ color: theme.primary }} />
+            <h2 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>Customize</h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={() => setEditMode((v) => !v)}
+              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-colors"
+              style={{ backgroundColor: editMode ? theme.primary : theme.hover, border: `1px solid ${editMode ? theme.primary : theme.border}`, color: editMode ? (theme.primaryText || '#fff') : theme.textMuted }}>
+              <Pencil className="h-3.5 w-3.5" /> {editMode ? 'Done editing' : 'Edit contents'}
+            </button>
+            <button type="button" onClick={resetAll} disabled={!hasCustomizations}
+              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors disabled:opacity-40"
+              style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.textMuted }}>
+              <RotateCcw className="h-3.5 w-3.5" /> Reset
+            </button>
           </div>
         </div>
+        <p className="text-xs mb-4" style={{ color: theme.textMuted }}>
+          {editMode
+            ? 'Click any text on the materials below to edit it. Hover a section and click × to remove it (a Restore chip brings it back). Reset restores brand defaults.'
+            : 'These apply to every printable below and are saved for next time.'}
+        </p>
 
-        <div>
+        <div className="space-y-4">
+          <ColorRow label="Card background" value={bgColor} swatches={bgSwatches} onPick={setBgColor} autoLabel="White" theme={theme} />
+          <ColorRow label="Accent (header + highlights)" value={accentColor} swatches={accentSwatches} onPick={setAccentColor} autoLabel="Brand" theme={theme} />
+          <ColorRow label="Text" value={textColor} swatches={textSwatches} onPick={setTextColor} autoLabel="Auto" theme={theme} />
+        </div>
+
+        <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
           <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: theme.textMuted }}>Show on materials</p>
           <div className={`grid ${toggleCols} gap-2`}>
             <ToggleChip label="Business name" on={showBusinessName} onClick={() => setShowBusinessName((v) => !v)} theme={theme} />
             {demo && <ToggleChip label="Demo number" on={showDemoNumber} onClick={() => setShowDemoNumber((v) => !v)} theme={theme} />}
             {agency.phone && <ToggleChip label="Contact phone" on={showContactPhone} onClick={() => setShowContactPhone((v) => !v)} theme={theme} />}
             <ToggleChip label="Signup link" on={showSignupLink} onClick={() => setShowSignupLink((v) => !v)} theme={theme} />
+          </div>
+          <div className="mt-3 grid grid-cols-1 gap-2">
+            <ToggleChip label="Logo on white background" on={logoPlaque} onClick={() => setLogoPlaque((v) => !v)} theme={theme} />
           </div>
         </div>
       </div>
@@ -348,47 +562,57 @@ export default function MarketingKitPage() {
       </div>
       <p className="text-sm mb-4" style={{ color: theme.textMuted }}>Hand this to a prospect or leave it behind. Click Download / Print and choose &ldquo;Save as PDF.&rdquo;</p>
 
-      <div id="mk-onepager" style={{ background: '#ffffff', color: '#111827', border: `1px solid ${theme.border}`, borderRadius: 16, overflow: 'hidden', maxWidth: 820 }}>
-        <div style={{ background: mat, color: matText, padding: '28px 36px', display: 'flex', alignItems: 'center', gap: 16 }}>
-          {logoUrl
-            ? <img src={logoUrl} alt={name} style={{ height: 44, maxWidth: 220, objectFit: 'contain' }} />
-            : <span style={{ fontSize: 24, fontWeight: 800 }}>{name}</span>}
+      <div id="mk-onepager" style={{ background: sheetBg, color: bodyColor, border: `1px solid ${theme.border}`, borderRadius: 16, overflow: 'hidden', maxWidth: 820 }}>
+        <div style={{ background: accent, color: accentText, padding: '28px 36px', display: 'flex', alignItems: 'center', gap: 16 }}>
+          <BandLogo h={44} maxW={220} />
         </div>
         <div style={{ padding: '36px' }}>
-          <h3 style={{ fontSize: 34, lineHeight: 1.1, margin: 0, fontWeight: 800, color: '#0f172a' }}>Never miss another call.</h3>
-          <p style={{ fontSize: 17, color: '#475569', marginTop: 14, lineHeight: 1.6 }}>
-            An AI receptionist that answers every call 24/7, sounds natural, handles questions, and books jobs straight onto your calendar. Set up in about a day.
-          </p>
+          <Editable {...edProps('op-headline', 'Never miss another call.')} as="h3" placeholder="Headline"
+            style={{ fontSize: 34, lineHeight: 1.1, margin: 0, fontWeight: 800, color: headingColor }} />
+          <Editable {...edProps('op-subhead', 'An AI receptionist that answers every call 24/7, sounds natural, handles questions, and books jobs straight onto your calendar. Set up in about a day.')} as="p" multiline placeholder="Supporting text"
+            style={{ fontSize: 17, color: bodyColor, marginTop: 14, lineHeight: 1.6 }} />
+
           <ul style={{ margin: '22px 0 0', padding: 0, listStyle: 'none', display: 'grid', gap: 10 }}>
-            {['Answers 24/7, even after hours and weekends', 'Books appointments and captures every lead', 'Sounds like a real receptionist, not a robot'].map((b) => (
-              <li key={b} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 16, color: '#1f2937' }}>
-                <span style={{ width: 20, height: 20, borderRadius: 999, background: mat, color: matText, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800 }}>✓</span>
-                {b}
-              </li>
-            ))}
+              {[
+                ['op-b1', 'Answers 24/7, even after hours and weekends'],
+                ['op-b2', 'Books appointments and captures every lead'],
+                ['op-b3', 'Sounds like a real receptionist, not a robot'],
+              ].map(([id, def]) => (
+                hidden.includes(id) && !editMode ? null : (
+                  hidden.includes(id) ? (
+                    <li key={id}><button type="button" onClick={() => toggleHidden(id)} className="mk-restore no-print"><RotateCcw style={{ width: 11, height: 11 }} /> Bullet</button></li>
+                  ) : (
+                    <li key={id} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 10, fontSize: 16, color: headingColor, paddingRight: editMode ? 26 : 0 }}>
+                      <span style={{ width: 20, height: 20, borderRadius: 999, background: accent, color: accentText, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, flexShrink: 0 }}>✓</span>
+                      <Editable {...edProps(id, def)} as="span" placeholder="Bullet" style={{ flex: 1 }} />
+                      {editMode && <button type="button" onClick={() => toggleHidden(id)} aria-label="Remove bullet" className="mk-x no-print" style={{ top: '50%', transform: 'translateY(-50%)', right: 2 }}>×</button>}
+                    </li>
+                  )
+                )
+              ))}
           </ul>
 
           <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginTop: 30, alignItems: 'center' }}>
             {demo && (
-              <div style={{ textAlign: 'center' }}>
+              <Removable id="op-demoqr" hidden={hidden} editing={editMode} onToggle={toggleHidden} label="Demo QR" style={{ textAlign: 'center' }}>
                 <img src={qrImg(telHref(demo), 300)} alt="Call the demo" width={130} height={130} style={{ display: 'block', width: 130, height: 130, border: '1px solid #e5e7eb', borderRadius: 10, padding: 6, background: '#fff' }} />
-                <p style={{ margin: '8px 0 0', fontSize: 12, fontWeight: 700, color: '#0f172a' }}>Scan to hear it answer</p>
-              </div>
+                <Editable {...edProps('op-demoqr-cap', 'Scan to hear it answer')} as="p" placeholder="Caption" style={{ margin: '8px 0 0', fontSize: 12, fontWeight: 700, color: headingColor }} />
+              </Removable>
             )}
-            <div style={{ textAlign: 'center' }}>
+            <Removable id="op-signupqr" hidden={hidden} editing={editMode} onToggle={toggleHidden} label="Signup QR" style={{ textAlign: 'center' }}>
               <img src={qrImg(signupUrl, 300)} alt="Sign up" width={130} height={130} style={{ display: 'block', width: 130, height: 130, border: '1px solid #e5e7eb', borderRadius: 10, padding: 6, background: '#fff' }} />
-              <p style={{ margin: '8px 0 0', fontSize: 12, fontWeight: 700, color: '#0f172a' }}>Scan to get started</p>
-            </div>
+              <Editable {...edProps('op-signupqr-cap', 'Scan to get started')} as="p" placeholder="Caption" style={{ margin: '8px 0 0', fontSize: 12, fontWeight: 700, color: headingColor }} />
+            </Removable>
             {demo && showDemoNumber && (
-              <div style={{ flex: 1, minWidth: 180 }}>
-                <p style={{ margin: 0, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#64748b', fontWeight: 700 }}>Hear it live</p>
-                <p style={{ margin: '6px 0 0', fontSize: 28, fontWeight: 800, color: mat }}>{demoDisplay}</p>
-                <p style={{ margin: '4px 0 0', fontSize: 14, color: '#475569' }}>Call and tell it what your business does.</p>
-              </div>
+              <Removable id="op-hearlive" hidden={hidden} editing={editMode} onToggle={toggleHidden} label="Call-now block" style={{ flex: 1, minWidth: 180 }}>
+                <Editable {...edProps('op-hearlive-label', 'Hear it live')} as="p" placeholder="Label" style={{ margin: 0, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.08em', color: subtleColor, fontWeight: 700 }} />
+                <p style={{ margin: '6px 0 0', fontSize: 28, fontWeight: 800, color: emphasis }}>{demoDisplay}</p>
+                <Editable {...edProps('op-hearlive-sub', 'Call and tell it what your business does.')} as="p" multiline placeholder="Subtext" style={{ margin: '4px 0 0', fontSize: 14, color: bodyColor }} />
+              </Removable>
             )}
           </div>
 
-          <Footer style={{ marginTop: 32, paddingTop: 20, borderTop: '1px solid #e5e7eb', fontSize: 14, color: '#475569' }} />
+          <Footer style={{ marginTop: 32, paddingTop: 20, borderTop: `1px solid ${hairline}`, fontSize: 14, color: bodyColor }} />
         </div>
       </div>
 
@@ -403,21 +627,19 @@ export default function MarketingKitPage() {
         </button>
       </div>
       <p className="text-sm mb-4" style={{ color: theme.textMuted }}>Leave this at a business you stopped by or couldn&apos;t reach.</p>
-      <div id="mk-leavebehind" style={{ background: '#ffffff', color: '#111827', border: `1px solid ${theme.border}`, borderRadius: 16, overflow: 'hidden', maxWidth: 520 }}>
-        <div style={{ background: mat, color: matText, padding: '18px 28px', textAlign: 'center' }}>
-          {logoUrl ? <img src={logoUrl} alt={name} style={{ height: 34, maxWidth: 200, objectFit: 'contain' }} /> : <span style={{ fontSize: 20, fontWeight: 800 }}>{name}</span>}
+      <div id="mk-leavebehind" style={{ background: sheetBg, color: bodyColor, border: `1px solid ${theme.border}`, borderRadius: 16, overflow: 'hidden', maxWidth: 520 }}>
+        <div style={{ background: accent, color: accentText, padding: '18px 28px', textAlign: 'center' }}>
+          <BandLogo h={34} maxW={200} />
         </div>
         <div style={{ padding: '28px', textAlign: 'center' }}>
-          <h3 style={{ fontSize: 24, fontWeight: 800, margin: 0, color: '#0f172a' }}>Sorry we missed you.</h3>
-          <p style={{ fontSize: 15, color: '#475569', marginTop: 10, lineHeight: 1.6 }}>
-            How many calls does your business miss? We set up an AI receptionist that answers every one, 24/7, and books the job.
-          </p>
-          <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', marginTop: 18 }}>
+          <Editable {...edProps('lb-headline', 'Sorry we missed you.')} as="h3" placeholder="Headline" style={{ fontSize: 24, fontWeight: 800, margin: 0, color: headingColor }} />
+          <Editable {...edProps('lb-subhead', 'How many calls does your business miss? We set up an AI receptionist that answers every one, 24/7, and books the job.')} as="p" multiline placeholder="Supporting text" style={{ fontSize: 15, color: bodyColor, marginTop: 10, lineHeight: 1.6 }} />
+          <Removable id="lb-qr" hidden={hidden} editing={editMode} onToggle={toggleHidden} label="QR" style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', marginTop: 18 }}>
             <img src={qrImg(demo ? telHref(demo) : signupUrl, 240)} alt="QR" width={120} height={120} style={{ width: 120, height: 120, border: '1px solid #e5e7eb', borderRadius: 10, padding: 6, background: '#fff' }} />
-            <p style={{ margin: '10px 0 0', fontSize: 13, fontWeight: 700, color: '#0f172a' }}>{demo ? 'Scan to hear it answer' : 'Scan to get started'}</p>
-          </div>
-          {demo && showDemoNumber && <p style={{ margin: '14px 0 0', fontSize: 22, fontWeight: 800, color: mat }}>{demoDisplay}</p>}
-          <Footer style={{ margin: '12px 0 0', fontSize: 12, color: '#64748b' }} />
+            <Editable {...edProps('lb-qr-cap', demo ? 'Scan to hear it answer' : 'Scan to get started')} as="p" placeholder="Caption" style={{ margin: '10px 0 0', fontSize: 13, fontWeight: 700, color: headingColor }} />
+          </Removable>
+          {demo && showDemoNumber && <p style={{ margin: '14px 0 0', fontSize: 22, fontWeight: 800, color: emphasis }}>{demoDisplay}</p>}
+          <Footer style={{ margin: '12px 0 0', fontSize: 12, color: subtleColor }} />
         </div>
       </div>
 
@@ -434,22 +656,26 @@ export default function MarketingKitPage() {
       <p className="text-sm mb-4" style={{ color: theme.textMuted }}>Front and back, standard 3.5 x 2 in. Print, then cut to size (or send to any printer).</p>
       <div id="mk-card" style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
         {/* Front */}
-        <div style={{ width: 336, height: 192, borderRadius: 12, overflow: 'hidden', border: '1px solid #e5e7eb', background: '#ffffff', color: '#0f172a', padding: 20, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div style={{ width: 336, height: 192, borderRadius: 12, overflow: 'hidden', border: `1px solid ${hairline}`, background: sheetBg, color: headingColor, padding: 20, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {logoUrl ? <img src={logoUrl} alt={name} style={{ height: 30, maxWidth: 150, objectFit: 'contain' }} /> : <span style={{ fontSize: 17, fontWeight: 800 }}>{name}</span>}
+            {logoUrl
+              ? (logoPlaque
+                  ? <span style={{ background: '#ffffff', borderRadius: 8, padding: '5px 8px', display: 'inline-flex', alignItems: 'center' }}><img src={logoUrl} alt={name} style={{ height: 28, maxWidth: 140, objectFit: 'contain', display: 'block' }} /></span>
+                  : <img src={logoUrl} alt={name} style={{ height: 30, maxWidth: 150, objectFit: 'contain' }} />)
+              : <span style={{ fontSize: 17, fontWeight: 800, color: headingColor }}>{name}</span>}
           </div>
           <div>
-            <p style={{ margin: 0, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#94a3b8', fontWeight: 700 }}>AI Receptionist</p>
-            {demo && showDemoNumber && <p style={{ margin: '4px 0 0', fontSize: 20, fontWeight: 800, color: mat }}>{demoDisplay}</p>}
-            <p style={{ margin: '4px 0 0', fontSize: 12, color: '#475569' }}>{siteUrl.replace(/^https?:\/\//, '')}</p>
+            <Editable {...edProps('bc-label', 'AI Receptionist')} as="p" placeholder="Label" style={{ margin: 0, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: subtleColor, fontWeight: 700 }} />
+            {demo && showDemoNumber && <p style={{ margin: '4px 0 0', fontSize: 20, fontWeight: 800, color: emphasis }}>{demoDisplay}</p>}
+            <p style={{ margin: '4px 0 0', fontSize: 12, color: bodyColor }}>{siteUrl.replace(/^https?:\/\//, '')}</p>
           </div>
         </div>
         {/* Back */}
-        <div style={{ width: 336, height: 192, borderRadius: 12, overflow: 'hidden', border: '1px solid #e5e7eb', background: mat, color: matText, padding: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div style={{ width: 336, height: 192, borderRadius: 12, overflow: 'hidden', border: `1px solid ${hairline}`, background: accent, color: accentText, padding: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
           <img src={qrImg(demo ? telHref(demo) : signupUrl, 240)} alt="QR" width={110} height={110} style={{ width: 110, height: 110, borderRadius: 8, background: '#fff', padding: 6 }} />
           <div>
-            <p style={{ margin: 0, fontSize: 18, fontWeight: 800, lineHeight: 1.2 }}>Never miss another call.</p>
-            <p style={{ margin: '8px 0 0', fontSize: 12, opacity: 0.9 }}>{demo ? 'Scan to hear your AI answer.' : 'Scan to get started.'}</p>
+            <Editable {...edProps('bc-back-headline', 'Never miss another call.')} as="p" multiline placeholder="Headline" style={{ margin: 0, fontSize: 18, fontWeight: 800, lineHeight: 1.2, color: accentText }} />
+            <Editable {...edProps('bc-back-sub', demo ? 'Scan to hear your AI answer.' : 'Scan to get started.')} as="p" placeholder="Subtext" style={{ margin: '8px 0 0', fontSize: 12, opacity: 0.9, color: accentText }} />
           </div>
         </div>
       </div>

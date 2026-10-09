@@ -7,6 +7,9 @@
 // calls are costing them, then print a branded result sheet to hand over. Pure
 // frontend, brands from the agency's logo/colors/demo number. A later phase can
 // expose a public, QR-scannable version for prospects to self-serve.
+//
+// The result-sheet logo sits on a white plaque so transparent / dark logos stay
+// legible on the colored header band (matches the Marketing Kit assets).
 // ============================================================================
 
 import { useState, useMemo } from 'react';
@@ -132,7 +135,9 @@ export default function MissedCallCalculatorPage() {
       {/* Printable branded result */}
       <div id="mcalc-result" className="mt-8" style={{ background: '#ffffff', color: '#111827', border: `1px solid ${theme.border}`, borderRadius: 16, overflow: 'hidden', maxWidth: 820 }}>
         <div style={{ background: primary, color: '#fff', padding: '24px 36px', display: 'flex', alignItems: 'center', gap: 16 }}>
-          {logoUrl ? <img src={logoUrl} alt={name} style={{ height: 40, maxWidth: 220, objectFit: 'contain' }} /> : <span style={{ fontSize: 22, fontWeight: 800 }}>{name}</span>}
+          {logoUrl
+            ? <span style={{ background: '#ffffff', borderRadius: 10, padding: '8px 12px', display: 'inline-flex', alignItems: 'center' }}><img src={logoUrl} alt={name} style={{ height: 40, maxWidth: 220, objectFit: 'contain', display: 'block' }} /></span>
+            : <span style={{ fontSize: 22, fontWeight: 800 }}>{name}</span>}
         </div>
         <div style={{ padding: 36 }}>
           <h3 style={{ fontSize: 28, lineHeight: 1.15, margin: 0, fontWeight: 800, color: '#0f172a' }}>
