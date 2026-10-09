@@ -445,52 +445,6 @@ export default function MarketingKitPage() {
         </div>
       )}
 
-      {/* Customize */}
-      <div className="mb-8 p-4 sm:p-5" style={cardStyle}>
-        <div className="flex items-center justify-between gap-3 mb-1 flex-wrap">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4" style={{ color: theme.primary }} />
-            <h2 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>Customize</h2>
-          </div>
-          <div className="flex items-center gap-2">
-            <button type="button" onClick={() => setEditMode((v) => !v)}
-              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-colors"
-              style={{ backgroundColor: editMode ? theme.primary : theme.hover, border: `1px solid ${editMode ? theme.primary : theme.border}`, color: editMode ? (theme.primaryText || '#fff') : theme.textMuted }}>
-              <Pencil className="h-3.5 w-3.5" /> {editMode ? 'Done editing' : 'Edit contents'}
-            </button>
-            <button type="button" onClick={resetAll} disabled={!hasCustomizations}
-              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors disabled:opacity-40"
-              style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.textMuted }}>
-              <RotateCcw className="h-3.5 w-3.5" /> Reset
-            </button>
-          </div>
-        </div>
-        <p className="text-xs mb-4" style={{ color: theme.textMuted }}>
-          {editMode
-            ? 'Click any text on the materials below to edit it. Hover a section and click × to remove it (a Restore chip brings it back). Reset restores brand defaults.'
-            : 'These apply to every printable below and are saved for next time.'}
-        </p>
-
-        <div className="space-y-4">
-          <ColorRow label="Card background" value={bgColor} swatches={bgSwatches} onPick={setBgColor} autoLabel="White" theme={theme} />
-          <ColorRow label="Accent (header + highlights)" value={accentColor} swatches={accentSwatches} onPick={setAccentColor} autoLabel="Brand" theme={theme} />
-          <ColorRow label="Text" value={textColor} swatches={textSwatches} onPick={setTextColor} autoLabel="Auto" theme={theme} />
-        </div>
-
-        <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
-          <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: theme.textMuted }}>Show on materials</p>
-          <div className={`grid ${toggleCols} gap-2`}>
-            <ToggleChip label="Business name" on={showBusinessName} onClick={() => setShowBusinessName((v) => !v)} theme={theme} />
-            {demo && <ToggleChip label="Demo number" on={showDemoNumber} onClick={() => setShowDemoNumber((v) => !v)} theme={theme} />}
-            {agency.phone && <ToggleChip label="Contact phone" on={showContactPhone} onClick={() => setShowContactPhone((v) => !v)} theme={theme} />}
-            <ToggleChip label="Signup link" on={showSignupLink} onClick={() => setShowSignupLink((v) => !v)} theme={theme} />
-          </div>
-          <div className="mt-3 grid grid-cols-1 gap-2">
-            <ToggleChip label="Logo on white background" on={logoPlaque} onClick={() => setLogoPlaque((v) => !v)} theme={theme} />
-          </div>
-        </div>
-      </div>
-
       {/* Quick links */}
       <div className="grid gap-3 mb-8" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
         {demo && (
@@ -550,6 +504,61 @@ export default function MarketingKitPage() {
         ))}
       </div>
 
+      {/* ===== Builder: sticky controls + live canvas ===== */}
+      <div className="flex items-center gap-2 mb-3">
+        <Megaphone className="h-4 w-4" style={{ color: theme.primary }} />
+        <h2 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>Branded print materials</h2>
+      </div>
+      <p className="text-sm mb-4" style={{ color: theme.textMuted }}>Edit colors and content on the left; the materials on the right update live. Saved for next time.</p>
+      <div className="lg:grid lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-6 lg:items-start">
+        {/* Customize (sticky control rail) */}
+        <div className="mb-6 lg:mb-0 lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto p-4 sm:p-5" style={cardStyle}>
+          <div className="flex items-center justify-between gap-3 mb-1 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" style={{ color: theme.primary }} />
+              <h2 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>Customize</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => setEditMode((v) => !v)}
+                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-colors"
+                style={{ backgroundColor: editMode ? theme.primary : theme.hover, border: `1px solid ${editMode ? theme.primary : theme.border}`, color: editMode ? (theme.primaryText || '#fff') : theme.textMuted }}>
+                <Pencil className="h-3.5 w-3.5" /> {editMode ? 'Done editing' : 'Edit contents'}
+              </button>
+              <button type="button" onClick={resetAll} disabled={!hasCustomizations}
+                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors disabled:opacity-40"
+                style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.textMuted }}>
+                <RotateCcw className="h-3.5 w-3.5" /> Reset
+              </button>
+            </div>
+          </div>
+          <p className="text-xs mb-4" style={{ color: theme.textMuted }}>
+            {editMode
+              ? 'Click any text on the materials to edit it. Hover a section and click × to remove it (a Restore chip brings it back). Reset restores brand defaults.'
+              : 'These apply to every material here and are saved for next time.'}
+          </p>
+
+          <div className="space-y-4">
+            <ColorRow label="Card background" value={bgColor} swatches={bgSwatches} onPick={setBgColor} autoLabel="White" theme={theme} />
+            <ColorRow label="Accent (header + highlights)" value={accentColor} swatches={accentSwatches} onPick={setAccentColor} autoLabel="Brand" theme={theme} />
+            <ColorRow label="Text" value={textColor} swatches={textSwatches} onPick={setTextColor} autoLabel="Auto" theme={theme} />
+          </div>
+
+          <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
+            <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: theme.textMuted }}>Show on materials</p>
+            <div className={`grid ${toggleCols} gap-2`}>
+              <ToggleChip label="Business name" on={showBusinessName} onClick={() => setShowBusinessName((v) => !v)} theme={theme} />
+              {demo && <ToggleChip label="Demo number" on={showDemoNumber} onClick={() => setShowDemoNumber((v) => !v)} theme={theme} />}
+              {agency.phone && <ToggleChip label="Contact phone" on={showContactPhone} onClick={() => setShowContactPhone((v) => !v)} theme={theme} />}
+              <ToggleChip label="Signup link" on={showSignupLink} onClick={() => setShowSignupLink((v) => !v)} theme={theme} />
+            </div>
+            <div className="mt-3 grid grid-cols-1 gap-2">
+              <ToggleChip label="Logo on white background" on={logoPlaque} onClick={() => setLogoPlaque((v) => !v)} theme={theme} />
+            </div>
+          </div>
+        </div>
+
+        {/* Canvas: the materials being customized, update live */}
+        <div className="min-w-0">
       {/* One-pager */}
       <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
         <div className="flex items-center gap-2">
@@ -677,6 +686,8 @@ export default function MarketingKitPage() {
             <Editable {...edProps('bc-back-headline', 'Never miss another call.')} as="p" multiline placeholder="Headline" style={{ margin: 0, fontSize: 18, fontWeight: 800, lineHeight: 1.2, color: accentText }} />
             <Editable {...edProps('bc-back-sub', demo ? 'Scan to hear your AI answer.' : 'Scan to get started.')} as="p" placeholder="Subtext" style={{ margin: '8px 0 0', fontSize: 12, opacity: 0.9, color: accentText }} />
           </div>
+        </div>
+      </div>
         </div>
       </div>
 
