@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   PhoneCall, Search, Loader2, PhoneForwarded, ShieldX, Download, X, Calendar
 } from 'lucide-react';
@@ -53,6 +53,7 @@ export default function ClientCallsPage() {
   const [calls, setCalls] = useState<any[]>([]);
   const [callsLoading, setCallsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [contacts, setContacts] = useState<any[]>([]);
 
   // Export state
   const [showExport, setShowExport] = useState(false);
@@ -61,7 +62,7 @@ export default function ClientCallsPage() {
   const [exporting, setExporting] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { if (client) fetchCalls(); }, [client]);
+  useEffect(() => { if (client) { fetchCalls(); fetchContacts(); } }, [client]);
 
   // Close export panel on outside click
   useEffect(() => {
@@ -86,6 +87,18 @@ export default function ClientCallsPage() {
       }
     } catch (e) { console.error('Failed to fetch calls:', e); }
     finally { setCallsLoading(false); }
+  };
+
+  // Saved contacts, used to put a name on a call whose record has none (the AI
+  // stores "Unknown" when it never caught a name), matched by phone last 10.
+  const fetchContacts = async () => {
+    if (!client) return;
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
+      const r = await fetch(`${backendUrl}/api/client/${client.id}/contacts?limit=500&sort=name`, { headers: { 'Authorization': `Bearer ${token}` } });
+      if (r.ok) { const d = await r.json(); setContacts(d.contacts || []); }
+    } catch {}
   };
 
   const handleExportCalls = async () => {
@@ -115,11 +128,25 @@ export default function ClientCallsPage() {
     finally { setExporting(false); }
   };
 
+  const digits = (p: string) => (p || '').replace(/\D/g, '');
+  const contactNameByPhone = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const c of contacts) { const k = digits(c.phone).slice(-10); if (k && c.name && String(c.name).trim()) m.set(k, String(c.name).trim()); }
+    return m;
+  }, [contacts]);
+  // The record's name is a placeholder when it's empty or the AI's "Unknown".
+  const isPlaceholderName = (n?: string) => { const t = (n || '').trim().toLowerCase(); return !t || t === 'unknown' || t === 'unknown caller'; };
+  const displayName = (call: any) => {
+    if (!isPlaceholderName(call.customer_name)) return call.customer_name;
+    const k = digits(call.customer_phone || call.caller_phone).slice(-10);
+    return (k && contactNameByPhone.get(k)) || 'Unknown Caller';
+  };
+
   const filteredCalls = calls.filter(call => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (
-      call.customer_name?.toLowerCase().includes(q) ||
+      displayName(call).toLowerCase().includes(q) ||
       call.customer_phone?.includes(q) ||
       call.caller_phone?.includes(q) ||
       call.service_requested?.toLowerCase().includes(q)
@@ -288,7 +315,7 @@ export default function ClientCallsPage() {
 
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-[13px] sm:text-sm truncate" style={{ color: theme.text }}>
-                    {call.customer_name || 'Unknown Caller'}
+                    {displayName(call)}
                   </p>
                   <p className="text-[11px] sm:text-xs truncate mt-0.5" style={{ color: theme.textMuted }}>
                     {formatPhoneNumber(call.customer_phone || call.caller_phone)}

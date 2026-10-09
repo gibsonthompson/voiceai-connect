@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { 
   Phone, Settings, ArrowLeft, Clock, User, MapPin,
@@ -56,6 +56,7 @@ export default function CallDetailPage() {
   const theme = useClientTheme();
   const [call, setCall] = useState<Call | null>(null);
   const [callLoading, setCallLoading] = useState(true);
+  const [contacts, setContacts] = useState<any[]>([]);
   const [showTextCompose, setShowTextCompose] = useState(false);
   const [textMessage, setTextMessage] = useState('');
   const [textSending, setTextSending] = useState(false);
@@ -64,6 +65,32 @@ export default function CallDetailPage() {
   const hipaaMode = client?.hipaa_mode === true;
 
   useEffect(() => { if (client && callId) fetchCallDetail(); }, [client, callId]);
+  useEffect(() => { if (client) fetchContacts(); }, [client]);
+
+  // Resolve a caller name from saved contacts when the call record has none
+  // (the AI stores "Unknown" when it never caught a name), matched by phone.
+  const fetchContacts = async () => {
+    if (!client) return;
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
+      const r = await fetch(`${backendUrl}/api/client/${client.id}/contacts?limit=500&sort=name`, { headers: { 'Authorization': `Bearer ${token}` } });
+      if (r.ok) { const d = await r.json(); setContacts(d.contacts || []); }
+    } catch {}
+  };
+  const digits = (p: string) => (p || '').replace(/\D/g, '');
+  const contactNameByPhone = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const c of contacts) { const k = digits(c.phone).slice(-10); if (k && c.name && String(c.name).trim()) m.set(k, String(c.name).trim()); }
+    return m;
+  }, [contacts]);
+  const isPlaceholderName = (n?: string | null) => { const t = (n || '').trim().toLowerCase(); return !t || t === 'unknown' || t === 'unknown caller'; };
+  const resolveCallName = (c: Call | null): string => {
+    if (!c) return 'Unknown Caller';
+    if (!isPlaceholderName(c.customer_name)) return c.customer_name as string;
+    const k = digits(c.customer_phone || c.caller_phone || '').slice(-10);
+    return (k && contactNameByPhone.get(k)) || 'Unknown Caller';
+  };
 
   const fetchCallDetail = async () => {
     if (!client || !callId) return;
@@ -183,7 +210,7 @@ export default function CallDetailPage() {
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-lg sm:text-xl lg:text-2xl font-semibold tracking-tight truncate" style={{ color: theme.text }}>
-              {isSpam ? 'Spam Call' : `Call with ${call.customer_name || 'Unknown Caller'}`}
+              {isSpam ? 'Spam Call' : `Call with ${resolveCallName(call)}`}
             </h1>
             <p className="mt-0.5 text-xs sm:text-[13px]" style={{ color: theme.textMuted }}>
               {new Date(call.created_at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
@@ -290,7 +317,7 @@ export default function CallDetailPage() {
           <div className="rounded-2xl p-5 sm:p-6 fu fu2" style={glass}>
             <h2 className="font-semibold text-sm sm:text-[15px] tracking-tight mb-4" style={{ color: theme.text }}>Contact Details</h2>
             <div className="space-y-3.5">
-              {call.customer_name && <InfoRow icon={User} label="Name" value={call.customer_name} />}
+              {resolveCallName(call) !== 'Unknown Caller' && <InfoRow icon={User} label="Name" value={resolveCallName(call)} />}
               {(call.customer_phone || call.caller_phone) && (
                 <InfoRow icon={Phone} label="Phone" value={call.customer_phone || call.caller_phone || ''} href={`tel:${call.customer_phone || call.caller_phone}`} />
               )}
