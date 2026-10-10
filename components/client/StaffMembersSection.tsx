@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { getClientAuthToken } from '@/lib/client-auth';
 import {
   Users, Plus, Loader2, X, Check, Trash2, UserPlus,
   Phone, Mail, Pencil, ChevronDown, ChevronUp, ToggleLeft, ToggleRight, Globe,
@@ -26,6 +27,7 @@ interface StaffMember {
   notes: string | null;
   is_active: boolean;
   transferable: boolean;
+  transfer_criteria: string | null;
   available_hours: any;
   google_calendar_id: string | null;
   created_at: string;
@@ -99,7 +101,7 @@ function parseStoredHours(stored: any): { enabled: boolean; hours: WeekHours } {
   return { enabled: true, hours };
 }
 
-const EMPTY_FORM = { name: '', role: '', phone: '', email: '', notes: '', transferable: false, hoursEnabled: false, availableHours: { ...DEFAULT_HOURS } as WeekHours };
+const EMPTY_FORM = { name: '', role: '', phone: '', email: '', notes: '', transferable: false, transferCriteria: '', hoursEnabled: false, availableHours: { ...DEFAULT_HOURS } as WeekHours };
 
 export default function StaffMembersSection({ clientId, theme, compact, industry, hideHeader }: Props) {
   const [staff, setStaff] = useState<StaffMember[]>([]);
@@ -119,7 +121,7 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
 
   const fetchStaff = useCallback(async () => {
     try {
-      const token = localStorage.getItem('auth_token');
+      const token = getClientAuthToken();
       const res = await fetch(`${backendUrl}/api/client/${clientId}/staff`, { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) { const data = await res.json(); setStaff(data.staff || []); setSuggestions(Array.isArray(data.suggestions) ? data.suggestions : []); }
     } catch (e) { console.error('Failed to fetch staff:', e); }
@@ -129,7 +131,7 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
   useEffect(() => { fetchStaff(); }, [fetchStaff]);
 
   const openAdd = () => { setForm(EMPTY_FORM); setEditingId(null); setResolvingSuggestion(null); setError(''); setShowModal(true); };
-  const openEdit = (member: StaffMember) => { const h = parseStoredHours(member.available_hours); setForm({ name: member.name, role: member.role || '', phone: member.phone || '', email: member.email || '', notes: member.notes || '', transferable: !!member.transferable, hoursEnabled: h.enabled, availableHours: h.hours }); setEditingId(member.id); setResolvingSuggestion(null); setError(''); setShowModal(true); };
+  const openEdit = (member: StaffMember) => { const h = parseStoredHours(member.available_hours); setForm({ name: member.name, role: member.role || '', phone: member.phone || '', email: member.email || '', notes: member.notes || '', transferable: !!member.transferable, transferCriteria: member.transfer_criteria || '', hoursEnabled: h.enabled, availableHours: h.hours }); setEditingId(member.id); setResolvingSuggestion(null); setError(''); setShowModal(true); };
 
   // Add a scraped staff suggestion: open the form prefilled with name + role so
   // the client can add a phone and confirm before saving. Dismissed on save.
@@ -144,7 +146,7 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
   const dismissSuggestion = async (name: string) => {
     setSuggestions(prev => prev.filter(s => s.name !== name));
     try {
-      const token = localStorage.getItem('auth_token');
+      const token = getClientAuthToken();
       await fetch(`${backendUrl}/api/client/${clientId}/staff/suggestions/dismiss`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -157,9 +159,9 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
     if (!form.name.trim()) { setError('Name is required'); return; }
     setSaving(true); setError('');
     try {
-      const token = localStorage.getItem('auth_token');
+      const token = getClientAuthToken();
       const url = editingId ? `${backendUrl}/api/client/${clientId}/staff/${editingId}` : `${backendUrl}/api/client/${clientId}/staff`;
-      const res = await fetch(url, { method: editingId ? 'PUT' : 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: form.name.trim(), role: form.role.trim() || null, phone: form.phone.trim() || null, email: form.email.trim() || null, notes: form.notes.trim() || null, transferable: !!form.transferable, available_hours: form.hoursEnabled ? form.availableHours : {} }) });
+      const res = await fetch(url, { method: editingId ? 'PUT' : 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: form.name.trim(), role: form.role.trim() || null, phone: form.phone.trim() || null, email: form.email.trim() || null, notes: form.notes.trim() || null, transferable: !!form.transferable, transfer_criteria: form.transferCriteria.trim() || null, available_hours: form.hoursEnabled ? form.availableHours : {} }) });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Failed to save'); return; }
       if (resolvingSuggestion) { await dismissSuggestion(resolvingSuggestion); setResolvingSuggestion(null); }
@@ -171,13 +173,13 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
   const handleDelete = async (id: string) => {
     if (!confirm('Remove this staff member? This will also unassign them from any services.')) return;
     setDeletingId(id);
-    try { const token = localStorage.getItem('auth_token'); await fetch(`${backendUrl}/api/client/${clientId}/staff/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }); fetchStaff(); } catch (e) { console.error('Delete failed:', e); }
+    try { const token = getClientAuthToken(); await fetch(`${backendUrl}/api/client/${clientId}/staff/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }); fetchStaff(); } catch (e) { console.error('Delete failed:', e); }
     finally { setDeletingId(null); }
   };
 
   const handleToggleActive = async (member: StaffMember) => {
     setTogglingId(member.id);
-    try { const token = localStorage.getItem('auth_token'); await fetch(`${backendUrl}/api/client/${clientId}/staff/${member.id}`, { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ is_active: !member.is_active }) }); fetchStaff(); } catch (e) { console.error('Toggle failed:', e); }
+    try { const token = getClientAuthToken(); await fetch(`${backendUrl}/api/client/${clientId}/staff/${member.id}`, { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ is_active: !member.is_active }) }); fetchStaff(); } catch (e) { console.error('Toggle failed:', e); }
     finally { setTogglingId(null); }
   };
 
@@ -218,6 +220,14 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
           <span className="pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transition" style={{ transform: form.transferable ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
         </button>
       </div>
+      {/* When to route a caller here. Fed into the live prompt's transfer routing so the AI connects the right caller to the right person. Only relevant when transferable. */}
+      {form.transferable && (
+        <div>
+          <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>When should callers go to this person?</label>
+          <textarea rows={2} placeholder="e.g. Billing and payment questions, or anyone asking about an existing invoice" value={form.transferCriteria} onChange={(e) => setForm({ ...form, transferCriteria: e.target.value })} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none resize-none" style={inputStyle} />
+          <p className="text-[11px] mt-0.5 leading-snug" style={{ color: theme.textMuted }}>The AI reads this on live calls to decide which callers to connect to this person. Leave blank to let it route by name and role.</p>
+        </div>
+      )}
       {/* Working hours (optional): powers "is X in?" answers and gates transfers */}
       <div className="rounded-xl px-3.5 py-3" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}` }}>
         <div className="flex items-start justify-between gap-3">
