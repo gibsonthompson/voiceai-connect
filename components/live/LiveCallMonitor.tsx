@@ -153,6 +153,11 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
 
   const [lines, setLines] = useState<Line[]>([]);
   const [partial, setPartial] = useState<{ role: 'caller' | 'assistant'; text: string } | null>(null);
+  // When the AI warm-transfers the caller to a person, VAPI (and its transcript)
+  // drops off while the human conversation continues on the carrier. This holds
+  // the "connected to X" note so the transcript pane explains the pause instead
+  // of looking frozen. Cleared when the caller returns to the AI or the call ends.
+  const [bridged, setBridged] = useState<string | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
 
   const [takeoverOpen, setTakeoverOpen] = useState(false);
@@ -315,10 +320,16 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
       addActivity(ev.tool || 'tool', ev.detail, ev.label);
     } else if (ev.type === 'status') {
       const s = String(ev.status || '').toLowerCase();
-      if (s === 'in-progress') { setCallState('live'); setStatusLabel('Live'); }
-      else if (s === 'ringing' || s === 'queued') { setCallState('connecting'); setStatusLabel('Ringing'); }
+      const lbl = ev.label ? String(ev.label) : null;
+      if (s === 'in-progress') { setCallState('live'); setStatusLabel(lbl || 'Live'); setBridged(null); }
+      else if (s === 'ringing' || s === 'queued') { setCallState('connecting'); setStatusLabel(lbl || 'Ringing'); }
       else if (s === 'forwarding') { setStatusLabel('Transferring'); addActivity('transferCall'); }
-      else if (s === 'ended') { setCallState('ended'); setStatusLabel('Call ended'); setSpeaking(null); setPartial(null); }
+      // Own-the-call warm transfer lifecycle (telnyx_cc): dialing the team, then
+      // connected (bridged) to a person. Stay "live" throughout; the pill label
+      // tells the viewer where the call is.
+      else if (s === 'dialing_team' || s === 'transferring') { setCallState('live'); setStatusLabel(lbl || 'Transferring to the team'); }
+      else if (s === 'bridged') { setCallState('live'); setStatusLabel(lbl || 'Connected to the team'); setBridged(lbl || 'Connected to the team'); setPartial(null); }
+      else if (s === 'ended') { setCallState('ended'); setStatusLabel('Call ended'); setSpeaking(null); setPartial(null); setBridged(null); }
     } else if (ev.type === 'takeover') {
       addActivity('request_human_transfer', ev.text || null, `You stepped in (${ev.action})`);
     }
@@ -604,7 +615,7 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
             <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: t.textMuted }}>Live transcript</span>
           </div>
           <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-3">
-            {lines.length === 0 && !partial && (
+            {lines.length === 0 && !partial && !bridged && (
               <div className="h-full flex flex-col items-center justify-center text-center py-16">
                 <CircleDot className="h-8 w-8 mb-3" style={{ color: t.textFaint }} />
                 <p className="text-sm" style={{ color: t.textMuted }}>
@@ -615,6 +626,12 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
             )}
             {lines.map((l) => <Bubble key={l.id} role={l.role} text={l.text} t={t} accent={accent} accentText={accentText} />)}
             {partial && <Bubble role={partial.role} text={partial.text} t={t} accent={accent} accentText={accentText} faded />}
+            {bridged && (
+              <div className="rounded-lg px-3 py-2.5 text-xs leading-relaxed" style={{ backgroundColor: t.borderSubtle, color: t.textMuted }}>
+                <span style={{ color: t.text, fontWeight: 600 }}>{bridged}.</span>{' '}
+                The caller is now speaking with a team member. The live AI transcript pauses during the human conversation; a recorded recap is saved to this call once it ends.
+              </div>
+            )}
             <div ref={transcriptEndRef} />
           </div>
         </section>
