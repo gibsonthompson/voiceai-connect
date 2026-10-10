@@ -14,7 +14,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  Search, Loader2, ArrowLeft, Send, Plus, MessageSquare, Phone, X, Sparkles, Building2, Hash
+  Search, Loader2, ArrowLeft, Send, Plus, MessageSquare, Phone, X, Sparkles, Building2, Hash,
+  HelpCircle, ShieldCheck
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
@@ -101,6 +102,19 @@ export default function AgencyInboxPage() {
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [search, setSearch] = useState('');
+
+  // "How support works" inline explainer. The Inbox mixes threads from the
+  // agency's own clients with the pinned VoiceAI Connect (platform) thread, so
+  // this clears up the two directions and the white-label promise right where
+  // the confusion is. Collapses to a small link once dismissed, saved per agency.
+  const [helpOpen, setHelpOpen] = useState(true);
+  useEffect(() => {
+    try { setHelpOpen(localStorage.getItem(`vac_inbox_help_${agencyId || 'x'}`) !== '1'); } catch {}
+  }, [agencyId]);
+  const dismissHelp = () => {
+    setHelpOpen(false);
+    try { localStorage.setItem(`vac_inbox_help_${agencyId || 'x'}`, '1'); } catch {}
+  };
 
   // Quick facts about the open thread's client or prospect, shown at the top of
   // the thread so the agency has context while replying.
@@ -288,6 +302,37 @@ export default function AgencyInboxPage() {
               <input type="text" placeholder="Search" value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-9 pr-3 py-2 rounded-xl text-sm focus:outline-none" style={{ ...glass, color: theme.text }} />
             </div>
           </div>
+
+          {/* How support works, inline explainer */}
+          {helpOpen ? (
+            <div className="mx-4 mb-2 rounded-xl p-3" style={{ ...glass }}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold flex items-center gap-1.5" style={{ color: theme.text }}>
+                  <HelpCircle className="h-3.5 w-3.5" style={{ color: primaryColor }} /> How support works
+                </span>
+                <button onClick={dismissHelp} className="p-0.5 rounded transition hover:opacity-70" style={{ color: textMuted2 }} title="Dismiss"><X className="h-3.5 w-3.5" /></button>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-start gap-2">
+                  <Building2 className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" style={{ color: textMuted2 }} />
+                  <p className="text-[11px] leading-snug" style={{ color: theme.textMuted }}><span style={{ color: theme.text, fontWeight: 600 }}>Your clients reach you here.</span> Their messages arrive as Client threads, and you&apos;re their support.</p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Sparkles className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" style={{ color: textMuted2 }} />
+                  <p className="text-[11px] leading-snug" style={{ color: theme.textMuted }}><span style={{ color: theme.text, fontWeight: 600 }}>Need help yourself?</span> Message the VoiceAI Connect thread pinned up top. That one&apos;s us.</p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <ShieldCheck className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" style={{ color: primaryColor }} />
+                  <p className="text-[11px] leading-snug" style={{ color: theme.textMuted }}>Your clients never see or contact VoiceAI Connect. Everything they send routes to you.</p>
+                </div>
+              </div>
+              <button onClick={dismissHelp} className="mt-2.5 w-full text-[11px] font-semibold rounded-lg py-1.5 transition hover:opacity-90" style={{ backgroundColor: hexToRgba(primaryColor, 0.1), color: primaryColor }}>Got it</button>
+            </div>
+          ) : (
+            <button onClick={() => setHelpOpen(true)} className="mx-4 mb-2 flex items-center gap-1.5 text-[11px] font-medium transition hover:opacity-80" style={{ color: textMuted2 }}>
+              <HelpCircle className="h-3.5 w-3.5" /> How support works
+            </button>
+          )}
 
           <div className="flex-1 overflow-y-auto">
             {loading ? (
