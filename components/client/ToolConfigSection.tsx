@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { 
   Loader2, Shield, PhoneForwarded, UserCheck, Moon,
-  ChevronDown, Check, Send, X, MapPin, Globe, Star, DollarSign
+  ChevronDown, Check, Send, X, MapPin, Globe, Star, DollarSign,
+  MessageSquareText
 } from 'lucide-react';
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -393,6 +394,7 @@ export default function ToolConfigSection({ clientId, theme, compact }: Props) {
                     <div className="p-2.5 sm:p-3 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
                       <p className="text-[10px] mb-2.5" style={{ color: theme.textMuted }}>Turn on what your AI can text callers during a call, then add the link or info. It only ever texts the person on the call.</p>
 
+                      {/* Preset texts */}
                       {SMS_PRESETS.map((preset) => {
                         const p = (config.smsPresets && config.smsPresets[preset.key]) || { enabled: false, value: '' };
                         const Icon = preset.icon;
@@ -428,23 +430,46 @@ export default function ToolConfigSection({ clientId, theme, compact }: Props) {
                         );
                       })}
 
-                      <button type="button" onClick={() => setSmsAdvancedOpen(o => !o)} className="flex items-center gap-1 text-[10px] font-medium mt-1" style={{ color: theme.textMuted }}>
+                      {/* Custom texts: same card format as the presets, listed with them */}
+                      {(config.smsSnippets || []).map((snip, i) => {
+                        const has = !!((snip.label || '').trim() || (snip.value || '').trim());
+                        return (
+                          <div key={`snip-${i}`} className="mb-2 rounded-lg overflow-hidden" style={{ border: `1px solid ${has ? theme.primary : theme.inputBorder}` }}>
+                            <div className="flex items-center justify-between gap-2 px-2.5 py-2">
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                <MessageSquareText className="h-4 w-4 flex-shrink-0" style={{ color: has ? theme.primary : theme.textMuted4 }} />
+                                <input
+                                  value={snip.label}
+                                  onChange={(e) => { const s = [...(config.smsSnippets || [])]; s[i] = { ...s[i], label: e.target.value }; setConfig({ ...config, smsSnippets: s }); }}
+                                  placeholder="Label (e.g. Parking info)"
+                                  className="min-w-0 flex-1 bg-transparent text-xs font-medium focus:outline-none"
+                                  style={{ color: theme.text }}
+                                />
+                              </div>
+                              <button type="button" onClick={() => { const s = (config.smsSnippets || []).filter((_, j) => j !== i); setConfig({ ...config, smsSnippets: s }); }} className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-lg hover:opacity-70" style={{ color: theme.textMuted4 }} title="Remove"><X className="h-3.5 w-3.5" /></button>
+                            </div>
+                            <div className="px-2.5 pb-2">
+                              <input
+                                value={snip.value}
+                                onChange={(e) => { const s = [...(config.smsSnippets || [])]; s[i] = { ...s[i], value: e.target.value }; setConfig({ ...config, smsSnippets: s }); }}
+                                placeholder="Exact text or link, sent word-for-word"
+                                className="w-full rounded-lg px-2.5 py-1.5 text-xs focus:outline-none"
+                                style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      <button type="button" onClick={() => setConfig({ ...config, smsSnippets: [...(config.smsSnippets || []), { label: '', value: '' }] })} className="text-[10px] font-medium" style={{ color: theme.primary }}>+ Add a custom text</button>
+                      <p className="text-[9px] mt-1" style={{ color: theme.textMuted4 }}>Custom texts cover anything the options above don&apos;t. The exact text or link is sent word-for-word.</p>
+
+                      <button type="button" onClick={() => setSmsAdvancedOpen(o => !o)} className="flex items-center gap-1 text-[10px] font-medium mt-3" style={{ color: theme.textMuted }}>
                         <ChevronDown className={`h-3 w-3 transition-transform ${smsAdvancedOpen ? 'rotate-180' : ''}`} /> Advanced
                       </button>
                       {smsAdvancedOpen && (
                         <div className="mt-2 pt-2" style={{ borderTop: `1px solid ${theme.border}` }}>
-                          <label className="block text-[10px] font-medium mb-1" style={{ color: theme.textMuted }}>Custom texts</label>
-                          <p className="text-[9px] mb-1.5" style={{ color: theme.textMuted4 }}>For anything not above. A label and the exact text or link, sent word-for-word.</p>
-                          {(config.smsSnippets || []).map((snip, i) => (
-                            <div key={i} className="flex items-center gap-1.5 mb-1.5">
-                              <input value={snip.label} onChange={(e) => { const s = [...(config.smsSnippets || [])]; s[i] = { ...s[i], label: e.target.value }; setConfig({ ...config, smsSnippets: s }); }} placeholder="Label" className="w-1/3 rounded-lg px-2 py-1.5 text-xs focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
-                              <input value={snip.value} onChange={(e) => { const s = [...(config.smsSnippets || [])]; s[i] = { ...s[i], value: e.target.value }; setConfig({ ...config, smsSnippets: s }); }} placeholder="Exact text or link" className="flex-1 rounded-lg px-2 py-1.5 text-xs focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
-                              <button onClick={() => { const s = (config.smsSnippets || []).filter((_, j) => j !== i); setConfig({ ...config, smsSnippets: s }); }} className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-lg hover:opacity-70" style={{ color: theme.textMuted }} title="Remove"><X className="h-3.5 w-3.5" /></button>
-                            </div>
-                          ))}
-                          <button onClick={() => setConfig({ ...config, smsSnippets: [...(config.smsSnippets || []), { label: '', value: '' }] })} className="text-[10px] font-medium mb-3" style={{ color: theme.primary }}>+ Add a custom text</button>
-
-                          <label className="block text-[10px] font-medium mb-1 mt-1" style={{ color: theme.textMuted }}>Extra instructions (optional)</label>
+                          <label className="block text-[10px] font-medium mb-1" style={{ color: theme.textMuted }}>Extra instructions (optional)</label>
                           <textarea value={config.smsInstructions} onChange={(e) => setConfig({ ...config, smsInstructions: e.target.value })} rows={2} className="w-full rounded-lg px-2.5 py-2 text-xs resize-none focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} placeholder="Fine-tune when or how the AI texts, e.g. always send a confirmation after booking." />
                         </div>
                       )}
