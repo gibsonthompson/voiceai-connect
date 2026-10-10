@@ -100,8 +100,12 @@ export default function ClientAIAgentPage() {
   const [savingVoice, setSavingVoice] = useState(false);
   const [voiceSaved, setVoiceSaved] = useState(false);
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
-  const [voiceFilter, setVoiceFilter] = useState<'all' | 'female' | 'male'>('all');
-  const [accentFilter, setAccentFilter] = useState('all');
+  // Open on Female + American (the most-picked default, and keeps the list
+  // short, All is long enough to crowd the panel). A guard below falls back to
+  // All if a given client's voice set happens to have no female/American voices.
+  const [voiceFilter, setVoiceFilter] = useState<'all' | 'female' | 'male'>('female');
+  const [accentFilter, setAccentFilter] = useState('American');
+  const voiceFiltersAdjusted = useRef(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   // Greeting-in-voice preview: cache synthesized audio per voice+text for the
   // session so re-tapping a voice doesn't re-bill ElevenLabs; track which voice
@@ -121,6 +125,21 @@ export default function ClientAIAgentPage() {
   const [disconnectingCalendar, setDisconnectingCalendar] = useState(false);
 
   useEffect(() => { if (client) { fetchVoices(); fetchCurrentVoice(); fetchGreeting(); fetchCalendarStatus(); } }, [client]);
+
+  // Once voices load, make sure the Female/American defaults actually have
+  // voices for this client; if not, fall back to All so the panel never opens
+  // empty. Runs once (ref-gated), so it never overrides a later manual choice.
+  useEffect(() => {
+    const total = (voices.female?.length || 0) + (voices.male?.length || 0);
+    if (total === 0 || voiceFiltersAdjusted.current) return;
+    voiceFiltersAdjusted.current = true;
+    const femaleEmpty = (voices.female?.length || 0) === 0;
+    if (femaleEmpty && voiceFilter === 'female') setVoiceFilter('all');
+    const genderPool = (!femaleEmpty && voiceFilter === 'female')
+      ? (voices.female || [])
+      : [...(voices.female || []), ...(voices.male || [])];
+    if (accentFilter === 'American' && !genderPool.some(v => v.accent === 'American')) setAccentFilter('all');
+  }, [voices]);
   useEffect(() => { return () => { if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; } previewCacheRef.current.forEach(url => { try { URL.revokeObjectURL(url); } catch {} }); previewCacheRef.current.clear(); }; }, []);
 
   // Handle calendar redirect params
@@ -527,7 +546,7 @@ export default function ClientAIAgentPage() {
         {/* AI Tools */}
         <div className="fu fu4">
           <SectionCard icon={Shield} title="AI Tools" theme={theme} primaryColor={primaryColor}>
-            <ToolConfigSection clientId={client.id} theme={theme} compact />
+            <ToolConfigSection clientId={client.id} theme={theme} compact industry={client.industry} />
           </SectionCard>
         </div>
 

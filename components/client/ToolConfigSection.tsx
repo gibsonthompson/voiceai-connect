@@ -31,6 +31,7 @@ interface Props {
   clientId: string;
   theme: any;
   compact?: boolean;
+  industry?: string;
 }
 
 const DEFAULT_CONFIG: ToolConfig = {
@@ -56,7 +57,32 @@ const SMS_PRESETS: { key: string; label: string; desc: string; placeholder: stri
   { key: 'payment', label: 'Payment link', desc: 'When a caller needs to pay', placeholder: 'https://...', icon: DollarSign },
 ];
 
-export default function ToolConfigSection({ clientId, theme, compact }: Props) {
+// Example custom-text label for the client's industry. These must be things the
+// AI actually TEXTS to the caller's phone (a link or a short note it can send),
+// not knowledge it just speaks (service area, hours, pricing live in the
+// knowledge base, so they are never examples here). Keyed off client.industry,
+// same keys the services/staff sections use, with a textable default fallback.
+const INDUSTRY_SMS_EXAMPLES: Record<string, string> = {
+  dental: 'New patient form',
+  medical_practice: 'New patient form',
+  mental_health: 'Intake form',
+  veterinary: 'New client form',
+  chiropractic: 'New patient form',
+  optometry: 'New patient form',
+  physical_therapy: 'Intake form',
+  salon_spa: 'Booking link',
+  legal: 'Intake form',
+  real_estate: 'Listing link',
+  automotive: 'Specials link',
+  home_services: 'Financing link',
+  fitness: 'Class schedule',
+  restaurant: 'Menu link',
+  healthcare: 'New patient form',
+};
+const DEFAULT_SMS_EXAMPLE = 'Booking link';
+
+export default function ToolConfigSection({ clientId, theme, compact, industry }: Props) {
+  const smsLabelExample = (industry && INDUSTRY_SMS_EXAMPLES[industry]) || DEFAULT_SMS_EXAMPLE;
   const [config, setConfig] = useState<ToolConfig>(DEFAULT_CONFIG);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -441,7 +467,7 @@ export default function ToolConfigSection({ clientId, theme, compact }: Props) {
                                 <input
                                   value={snip.label}
                                   onChange={(e) => { const s = [...(config.smsSnippets || [])]; s[i] = { ...s[i], label: e.target.value }; setConfig({ ...config, smsSnippets: s }); }}
-                                  placeholder="Label (e.g. Parking info)"
+                                  placeholder={`Label (e.g. ${smsLabelExample})`}
                                   className="min-w-0 flex-1 bg-transparent text-xs font-medium focus:outline-none"
                                   style={{ color: theme.text }}
                                 />
