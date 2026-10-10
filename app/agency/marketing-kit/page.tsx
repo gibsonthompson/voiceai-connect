@@ -604,7 +604,9 @@ export default function MarketingKitPage() {
               ))}
           </ul>
 
-          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginTop: 30, alignItems: 'center' }}>
+          {/* Natural widths, no flex-grow: removing any QR just closes the row
+              up and left-packs the rest instead of leaving a gap. */}
+          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginTop: 30, alignItems: 'flex-start' }}>
             {demo && (
               <Removable id="op-demoqr" hidden={hidden} editing={editMode} onToggle={toggleHidden} label="Demo QR" style={{ textAlign: 'center' }}>
                 <img src={qrImg(telHref(demo), 300)} alt="Call the demo" width={130} height={130} style={{ display: 'block', width: 130, height: 130, border: '1px solid #e5e7eb', borderRadius: 10, padding: 6, background: '#fff' }} />
@@ -616,7 +618,7 @@ export default function MarketingKitPage() {
               <Editable {...edProps('op-signupqr-cap', 'Scan to get started')} as="p" placeholder="Caption" style={{ margin: '8px 0 0', fontSize: 12, fontWeight: 700, color: headingColor }} />
             </Removable>
             {demo && showDemoNumber && (
-              <Removable id="op-hearlive" hidden={hidden} editing={editMode} onToggle={toggleHidden} label="Call-now block" style={{ flex: 1, minWidth: 180 }}>
+              <Removable id="op-hearlive" hidden={hidden} editing={editMode} onToggle={toggleHidden} label="Call-now block" style={{ minWidth: 180, maxWidth: 320 }}>
                 <Editable {...edProps('op-hearlive-label', 'Hear it live')} as="p" placeholder="Label" style={{ margin: 0, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.08em', color: subtleColor, fontWeight: 700 }} />
                 <p style={{ margin: '6px 0 0', fontSize: 28, fontWeight: 800, color: emphasis }}>{demoDisplay}</p>
                 <Editable {...edProps('op-hearlive-sub', 'Call and tell it what your business does.')} as="p" multiline placeholder="Subtext" style={{ margin: '4px 0 0', fontSize: 14, color: bodyColor }} />
