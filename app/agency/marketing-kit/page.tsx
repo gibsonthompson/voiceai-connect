@@ -32,7 +32,7 @@ import Link from 'next/link';
 import {
   Megaphone, QrCode, Download, Copy, Check, Phone, ExternalLink,
   Printer, Sparkles, ArrowLeft, Loader2, Calculator, ChevronRight,
-  Pencil, RotateCcw,
+  Pencil, RotateCcw, Plus,
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme, isValidHex, isLightColor, withAlpha } from '@/hooks/useTheme';
@@ -114,12 +114,14 @@ function ColorRow({
   const isAuto = !value;
   const uniq = (swatches.filter(Boolean) as string[])
     .filter((c, i, a) => a.findIndex((x) => x.toLowerCase() === c.toLowerCase()) === i);
+  const customActive = !isAuto && !uniq.some((c) => c.toLowerCase() === value.toLowerCase());
   return (
     <div>
       <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: theme.textMuted }}>{label}</p>
-      <div className="flex items-center gap-2 flex-wrap">
+      {/* One scrollable row so swatches never wrap onto a second line in the narrow rail. */}
+      <div className="mk-swatches flex items-center gap-1.5 flex-nowrap overflow-x-auto pb-0.5">
         {autoLabel && (
-          <button type="button" onClick={() => onPick('')} className="rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors"
+          <button type="button" onClick={() => onPick('')} className="flex-shrink-0 inline-flex items-center rounded-md px-2 h-7 text-[11px] font-semibold transition-colors"
             style={{ backgroundColor: isAuto ? theme.primary15 : theme.hover, border: `1px solid ${isAuto ? theme.primary + '55' : theme.border}`, color: isAuto ? theme.primary : theme.textMuted }}>
             {autoLabel}
           </button>
@@ -128,14 +130,14 @@ function ColorRow({
           const active = !isAuto && value.toLowerCase() === c.toLowerCase();
           const isWhite = c.toLowerCase() === '#ffffff' || c.toLowerCase() === '#fff';
           return (
-            <button key={c} type="button" onClick={() => onPick(c)} aria-label={`Use ${c}`}
-              className="h-8 w-8 rounded-full transition-transform hover:scale-110"
+            <button key={c} type="button" onClick={() => onPick(c)} aria-label={`Use ${c}`} title={c}
+              className="flex-shrink-0 h-7 w-7 rounded-full transition-transform hover:scale-110"
               style={{ backgroundColor: c, border: `2px solid ${active ? theme.text : (isWhite ? '#cbd5e1' : theme.border)}`, boxShadow: active ? `0 0 0 2px ${theme.card}` : 'none' }} />
           );
         })}
-        <label className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium cursor-pointer relative" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.textMuted }}>
-          <span style={{ width: 14, height: 14, borderRadius: 4, background: value || '#ffffff', display: 'inline-block', border: `1px solid ${theme.border}` }} />
-          Custom
+        <label title="Custom color" className="flex-shrink-0 inline-flex items-center justify-center h-7 w-7 rounded-full cursor-pointer relative"
+          style={{ background: customActive ? value : theme.hover, border: `2px solid ${customActive ? theme.text : theme.border}`, boxShadow: customActive ? `0 0 0 2px ${theme.card}` : 'none' }}>
+          {!customActive && <Plus className="h-3.5 w-3.5" style={{ color: theme.textMuted }} />}
           <input type="color" value={isValidHex(value) ? value : '#ffffff'} onChange={(e) => onPick(e.target.value)} style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }} />
         </label>
       </div>
@@ -311,9 +313,12 @@ export default function MarketingKitPage() {
 
   // Swatch palettes. Agency brand first, then neutrals + white. The platform's
   // F1 neutrals are offered so an agency can reach that look, without forcing it.
-  const bgSwatches = ['#ffffff', '#0A0E0F', '#12181A', primary, brandSecondary, brandAccent];
-  const accentSwatches = [primary, brandSecondary, brandAccent, '#00A19B', '#0f172a', '#ffffff'];
-  const textSwatches = ['#ffffff', '#0f172a'];
+  // Trimmed so each row fits on one line in the narrow rail (the Auto chip
+  // already covers White for background and Brand for accent). Custom covers
+  // anything else.
+  const bgSwatches = ['#0A0E0F', primary, brandSecondary, brandAccent];
+  const accentSwatches = [primary, brandSecondary, brandAccent, '#0f172a', '#ffffff'];
+  const textSwatches = ['#0f172a', '#ffffff'];
 
   // Content helpers.
   const getText = (id: string, def: string) => (id in textOv ? textOv[id] : def);
@@ -345,10 +350,6 @@ export default function MarketingKitPage() {
     showSignupLink ? signupUrl.replace(/^https?:\/\//, '') : null,
   ].filter(Boolean) as string[];
   const showFooter = showBusinessName || contactBits.length > 0;
-
-  // Keep the toggle grid balanced (never a single chip alone on a row).
-  const toggleCount = 2 + (demo ? 1 : 0) + (agency.phone ? 1 : 0);
-  const toggleCols = toggleCount === 4 ? 'grid-cols-2 sm:grid-cols-4' : toggleCount === 3 ? 'grid-cols-3' : 'grid-cols-2';
 
   const copy = async (key: string, value: string) => {
     try {
@@ -416,6 +417,8 @@ export default function MarketingKitPage() {
   return (
     <div className={`p-4 sm:p-6 lg:p-8 max-w-[1100px] ${editMode ? 'mk-editing' : ''}`}>
       <style>{`
+        .mk-swatches { scrollbar-width: none; -ms-overflow-style: none; }
+        .mk-swatches::-webkit-scrollbar { display: none; }
         .mk-editing [data-mk-edit]:hover { box-shadow: inset 0 0 0 1px rgba(99,102,241,0.45); border-radius: 4px; }
         [data-mk-edit]:focus { box-shadow: inset 0 0 0 2px #6366f1; border-radius: 4px; }
         [data-mk-edit]:empty:before { content: attr(data-ph); color: #cbd5e1; }
@@ -545,13 +548,13 @@ export default function MarketingKitPage() {
 
           <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
             <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: theme.textMuted }}>Show on materials</p>
-            <div className={`grid ${toggleCols} gap-2`}>
+            {/* Full-width stack: label left, check right. Can't cram or wrap at
+                any width, so it reads the same in the narrow rail and on mobile. */}
+            <div className="grid grid-cols-1 gap-2">
               <ToggleChip label="Business name" on={showBusinessName} onClick={() => setShowBusinessName((v) => !v)} theme={theme} />
               {demo && <ToggleChip label="Demo number" on={showDemoNumber} onClick={() => setShowDemoNumber((v) => !v)} theme={theme} />}
               {agency.phone && <ToggleChip label="Contact phone" on={showContactPhone} onClick={() => setShowContactPhone((v) => !v)} theme={theme} />}
               <ToggleChip label="Signup link" on={showSignupLink} onClick={() => setShowSignupLink((v) => !v)} theme={theme} />
-            </div>
-            <div className="mt-3 grid grid-cols-1 gap-2">
               <ToggleChip label="Logo on white background" on={logoPlaque} onClick={() => setLogoPlaque((v) => !v)} theme={theme} />
             </div>
           </div>
