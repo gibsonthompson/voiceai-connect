@@ -13,6 +13,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@/hooks/useTheme';
+import { useAgency } from '@/app/agency/context';
 import {
   Search, Plus, Users, Target, Send, BarChart3, CreditCard, DollarSign,
   Globe, Phone, Cpu, Paintbrush, Settings, Mic, Link2, MessageSquare,
@@ -78,46 +79,104 @@ const ACTIONS: Action[] = [
   { label: 'Contact VoiceAI Connect support', href: '/agency/support', icon: HelpCircle, hint: 'Support', keywords: 'support help contact ask a question talk to someone' },
 ];
 
-const PREFIXES = ['i need to', 'i want to', 'i would like to', 'how do i', 'how to', 'how can i', 'where do i', 'where is', 'where can i', 'help me', 'can i', 'show me'];
+const PREFIXES = ['i need to', 'i want to', 'i would like to', 'how do i', 'how to', 'how can i', 'where do i', 'where is', 'where can i', 'help me', 'can i', 'show me', 'go to', 'take me to', 'navigate to', 'jump to', 'pull up', 'open'];
 
-function normalize(q: string): string {
-  let s = q.trim().toLowerCase();
-  for (const p of PREFIXES) { if (s.startsWith(p)) { s = s.slice(p.length).trim(); break; } }
+// Tiny words that must never create a match on their own.
+const STOP = new Set(['to', 'a', 'an', 'the', 'my', 'me', 'is', 'for', 'of', 'and', 'i', 'on', 'in']);
+
+function stripPrefix(s: string): string {
+  for (const p of PREFIXES) { if (s === p || s.startsWith(p + ' ')) return s.slice(p.length).trim(); }
   return s;
 }
+function clean(s: string): string {
+  return (s || '').toLowerCase().replace(/[’']/g, '').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function normalize(q: string): string { return stripPrefix(clean(q)); }
 
-function scoreAction(a: Action, q: string): number {
-  if (!q) return 0;
-  const hay = (a.label + ' ' + a.keywords).toLowerCase();
-  const label = a.label.toLowerCase();
-  if (label.includes(q)) return 100;
-  if (hay.includes(q)) return 70;
-  // token overlap
-  const tokens = q.split(/\s+/).filter(Boolean);
-  const hits = tokens.filter((t) => t.length > 1 && hay.includes(t)).length;
-  if (hits === 0) return 0;
-  return 20 + hits * 10;
+// Typo-tolerant subsequence: do the chars of `needle` appear in order in `hay`?
+function subseq(needle: string, hay: string): boolean {
+  if (!needle) return false;
+  let i = 0;
+  for (let j = 0; j < hay.length && i < needle.length; j++) { if (hay[j] === needle[i]) i++; }
+  return i === needle.length;
+}
+
+// Relevance of a candidate (its display name + extra keywords) to the query.
+// Full-name match wins, then prefix/substring, then token coverage with a
+// fuzzy fallback. The caller strips stopwords and 1-char tokens, so trivial
+// words like "to" can never generate noise.
+function relevance(name: string, keywords: string, qClean: string, qTokens: string[]): number {
+  if (!qClean) return 0;
+  const label = clean(name);
+  const hay = clean(name + ' ' + (keywords || ''));
+  if (label === qClean) return 1000;
+  if (label.startsWith(qClean)) return 650;
+  if (label.includes(qClean)) return 480;
+  if (hay.includes(qClean)) return 300;
+  if (qTokens.length === 0) return 0;
+  let covered = 0;
+  for (const t of qTokens) {
+    if (hay.includes(t)) covered += 1;
+    else if (t.length >= 4 && subseq(t, label)) covered += 0.5;
+  }
+  if (covered === 0) return 0;
+  let s = (covered / qTokens.length) * 220;
+  if (qTokens.every((t) => label.includes(t))) s += 140;
+  return s;
 }
 
 const POPULAR = ['Add a client', 'Find leads / businesses', 'Change my shared-link / SMS preview card', 'Change the AI voice', 'Connect Stripe to get paid by clients', 'View reporting / analytics'];
 
+type Row = { key: string; label: string; hint?: string; href: string; Icon: any };
+
 export default function NeedToSearch() {
   const theme = useTheme();
   const router = useRouter();
+  const { agency } = useAgency();
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
+  const [clients, setClients] = useState<{ id: string; business_name: string; owner_phone?: string }[]>([]);
   const ref = useRef<HTMLDivElement>(null);
 
-  const q = normalize(query);
-  const results = useMemo(() => {
-    if (!q) return ACTIONS.filter((a) => POPULAR.includes(a.label));
-    return ACTIONS.map((a) => ({ a, s: scoreAction(a, q) }))
-      .filter((x) => x.s > 0)
-      .sort((x, y) => y.s - x.s)
-      .slice(0, 7)
-      .map((x) => x.a);
-  }, [q]);
+  // Load this agency's clients once so the bar can jump straight to one by name.
+  useEffect(() => {
+    if (!agency?.id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+        const r = await fetch(`${backendUrl}/api/agency/${agency.id}/clients`, { headers: { Authorization: `Bearer ${token}` } });
+        if (!r.ok) return;
+        const d = await r.json();
+        if (!cancelled) setClients((d.clients || []).map((c: any) => ({ id: c.id, business_name: c.business_name || '', owner_phone: c.owner_phone || '' })));
+      } catch { /* non-blocking */ }
+    })();
+    return () => { cancelled = true; };
+  }, [agency?.id]);
+
+  const qClean = normalize(query);
+  const qTokens = useMemo(() => qClean.split(' ').filter((t) => t.length > 1 && !STOP.has(t)), [qClean]);
+
+  const rows: Row[] = useMemo(() => {
+    if (!qClean) {
+      return ACTIONS.filter((a) => POPULAR.includes(a.label)).map((a) => ({ key: `a-${a.label}`, label: a.label, hint: a.hint, href: a.href, Icon: a.icon }));
+    }
+    const scored: { row: Row; s: number }[] = [];
+    // Real clients first-class: "open bella's salon" jumps to that client.
+    for (const c of clients) {
+      if (!c.business_name) continue;
+      const s = relevance(c.business_name, c.owner_phone || '', qClean, qTokens);
+      if (s > 0) scored.push({ s: s + 30, row: { key: `c-${c.id}`, label: `Open ${c.business_name}`, hint: 'Client', href: `/agency/clients/${c.id}`, Icon: Building } });
+    }
+    for (const a of ACTIONS) {
+      const s = relevance(a.label, a.keywords, qClean, qTokens);
+      if (s > 0) scored.push({ s, row: { key: `a-${a.label}`, label: a.label, hint: a.hint, href: a.href, Icon: a.icon } });
+    }
+    scored.sort((x, y) => y.s - x.s);
+    return scored.slice(0, 8).map((x) => x.row);
+  }, [qClean, qTokens, clients]);
 
   useEffect(() => { setActive(0); }, [query]);
   useEffect(() => {
@@ -128,17 +187,17 @@ export default function NeedToSearch() {
   }, [open]);
 
   const go = (href: string) => { setOpen(false); setQuery(''); router.push(href); };
-  const askSupport = () => go(`/agency/support${q ? `?q=${encodeURIComponent(q)}` : ''}`);
+  const askSupport = () => go(`/agency/support${qClean ? `?q=${encodeURIComponent(qClean)}` : ''}`);
 
-  const noMatch = !!q && results.length === 0;
+  const noMatch = !!qClean && rows.length === 0;
 
   const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowDown') { e.preventDefault(); setActive((i) => Math.min((noMatch ? 0 : results.length - 1), i + 1)); }
+    if (e.key === 'ArrowDown') { e.preventDefault(); setActive((i) => Math.min((noMatch ? 0 : rows.length - 1), i + 1)); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); setActive((i) => Math.max(0, i - 1)); }
     else if (e.key === 'Enter') {
       e.preventDefault();
       if (noMatch) askSupport();
-      else if (results[active]) go(results[active].href);
+      else if (rows[active]) go(rows[active].href);
     } else if (e.key === 'Escape') { setOpen(false); }
   };
 
@@ -153,7 +212,7 @@ export default function NeedToSearch() {
           onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
           onKeyDown={onKeyDown}
-          placeholder="add a client, change the voice, get paid..."
+          placeholder="open a client, change the voice, get paid..."
           className="flex-1 bg-transparent outline-none text-sm"
           style={{ color: theme.text }}
         />
@@ -162,14 +221,14 @@ export default function NeedToSearch() {
       {open && (
         <div className="absolute z-50 mt-2 w-full rounded-2xl overflow-hidden shadow-xl"
           style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-          {!q && (
+          {!qClean && (
             <div className="px-4 pt-3 pb-1 text-[11px] font-medium uppercase tracking-wider" style={{ color: theme.textMuted }}>Popular</div>
           )}
-          {results.map((a, i) => {
-            const Icon = a.icon;
+          {rows.map((r, i) => {
+            const Icon = r.Icon;
             const isActive = i === active;
             return (
-              <button key={a.label + i} onClick={() => go(a.href)} onMouseEnter={() => setActive(i)}
+              <button key={r.key} onClick={() => go(r.href)} onMouseEnter={() => setActive(i)}
                 className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors"
                 style={{ backgroundColor: isActive ? (theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)') : 'transparent' }}>
                 <span className="flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0"
@@ -177,8 +236,8 @@ export default function NeedToSearch() {
                   <Icon className="h-4 w-4" style={{ color: theme.primary }} />
                 </span>
                 <span className="flex-1 min-w-0">
-                  <span className="block text-sm font-medium truncate" style={{ color: theme.text }}>{a.label}</span>
-                  {a.hint && <span className="block text-[11px]" style={{ color: theme.textMuted }}>{a.hint}</span>}
+                  <span className="block text-sm font-medium truncate" style={{ color: theme.text }}>{r.label}</span>
+                  {r.hint && <span className="block text-[11px]" style={{ color: theme.textMuted }}>{r.hint}</span>}
                 </span>
                 <ArrowRight className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted }} />
               </button>
@@ -193,13 +252,13 @@ export default function NeedToSearch() {
               </span>
               <span className="flex-1 min-w-0">
                 <span className="block text-sm font-medium" style={{ color: theme.text }}>Ask the support assistant</span>
-                <span className="block text-[11px] truncate" style={{ color: theme.textMuted }}>&ldquo;{q}&rdquo;</span>
+                <span className="block text-[11px] truncate" style={{ color: theme.textMuted }}>&ldquo;{qClean}&rdquo;</span>
               </span>
               <ArrowRight className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted }} />
             </button>
           )}
 
-          {!noMatch && q && (
+          {!noMatch && qClean && (
             <button onClick={askSupport} className="w-full flex items-center gap-2 px-4 py-2.5 text-left border-t text-[12px]"
               style={{ borderColor: theme.border, color: theme.textMuted }}>
               <HelpCircle className="h-3.5 w-3.5" /> Not here? Ask the support assistant
