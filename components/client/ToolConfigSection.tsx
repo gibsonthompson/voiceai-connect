@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import { 
   Loader2, Shield, PhoneForwarded, UserCheck, Moon,
-  ChevronDown, Check, Send, X, MapPin, Globe, Star, DollarSign,
-  MessageSquareText
+  ChevronDown, Check, Send, X, MapPin, Globe, Star, DollarSign
 } from 'lucide-react';
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -19,8 +18,6 @@ interface ToolConfig {
   spamDetection: boolean;
   transferCall: boolean;
   businessHoursRouting: boolean;
-  afterHoursMessage: string;
-  transferFallbackToMessage: boolean;
   smsToCaller: boolean;
   smsInstructions: string;
   smsSnippets: { label: string; value: string }[];
@@ -31,7 +28,6 @@ interface Props {
   clientId: string;
   theme: any;
   compact?: boolean;
-  industry?: string;
 }
 
 const DEFAULT_CONFIG: ToolConfig = {
@@ -39,8 +35,6 @@ const DEFAULT_CONFIG: ToolConfig = {
   spamDetection: true,
   transferCall: true,
   businessHoursRouting: true,
-  afterHoursMessage: "We're currently closed, but I'd be happy to take a message and have someone call you back during business hours.",
-  transferFallbackToMessage: true,
   smsToCaller: false,
   smsInstructions: '',
   smsSnippets: [],
@@ -57,32 +51,7 @@ const SMS_PRESETS: { key: string; label: string; desc: string; placeholder: stri
   { key: 'payment', label: 'Payment link', desc: 'When a caller needs to pay', placeholder: 'https://...', icon: DollarSign },
 ];
 
-// Example custom-text label for the client's industry. These must be things the
-// AI actually TEXTS to the caller's phone (a link or a short note it can send),
-// not knowledge it just speaks (service area, hours, pricing live in the
-// knowledge base, so they are never examples here). Keyed off client.industry,
-// same keys the services/staff sections use, with a textable default fallback.
-const INDUSTRY_SMS_EXAMPLES: Record<string, string> = {
-  dental: 'New patient form',
-  medical_practice: 'New patient form',
-  mental_health: 'Intake form',
-  veterinary: 'New client form',
-  chiropractic: 'New patient form',
-  optometry: 'New patient form',
-  physical_therapy: 'Intake form',
-  salon_spa: 'Booking link',
-  legal: 'Intake form',
-  real_estate: 'Listing link',
-  automotive: 'Specials link',
-  home_services: 'Financing link',
-  fitness: 'Class schedule',
-  restaurant: 'Menu link',
-  healthcare: 'New patient form',
-};
-const DEFAULT_SMS_EXAMPLE = 'Booking link';
-
-export default function ToolConfigSection({ clientId, theme, compact, industry }: Props) {
-  const smsLabelExample = (industry && INDUSTRY_SMS_EXAMPLES[industry]) || DEFAULT_SMS_EXAMPLE;
+export default function ToolConfigSection({ clientId, theme, compact }: Props) {
   const [config, setConfig] = useState<ToolConfig>(DEFAULT_CONFIG);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -158,24 +127,6 @@ export default function ToolConfigSection({ clientId, theme, compact, industry }
     } catch (e) {
       console.error('Failed to update tool config:', e);
       setConfig(config);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const updateAfterHoursMessage = async () => {
-    setSaving(true);
-    try {
-      const token = localStorage.getItem('auth_token');
-      await fetch(`${backendUrl}/api/client/${clientId}/tool-config`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ afterHoursMessage: config.afterHoursMessage }),
-      });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } catch (e) {
-      console.error('Failed to save after-hours message:', e);
     } finally {
       setSaving(false);
     }
@@ -413,144 +364,92 @@ export default function ToolConfigSection({ clientId, theme, compact, industry }
                     )}
                   </div>
                 )}
-
-                {/* Text Callers config: what the AI can text, directly under its own row */}
-                {tool.key === 'smsToCaller' && config.smsToCaller && (
-                  <div className="mt-2">
-                    <div className="p-2.5 sm:p-3 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
-                      <p className="text-[10px] mb-2.5" style={{ color: theme.textMuted }}>Turn on what your AI can text callers during a call, then add the link or info. It only ever texts the person on the call.</p>
-
-                      {/* Preset texts */}
-                      {SMS_PRESETS.map((preset) => {
-                        const p = (config.smsPresets && config.smsPresets[preset.key]) || { enabled: false, value: '' };
-                        const Icon = preset.icon;
-                        return (
-                          <div key={preset.key} className="mb-2 rounded-lg overflow-hidden" style={{ border: `1px solid ${p.enabled ? theme.primary : theme.inputBorder}` }}>
-                            <div className="flex items-center justify-between gap-2 px-2.5 py-2">
-                              <div className="flex items-center gap-2 min-w-0">
-                                <Icon className="h-4 w-4 flex-shrink-0" style={{ color: p.enabled ? theme.primary : theme.textMuted4 }} />
-                                <div className="min-w-0">
-                                  <p className="text-xs font-medium" style={{ color: theme.text }}>{preset.label}</p>
-                                  <p className="text-[9px]" style={{ color: theme.textMuted4 }}>{preset.desc}</p>
-                                </div>
-                              </div>
-                              <button type="button" onClick={() => togglePreset(preset.key)} aria-pressed={p.enabled} className="relative flex-shrink-0 w-9 h-5 rounded-full transition-colors" style={{ backgroundColor: p.enabled ? theme.primary : theme.inputBorder }}>
-                                <span className="absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all" style={{ left: p.enabled ? '18px' : '2px' }} />
-                              </button>
-                            </div>
-                            {p.enabled && (() => {
-                              const kbVal = (preset.key === 'address' || preset.key === 'website') ? (kbContact[preset.key] || '') : '';
-                              const isEmpty = !p.value || !String(p.value).trim();
-                              return (
-                                <div className="px-2.5 pb-2">
-                                  <input value={p.value} onChange={(e) => setPresetValue(preset.key, e.target.value)} placeholder={preset.placeholder} className="w-full rounded-lg px-2.5 py-1.5 text-xs focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
-                                  {autoFilled[preset.key] && !isEmpty && p.value === kbVal ? (
-                                    <p className="text-[9px] mt-1 font-medium" style={{ color: theme.primary }}>Pulled from your knowledge base. Save to keep it.</p>
-                                  ) : (kbVal && isEmpty ? (
-                                    <button type="button" onClick={() => setPresetValue(preset.key, kbVal)} className="text-[9px] mt-1 font-medium" style={{ color: theme.primary }}>Use the {preset.label.toLowerCase()} from your knowledge base</button>
-                                  ) : null)}
-                                </div>
-                              );
-                            })()}
-                          </div>
-                        );
-                      })}
-
-                      {/* Custom texts: same card format as the presets, listed with them */}
-                      {(config.smsSnippets || []).map((snip, i) => {
-                        const has = !!((snip.label || '').trim() || (snip.value || '').trim());
-                        return (
-                          <div key={`snip-${i}`} className="mb-2 rounded-lg overflow-hidden" style={{ border: `1px solid ${has ? theme.primary : theme.inputBorder}` }}>
-                            <div className="flex items-center justify-between gap-2 px-2.5 py-2">
-                              <div className="flex items-center gap-2 min-w-0 flex-1">
-                                <MessageSquareText className="h-4 w-4 flex-shrink-0" style={{ color: has ? theme.primary : theme.textMuted4 }} />
-                                <input
-                                  value={snip.label}
-                                  onChange={(e) => { const s = [...(config.smsSnippets || [])]; s[i] = { ...s[i], label: e.target.value }; setConfig({ ...config, smsSnippets: s }); }}
-                                  placeholder={`Label (e.g. ${smsLabelExample})`}
-                                  className="min-w-0 flex-1 bg-transparent text-xs font-medium focus:outline-none"
-                                  style={{ color: theme.text }}
-                                />
-                              </div>
-                              <button type="button" onClick={() => { const s = (config.smsSnippets || []).filter((_, j) => j !== i); setConfig({ ...config, smsSnippets: s }); }} className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-lg hover:opacity-70" style={{ color: theme.textMuted4 }} title="Remove"><X className="h-3.5 w-3.5" /></button>
-                            </div>
-                            <div className="px-2.5 pb-2">
-                              <input
-                                value={snip.value}
-                                onChange={(e) => { const s = [...(config.smsSnippets || [])]; s[i] = { ...s[i], value: e.target.value }; setConfig({ ...config, smsSnippets: s }); }}
-                                placeholder="Exact text or link, sent word-for-word"
-                                className="w-full rounded-lg px-2.5 py-1.5 text-xs focus:outline-none"
-                                style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-
-                      <button type="button" onClick={() => setConfig({ ...config, smsSnippets: [...(config.smsSnippets || []), { label: '', value: '' }] })} className="text-[10px] font-medium" style={{ color: theme.primary }}>+ Add a custom text</button>
-                      <p className="text-[9px] mt-1" style={{ color: theme.textMuted4 }}>Custom texts cover anything the options above don&apos;t. The exact text or link is sent word-for-word.</p>
-
-                      <button type="button" onClick={() => setSmsAdvancedOpen(o => !o)} className="flex items-center gap-1 text-[10px] font-medium mt-3" style={{ color: theme.textMuted }}>
-                        <ChevronDown className={`h-3 w-3 transition-transform ${smsAdvancedOpen ? 'rotate-180' : ''}`} /> Advanced
-                      </button>
-                      {smsAdvancedOpen && (
-                        <div className="mt-2 pt-2" style={{ borderTop: `1px solid ${theme.border}` }}>
-                          <label className="block text-[10px] font-medium mb-1" style={{ color: theme.textMuted }}>Extra instructions (optional)</label>
-                          <textarea value={config.smsInstructions} onChange={(e) => setConfig({ ...config, smsInstructions: e.target.value })} rows={2} className="w-full rounded-lg px-2.5 py-2 text-xs resize-none focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} placeholder="Fine-tune when or how the AI texts, e.g. always send a confirmation after booking." />
-                        </div>
-                      )}
-
-                      <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${theme.border}` }}>
-                        {smsDirty ? (
-                          <button type="button" onClick={saveSms} disabled={saving}
-                            className="w-full flex items-center justify-center gap-2 rounded-lg py-2 text-xs font-semibold transition disabled:opacity-60"
-                            style={{ backgroundColor: theme.primary, color: theme.primaryText || '#ffffff' }}>
-                            {saving ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving...</> : 'Save texting settings'}
-                          </button>
-                        ) : smsJustSaved ? (
-                          <div className="w-full flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold"
-                            style={{ backgroundColor: theme.successBg || 'rgba(16,185,129,0.12)', color: theme.successText || '#10b981', border: `1px solid ${theme.successBorder || 'rgba(16,185,129,0.3)'}` }}>
-                            <Check className="h-3.5 w-3.5" /> Texting settings saved
-                          </div>
-                        ) : (
-                          <p className="text-center text-[10px]" style={{ color: theme.textMuted4 }}>All texting settings saved</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             );
           })}
         </div>
 
-        {/* After-hours message, shown when businessHoursRouting is on */}
-        {config.businessHoursRouting && (
+        {/* SMS to caller: pick what the AI can text, shown when Text Callers is on */}
+        {config.smsToCaller && (
           <div className="px-3 sm:px-4 pb-3 sm:pb-4">
             <div className="p-2.5 sm:p-3 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
-              <label className="block text-[10px] sm:text-xs font-medium mb-1.5" style={{ color: theme.textMuted }}>
-                After-hours message
-              </label>
-              <textarea
-                value={config.afterHoursMessage}
-                onChange={(e) => setConfig({ ...config, afterHoursMessage: e.target.value })}
-                onBlur={updateAfterHoursMessage}
-                rows={2}
-                className="w-full rounded-lg px-2.5 py-2 text-xs resize-none focus:outline-none focus:ring-2 transition"
-                style={{
-                  backgroundColor: theme.input,
-                  border: `1px solid ${theme.inputBorder}`,
-                  color: theme.text,
-                }}
-                placeholder="We're currently closed, but I'd be happy to take a message..."
-              />
-              <p className="text-[9px] mt-1" style={{ color: theme.textMuted4 }}>
-                Your AI will say this when someone calls outside business hours. Make sure your business hours are set in settings.
-              </p>
+              <p className="text-[10px] mb-2.5" style={{ color: theme.textMuted }}>Turn on what your AI can text callers during a call, then add the link or info. It only ever texts the person on the call.</p>
+
+              {SMS_PRESETS.map((preset) => {
+                const p = (config.smsPresets && config.smsPresets[preset.key]) || { enabled: false, value: '' };
+                const Icon = preset.icon;
+                return (
+                  <div key={preset.key} className="mb-2 rounded-lg overflow-hidden" style={{ border: `1px solid ${p.enabled ? theme.primary : theme.inputBorder}` }}>
+                    <div className="flex items-center justify-between gap-2 px-2.5 py-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Icon className="h-4 w-4 flex-shrink-0" style={{ color: p.enabled ? theme.primary : theme.textMuted4 }} />
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium" style={{ color: theme.text }}>{preset.label}</p>
+                          <p className="text-[9px]" style={{ color: theme.textMuted4 }}>{preset.desc}</p>
+                        </div>
+                      </div>
+                      <button type="button" onClick={() => togglePreset(preset.key)} aria-pressed={p.enabled} className="relative flex-shrink-0 w-9 h-5 rounded-full transition-colors" style={{ backgroundColor: p.enabled ? theme.primary : theme.inputBorder }}>
+                        <span className="absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all" style={{ left: p.enabled ? '18px' : '2px' }} />
+                      </button>
+                    </div>
+                    {p.enabled && (() => {
+                      const kbVal = (preset.key === 'address' || preset.key === 'website') ? (kbContact[preset.key] || '') : '';
+                      const isEmpty = !p.value || !String(p.value).trim();
+                      return (
+                        <div className="px-2.5 pb-2">
+                          <input value={p.value} onChange={(e) => setPresetValue(preset.key, e.target.value)} placeholder={preset.placeholder} className="w-full rounded-lg px-2.5 py-1.5 text-xs focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                          {autoFilled[preset.key] && !isEmpty && p.value === kbVal ? (
+                            <p className="text-[9px] mt-1 font-medium" style={{ color: theme.primary }}>Pulled from your knowledge base. Save to keep it.</p>
+                          ) : (kbVal && isEmpty ? (
+                            <button type="button" onClick={() => setPresetValue(preset.key, kbVal)} className="text-[9px] mt-1 font-medium" style={{ color: theme.primary }}>Use the {preset.label.toLowerCase()} from your knowledge base</button>
+                          ) : null)}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                );
+              })}
+
+              <button type="button" onClick={() => setSmsAdvancedOpen(o => !o)} className="flex items-center gap-1 text-[10px] font-medium mt-1" style={{ color: theme.textMuted }}>
+                <ChevronDown className={`h-3 w-3 transition-transform ${smsAdvancedOpen ? 'rotate-180' : ''}`} /> Advanced
+              </button>
+              {smsAdvancedOpen && (
+                <div className="mt-2 pt-2" style={{ borderTop: `1px solid ${theme.border}` }}>
+                  <label className="block text-[10px] font-medium mb-1" style={{ color: theme.textMuted }}>Custom texts</label>
+                  <p className="text-[9px] mb-1.5" style={{ color: theme.textMuted4 }}>For anything not above. A label and the exact text or link, sent word-for-word.</p>
+                  {(config.smsSnippets || []).map((snip, i) => (
+                    <div key={i} className="flex items-center gap-1.5 mb-1.5">
+                      <input value={snip.label} onChange={(e) => { const s = [...(config.smsSnippets || [])]; s[i] = { ...s[i], label: e.target.value }; setConfig({ ...config, smsSnippets: s }); }} placeholder="Label" className="w-1/3 rounded-lg px-2 py-1.5 text-xs focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                      <input value={snip.value} onChange={(e) => { const s = [...(config.smsSnippets || [])]; s[i] = { ...s[i], value: e.target.value }; setConfig({ ...config, smsSnippets: s }); }} placeholder="Exact text or link" className="flex-1 rounded-lg px-2 py-1.5 text-xs focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                      <button onClick={() => { const s = (config.smsSnippets || []).filter((_, j) => j !== i); setConfig({ ...config, smsSnippets: s }); }} className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-lg hover:opacity-70" style={{ color: theme.textMuted }} title="Remove"><X className="h-3.5 w-3.5" /></button>
+                    </div>
+                  ))}
+                  <button onClick={() => setConfig({ ...config, smsSnippets: [...(config.smsSnippets || []), { label: '', value: '' }] })} className="text-[10px] font-medium mb-3" style={{ color: theme.primary }}>+ Add a custom text</button>
+
+                  <label className="block text-[10px] font-medium mb-1 mt-1" style={{ color: theme.textMuted }}>Extra instructions (optional)</label>
+                  <textarea value={config.smsInstructions} onChange={(e) => setConfig({ ...config, smsInstructions: e.target.value })} rows={2} className="w-full rounded-lg px-2.5 py-2 text-xs resize-none focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} placeholder="Fine-tune when or how the AI texts, e.g. always send a confirmation after booking." />
+                </div>
+              )}
+
+              <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${theme.border}` }}>
+                {smsDirty ? (
+                  <button type="button" onClick={saveSms} disabled={saving}
+                    className="w-full flex items-center justify-center gap-2 rounded-lg py-2 text-xs font-semibold transition disabled:opacity-60"
+                    style={{ backgroundColor: theme.primary, color: theme.primaryText || '#ffffff' }}>
+                    {saving ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving...</> : 'Save texting settings'}
+                  </button>
+                ) : smsJustSaved ? (
+                  <div className="w-full flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold"
+                    style={{ backgroundColor: theme.successBg || 'rgba(16,185,129,0.12)', color: theme.successText || '#10b981', border: `1px solid ${theme.successBorder || 'rgba(16,185,129,0.3)'}` }}>
+                    <Check className="h-3.5 w-3.5" /> Texting settings saved
+                  </div>
+                ) : (
+                  <p className="text-center text-[10px]" style={{ color: theme.textMuted4 }}>All texting settings saved</p>
+                )}
+              </div>
             </div>
           </div>
         )}
-
       </div>
     </section>
   );
