@@ -75,86 +75,104 @@ const TRIGGER_AFTER_VISITS = 3;
 // ============================================================================
 // MOCK IPHONE UI, renders themed to match agency branding
 // ============================================================================
+// Normalize whatever host we're handed (strip protocol, leading www., trailing
+// slash) so the mock shows a clean address and never overflows the phone.
+function cleanHost(domain: string): string {
+  return (domain || '').replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/\/+$/, '');
+}
+
 function IPhoneMockStep({ step, theme, appName, iconUrl, domain }: { step: number; theme: any; appName: string; iconUrl?: string; domain: string }) {
   const isDark = theme.isDark;
   const mockBg = isDark ? '#1c1c1e' : '#f2f2f7';
   const mockCard = isDark ? '#2c2c2e' : '#ffffff';
   const mockText = isDark ? '#ffffff' : '#000000';
   const mockMuted = isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)';
-  const mockBorder = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
-  const mockRowBg = isDark ? '#2c2c2e' : '#ffffff';
+  const mockBorder = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)';
+  const mockSep = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
+  const fieldBg = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
   const accentBlue = '#007AFF';
+  const host = cleanHost(domain);
 
   if (step === 0) {
-    // Step 1: Tap the Share button, show Safari bottom bar with share icon highlighted
+    // Tap the Share button — a page in Safari with the real bottom toolbar.
     return (
-      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: mockBg, border: `1px solid ${mockBorder}` }}>
-        {/* Mini browser chrome */}
-        <div className="px-3 py-2 flex items-center gap-2" style={{ borderBottom: `1px solid ${mockBorder}` }}>
-          <div className="flex-1 rounded-lg px-2.5 py-1.5 text-center" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)' }}>
-            <span className="text-[9px] font-medium" style={{ color: mockMuted }}>{domain}</span>
+      <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: mockBg, border: `1px solid ${mockBorder}` }}>
+        {/* Safari address bar */}
+        <div className="flex items-center gap-1.5 px-2.5 py-2" style={{ backgroundColor: mockCard, borderBottom: `1px solid ${mockSep}` }}>
+          <span className="text-[10px] font-semibold flex-shrink-0" style={{ color: mockMuted }}>aA</span>
+          <div className="flex-1 min-w-0 flex items-center justify-center gap-1 rounded-lg px-2 py-1" style={{ backgroundColor: fieldBg }}>
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-2.5 h-2.5 flex-shrink-0" style={{ color: mockMuted }}><path d="M12 1a5 5 0 00-5 5v3H6a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2v-8a2 2 0 00-2-2h-1V6a5 5 0 00-5-5zm3 8H9V6a3 3 0 016 0v3z"/></svg>
+            <span className="text-[10px] font-medium truncate" style={{ color: mockText }}>{host}</span>
           </div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3.5 h-3.5 flex-shrink-0" style={{ color: mockMuted }}><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
         </div>
-        {/* Page preview - shows the app with branding */}
-        <div className="px-4 py-5 flex items-center justify-center" style={{ minHeight: '80px' }}>
-          <div className="text-center">
-            <div className="mb-2 flex justify-center">
-              <MockAppIcon iconUrl={iconUrl} theme={theme} px={40} radius="12px" />
+        {/* Page body — the branded app */}
+        <div className="px-4 py-7 flex items-center justify-center" style={{ minHeight: '112px' }}>
+          <div className="text-center max-w-full px-4">
+            <div className="mb-2.5 flex justify-center">
+              <MockAppIcon iconUrl={iconUrl} theme={theme} px={48} radius="12px" />
             </div>
-            <p className="text-[10px] font-semibold" style={{ color: mockText }}>{appName}</p>
+            <p className="text-[11px] font-semibold truncate" style={{ color: mockText }}>{appName}</p>
+            <p className="text-[9px] truncate mt-0.5" style={{ color: mockMuted }}>{host}</p>
           </div>
         </div>
-        {/* Safari bottom bar with share highlighted */}
-        <div className="flex items-center justify-around px-4 py-2.5" style={{ backgroundColor: isDark ? '#1c1c1e' : '#f8f8f8', borderTop: `1px solid ${mockBorder}` }}>
-          <div className="w-5 h-5 opacity-30" style={{ color: mockText }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
-          </div>
-          <div className="w-5 h-5 opacity-30" style={{ color: mockText }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
-          </div>
-          {/* Share button, highlighted */}
+        {/* Safari bottom toolbar: back, forward, share (highlighted), book, tabs */}
+        <div className="flex items-center justify-between px-6 py-2.5" style={{ backgroundColor: isDark ? '#1c1c1e' : '#f7f7f8', borderTop: `1px solid ${mockSep}` }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke={accentBlue} strokeWidth="2.5" className="w-4 h-4"><path d="M15 18l-6-6 6-6"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke={accentBlue} strokeWidth="2.5" className="w-4 h-4 opacity-40"><path d="M9 18l6-6-6-6"/></svg>
+          {/* Share — highlighted with pulse */}
           <div className="relative">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: hexToRgba(accentBlue, 0.15) }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke={accentBlue} strokeWidth="2.5" className="w-4 h-4">
-                <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8" /><polyline points="16 6 12 2 8 6" /><line x1="12" y1="2" x2="12" y2="15" />
-              </svg>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: hexToRgba(accentBlue, 0.15) }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke={accentBlue} strokeWidth="2" className="w-4 h-4"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8" /><polyline points="16 6 12 2 8 6" /><line x1="12" y1="2" x2="12" y2="15" /></svg>
             </div>
-            {/* Pulse ring */}
-            <div className="absolute -inset-1 rounded-xl border-2 animate-pulse" style={{ borderColor: accentBlue, opacity: 0.4 }} />
+            <div className="absolute -inset-1 rounded-xl border-2 animate-pulse" style={{ borderColor: accentBlue, opacity: 0.45 }} />
           </div>
-          <div className="w-5 h-5 opacity-30" style={{ color: mockText }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
-          </div>
-          <div className="w-5 h-5 opacity-30" style={{ color: mockText }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-          </div>
+          <svg viewBox="0 0 24 24" fill="none" stroke={accentBlue} strokeWidth="2" className="w-4 h-4"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke={accentBlue} strokeWidth="2" className="w-4 h-4"><rect x="3" y="4" width="8" height="8" rx="1.5"/><rect x="13" y="4" width="8" height="8" rx="1.5"/><rect x="3" y="14" width="8" height="6" rx="1.5"/><rect x="13" y="14" width="8" height="6" rx="1.5"/></svg>
         </div>
       </div>
     );
   }
 
   if (step === 1) {
-    // Step 2: Scroll down and tap "Add to Home Screen"
+    // The iOS share sheet — page preview header + action list, "Add to Home
+    // Screen" highlighted at the bottom.
+    const rows: { label: string; icon: JSX.Element }[] = [
+      { label: 'Copy', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-full h-full"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> },
+      { label: 'Add to Reading List', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-full h-full"><circle cx="7" cy="12" r="3.2"/><circle cx="17" cy="12" r="3.2"/><path d="M10.2 12h3.6"/></svg> },
+      { label: 'Add Bookmark', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-full h-full"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg> },
+      { label: 'Add to Favourites', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-full h-full"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> },
+    ];
     return (
-      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: mockBg, border: `1px solid ${mockBorder}` }}>
-        {/* Share sheet rows */}
-        <div className="px-1 py-2 space-y-[1px]">
-          {['Copy', 'Add to Reading List', 'Add Bookmark', 'Add to Favorites'].map((label) => (
-            <div key={label} className="flex items-center justify-between px-4 py-2.5 rounded-lg" style={{ backgroundColor: mockRowBg }}>
-              <span className="text-[11px]" style={{ color: mockText }}>{label}</span>
-              <div className="w-4 h-4 opacity-30" style={{ color: mockMuted }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
-              </div>
+      <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: mockBg, border: `1px solid ${mockBorder}` }}>
+        {/* Grab handle */}
+        <div className="flex justify-center pt-2 pb-1">
+          <div className="rounded-full" style={{ width: 34, height: 4, backgroundColor: mockMuted, opacity: 0.4 }} />
+        </div>
+        {/* Page preview header */}
+        <div className="mx-2 mb-1.5 flex items-center gap-2.5 px-3 py-2.5 rounded-xl" style={{ backgroundColor: mockCard }}>
+          <MockAppIcon iconUrl={iconUrl} theme={theme} px={34} radius="8px" />
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-semibold truncate" style={{ color: mockText }}>{appName}</p>
+            <p className="text-[9px] truncate" style={{ color: mockMuted }}>{host}</p>
+          </div>
+          <span className="text-[10px] font-medium flex-shrink-0" style={{ color: accentBlue }}>Options</span>
+        </div>
+        {/* Action list */}
+        <div className="mx-2 mb-2 rounded-xl overflow-hidden" style={{ backgroundColor: mockCard }}>
+          {rows.map((r, i) => (
+            <div key={r.label} className="flex items-center justify-between px-3.5 py-2.5" style={{ borderTop: i === 0 ? 'none' : `1px solid ${mockSep}` }}>
+              <span className="text-[11px] truncate pr-2" style={{ color: mockText }}>{r.label}</span>
+              <div className="w-4 h-4 flex-shrink-0" style={{ color: mockMuted }}>{r.icon}</div>
             </div>
           ))}
-          {/* Add to Home Screen, highlighted */}
-          <div className="relative flex items-center justify-between px-4 py-2.5 rounded-lg" style={{ backgroundColor: hexToRgba(accentBlue, isDark ? 0.12 : 0.06), border: `1.5px solid ${hexToRgba(accentBlue, 0.3)}` }}>
-            <span className="text-[11px] font-semibold" style={{ color: accentBlue }}>Add to Home Screen</span>
-            <div className="w-5 h-5 rounded flex items-center justify-center" style={{ backgroundColor: hexToRgba(accentBlue, 0.15) }}>
-              <Plus className="w-3 h-3" style={{ color: accentBlue }} />
+          {/* Add to Home Screen — highlighted */}
+          <div className="relative flex items-center justify-between px-3.5 py-2.5" style={{ borderTop: `1px solid ${mockSep}`, backgroundColor: hexToRgba(accentBlue, isDark ? 0.16 : 0.08) }}>
+            <span className="text-[11px] font-semibold truncate pr-2" style={{ color: accentBlue }}>Add to Home Screen</span>
+            <div className="w-4 h-4 flex-shrink-0" style={{ color: accentBlue }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-full h-full"><rect x="3" y="3" width="18" height="18" rx="4"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
             </div>
-            {/* Arrow indicator */}
-            <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: accentBlue }} />
+            <div className="absolute inset-0 rounded-[2px] border-2 animate-pulse pointer-events-none" style={{ borderColor: accentBlue, opacity: 0.4 }} />
           </div>
         </div>
       </div>
@@ -162,31 +180,28 @@ function IPhoneMockStep({ step, theme, appName, iconUrl, domain }: { step: numbe
   }
 
   if (step === 2) {
-    // Step 3: Tap "Add", confirmation dialog with app icon
+    // The "Add to Home Screen" confirmation sheet. Nav bar uses a 3-column grid
+    // so the centered title stays on one line and Cancel/Add never collide.
     return (
-      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: mockBg, border: `1px solid ${mockBorder}` }}>
-        {/* Top bar */}
-        <div className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: `1px solid ${mockBorder}` }}>
+      <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: mockCard, border: `1px solid ${mockBorder}` }}>
+        {/* Nav bar */}
+        <div className="grid items-center gap-2 px-3.5 py-3" style={{ gridTemplateColumns: 'auto 1fr auto', borderBottom: `1px solid ${mockSep}` }}>
           <span className="text-[11px]" style={{ color: accentBlue }}>Cancel</span>
-          <span className="text-[11px] font-semibold" style={{ color: mockText }}>Add to Home Screen</span>
-          <div className="relative">
-            <span className="text-[11px] font-semibold" style={{ color: accentBlue }}>Add</span>
-            <div className="absolute -inset-x-2 -inset-y-1 rounded-lg border-2 animate-pulse" style={{ borderColor: accentBlue, opacity: 0.4 }} />
+          <span className="text-[11px] font-semibold text-center truncate" style={{ color: mockText }}>Add to Home Screen</span>
+          <div className="relative justify-self-end">
+            <span className="text-[11px] font-bold" style={{ color: accentBlue }}>Add</span>
+            <div className="absolute -inset-x-2 -inset-y-1 rounded-lg border-2 animate-pulse" style={{ borderColor: accentBlue, opacity: 0.45 }} />
           </div>
         </div>
-        {/* App preview */}
-        <div className="flex items-center gap-3 px-4 py-4">
-          <MockAppIcon iconUrl={iconUrl} theme={theme} px={48} radius="12px" />
-          <div>
-            <p className="text-[12px] font-semibold" style={{ color: mockText }}>{appName}</p>
-            <p className="text-[10px]" style={{ color: mockMuted }}>{domain}</p>
+        {/* Icon + editable name field + URL */}
+        <div className="flex items-start gap-3 px-4 py-4">
+          <MockAppIcon iconUrl={iconUrl} theme={theme} px={52} radius="12px" />
+          <div className="min-w-0 flex-1">
+            <div className="rounded-md px-2.5 py-1.5" style={{ backgroundColor: fieldBg, border: `1px solid ${mockSep}` }}>
+              <p className="text-[12px] font-medium truncate" style={{ color: mockText }}>{appName}</p>
+            </div>
+            <p className="text-[10px] truncate mt-1.5" style={{ color: mockMuted }}>{host}</p>
           </div>
-        </div>
-        {/* Description */}
-        <div className="px-4 pb-3">
-          <p className="text-[10px]" style={{ color: mockMuted }}>
-            An icon will be added to your Home Screen so you can quickly access this app.
-          </p>
         </div>
       </div>
     );
@@ -212,12 +227,12 @@ function AndroidMockStep({ step, theme, appName, iconUrl, domain }: { step: numb
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: mockBg, border: `1px solid ${mockBorder}` }}>
         {/* Chrome top bar */}
         <div className="flex items-center justify-between px-3 py-2" style={{ backgroundColor: '#2d2d2d', borderBottom: `1px solid ${mockBorder}` }}>
-          <div className="flex-1 flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}>
+          <div className="flex-1 min-w-0 flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}>
               <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4" stroke="rgba(255,255,255,0.4)" strokeWidth="2"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/></svg>
             </div>
-            <div className="flex-1 rounded-full px-3 py-1" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
-              <span className="text-[9px]" style={{ color: mockMuted }}>{domain}</span>
+            <div className="flex-1 min-w-0 rounded-full px-3 py-1" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
+              <span className="text-[9px] block truncate" style={{ color: mockMuted }}>{cleanHost(domain)}</span>
             </div>
           </div>
           {/* Three-dot menu, highlighted */}
@@ -230,11 +245,11 @@ function AndroidMockStep({ step, theme, appName, iconUrl, domain }: { step: numb
         </div>
         {/* Page content */}
         <div className="px-4 py-6 flex items-center justify-center">
-          <div className="text-center">
+          <div className="text-center max-w-full px-4">
             <div className="mb-2 flex justify-center">
               <MockAppIcon iconUrl={iconUrl} theme={theme} px={40} radius="12px" />
             </div>
-            <p className="text-[10px] font-semibold" style={{ color: mockText }}>{appName}</p>
+            <p className="text-[10px] font-semibold truncate" style={{ color: mockText }}>{appName}</p>
           </div>
         </div>
       </div>
@@ -277,7 +292,7 @@ function AndroidMockStep({ step, theme, appName, iconUrl, domain }: { step: numb
           <div className="mx-auto mb-3 flex justify-center">
             <MockAppIcon iconUrl={iconUrl} theme={theme} px={56} radius="16px" />
           </div>
-          <p className="text-[13px] font-semibold mb-1" style={{ color: mockText }}>Install {appName}?</p>
+          <p className="text-[13px] font-semibold mb-1 truncate" style={{ color: mockText }}>Install {appName}?</p>
           <p className="text-[10px] mb-4" style={{ color: mockMuted }}>This app will be added to your home screen</p>
           {/* Buttons */}
           <div className="flex gap-2">
@@ -386,6 +401,10 @@ export default function AddToHomeScreenModal({ clientId, theme, isOpen: controll
   // agency's actual address instead of a placeholder.
   const domain = typeof window !== 'undefined' ? window.location.hostname : '';
   const originUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  const displayHost = cleanHost(domain);
+  // Brand the copy when we have a real white-label name (agency or client),
+  // not the generic fallback.
+  const brand = appName && appName !== 'Your App' ? appName : '';
 
   const copyUrl = useCallback(async () => {
     try {
@@ -502,21 +521,21 @@ export default function AddToHomeScreenModal({ clientId, theme, isOpen: controll
           }}
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-4" style={{ borderBottom: `1px solid ${theme.border}` }}>
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.15 : 0.08) }}>
+          <div className="flex items-center justify-between gap-3 p-4" style={{ borderBottom: `1px solid ${theme.border}` }}>
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.15 : 0.08) }}>
                 <Smartphone className="w-4.5 h-4.5" style={{ color: theme.primary }} />
               </div>
-              <div>
-                <h2 className="font-semibold text-sm" style={{ color: theme.text }}>
-                  {alreadyInstalled ? 'App Installed!' : 'Get the App'}
+              <div className="min-w-0">
+                <h2 className="font-semibold text-sm truncate" style={{ color: theme.text }}>
+                  {alreadyInstalled ? 'App installed' : (brand ? `Get the ${brand} app` : 'Get the app')}
                 </h2>
-                <p className="text-[10px]" style={{ color: theme.textMuted }}>
-                  {alreadyInstalled ? 'Running from your home screen' : 'Add to your home screen for quick access'}
+                <p className="text-[10px] truncate" style={{ color: theme.textMuted }}>
+                  {alreadyInstalled ? 'Running from your home screen' : 'Add it to your home screen for quick access'}
                 </p>
               </div>
             </div>
-            <button onClick={handleClose} className="w-7 h-7 flex items-center justify-center rounded-lg transition hover:opacity-70" style={{ backgroundColor: theme.bg }}>
+            <button onClick={handleClose} className="w-7 h-7 flex items-center justify-center rounded-lg transition hover:opacity-70 flex-shrink-0" style={{ backgroundColor: theme.bg }}>
               <X className="w-3.5 h-3.5" style={{ color: theme.textMuted }} />
             </button>
           </div>
@@ -549,7 +568,7 @@ export default function AddToHomeScreenModal({ clientId, theme, isOpen: controll
 
               {/* The URL to visit on the phone, with copy */}
               <div className="mt-4 flex items-center gap-2 rounded-xl p-1.5 pl-3" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
-                <span className="flex-1 text-xs font-medium truncate" style={{ color: theme.text }}>{domain}</span>
+                <span className="flex-1 min-w-0 text-xs font-medium truncate" style={{ color: theme.text }}>{displayHost}</span>
                 <button
                   onClick={copyUrl}
                   className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition hover:opacity-90 flex-shrink-0"

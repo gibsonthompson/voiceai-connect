@@ -358,7 +358,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
 
       <main className="lg:pl-64 min-h-screen" style={{ backgroundColor: theme.bg, paddingBottom: 'calc(env(safe-area-inset-bottom) + 6rem)' }}>{children}</main>
 
-      {client && (<AddToHomeScreenModal clientId={client.id} theme={theme} appName={branding.businessName || branding.agencyName || client.business_name || 'Your App'} iconUrl={`/api/agency-app-icon?size=192&clientId=${client.id}`} />)}
+      {client && (<AddToHomeScreenModal clientId={client.id} theme={theme} appName={(branding.clientHeaderMode === 'business_name' ? (branding.businessName || branding.agencyName) : (branding.agencyName || branding.businessName)) || client.business_name || 'Your App'} iconUrl={`/api/agency-app-icon?size=192&clientId=${client.id}`} />)}
       <SupportWidget theme={theme} userType="client" />
     </div>
   );

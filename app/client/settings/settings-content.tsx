@@ -29,6 +29,7 @@ interface Client {
 interface Branding {
   primaryColor: string; secondaryColor: string; accentColor: string; agencyName: string;
   logoUrl: string | null; supportEmail: string | null; supportPhone: string | null; websiteTheme?: 'light' | 'dark' | 'auto';
+  businessName?: string; clientHeaderMode?: 'agency_name' | 'business_name';
 }
 
 interface Props { client: Client; branding: Branding; }
@@ -578,7 +579,7 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
         </SectionCard>
       </div>
 
-      <AddToHomeScreenModal clientId={client.id} theme={theme} isOpen={showPwaModal} onClose={() => setShowPwaModal(false)} manualTrigger appName={branding.agencyName || client.business_name || 'Your App'} iconUrl={`/api/agency-app-icon?size=192&clientId=${client.id}`} />
+      <AddToHomeScreenModal clientId={client.id} theme={theme} isOpen={showPwaModal} onClose={() => setShowPwaModal(false)} manualTrigger appName={(branding.clientHeaderMode === 'business_name' ? (branding.businessName || branding.agencyName) : (branding.agencyName || branding.businessName)) || client.business_name || 'Your App'} iconUrl={`/api/agency-app-icon?size=192&clientId=${client.id}`} />
     </div>
   );
 }
