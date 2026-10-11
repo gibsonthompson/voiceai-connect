@@ -712,7 +712,7 @@ export default function AdminAgenciesPage() {
                               <MessageSquare className="h-3.5 w-3.5" style={{ color: 'var(--a-cyan)' }} />
                               <h4 className={label}>Support</h4>
                               <span className="text-[10px] text-[var(--a-dim)]">{items.length}</span>
-                              <a href="/admin/support" className="ml-auto inline-flex items-center gap-1 text-[10px] font-semibold hover:underline" style={{ color: 'var(--a-em-deep)' }}>Open queue <ExternalLink className="h-2.5 w-2.5" /></a>
+                              <a href="/admin/inbox" className="ml-auto inline-flex items-center gap-1 text-[10px] font-semibold hover:underline" style={{ color: 'var(--a-em-deep)' }}>Open inbox <ExternalLink className="h-2.5 w-2.5" /></a>
                             </div>
                             {items.length > 0 ? (
                               <div className="space-y-1">

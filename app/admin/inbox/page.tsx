@@ -12,7 +12,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { MessageSquare, Send, ArrowLeft, Loader2, RefreshCw, Phone, Building2, Bot } from 'lucide-react';
 
-interface InboxMessage { id: string; sender: 'in' | 'out'; body: string; at: string; kind: 'inapp' | 'sms' | 'faq'; }
+interface InboxMessage { id: string; sender: 'in' | 'out'; body: string; at: string; kind: 'inapp' | 'sms' | 'faq' | 'feedback'; }
 interface Conversation {
   key: string;
   type: 'agency' | 'faq';
@@ -24,7 +24,7 @@ interface Conversation {
   lastAt: string | null;
   lastDirection: 'in' | 'out' | null;
   lastPreview: string;
-  lastInboundKind?: 'inapp' | 'sms' | 'faq';
+  lastInboundKind?: 'inapp' | 'sms' | 'faq' | 'feedback';
   needsReply: boolean;
   readOnly?: boolean;
   escalated?: boolean;
@@ -204,6 +204,7 @@ export default function AdminInboxPage() {
                         </div>
                         <div className={`mt-1 text-[10px] flex items-center gap-1.5 ${isIn ? 'justify-start' : 'justify-end'}`} style={{ color: 'var(--a-dim)' }}>
                           {m.kind === 'sms' && <span className="uppercase tracking-wide">Text</span>}
+                          {m.kind === 'feedback' && <span className="uppercase tracking-wide" style={{ color: '#92400e' }}>Feedback</span>}
                           <span>{fmtTime(m.at)}</span>
                         </div>
                       </div>

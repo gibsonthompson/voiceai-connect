@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { 
+import {
   Loader2, Send, Bot, User, Phone, MessageCircle,
-  HelpCircle, Zap, AlertCircle, Wrench, CreditCard, ArrowRight
+  HelpCircle, Zap, AlertCircle, Wrench, CreditCard, ArrowRight,
+  Headphones, CheckCircle2, Inbox
 } from 'lucide-react';
+import Link from 'next/link';
 import { useAgency } from '@/app/agency/context';
 import { useTheme } from '@/hooks/useTheme';
 
@@ -51,10 +53,50 @@ export default function SupportPage() {
   const [sending, setSending] = useState(false);
   const [userMessageCount, setUserMessageCount] = useState(0);
 
+  // Human escalation — hands the conversation to the team (support_requests),
+  // which lands in the admin inbox and the agency's own Inbox platform thread.
+  const [escalating, setEscalating] = useState(false);
+  const [escalated, setEscalated] = useState(false);
+  const [escalateError, setEscalateError] = useState('');
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const showPhone = userMessageCount >= PHONE_REVEAL_THRESHOLD;
+  // "Talk to a human" is live once there's anything to send — a bot exchange,
+  // or even an unsent question sitting in the box.
+  const canEscalate = !!agency && !escalating && !escalated && (messages.length > 0 || input.trim().length > 0);
+
+  // Flatten the chat into a readable transcript for the owner.
+  const buildTranscript = () =>
+    messages.map(m => `${m.role === 'user' ? 'You' : 'Assistant'}: ${m.content}`).join('\n\n');
+
+  const escalateToHuman = async () => {
+    if (!agency || escalating || escalated) return;
+    const transcript = buildTranscript();
+    const note = input.trim();
+    if (!transcript && !note) { inputRef.current?.focus(); return; }
+    setEscalating(true);
+    setEscalateError('');
+    try {
+      const token = localStorage.getItem('auth_token') || '';
+      const r = await fetch(`${api}/api/agency/${agency.id}/support/escalate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ message: note, transcript }),
+      });
+      if (r.ok) {
+        setEscalated(true);
+        if (note) setInput('');
+      } else {
+        setEscalateError('Could not send. Please try again, or call us.');
+      }
+    } catch {
+      setEscalateError('Connection error. Please try again, or call us.');
+    } finally {
+      setEscalating(false);
+    }
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -126,14 +168,22 @@ export default function SupportPage() {
             </div>
           </div>
 
-          {/* Phone — fades in after threshold */}
-          <div className={`transition-all duration-500 ${showPhone ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
+          <div className="flex items-center gap-2">
+            {/* Phone — fades in after threshold (secondary) */}
             <a href={`tel:${SUPPORT_PHONE.replace(/\D/g, '')}`}
-              className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition hover:opacity-80"
+              className={`hidden sm:flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition hover:opacity-80 ${showPhone ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
               style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.1 : 0.06), color: theme.primary, border: `1px solid ${hexToRgba(theme.primary, 0.2)}` }}>
               <Phone className="h-3.5 w-3.5" />
               {SUPPORT_PHONE}
             </a>
+
+            {/* Talk to a human — always available, routes into the Inbox */}
+            <button onClick={escalateToHuman} disabled={!canEscalate}
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition disabled:opacity-40 hover:opacity-80"
+              style={{ backgroundColor: 'transparent', color: theme.primary, border: `1px solid ${hexToRgba(theme.primary, 0.3)}` }}>
+              {escalating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : escalated ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Headphones className="h-3.5 w-3.5" />}
+              <span>{escalated ? 'Sent' : 'Talk to a human'}</span>
+            </button>
           </div>
         </div>
       </div>
@@ -215,20 +265,48 @@ export default function SupportPage() {
                 </div>
               )}
 
-              {/* Phone reveal card — appears inline after threshold */}
-              {showPhone && messages.length >= PHONE_REVEAL_THRESHOLD * 2 && (
+              {/* Human handoff — appears once the bot has replied at least once.
+                  Flips to a confirmation (with an Inbox link) after escalating. */}
+              {messages.length >= 2 && (
                 <div className="flex gap-3">
                   <div className="w-7 h-7 flex-shrink-0" />
-                  <div className="rounded-xl p-3 flex items-center gap-3 max-w-xs"
-                    style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.08 : 0.04), border: `1px solid ${hexToRgba(theme.primary, 0.15)}` }}>
-                    <Phone className="h-4 w-4 flex-shrink-0" style={{ color: theme.primary }} />
-                    <div>
-                      <p className="text-[10px]" style={{ color: theme.textMuted }}>Still need help?</p>
-                      <a href={`tel:${SUPPORT_PHONE.replace(/\D/g, '')}`} className="text-sm font-semibold hover:underline" style={{ color: theme.primary }}>
-                        Call {SUPPORT_PHONE}
-                      </a>
+                  {escalated ? (
+                    <div className="rounded-xl p-4 max-w-sm"
+                      style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.08 : 0.05), border: `1px solid ${hexToRgba(theme.primary, 0.2)}` }}>
+                      <div className="flex items-center gap-2 mb-1">
+                        <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: theme.primary }} />
+                        <p className="text-sm font-semibold" style={{ color: theme.text }}>Sent to the team</p>
+                      </div>
+                      <p className="text-xs mb-3 leading-relaxed" style={{ color: theme.textMuted }}>
+                        We've got your conversation. We'll reply right in your Inbox — you'll see it there and get a text.
+                      </p>
+                      <Link href="/agency/inbox?channel=platform"
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold hover:underline" style={{ color: theme.primary }}>
+                        <Inbox className="h-3.5 w-3.5" /> Go to Inbox
+                      </Link>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="rounded-xl p-4 max-w-sm"
+                      style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+                      <p className="text-sm font-semibold mb-1" style={{ color: theme.text }}>Still need a hand?</p>
+                      <p className="text-xs mb-3 leading-relaxed" style={{ color: theme.textMuted }}>
+                        Send this conversation to the VoiceAI Connect team — we'll reply right in your Inbox.
+                      </p>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                        <button onClick={escalateToHuman} disabled={!canEscalate}
+                          className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition disabled:opacity-40 hover:opacity-90"
+                          style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+                          {escalating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Headphones className="h-3.5 w-3.5" />}
+                          Message the team
+                        </button>
+                        <a href={`tel:${SUPPORT_PHONE.replace(/\D/g, '')}`}
+                          className="inline-flex items-center gap-1.5 text-xs font-medium hover:underline" style={{ color: theme.textMuted }}>
+                          <Phone className="h-3.5 w-3.5" /> or call {SUPPORT_PHONE}
+                        </a>
+                      </div>
+                      {escalateError && <p className="text-xs mt-2" style={{ color: '#dc2626' }}>{escalateError}</p>}
+                    </div>
+                  )}
                 </div>
               )}
 

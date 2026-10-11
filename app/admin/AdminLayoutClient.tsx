@@ -24,7 +24,7 @@ import Link from 'next/link';
 import {
   LayoutDashboard, Building2, Users, DollarSign, Target, Mail,
   MessageSquare, Youtube, LogOut, Loader2, Menu, X, PhoneCall, Sparkles,
-  LifeBuoy, Headphones, Bot, AlertTriangle, Globe, Megaphone,
+  Headphones, Bot, AlertTriangle, Globe, Megaphone,
 } from 'lucide-react';
 
 const AUTH_PAGES = ['/admin/login'];
@@ -62,9 +62,7 @@ const NAV: { section: string | null; items: { href: string; label: string; icon:
   ]},
   { section: null, items: [
     { href: '/admin/inbox', label: 'Inbox', icon: MessageSquare },
-    { href: '/admin/messaging', label: 'Messaging', icon: MessageSquare },
     { href: '/admin/broadcast', label: 'Broadcast', icon: Megaphone },
-    { href: '/admin/support', label: 'Support', icon: LifeBuoy },
     { href: '/admin/alerts', label: 'Alerts', icon: AlertTriangle },
     { href: '/admin/faq-chats', label: 'FAQ Chats', icon: Bot },
   ]},
