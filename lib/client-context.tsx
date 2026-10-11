@@ -102,6 +102,10 @@ interface Branding {
   supportPhone: string | null;
   websiteTheme: 'light' | 'dark' | 'auto';
   clientHeaderMode: 'agency_name' | 'business_name';
+  // The white-label host clients actually use: the agency's verified custom
+  // domain, else its platform subdomain, else the bare platform domain. Used by
+  // the Add-to-Home-Screen walkthrough so it never shows the platform host.
+  appDomain: string;
 }
 
 // ============================================================================
@@ -189,6 +193,12 @@ function buildBranding(c: any): Branding {
     supportPhone: agency?.support_phone || null,
     websiteTheme: (c.theme_mode === 'light' || c.theme_mode === 'dark') ? c.theme_mode : (agency?.website_theme || 'dark'),
     clientHeaderMode: agency?.client_header_mode || 'agency_name',
+    appDomain: (() => {
+      const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
+      if (agency?.domain_verified && agency?.marketing_domain) return String(agency.marketing_domain);
+      if (agency?.slug) return `${agency.slug}.${platformDomain}`;
+      return platformDomain;
+    })(),
   };
 }
 
@@ -214,6 +224,7 @@ const defaultBranding: Branding = {
   primaryColor: '#3b82f6', secondaryColor: '#1e40af', accentColor: '#60a5fa',
   agencyName: '', businessName: '', logoUrl: null,
   supportEmail: null, supportPhone: null, websiteTheme: 'dark', clientHeaderMode: 'agency_name',
+  appDomain: '',
 };
 
 // The login page caches the resolved agency (colors + theme) under

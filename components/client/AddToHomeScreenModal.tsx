@@ -23,6 +23,10 @@ interface Props {
    *  previews show this exact icon instead of a generic waveform, so the
    *  walkthrough matches what actually lands on the home screen. */
   iconUrl?: string;
+  /** The white-label host clients actually use (agency custom domain, else
+   *  platform subdomain). Shown in the mock and the copy link. Falls back to
+   *  the current window host when not provided. */
+  domain?: string;
 }
 
 // The real app icon in the mock previews, falling back to the agency-colored
@@ -391,17 +395,17 @@ function DesktopInstallAnimation({ theme, appName, iconUrl, domain }: { theme: a
 // ============================================================================
 // MAIN MODAL
 // ============================================================================
-export default function AddToHomeScreenModal({ clientId, theme, isOpen: controlledOpen, onClose, manualTrigger, appName = 'Your App', iconUrl }: Props) {
+export default function AddToHomeScreenModal({ clientId, theme, isOpen: controlledOpen, onClose, manualTrigger, appName = 'Your App', iconUrl, domain: domainProp }: Props) {
   const [open, setOpen] = useState(false);
   const [platform, setPlatform] = useState<Platform>('desktop');
   const [alreadyInstalled, setAlreadyInstalled] = useState(false);
   const [step, setStep] = useState(0);
   const [copied, setCopied] = useState(false);
-  // The real host shown in the mock previews, so the walkthrough matches this
-  // agency's actual address instead of a placeholder.
-  const domain = typeof window !== 'undefined' ? window.location.hostname : '';
-  const originUrl = typeof window !== 'undefined' ? window.location.origin : '';
-  const displayHost = cleanHost(domain);
+  // White-label host for the mock + copy link: the agency domain passed in
+  // (custom domain, else platform subdomain), falling back to the current host.
+  const domain = cleanHost(domainProp || (typeof window !== 'undefined' ? window.location.hostname : ''));
+  const originUrl = domain ? `https://${domain}` : (typeof window !== 'undefined' ? window.location.origin : '');
+  const displayHost = domain;
   // Brand the copy when we have a real white-label name (agency or client),
   // not the generic fallback.
   const brand = appName && appName !== 'Your App' ? appName : '';
