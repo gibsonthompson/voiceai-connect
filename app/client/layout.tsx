@@ -115,14 +115,36 @@ ls.removeItem('preview_mode');ls.removeItem('agency_auth_backup');ls.removeItem(
 }
 }catch(e){}})();`;
 
-export default function ClientLayout({ children }: { children: React.ReactNode }) {
+// Resolve the agency's theme (dark/light) on the server from the request host,
+// so the client dashboard's SSR skeleton paints the agency's background on the
+// very first byte instead of defaulting to a black screen on hard refresh.
+// Cached briefly since an agency's theme changes rarely.
+async function resolveInitialDark(): Promise<boolean> {
+  try {
+    const h = await headers();
+    const host = (h.get('host') || '').toLowerCase();
+    if (isPlatformHost(host)) return true;
+    const res = await fetch(
+      `${BACKEND_URL}/api/agency/by-host?host=${encodeURIComponent(host)}`,
+      { next: { revalidate: 300 } }
+    );
+    if (res.ok) {
+      const agency = (await res.json())?.agency;
+      if (agency?.website_theme === 'light') return false;
+    }
+  } catch {}
+  return true;
+}
+
+export default async function ClientLayout({ children }: { children: React.ReactNode }) {
+  const initialDark = await resolveInitialDark();
   return (
     <>
       <script dangerouslySetInnerHTML={{ __html: PREVIEW_AUTH_BOOTSTRAP }} />
       {/* App-like scrolling: stop the page from rubber-band / overscrolling past
           the top so the sticky nav stays pinned and you can't scroll above it. */}
       <style dangerouslySetInnerHTML={{ __html: 'html,body{overscroll-behavior-y:none;}' }} />
-      <ClientShell>{children}</ClientShell>
+      <ClientShell initialDark={initialDark}>{children}</ClientShell>
     </>
   );
 }

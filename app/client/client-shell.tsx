@@ -42,7 +42,7 @@ function getInitialPreviewMode(): boolean {
 
 interface NavItem { href: string; label: string; icon: any; permissionKey?: string; }
 
-function ClientDashboardLayout({ children }: { children: ReactNode }) {
+function ClientDashboardLayout({ children, initialDark = true }: { children: ReactNode; initialDark?: boolean }) {
   const pathname = usePathname();
   const { client, branding, loading, hasPermission, user } = useClient();
   const theme = useClientTheme();
@@ -176,16 +176,12 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
 
   // ── SKELETON: covers SSR→hydration flash (same pattern as agency) ────
   if (!mounted) {
-    let _isDark = true;
-    try {
-      const saved = localStorage.getItem('voiceai_ui_theme');
-      if (saved === 'light') _isDark = false;
-      else if (saved === 'dark') _isDark = true;
-      else {
-        const stored = localStorage.getItem('client');
-        if (stored) { const p = JSON.parse(stored); _isDark = p.agency?.website_theme !== 'light'; }
-      }
-    } catch {}
+    // Theme-match the SSR skeleton to the agency. initialDark is resolved
+    // server-side from the agency's website_theme (by host), so the very first
+    // paint on a hard refresh matches the agency instead of flashing black.
+    // Based purely on the server value so server and first client paint agree
+    // (no hydration mismatch); the real theme takes over once mounted.
+    const _isDark = initialDark;
     const sk = _isDark
       ? { bg: '#0a0a0a', sidebar: '#0a0a0a', border: 'rgba(255,255,255,0.06)', pulse: 'rgba(255,255,255,0.06)', pulse2: 'rgba(255,255,255,0.03)' }
       : { bg: '#f9fafb', sidebar: '#ffffff', border: '#e5e7eb', pulse: '#e5e7eb', pulse2: '#f3f4f6' };
@@ -217,7 +213,14 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   }
 
   if (loading && !client) {
-    const _hintDark = typeof window !== 'undefined' && localStorage.getItem('voiceai_ui_theme') !== 'light';
+    // Prefer the last-resolved theme, else the server-provided agency default
+    // (never a hardcoded dark that would flash black for a light-themed agency).
+    let _hintDark = initialDark;
+    try {
+      const t = localStorage.getItem('voiceai_ui_theme');
+      if (t === 'light') _hintDark = false;
+      else if (t === 'dark') _hintDark = true;
+    } catch {}
     const _bg = _hintDark ? '#0a0a0a' : '#f9fafb';
     const _sb = _hintDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
     const _st = _hintDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)';
@@ -364,7 +367,7 @@ function ClientDashboardLayout({ children }: { children: ReactNode }) {
   );
 }
 
-export default function ClientLayout({ children }: { children: ReactNode }) {
+export default function ClientLayout({ children, initialDark = true }: { children: ReactNode; initialDark?: boolean }) {
   const pathname = usePathname();
   const isAuthPage = AUTH_PAGES.some(page => pathname?.startsWith(page));
   if (isAuthPage) return <>{children}</>;
@@ -374,7 +377,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <ClientDashboardLayout>{children}</ClientDashboardLayout>
+      <ClientDashboardLayout initialDark={initialDark}>{children}</ClientDashboardLayout>
     </ClientProvider>
   );
 }
