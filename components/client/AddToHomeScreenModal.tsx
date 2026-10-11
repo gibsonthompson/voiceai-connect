@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { X, Share, MoreVertical, Plus, Download, Smartphone, Monitor, ChevronRight } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { X, Share, MoreVertical, Plus, Download, Smartphone, ChevronRight, Copy, Check } from 'lucide-react';
 
 function hexToRgba(hex: string, alpha: number): string {
   const r = parseInt(hex.slice(1, 3), 16);
@@ -298,6 +298,82 @@ function AndroidMockStep({ step, theme, appName, iconUrl, domain }: { step: numb
 }
 
 // ============================================================================
+// DESKTOP INSTALL ANIMATION
+// A looping phone graphic that auto-plays the real iOS install flow (tap Share,
+// scroll, Add to Home Screen, Add) so a desktop viewer sees exactly what to do
+// on their phone. Reuses the themed IPhoneMockStep so the icon/name/domain stay
+// white-labeled. Desktop only; the phone itself keeps the interactive steps.
+// ============================================================================
+function DesktopInstallAnimation({ theme, appName, iconUrl, domain }: { theme: any; appName: string; iconUrl?: string; domain: string }) {
+  const [step, setStep] = useState(0);
+  const reduceMotion = useRef(false);
+  const isDark = theme.isDark;
+  const bezel = isDark ? '#0a0a0b' : '#1a1a1c';
+  const screenBg = isDark ? '#000000' : '#f2f2f7';
+  const statusColor = isDark ? '#ffffff' : '#000000';
+
+  const captions = ['Tap the Share button', 'Tap "Add to Home Screen"', 'Tap "Add" to finish'];
+
+  useEffect(() => {
+    try {
+      reduceMotion.current =
+        typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    } catch { reduceMotion.current = false; }
+    if (reduceMotion.current) return;
+    const id = setInterval(() => setStep((s) => (s + 1) % 3), 2600);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center">
+      {/* Keyframes (scoped by unique names so they can't collide with Tailwind) */}
+      <style>{`
+        @keyframes a2hsStepIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+      `}</style>
+
+      <div style={{ width: 228 }} className="relative">
+        {/* Device bezel */}
+        <div style={{ background: bezel, borderRadius: 40, padding: 7, boxShadow: '0 22px 45px -14px rgba(0,0,0,0.5)' }}>
+          {/* Screen */}
+          <div className="relative overflow-hidden" style={{ borderRadius: 33, backgroundColor: screenBg, height: 384 }}>
+            {/* Notch */}
+            <div className="absolute left-1/2 -translate-x-1/2 top-1.5 z-20" style={{ width: 84, height: 20, borderRadius: 12, background: bezel }} />
+
+            {/* Status bar */}
+            <div className="relative z-10 flex items-center justify-between px-5 pt-2.5 pb-1" style={{ color: statusColor }}>
+              <span className="text-[9px] font-semibold tracking-tight">9:41</span>
+              <div className="flex items-center gap-1">
+                {/* signal */}
+                <svg width="13" height="9" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2" width="3" height="10" rx="1" opacity="0.4"/><rect x="15" y="0" width="3" height="12" rx="1" opacity="0.4"/></svg>
+                {/* battery */}
+                <svg width="16" height="9" viewBox="0 0 24 12" fill="none"><rect x="0.5" y="0.5" width="20" height="11" rx="3" stroke="currentColor" opacity="0.5"/><rect x="2" y="2" width="14" height="8" rx="1.5" fill="currentColor"/><rect x="21.5" y="4" width="2" height="4" rx="1" fill="currentColor" opacity="0.5"/></svg>
+              </div>
+            </div>
+
+            {/* Animated step content (re-keyed each step so it animates in) */}
+            <div key={step} className="px-3 pt-2" style={{ animation: reduceMotion.current ? undefined : 'a2hsStepIn 560ms ease' }}>
+              <IPhoneMockStep step={step} theme={theme} appName={appName} iconUrl={iconUrl} domain={domain} />
+            </div>
+
+            {/* Caption pill */}
+            <div className="absolute bottom-3.5 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full shadow-sm" style={{ backgroundColor: theme.primary }}>
+              <span className="text-[10px] font-semibold whitespace-nowrap" style={{ color: theme.primaryText }}>{captions[step]}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Progress dots (auto-advance) */}
+      <div className="flex items-center gap-1.5 mt-3.5">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="rounded-full transition-all duration-300" style={{ width: step === i ? '20px' : '7px', height: '7px', backgroundColor: step === i ? theme.primary : hexToRgba(theme.primary, 0.25) }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
 // MAIN MODAL
 // ============================================================================
 export default function AddToHomeScreenModal({ clientId, theme, isOpen: controlledOpen, onClose, manualTrigger, appName = 'Your App', iconUrl }: Props) {
@@ -305,9 +381,19 @@ export default function AddToHomeScreenModal({ clientId, theme, isOpen: controll
   const [platform, setPlatform] = useState<Platform>('desktop');
   const [alreadyInstalled, setAlreadyInstalled] = useState(false);
   const [step, setStep] = useState(0);
+  const [copied, setCopied] = useState(false);
   // The real host shown in the mock previews, so the walkthrough matches this
   // agency's actual address instead of a placeholder.
   const domain = typeof window !== 'undefined' ? window.location.hostname : '';
+  const originUrl = typeof window !== 'undefined' ? window.location.origin : '';
+
+  const copyUrl = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(originUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* clipboard unavailable, ignore */ }
+  }, [originUrl]);
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -449,19 +535,31 @@ export default function AddToHomeScreenModal({ clientId, theme, isOpen: controll
             </div>
           )}
 
-          {/* Desktop message */}
+          {/* Desktop: animated phone walkthrough + the URL to open on a phone */}
           {!alreadyInstalled && isDesktop && (
             <div className="p-5">
-              <div className="flex items-start gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.15 : 0.08) }}>
-                  <Monitor className="w-5 h-5" style={{ color: theme.primary }} />
-                </div>
-                <div>
-                  <p className="text-sm font-medium mb-1" style={{ color: theme.text }}>Open on your phone for the best experience</p>
-                  <p className="text-xs" style={{ color: theme.textMuted }}>Visit this URL on your iPhone or Android to install it on your home screen. No app store needed.</p>
-                </div>
+              <DesktopInstallAnimation theme={theme} appName={appName} iconUrl={iconUrl} domain={domain} />
+
+              <div className="mt-5 text-center">
+                <p className="text-sm font-semibold mb-1" style={{ color: theme.text }}>Add it to your home screen</p>
+                <p className="text-xs leading-relaxed" style={{ color: theme.textMuted }}>
+                  Open this link on your phone (iPhone or Android), then tap Share, then Add to Home Screen. No app store needed.
+                </p>
               </div>
-              <button onClick={handleClose} className="w-full py-2.5 rounded-xl text-sm font-semibold transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+
+              {/* The URL to visit on the phone, with copy */}
+              <div className="mt-4 flex items-center gap-2 rounded-xl p-1.5 pl-3" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
+                <span className="flex-1 text-xs font-medium truncate" style={{ color: theme.text }}>{domain}</span>
+                <button
+                  onClick={copyUrl}
+                  className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition hover:opacity-90 flex-shrink-0"
+                  style={{ backgroundColor: copied ? hexToRgba(theme.primary, 0.15) : theme.primary, color: copied ? theme.primary : theme.primaryText }}
+                >
+                  {copied ? <><Check className="w-3.5 h-3.5" /> Copied</> : <><Copy className="w-3.5 h-3.5" /> Copy link</>}
+                </button>
+              </div>
+
+              <button onClick={handleClose} className="mt-3 w-full py-2.5 rounded-xl text-sm font-semibold transition" style={{ backgroundColor: 'transparent', color: theme.textMuted, border: `1px solid ${theme.border}` }}>
                 Got it
               </button>
             </div>
