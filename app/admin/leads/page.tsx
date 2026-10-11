@@ -10,6 +10,7 @@
 // ============================================================================
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import {
   Search, Loader2, Target, DollarSign, Plus, Trash2,
   FileSpreadsheet, BarChart3, Mail, Phone, Globe,
@@ -318,6 +319,7 @@ export default function AdminLeadsPage() {
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setShowCSVImport(true)} className="a-btn-ghost"><FileSpreadsheet className="h-4 w-4" />Import CSV</button>
+          <Link href="/admin/leads/finder" className="a-btn"><Phone className="h-4 w-4" />Find call centers</Link>
         </div>
       </div>
 
