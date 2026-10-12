@@ -78,38 +78,6 @@ function toolMeta(tool: string, fallbackLabel?: string) {
 
 const uid = () => `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
-// ---- Live audio format detection -------------------------------------------
-// VAPI's listen stream does not announce its format and it varies (8/16/24/32
-// kHz, mono OR interleaved stereo). We detect it from the real-time byte rate
-// and a channel heuristic, then play it. Assuming a fixed mono rate is what made
-// the audio sound like garbled "waves" on a stereo or off-rate stream.
-const STANDARD_RATES = [8000, 16000, 22050, 24000, 32000, 44100, 48000];
-function nearestRate(r: number): number {
-  let best = STANDARD_RATES[0];
-  let bd = Infinity;
-  for (const s of STANDARD_RATES) { const d = Math.abs(s - r); if (d < bd) { bd = d; best = s; } }
-  return best;
-}
-// Interleaved stereo [L,R,L,R...] has neighbouring samples (cross-channel) less
-// correlated than samples two apart (same channel), so neighbour diffs run
-// bigger. Mono audio is the opposite.
-function looksStereo(samples: Int16Array): boolean {
-  const n = Math.min(samples.length - 2, 8000);
-  if (n < 200) return false;
-  let d1 = 0, d2 = 0;
-  for (let i = 0; i < n; i++) {
-    d1 += Math.abs(samples[i + 1] - samples[i]);
-    d2 += Math.abs(samples[i + 2] - samples[i]);
-  }
-  return d1 > d2 * 1.15;
-}
-function concatInt16(chunks: Int16Array[]): Int16Array {
-  let len = 0; for (const c of chunks) len += c.length;
-  const out = new Int16Array(len); let o = 0;
-  for (const c of chunks) { out.set(c, o); o += c.length; }
-  return out;
-}
-
 // Read the agency's light/dark choice the same way useTheme does, synchronously,
 // so the first paint is already in the right mode.
 function readPrefersDark(): boolean {
@@ -171,11 +139,15 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
   const [controlBusy, setControlBusy] = useState(false);
   const [controlNote, setControlNote] = useState<string | null>(null);
 
-  // ---- Browser human-barge ("jump in and talk") ---------------------------
-  // The agent joins the live call and talks straight from the browser over
-  // WebRTC. arming = getting mic + token; connecting = backend dialing us; live
-  // = on the call; leaving = handing back / ending.
-  const [bargeState, setBargeState] = useState<'idle' | 'arming' | 'connecting' | 'live' | 'leaving'>('idle');
+  // ---- Live monitor seat (listen + jump-in), conference over WebRTC --------
+  // The supervisor is seated on the real call as a WebRTC participant: muted =
+  // listening (real-time audio, no sync knob), unmuted = talking to the caller.
+  //   arming      = getting mic + token
+  //   connecting  = backend seating us in the conference
+  //   listening   = on the call, muted (hearing it live)
+  //   barged      = talking to the caller (AI dropped)
+  //   leaving     = handing back / ending
+  const [bargeState, setBargeState] = useState<'idle' | 'arming' | 'connecting' | 'listening' | 'barged' | 'leaving'>('idle');
   const [bargeErr, setBargeErr] = useState<string | null>(null);
   const [agentMuted, setAgentMuted] = useState(false);
   const telnyxRtcRef = useRef<any>(null);
@@ -183,14 +155,6 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
   const localStreamRef = useRef<MediaStream | null>(null);
   const bargeStateRef = useRef<typeof bargeState>('idle');
   useEffect(() => { bargeStateRef.current = bargeState; }, [bargeState]);
-
-  const [listening, setListening] = useState(false);
-  const [listenRate, setListenRate] = useState(0); // 0 = auto-detect format
-  const [listenErr, setListenErr] = useState<string | null>(null);
-  const [listenInfo, setListenInfo] = useState<string | null>(null);
-  // Deliberately delay the audio so it lines up with the transcript (which
-  // trails the live speech by the transcription lag). Seconds.
-  const [syncDelay, setSyncDelay] = useState(1.5);
 
   const [prefersDark] = useState<boolean>(() => readPrefersDark());
   const t = useMemo(() => palette(prefersDark), [prefersDark]);
@@ -200,17 +164,7 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
   const callIdRef = useRef<string | null>(null);
   const seenIdsRef = useRef<Set<string>>(new Set());
   const transcriptEndRef = useRef<HTMLDivElement | null>(null);
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const audioWsRef = useRef<WebSocket | null>(null);
-  const audioOutRef = useRef<AudioNode | null>(null);
-  const nextTimeRef = useRef(0);
-  const listenRateRef = useRef(0);
-  const syncDelayRef = useRef(1.5);
-  const detectRef = useRef<{ started: number; bytes: number; pending: Int16Array[]; channels: number; rate: number; done: boolean } | null>(null);
   const scrollQueuedRef = useRef(false);
-
-  useEffect(() => { listenRateRef.current = listenRate; }, [listenRate]);
-  useEffect(() => { syncDelayRef.current = syncDelay; }, [syncDelay]);
 
   const token = useMemo(() => {
     try { return localStorage.getItem('auth_token') || ''; } catch { return ''; }
@@ -382,6 +336,36 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
     return () => { es.close(); esRef.current = null; };
   }, [mode, info, clientId, token, applyServerEvent, resetFeed]);
 
+  // Direct WebSocket events stream: the fast path. DigitalOcean's proxy buffers
+  // the SSE stream above, so transcript lines arrive late; a WebSocket upgrade is
+  // passed through frame by frame, so the same events land in real time. The
+  // browser de-dupes by id, so whichever path arrives first wins (this one), and
+  // SSE + Supabase stay as fallbacks if the socket drops.
+  useEffect(() => {
+    if (mode !== 'monitor' || !info) return;
+    let ws: WebSocket | null = null;
+    let closed = false;
+    let retry: any = null;
+    const open = () => {
+      if (closed) return;
+      try {
+        const wsBase = API.replace(/^http/, 'ws');
+        ws = new WebSocket(`${wsBase}/api/live/events?client=${encodeURIComponent(clientId)}&token=${encodeURIComponent(token)}`);
+        ws.onmessage = (e: MessageEvent) => {
+          try {
+            const ev = JSON.parse(e.data);
+            if (ev && ev.type === 'hello') return;
+            applyServerEvent(ev);
+          } catch { /* ignore */ }
+        };
+        ws.onclose = () => { if (!closed) { retry = setTimeout(open, 2000); } };
+        ws.onerror = () => { try { ws?.close(); } catch {} };
+      } catch { retry = setTimeout(open, 2000); }
+    };
+    open();
+    return () => { closed = true; if (retry) clearTimeout(retry); try { ws?.close(); } catch {} };
+  }, [mode, info, clientId, token, applyServerEvent]);
+
   // Supabase Realtime: the cross-instance delivery path. Subscribes to the same
   // events over a WebSocket straight to Supabase, so the monitor works even when
   // the backend runs multiple instances (the webhook may be on a different one
@@ -414,116 +398,6 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
 
   useEffect(() => () => { try { vapiRef.current?.stop(); } catch {} }, []);
 
-  // ---- live audio listen (monitor mode): stream raw PCM from the backend ---
-  const stopListen = useCallback(() => {
-    try { audioWsRef.current?.close(); } catch {}
-    try { audioCtxRef.current?.close(); } catch {}
-    audioWsRef.current = null; audioCtxRef.current = null;
-    audioOutRef.current = null; detectRef.current = null;
-    setListening(false); setListenInfo(null);
-  }, []);
-
-  const startListen = useCallback(() => {
-    const callId = callIdRef.current;
-    if (!callId) { setListenErr('No live call to listen to yet.'); return; }
-    setListenErr(null); setListenInfo(null);
-    try {
-      const Ctor: any = (window as any).AudioContext || (window as any).webkitAudioContext;
-      if (!Ctor) { setListenErr('This browser has no Web Audio support.'); return; }
-      const ctx: AudioContext = new Ctor();
-      audioCtxRef.current = ctx;
-      if (ctx.state === 'suspended') { try { ctx.resume(); } catch {} }
-
-      // Output chain: phone audio is quiet, so lift it and run a limiter so the
-      // boost never clips.
-      const gain = ctx.createGain(); gain.gain.value = 2.2;
-      const limiter = ctx.createDynamicsCompressor();
-      limiter.threshold.value = -6; limiter.knee.value = 6; limiter.ratio.value = 12;
-      limiter.attack.value = 0.003; limiter.release.value = 0.12;
-      gain.connect(limiter); limiter.connect(ctx.destination);
-      audioOutRef.current = gain;
-
-      nextTimeRef.current = 0;
-      // listenRateRef > 0 means the user forced a rate (mono); 0 means auto-detect.
-      const forced = listenRateRef.current;
-      detectRef.current = { started: 0, bytes: 0, pending: [], channels: 1, rate: forced || 0, done: forced > 0 };
-      if (forced > 0) setListenInfo(`${forced / 1000}kHz mono (manual)`);
-
-      const schedule = (int16: Int16Array) => {
-        const c = audioCtxRef.current; const d = detectRef.current;
-        if (!c || !d || !d.done || !d.rate) return;
-        let frames: number; let f32: Float32Array;
-        if (d.channels === 2) {
-          frames = int16.length >> 1;
-          f32 = new Float32Array(frames);
-          for (let i = 0; i < frames; i++) f32[i] = ((int16[2 * i] + int16[2 * i + 1]) * 0.5) / 32768;
-        } else {
-          frames = int16.length;
-          f32 = new Float32Array(frames);
-          for (let i = 0; i < frames; i++) f32[i] = int16[i] / 32768;
-        }
-        if (!frames) return;
-        const abuf = c.createBuffer(1, frames, d.rate);
-        abuf.getChannelData(0).set(f32);
-        const node = c.createBufferSource();
-        node.buffer = abuf;
-        node.connect(audioOutRef.current || c.destination);
-        // Lead time = the sync delay (so audio lines up with the transcript),
-        // floored at a small jitter buffer so playback never underruns.
-        if (nextTimeRef.current === 0) nextTimeRef.current = c.currentTime + Math.max(syncDelayRef.current, 0.15);
-        const at = Math.max(nextTimeRef.current, c.currentTime + 0.02);
-        node.start(at);
-        nextTimeRef.current = at + abuf.duration;
-      };
-
-      const wsBase = API.replace(/^http/, 'ws'); // https -> wss, http -> ws
-      const url = `${wsBase}/api/live/audio?client=${encodeURIComponent(clientId)}&call=${encodeURIComponent(callId)}&token=${encodeURIComponent(token)}`;
-      const ws = new WebSocket(url);
-      ws.binaryType = 'arraybuffer';
-
-      ws.onmessage = (e: MessageEvent) => {
-        if (typeof e.data === 'string') {
-          try { const m = JSON.parse(e.data); if (m.type === 'error') setListenErr(m.error || 'Listen error'); } catch {}
-          return;
-        }
-        const raw = e.data as ArrayBuffer;
-        if (!raw || (raw.byteLength & 1)) return; // need whole 16-bit samples
-        const int16 = new Int16Array(raw);
-        if (!int16.length) return;
-        const d = detectRef.current;
-        if (!d) return;
-        if (d.done) { schedule(int16); return; }
-        // Detection window: measure the real-time byte rate + channel layout over
-        // the first ~1.5s, then derive the sample rate (bytes/sec / (2*channels)).
-        const now = performance.now();
-        if (d.started === 0) d.started = now; else d.bytes += int16.byteLength;
-        d.pending.push(int16);
-        if (now - d.started >= 1500 && d.bytes > 0) {
-          const flat = d.pending.length === 1 ? d.pending[0] : concatInt16(d.pending);
-          const channels = looksStereo(flat) ? 2 : 1;
-          const secs = (now - d.started) / 1000;
-          const rate = nearestRate((d.bytes / secs) / (2 * channels));
-          d.channels = channels; d.rate = rate; d.done = true;
-          setListenInfo(`${rate / 1000}kHz ${channels === 2 ? 'stereo' : 'mono'}`);
-          nextTimeRef.current = 0;
-          for (const chunk of d.pending) schedule(chunk);
-          d.pending = [];
-        }
-      };
-      ws.onclose = () => setListening(false);
-      ws.onerror = () => setListenErr('Could not connect to the live audio.');
-      audioWsRef.current = ws;
-      setListening(true);
-    } catch (e: any) {
-      setListenErr(e?.message || 'Could not start listening.');
-    }
-  }, [clientId, token]);
-
-  useEffect(() => () => {
-    try { audioWsRef.current?.close(); } catch {}
-    try { audioCtxRef.current?.close(); } catch {}
-  }, []);
-
   const sendControl = useCallback(async (action: string, extra?: Record<string, any>) => {
     const callId = callIdRef.current;
     if (!callId) { setControlNote('No live call to control yet.'); return; }
@@ -545,8 +419,8 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
     }
   }, [clientId, token]);
 
-  // ---- browser human-barge: join the live call and talk from here ----------
-  const startBarge = useCallback(async () => {
+  // ---- take a seat on the live call (listen), over WebRTC -------------------
+  const startListen = useCallback(async () => {
     const callId = callIdRef.current;
     if (!callId) { setBargeErr('No live call to join yet.'); return; }
     setBargeErr(null);
@@ -584,18 +458,20 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
       try { rtc.enableMicrophone?.(); } catch {}
 
       rtc.on('telnyx.ready', async () => {
-        // 4) Ask the backend to dial this browser and swap the AI out.
+        // 4) Ask the backend to seat us in the call's conference as a muted
+        //    monitor (listen). It promotes the call to a conference and dials
+        //    this browser in. We stay muted until the agent chooses to jump in.
         try {
-          const jiRes = await fetch(`${API}/api/client/${clientId}/live/jump-in`, {
+          const lsRes = await fetch(`${API}/api/client/${clientId}/live/listen-start`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
             body: JSON.stringify({ callId }),
           });
-          const ji = await jiRes.json();
-          if (!jiRes.ok || !ji.success) throw new Error(ji.error || 'Could not join the call.');
+          const ls = await lsRes.json();
+          if (!lsRes.ok || !ls.success) throw new Error(ls.error || 'Could not open live audio.');
           setBargeState('connecting');
         } catch (e: any) {
-          setBargeErr(e?.message || 'Could not join the call.');
+          setBargeErr(e?.message || 'Could not open live audio.');
           cleanupBarge();
           setBargeState('idle');
         }
@@ -607,16 +483,18 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
         telnyxCallRef.current = call;
         const st = call.state;
         if (st === 'ringing') {
-          // Inbound dial from our backend: answer it to go on the call.
+          // Inbound dial from our backend: answer it to take the seat.
           try { call.answer(); } catch {}
         } else if (st === 'active') {
           try {
             const el: any = document.getElementById('barge-remote-audio');
             if (el && call.remoteStream) { el.srcObject = call.remoteStream; el.play?.().catch(() => {}); }
           } catch {}
-          setBargeState('live');
+          // Seated: hearing the call live. Stay in 'barged' if we already
+          // escalated (the audio leg is shared across listen and talk).
+          setBargeState((s) => (s === 'barged' ? 'barged' : 'listening'));
         } else if (st === 'hangup' || st === 'destroy') {
-          if (bargeStateRef.current === 'live' || bargeStateRef.current === 'connecting') {
+          if (bargeStateRef.current !== 'idle' && bargeStateRef.current !== 'leaving') {
             cleanupBarge();
             setBargeState('idle');
           }
@@ -632,22 +510,70 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
     }
   }, [clientId, token, cleanupBarge]);
 
-  // Leave the call: hand the caller back to the AI, or end the call outright.
-  const jumpOut = useCallback(async (leaveMode: 'return_ai' | 'end_call') => {
+  // Jump in: flip the seat from listening to talking (the backend drops the AI
+  // and unmutes us in the conference). The WebRTC leg stays up throughout.
+  const jumpIn = useCallback(async () => {
+    const callId = callIdRef.current;
+    if (!callId) return;
+    try {
+      const r = await fetch(`${API}/api/client/${clientId}/live/jump-in`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ callId }),
+      });
+      const d = await r.json();
+      if (!r.ok || !d.success) throw new Error(d.error || 'Could not jump in.');
+      setBargeState('barged');
+      setAgentMuted(false);
+    } catch (e: any) {
+      setBargeErr(e?.message || 'Could not jump in.');
+    }
+  }, [clientId, token]);
+
+  // Hand the caller back to the AI but STAY seated, listening.
+  const handBack = useCallback(async () => {
+    const callId = callIdRef.current;
+    try {
+      await fetch(`${API}/api/client/${clientId}/live/jump-out`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ callId, mode: 'return_ai' }),
+      });
+    } catch {}
+    setBargeState('listening');
+  }, [clientId, token]);
+
+  // End the call outright (hangs up the caller), then drop our seat.
+  const endCall = useCallback(async () => {
     const callId = callIdRef.current;
     setBargeState('leaving');
     try {
       await fetch(`${API}/api/client/${clientId}/live/jump-out`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ callId, mode: leaveMode }),
+        body: JSON.stringify({ callId, mode: 'end_call' }),
       });
-    } catch { /* the browser hangup below still frees this side */ }
+    } catch {}
     cleanupBarge();
     setBargeState('idle');
   }, [clientId, token, cleanupBarge]);
 
-  // Mute / unmute the agent's own microphone during a barge.
+  // Stop listening: leave the seat. The call continues with the AI.
+  const stopListen = useCallback(async () => {
+    const callId = callIdRef.current;
+    setBargeState('leaving');
+    try {
+      await fetch(`${API}/api/client/${clientId}/live/listen-stop`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ callId }),
+      });
+    } catch {}
+    cleanupBarge();
+    setBargeState('idle');
+  }, [clientId, token, cleanupBarge]);
+
+  // Mute / unmute the supervisor's own microphone (only meaningful while barged).
   const toggleAgentMute = useCallback(() => {
     const call = telnyxCallRef.current;
     if (!call) return;
@@ -657,7 +583,7 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
     } catch {}
   }, [agentMuted]);
 
-  // Clean up the barge leg if the component unmounts mid-call.
+  // Clean up the seat if the component unmounts mid-call.
   useEffect(() => () => { cleanupBarge(); }, [cleanupBarge]);
 
   // Watchdog: if we ask to join but never go live (e.g. the backend dial is
@@ -721,50 +647,6 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {mode === 'monitor' && (
-            <div className="flex items-center gap-1.5">
-              <select
-                value={listenRate}
-                onChange={(e) => setListenRate(Number(e.target.value))}
-                title="Audio format. Auto detects it; pick a kHz only if auto sounds wrong."
-                className="rounded-lg text-xs px-2 py-1.5 outline-none"
-                style={{ backgroundColor: t.inputBg, border: `1px solid ${t.border}`, color: t.text }}
-              >
-                <option value={0}>Auto</option>
-                <option value={8000}>8 kHz</option>
-                <option value={16000}>16 kHz</option>
-                <option value={24000}>24 kHz</option>
-                <option value={32000}>32 kHz</option>
-              </select>
-              <select
-                value={syncDelay}
-                onChange={(e) => { setSyncDelay(Number(e.target.value)); nextTimeRef.current = 0; }}
-                title="Delay the audio so it lines up with the transcript. Raise it if the voice runs ahead of the text."
-                className="rounded-lg text-xs px-2 py-1.5 outline-none"
-                style={{ backgroundColor: t.inputBg, border: `1px solid ${t.border}`, color: t.text }}
-              >
-                <option value={0}>Live</option>
-                <option value={0.5}>Sync +0.5s</option>
-                <option value={1}>Sync +1s</option>
-                <option value={1.5}>Sync +1.5s</option>
-                <option value={2}>Sync +2s</option>
-                <option value={2.5}>Sync +2.5s</option>
-              </select>
-              {!listening ? (
-                <button onClick={startListen} disabled={callState !== 'live'}
-                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold disabled:opacity-40"
-                        style={{ backgroundColor: accent, color: accentText }}>
-                  <Headphones className="h-4 w-4" /> Listen
-                </button>
-              ) : (
-                <button onClick={stopListen}
-                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold"
-                        style={{ backgroundColor: t.surfaceStrong, color: t.text }}>
-                  <VolumeX className="h-4 w-4" /> Stop
-                </button>
-              )}
-            </div>
-          )}
           <StatusPill state={callState} label={statusLabel} t={t} />
         </div>
       </header>
@@ -873,11 +755,12 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
 
       {/* Footer controls */}
       <footer className="px-4 sm:px-6 py-4 flex items-center justify-between gap-3" style={{ borderTop: `1px solid ${t.border}` }}>
-        <div className="min-h-[1.25rem] text-xs truncate" style={{ color: (bargeErr || listenErr) ? t.err : t.textMuted }}>
-          {bargeErr || listenErr || controlNote
-            || (bargeState === 'live' ? 'You are on the call, talking to the caller'
-              : bargeState === 'connecting' ? 'Joining the call...'
-              : listening ? (listenInfo ? `Listening to the live call (${listenInfo})` : 'Listening to the live call...')
+        <div className="min-h-[1.25rem] text-xs truncate" style={{ color: bargeErr ? t.err : t.textMuted }}>
+          {bargeErr || controlNote
+            || (bargeState === 'barged' ? 'You are on the call, talking to the caller'
+              : bargeState === 'listening' ? 'Listening live to the call'
+              : bargeState === 'connecting' ? 'Connecting your audio...'
+              : bargeState === 'arming' ? 'Preparing your audio...'
               : speaking === 'assistant' ? 'AI is speaking...'
               : live ? 'Call in progress' : '')}
         </div>
@@ -903,26 +786,35 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
           <div className="flex items-center gap-2">
             {bargeState === 'idle' ? (
               <button
-                onClick={startBarge}
+                onClick={startListen}
                 disabled={callState !== 'live' || !!bridged}
-                title={bridged ? 'The caller is already with a team member' : callState !== 'live' ? 'Available during a live call' : 'Join this call and talk to the caller'}
+                title={bridged ? 'The caller is already with a team member' : callState !== 'live' ? 'Available during a live call' : 'Listen in on this call'}
                 className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold disabled:opacity-40"
                 style={{ backgroundColor: accent, color: accentText }}>
-                <UserPlus className="h-4 w-4" /> Jump in and talk
+                <Headphones className="h-4 w-4" /> Listen in
               </button>
             ) : bargeState === 'arming' || bargeState === 'connecting' ? (
               <button disabled className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold opacity-80" style={{ backgroundColor: accent, color: accentText }}>
-                <Loader2 className="h-4 w-4 animate-spin" /> {bargeState === 'arming' ? 'Preparing...' : 'Joining...'}
+                <Loader2 className="h-4 w-4 animate-spin" /> {bargeState === 'arming' ? 'Preparing...' : 'Connecting...'}
               </button>
-            ) : bargeState === 'live' ? (
+            ) : bargeState === 'listening' ? (
+              <>
+                <button onClick={jumpIn} className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold" style={{ backgroundColor: accent, color: accentText }}>
+                  <UserPlus className="h-4 w-4" /> Jump in and talk
+                </button>
+                <button onClick={stopListen} className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold" style={{ backgroundColor: t.surfaceStrong, color: t.text }}>
+                  <VolumeX className="h-4 w-4" /> Stop listening
+                </button>
+              </>
+            ) : bargeState === 'barged' ? (
               <>
                 <button onClick={toggleAgentMute} className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold" style={{ backgroundColor: t.surfaceStrong, color: t.text }}>
                   {agentMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />} {agentMuted ? 'Unmute' : 'Mute'}
                 </button>
-                <button onClick={() => jumpOut('return_ai')} className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold" style={{ backgroundColor: t.surfaceStrong, color: t.text }}>
+                <button onClick={handBack} className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold" style={{ backgroundColor: t.surfaceStrong, color: t.text }}>
                   <Undo2 className="h-4 w-4" /> Hand back to AI
                 </button>
-                <button onClick={() => jumpOut('end_call')} className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white" style={{ backgroundColor: 'rgba(239,68,68,0.9)' }}>
+                <button onClick={endCall} className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white" style={{ backgroundColor: 'rgba(239,68,68,0.9)' }}>
                   <PhoneOff className="h-4 w-4" /> End call
                 </button>
               </>
