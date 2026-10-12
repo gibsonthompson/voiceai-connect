@@ -132,6 +132,11 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
   // of looking frozen. Cleared when the caller returns to the AI or the call ends.
   const [bridged, setBridged] = useState<string | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
+  // Live delivery readout: which transport delivered the most recent transcript
+  // line first (ws / sse / supabase) and how long it took from the backend
+  // stamping it to arriving here. Proves the WebSocket fast path is actually
+  // winning in production instead of silently falling back to buffered SSE.
+  const [feedStat, setFeedStat] = useState<{ via: string; ms: number } | null>(null);
 
   const [takeoverOpen, setTakeoverOpen] = useState(false);
   const [sayText, setSayText] = useState('');
@@ -164,6 +169,11 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
   const callIdRef = useRef<string | null>(null);
   const seenIdsRef = useRef<Set<string>>(new Set());
   const transcriptEndRef = useRef<HTMLDivElement | null>(null);
+  const transcriptScrollRef = useRef<HTMLDivElement | null>(null);
+  // Sticky-to-bottom: true while the viewer is parked at the latest line. Set
+  // from the viewer's own scrolling; a programmatic scroll-to-bottom keeps it
+  // true, scrolling up turns it off so the feed never yanks them back down.
+  const stickToBottomRef = useRef(true);
   const scrollQueuedRef = useRef(false);
 
   const token = useMemo(() => {
@@ -218,16 +228,20 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
   }, []);
 
   useEffect(() => {
-    // Throttle to one scroll per animation frame and keep it instant, so rapid
-    // partial-transcript updates do not queue smooth-scroll animations (which
-    // read as lag). Keeps the newest line in view in real time.
+    // Keep the transcript pinned to the newest line WITHOUT touching the page.
+    // We scroll the transcript container itself (not scrollIntoView, which
+    // bubbles up and jerks the whole frame down on every partial), and only when
+    // the viewer is already at the bottom, so reading back is never yanked.
+    // Throttled to one scroll per frame so rapid partial updates don't thrash.
+    if (!stickToBottomRef.current) return;
     if (scrollQueuedRef.current) return;
     scrollQueuedRef.current = true;
     requestAnimationFrame(() => {
       scrollQueuedRef.current = false;
-      transcriptEndRef.current?.scrollIntoView({ block: 'end' });
+      const el = transcriptScrollRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
     });
-  }, [lines, partial, activities]);
+  }, [lines, partial]);
 
   // ---- DEMO mode: browser call via the Vapi web SDK ------------------------
   const startDemo = useCallback(() => {
@@ -284,16 +298,22 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
   }, [addLine, addActivity]);
 
   // ---- MONITOR mode: SSE stream of a real call -----------------------------
-  const applyServerEvent = useCallback((ev: any) => {
+  const applyServerEvent = useCallback((ev: any, via: string = 'sse') => {
     if (!ev || !ev.type) return;
-    // The same event can arrive on both the SSE stream and the Supabase Realtime
-    // channel; de-duplicate by its stamped id so it renders once.
+    // The same event can arrive on all three transports (WS / SSE / Supabase);
+    // de-duplicate by its stamped id so it renders once. Whichever transport
+    // delivers an id FIRST wins here, so recording the winner + latency at this
+    // point measures the real path the viewer is actually getting.
     if (ev.id) {
       if (seenIdsRef.current.has(ev.id)) return;
       seenIdsRef.current.add(ev.id);
       if (seenIdsRef.current.size > 1000) seenIdsRef.current.clear();
     }
     if (ev.callId) callIdRef.current = ev.callId;
+    if (ev.type === 'transcript' && typeof ev.ts === 'number') {
+      const ms = Date.now() - ev.ts;
+      if (ms >= 0 && ms < 120000) setFeedStat({ via, ms });
+    }
     if (ev.type === 'transcript') {
       if (ev.final) { setPartial(null); addLine(ev.role === 'caller' ? 'caller' : 'assistant', ev.text || ''); }
       else setPartial({ role: ev.role === 'caller' ? 'caller' : 'assistant', text: ev.text || '' });
@@ -330,7 +350,7 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
     esRef.current = es;
     es.addEventListener('hello', () => setStatusLabel('Waiting for a call'));
     es.addEventListener('event', (e: MessageEvent) => {
-      try { applyServerEvent(JSON.parse(e.data)); } catch { /* ignore */ }
+      try { applyServerEvent(JSON.parse(e.data), 'sse'); } catch { /* ignore */ }
     });
     es.onerror = () => { /* EventSource auto-reconnects; keep quiet */ };
     return () => { es.close(); esRef.current = null; };
@@ -355,7 +375,7 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
           try {
             const ev = JSON.parse(e.data);
             if (ev && ev.type === 'hello') return;
-            applyServerEvent(ev);
+            applyServerEvent(ev, 'ws');
           } catch { /* ignore */ }
         };
         ws.onclose = () => { if (!closed) { retry = setTimeout(open, 2000); } };
@@ -377,7 +397,7 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
       client = createClient(SUPABASE_URL, SUPABASE_ANON, { realtime: { params: { eventsPerSecond: 40 } } });
       const ch = client.channel(info.realtime_channel, { config: { broadcast: { self: false } } });
       ch.on('broadcast', { event: 'event' }, (msg: any) => {
-        try { applyServerEvent(msg?.payload); } catch { /* ignore */ }
+        try { applyServerEvent(msg?.payload, 'supabase'); } catch { /* ignore */ }
       });
       ch.subscribe();
       return () => { try { client.removeChannel(ch); } catch {} };
@@ -658,8 +678,24 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
           <div className="px-4 sm:px-6 py-3 flex items-center gap-2" style={{ borderBottom: `1px solid ${t.borderSubtle}` }}>
             <Radio className="h-4 w-4" style={{ color: accent }} />
             <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: t.textMuted }}>Live transcript</span>
+            {feedStat && (
+              <span
+                className="ml-auto text-[10px] font-semibold uppercase tracking-wider tabular-nums"
+                title="Transport that delivered the latest line first, and its delay from the server. ws = real-time WebSocket; sse means the fast path isn't winning."
+                style={{ color: feedStat.via === 'ws' && feedStat.ms < 800 ? '#16a34a' : t.textFaint }}
+              >
+                {feedStat.via} · {feedStat.ms}ms
+              </span>
+            )}
           </div>
-          <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-3">
+          <div
+            ref={transcriptScrollRef}
+            onScroll={(e) => {
+              const el = e.currentTarget;
+              stickToBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+            }}
+            className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-3"
+          >
             {lines.length === 0 && !partial && !bridged && (
               <div className="h-full flex flex-col items-center justify-center text-center py-16">
                 <CircleDot className="h-8 w-8 mb-3" style={{ color: t.textFaint }} />
