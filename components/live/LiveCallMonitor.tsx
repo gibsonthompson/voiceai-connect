@@ -27,7 +27,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Phone, PhoneOff, Mic, MicOff, Radio, Loader2, Calendar, CalendarCheck,
   BookOpen, PhoneForwarded, MessageSquare, Sparkles, Send, Building2,
-  ChevronRight, CircleDot, Headphones, VolumeX,
+  ChevronRight, CircleDot, Headphones, VolumeX, UserPlus, Undo2,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -50,6 +50,9 @@ interface Info {
   branding: Branding;
   web_demo_available: boolean;
   realtime_channel?: string;
+  // Browser human-barge ("jump in and talk") is only offered on own-the-call
+  // numbers, where the backend owns the caller leg and can bridge the browser in.
+  barge_supported?: boolean;
 }
 
 interface Line { id: string; role: 'caller' | 'assistant'; text: string; }
@@ -66,6 +69,8 @@ const TOOL_META: Record<string, { label: string; Icon: any }> = {
   request_human_transfer: { label: 'Connecting to the team', Icon: PhoneForwarded },
   transferCall: { label: 'Transferring the call', Icon: PhoneForwarded },
   send_sms: { label: 'Texting the caller', Icon: MessageSquare },
+  barge_connected: { label: 'A teammate joined the call', Icon: UserPlus },
+  barge_ended: { label: 'Teammate left the call', Icon: Undo2 },
 };
 function toolMeta(tool: string, fallbackLabel?: string) {
   return TOOL_META[tool] || { label: fallbackLabel || 'Working on it', Icon: Sparkles };
@@ -166,6 +171,19 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
   const [controlBusy, setControlBusy] = useState(false);
   const [controlNote, setControlNote] = useState<string | null>(null);
 
+  // ---- Browser human-barge ("jump in and talk") ---------------------------
+  // The agent joins the live call and talks straight from the browser over
+  // WebRTC. arming = getting mic + token; connecting = backend dialing us; live
+  // = on the call; leaving = handing back / ending.
+  const [bargeState, setBargeState] = useState<'idle' | 'arming' | 'connecting' | 'live' | 'leaving'>('idle');
+  const [bargeErr, setBargeErr] = useState<string | null>(null);
+  const [agentMuted, setAgentMuted] = useState(false);
+  const telnyxRtcRef = useRef<any>(null);
+  const telnyxCallRef = useRef<any>(null);
+  const localStreamRef = useRef<MediaStream | null>(null);
+  const bargeStateRef = useRef<typeof bargeState>('idle');
+  useEffect(() => { bargeStateRef.current = bargeState; }, [bargeState]);
+
   const [listening, setListening] = useState(false);
   const [listenRate, setListenRate] = useState(0); // 0 = auto-detect format
   const [listenErr, setListenErr] = useState<string | null>(null);
@@ -234,6 +252,15 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
 
   const resetFeed = useCallback(() => {
     setLines([]); setPartial(null); setActivities([]);
+  }, []);
+
+  // Tear down the browser WebRTC leg + mic. Safe to call repeatedly.
+  const cleanupBarge = useCallback(() => {
+    try { telnyxCallRef.current?.hangup(); } catch {}
+    try { telnyxRtcRef.current?.disconnect(); } catch {}
+    try { localStreamRef.current?.getTracks().forEach((tr) => tr.stop()); } catch {}
+    telnyxCallRef.current = null; telnyxRtcRef.current = null; localStreamRef.current = null;
+    setAgentMuted(false);
   }, []);
 
   useEffect(() => {
@@ -329,11 +356,17 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
       // tells the viewer where the call is.
       else if (s === 'dialing_team' || s === 'transferring') { setCallState('live'); setStatusLabel(lbl || 'Transferring to the team'); }
       else if (s === 'bridged') { setCallState('live'); setStatusLabel(lbl || 'Connected to the team'); setBridged(lbl || 'Connected to the team'); setPartial(null); }
-      else if (s === 'ended') { setCallState('ended'); setStatusLabel('Call ended'); setSpeaking(null); setPartial(null); setBridged(null); }
+      // Browser human-barge: a teammate joined and is talking to the caller. Stay
+      // "live"; the pill tells every viewer a person is on. The viewer who
+      // actually jumped in gets their own live state from the WebRTC leg.
+      else if (s === 'agent_connected') { setCallState('live'); setStatusLabel(lbl || 'Teammate on the call'); setBridged(null); setPartial(null); }
+      else if (s === 'ended') { setCallState('ended'); setStatusLabel('Call ended'); setSpeaking(null); setPartial(null); setBridged(null); if (bargeStateRef.current !== 'idle') { cleanupBarge(); setBargeState('idle'); } }
     } else if (ev.type === 'takeover') {
-      addActivity('request_human_transfer', ev.text || null, `You stepped in (${ev.action})`);
+      if (ev.action === 'jump_in') addActivity('barge_connected', null, 'A teammate joined the call');
+      else if (ev.action === 'jump_out') addActivity('barge_ended', null, ev.mode === 'end_call' ? 'Teammate ended the call' : 'Teammate handed back to the AI');
+      else addActivity('request_human_transfer', ev.text || null, `You stepped in (${ev.action})`);
     }
-  }, [addLine, addActivity]);
+  }, [addLine, addActivity, cleanupBarge]);
 
   useEffect(() => {
     if (mode !== 'monitor' || !info) return;
@@ -511,6 +544,121 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
       setControlBusy(false);
     }
   }, [clientId, token]);
+
+  // ---- browser human-barge: join the live call and talk from here ----------
+  const startBarge = useCallback(async () => {
+    const callId = callIdRef.current;
+    if (!callId) { setBargeErr('No live call to join yet.'); return; }
+    setBargeErr(null);
+    setBargeState('arming');
+
+    // 1) Mic permission first, so we fail fast with a clear message rather than
+    //    half-joining a call with no audio.
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      setBargeState('idle');
+      setBargeErr('Allow microphone access to join the call.');
+      return;
+    }
+    localStreamRef.current = stream;
+
+    try {
+      // 2) Mint a short-lived WebRTC token for this call.
+      const tokRes = await fetch(`${API}/api/client/${clientId}/live/webrtc-token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ callId }),
+      });
+      const tok = await tokRes.json();
+      if (!tokRes.ok || !tok.success) throw new Error(tok.error || 'Could not set up browser audio.');
+
+      // 3) Register as a Telnyx WebRTC endpoint.
+      const mod: any = await import('@telnyx/webrtc');
+      const TelnyxRTC = mod.TelnyxRTC;
+      const rtc = new TelnyxRTC({ login_token: tok.login_token });
+      telnyxRtcRef.current = rtc;
+      // Play the caller's audio through the hidden <audio> element.
+      try { rtc.remoteElement = 'barge-remote-audio'; } catch {}
+      try { rtc.enableMicrophone?.(); } catch {}
+
+      rtc.on('telnyx.ready', async () => {
+        // 4) Ask the backend to dial this browser and swap the AI out.
+        try {
+          const jiRes = await fetch(`${API}/api/client/${clientId}/live/jump-in`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ callId }),
+          });
+          const ji = await jiRes.json();
+          if (!jiRes.ok || !ji.success) throw new Error(ji.error || 'Could not join the call.');
+          setBargeState('connecting');
+        } catch (e: any) {
+          setBargeErr(e?.message || 'Could not join the call.');
+          cleanupBarge();
+          setBargeState('idle');
+        }
+      });
+
+      rtc.on('telnyx.notification', (n: any) => {
+        const call = n?.call;
+        if (!call) return;
+        telnyxCallRef.current = call;
+        const st = call.state;
+        if (st === 'ringing') {
+          // Inbound dial from our backend: answer it to go on the call.
+          try { call.answer(); } catch {}
+        } else if (st === 'active') {
+          try {
+            const el: any = document.getElementById('barge-remote-audio');
+            if (el && call.remoteStream) { el.srcObject = call.remoteStream; el.play?.().catch(() => {}); }
+          } catch {}
+          setBargeState('live');
+        } else if (st === 'hangup' || st === 'destroy') {
+          if (bargeStateRef.current === 'live' || bargeStateRef.current === 'connecting') {
+            cleanupBarge();
+            setBargeState('idle');
+          }
+        }
+      });
+
+      rtc.on('telnyx.error', () => { setBargeErr('Browser audio error. Try again.'); });
+      rtc.connect();
+    } catch (e: any) {
+      setBargeErr(e?.message || 'Could not join the call.');
+      cleanupBarge();
+      setBargeState('idle');
+    }
+  }, [clientId, token, cleanupBarge]);
+
+  // Leave the call: hand the caller back to the AI, or end the call outright.
+  const jumpOut = useCallback(async (leaveMode: 'return_ai' | 'end_call') => {
+    const callId = callIdRef.current;
+    setBargeState('leaving');
+    try {
+      await fetch(`${API}/api/client/${clientId}/live/jump-out`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ callId, mode: leaveMode }),
+      });
+    } catch { /* the browser hangup below still frees this side */ }
+    cleanupBarge();
+    setBargeState('idle');
+  }, [clientId, token, cleanupBarge]);
+
+  // Mute / unmute the agent's own microphone during a barge.
+  const toggleAgentMute = useCallback(() => {
+    const call = telnyxCallRef.current;
+    if (!call) return;
+    try {
+      if (agentMuted) { call.unmuteAudio(); setAgentMuted(false); }
+      else { call.muteAudio(); setAgentMuted(true); }
+    } catch {}
+  }, [agentMuted]);
+
+  // Clean up the barge leg if the component unmounts mid-call.
+  useEffect(() => () => { cleanupBarge(); }, [cleanupBarge]);
 
   // ---- render --------------------------------------------------------------
   if (loadErr) {
@@ -705,10 +853,18 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
         </aside>
       </div>
 
+      {/* Hidden sink for the caller's audio while an agent is barged in. */}
+      <audio id="barge-remote-audio" autoPlay playsInline style={{ display: 'none' }} />
+
       {/* Footer controls */}
       <footer className="px-4 sm:px-6 py-4 flex items-center justify-between gap-3" style={{ borderTop: `1px solid ${t.border}` }}>
-        <div className="min-h-[1.25rem] text-xs truncate" style={{ color: listenErr ? t.err : t.textMuted }}>
-          {listenErr || controlNote || (listening ? (listenInfo ? `Listening to the live call (${listenInfo})` : 'Listening to the live call...') : speaking === 'assistant' ? 'AI is speaking...' : live ? 'Call in progress' : '')}
+        <div className="min-h-[1.25rem] text-xs truncate" style={{ color: (bargeErr || listenErr) ? t.err : t.textMuted }}>
+          {bargeErr || listenErr || controlNote
+            || (bargeState === 'live' ? 'You are on the call, talking to the caller'
+              : bargeState === 'connecting' ? 'Joining the call...'
+              : listening ? (listenInfo ? `Listening to the live call (${listenInfo})` : 'Listening to the live call...')
+              : speaking === 'assistant' ? 'AI is speaking...'
+              : live ? 'Call in progress' : '')}
         </div>
         {isDemo ? (
           <div className="flex items-center gap-2">
@@ -726,6 +882,39 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
                   {callState === 'connecting' ? <Loader2 className="h-4 w-4 animate-spin" /> : <PhoneOff className="h-4 w-4" />} End
                 </button>
               </>
+            )}
+          </div>
+        ) : info.barge_supported ? (
+          <div className="flex items-center gap-2">
+            {bargeState === 'idle' ? (
+              <button
+                onClick={startBarge}
+                disabled={callState !== 'live' || !!bridged}
+                title={bridged ? 'The caller is already with a team member' : callState !== 'live' ? 'Available during a live call' : 'Join this call and talk to the caller'}
+                className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold disabled:opacity-40"
+                style={{ backgroundColor: accent, color: accentText }}>
+                <UserPlus className="h-4 w-4" /> Jump in and talk
+              </button>
+            ) : bargeState === 'arming' || bargeState === 'connecting' ? (
+              <button disabled className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold opacity-80" style={{ backgroundColor: accent, color: accentText }}>
+                <Loader2 className="h-4 w-4 animate-spin" /> {bargeState === 'arming' ? 'Preparing...' : 'Joining...'}
+              </button>
+            ) : bargeState === 'live' ? (
+              <>
+                <button onClick={toggleAgentMute} className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold" style={{ backgroundColor: t.surfaceStrong, color: t.text }}>
+                  {agentMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />} {agentMuted ? 'Unmute' : 'Mute'}
+                </button>
+                <button onClick={() => jumpOut('return_ai')} className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold" style={{ backgroundColor: t.surfaceStrong, color: t.text }}>
+                  <Undo2 className="h-4 w-4" /> Hand back to AI
+                </button>
+                <button onClick={() => jumpOut('end_call')} className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white" style={{ backgroundColor: 'rgba(239,68,68,0.9)' }}>
+                  <PhoneOff className="h-4 w-4" /> End call
+                </button>
+              </>
+            ) : (
+              <button disabled className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold opacity-80" style={{ backgroundColor: t.surfaceStrong, color: t.text }}>
+                <Loader2 className="h-4 w-4 animate-spin" /> Leaving...
+              </button>
             )}
           </div>
         ) : (
