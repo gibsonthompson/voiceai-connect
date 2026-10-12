@@ -660,6 +660,21 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
   // Clean up the barge leg if the component unmounts mid-call.
   useEffect(() => () => { cleanupBarge(); }, [cleanupBarge]);
 
+  // Watchdog: if we ask to join but never go live (e.g. the backend dial is
+  // refused, or the browser is never rung), don't sit on "Joining..." forever.
+  // Reset after a grace period so the agent can try again.
+  useEffect(() => {
+    if (bargeState !== 'arming' && bargeState !== 'connecting') return;
+    const timer = setTimeout(() => {
+      if (bargeStateRef.current === 'arming' || bargeStateRef.current === 'connecting') {
+        cleanupBarge();
+        setBargeErr('Could not connect you to the call. Please try again.');
+        setBargeState('idle');
+      }
+    }, 20000);
+    return () => clearTimeout(timer);
+  }, [bargeState, cleanupBarge]);
+
   // ---- render --------------------------------------------------------------
   if (loadErr) {
     return (
