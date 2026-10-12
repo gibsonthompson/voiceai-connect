@@ -20,7 +20,7 @@ interface ChatMessage { role: 'user' | 'assistant'; content: string; }
 
 interface SupportWidgetProps {
   theme: any;
-  userType?: 'agency' | 'client';
+  userType?: 'prospect' | 'agency' | 'client';
   openSignal?: number;
   hideLauncher?: boolean;
   openToView?: WidgetView;
@@ -134,6 +134,8 @@ export default function SupportWidget({ theme, userType = 'agency', openSignal, 
         body: JSON.stringify({
           message: msg,
           sessionId,
+          audience: userType,
+          agencyId,
           history: chatMessages.filter(m => m.role !== 'assistant' || chatMessages.indexOf(m) > 0).slice(-10),
         }),
       });
