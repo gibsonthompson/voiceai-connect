@@ -111,6 +111,10 @@ export default function AdminMoneyPage() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [clientRows, setClientRows] = useState<Record<string, ClientRow[]>>({});
   const [clientLoading, setClientLoading] = useState<string | null>(null);
+  // Live Stripe billing, fetched per agency on expand (source of truth for the
+  // per-client fee, vs the should-be revenue the margin endpoint computes).
+  const [stripeByAgency, setStripeByAgency] = useState<Record<string, any>>({});
+  const [stripeLoading, setStripeLoading] = useState<string | null>(null);
 
   const fetchExpenses = useCallback(async () => {
     try {
@@ -170,12 +174,24 @@ export default function AdminMoneyPage() {
   const toggleAgency = async (agencyId: string) => {
     if (expanded === agencyId) { setExpanded(null); return; }
     setExpanded(agencyId);
-    if (clientRows[agencyId]) return;
-    setClientLoading(agencyId);
-    try {
-      const res = await fetch(`${backendUrl()}/api/admin/margin?agencyId=${agencyId}`, { headers: authHeaders() });
-      if (res.ok) { const json = await res.json(); setClientRows((p) => ({ ...p, [agencyId]: json.clients || [] })); }
-    } catch (e) { console.error(e); } finally { setClientLoading(null); }
+    // Per-client cost rows (margin endpoint).
+    if (!clientRows[agencyId]) {
+      setClientLoading(agencyId);
+      fetch(`${backendUrl()}/api/admin/margin?agencyId=${agencyId}`, { headers: authHeaders() })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((json) => { if (json) setClientRows((p) => ({ ...p, [agencyId]: json.clients || [] })); })
+        .catch((e) => console.error(e))
+        .finally(() => setClientLoading((v) => (v === agencyId ? null : v)));
+    }
+    // Live Stripe billing (actual per-client charge + invoices + reconciliation).
+    if (!stripeByAgency[agencyId]) {
+      setStripeLoading(agencyId);
+      fetch(`${backendUrl()}/api/admin/agencies/${agencyId}/stripe-billing`, { headers: authHeaders() })
+        .then((r) => (r.ok ? r.json() : { error: `failed (${r.status})` }))
+        .then((json) => setStripeByAgency((p) => ({ ...p, [agencyId]: json })))
+        .catch(() => setStripeByAgency((p) => ({ ...p, [agencyId]: { error: 'network error' } })))
+        .finally(() => setStripeLoading((v) => (v === agencyId ? null : v)));
+    }
   };
 
   const planBadge = (p: string) => { const b = getPlanBadge(p); return <span className="rounded-md border px-2 py-0.5 text-[10px] font-medium" style={{ color: b.color, background: b.bg, borderColor: b.border }}>{getPlanDisplayName(p)}</span>; };
@@ -292,14 +308,14 @@ export default function AdminMoneyPage() {
           )}
 
           <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 mb-8">
-            <MarginTotal label="Revenue" value={formatUSD(margin.totals.revenue)} icon={DollarSign} tone="neutral" />
+            <MarginTotal label="Revenue" value={formatUSD(margin.totals.revenue)} icon={DollarSign} tone="neutral" sub="should-be at plan rates" />
             <MarginTotal label="Total Cost" value={formatUSD(margin.totals.total_cost)} icon={Phone} tone="neutral" sub={`VAPI ${formatUSD(margin.totals.vapi_cost)} + Telnyx ${formatUSD(margin.totals.telnyx_cost)}`} />
             <MarginTotal label="Margin" value={formatUSD(margin.totals.margin)} icon={margin.totals.margin >= 0 ? TrendingUp : TrendingDown} tone={margin.totals.margin >= 0 ? 'good' : 'bad'} />
             <MarginTotal label="Margin %" value={margin.totals.margin_pct === null ? 'n/a' : `${margin.totals.margin_pct}%`} icon={margin.totals.margin_pct !== null && margin.totals.margin_pct >= 0 ? TrendingUp : TrendingDown} tone={margin.totals.margin_pct === null ? 'neutral' : margin.totals.margin_pct < 0 ? 'bad' : margin.totals.margin_pct < 30 ? 'warn' : 'good'} />
           </div>
 
           <div className="a-panel">
-            <div className="px-5 py-4 border-b border-[var(--a-line)]"><h2 className="text-sm font-semibold text-[var(--a-ink)]">By Agency</h2><p className="text-[11px] text-[var(--a-dim)] mt-0.5">Sorted by thinnest margin first</p></div>
+            <div className="px-5 py-4 border-b border-[var(--a-line)]"><h2 className="text-sm font-semibold text-[var(--a-ink)]">By Agency</h2><p className="text-[11px] text-[var(--a-dim)] mt-0.5">Revenue is should-be at plan rates. Expand an agency to see what Stripe is actually billing.</p></div>
             <div className="hidden md:grid grid-cols-[1.6fr_0.7fr_0.7fr_0.8fr_0.9fr_0.9fr_0.9fr_0.7fr] gap-2 px-5 py-2.5 text-[10px] uppercase tracking-wider text-[var(--a-dim)] border-b border-[var(--a-line)]" style={{ background: '#F8FCFA' }}>
               <div>Agency</div><div>Plan</div><div className="text-right">Clients</div><div className="text-right">Minutes</div><div className="text-right">Revenue</div><div className="text-right">Cost</div><div className="text-right">Margin</div><div className="text-right">%</div>
             </div>
@@ -325,6 +341,7 @@ export default function AdminMoneyPage() {
                     </div>
                     {isOpen && (
                       <div className="px-5 py-3 border-t border-[var(--a-line)]" style={{ background: '#F8FCFA' }}>
+                        <StripeBillingBlock data={stripeByAgency[a.agency_id]} loading={stripeLoading === a.agency_id} />
                         {clientLoading === a.agency_id ? (
                           <div className="flex items-center gap-2 text-xs text-[var(--a-dim)] py-2"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading clients...</div>
                         ) : (clientRows[a.agency_id] && clientRows[a.agency_id].length > 0) ? (
@@ -380,6 +397,70 @@ function MarginTotal({ label, value, icon: Icon, tone, sub }: { label: string; v
         <div className="min-w-0"><p className="text-xs font-medium text-[var(--a-muted)] uppercase tracking-[0.1em]">{label}</p><p className="mt-2 text-2xl font-semibold tracking-tight a-num" style={{ color }}>{value}</p>{sub && <p className="mt-1.5 text-[11px] text-[var(--a-dim)] truncate">{sub}</p>}</div>
         <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ background: bg }}><Icon className="h-5 w-5" style={{ color }} /></div>
       </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// LIVE STRIPE BILLING (per-agency, shown inside the Actual drill-in)
+// Reads /api/admin/agencies/:id/stripe-billing. The margin endpoint's revenue
+// is should-be (plan rate x billable clients); this shows what Stripe is
+// ACTUALLY charging, so the two can be reconciled at a glance.
+// ============================================================================
+function StripeBillingBlock({ data, loading }: { data: any; loading: boolean }) {
+  if (loading && !data) return <div className="flex items-center gap-2 text-xs text-[var(--a-dim)] py-2 mb-2"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading live Stripe billing...</div>;
+  if (!data) return null;
+  if (data.error) return <p className="text-xs mb-2" style={{ color: 'var(--a-red)' }}>Could not load Stripe billing ({String(data.error)}).</p>;
+  const ag = data.agency || {};
+  const pc = data.per_client;
+  const fmtC = (c: number | null | undefined, cur = 'usd') => (c == null ? '—' : new Intl.NumberFormat('en-US', { style: 'currency', currency: (cur || 'usd').toUpperCase() }).format(c / 100));
+  const dt = (ms: number | null | undefined) => (ms ? new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—');
+  return (
+    <div className="mb-3 rounded-lg p-3" style={{ background: '#fff', border: '1px solid var(--a-line)' }}>
+      <div className="flex items-center gap-2 mb-2 flex-wrap">
+        <CreditCard className="h-3.5 w-3.5 text-[var(--a-em-deep)]" />
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--a-dim)]">Live from Stripe</span>
+        <span className="rounded-md px-1.5 py-0.5 text-[10px] font-medium" style={{ background: ag.usage_billing_enabled ? 'var(--a-em-soft)' : 'var(--a-red-soft)', color: ag.usage_billing_enabled ? 'var(--a-em-deep)' : 'var(--a-red)' }}>billing {ag.usage_billing_enabled ? 'on' : 'off'}</span>
+        {ag.subscription_status && <span className="text-[10px] text-[var(--a-dim)]">{ag.subscription_status}</span>}
+      </div>
+
+      <div className="grid grid-cols-3 gap-2 mb-2">
+        {[
+          { l: 'Active clients', v: ag.active_non_test_clients },
+          { l: 'Stripe billing', v: pc && pc.quantity != null ? pc.quantity : '—' },
+          { l: 'DB count', v: ag.db_billable_clients_count != null ? ag.db_billable_clients_count : '—' },
+        ].map((s) => (
+          <div key={s.l} className="rounded-md px-2 py-1.5" style={{ background: '#F8FCFA' }}>
+            <p className="text-[10px] text-[var(--a-dim)]">{s.l}</p>
+            <p className="text-sm font-semibold text-[var(--a-ink)] a-num">{String(s.v)}</p>
+          </div>
+        ))}
+      </div>
+
+      <p className="text-[12px] text-[var(--a-ink)] mb-2">
+        {pc ? (<>Per-client charge: {pc.quantity} &times; {fmtC(pc.unit_amount, pc.currency)} = <span className="font-semibold">{fmtC(pc.monthly_total, pc.currency)}</span>/mo</>) : (<span style={{ color: 'var(--a-red)' }}>No per-client line item on the Stripe subscription.</span>)}
+      </p>
+
+      {Array.isArray(data.warnings) && data.warnings.length > 0 && (
+        <div className="space-y-1 mb-2">
+          {data.warnings.map((w: string, i: number) => (
+            <div key={i} className="flex items-start gap-1.5 text-[11px]" style={{ color: '#b45309' }}><AlertTriangle className="h-3 w-3 flex-shrink-0 mt-0.5" /><span>{w}</span></div>
+          ))}
+        </div>
+      )}
+
+      {Array.isArray(data.invoices) && data.invoices.length > 0 && (
+        <div className="space-y-1">
+          <p className="text-[10px] uppercase tracking-wider text-[var(--a-dim)]">Recent invoices</p>
+          {data.invoices.slice(0, 4).map((inv: any, i: number) => (
+            <div key={i} className="flex items-center gap-2 text-[11px]">
+              <span className="flex-1 truncate text-[var(--a-muted)]">{inv.number || '(draft)'} &middot; <span style={{ color: inv.status === 'paid' ? 'var(--a-em-deep)' : 'var(--a-amber)' }}>{inv.status}</span> &middot; {dt(inv.created)}</span>
+              <span className="a-num text-[var(--a-ink)]">{fmtC(inv.total, inv.currency)}</span>
+              {inv.hosted_invoice_url && <a href={inv.hosted_invoice_url} target="_blank" rel="noopener noreferrer" className="text-[var(--a-em-deep)]"><ExternalLink className="h-3 w-3" /></a>}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
