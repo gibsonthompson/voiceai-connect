@@ -20,7 +20,7 @@ interface ChatMessage { role: 'user' | 'assistant'; content: string; }
 
 interface SupportWidgetProps {
   theme: any;
-  userType?: 'prospect' | 'agency' | 'client';
+  userType?: 'agency' | 'client';
   openSignal?: number;
   hideLauncher?: boolean;
   openToView?: WidgetView;

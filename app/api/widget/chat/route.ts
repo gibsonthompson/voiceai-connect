@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { isRateLimited } from '@/lib/rate-limit';
+import { createAdminClient } from '@/lib/supabase/server';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    POST /api/widget/chat
@@ -28,6 +29,34 @@ function fallbackContactLine(agencyName?: string, supportEmail?: string): string
   return `Please email ${PLATFORM_SUPPORT_EMAIL} for assistance.`;
 }
 
+// Log a public FAQ-bot exchange so prospect conversations show up in the admin
+// inbox (widget_chat_log). Service-role client bypasses RLS. Only the PLATFORM
+// bot is logged here (agency-branded site chats are that agency's own leads, not
+// VoiceAI platform support). Best-effort and defensive: if the origin columns
+// are not present yet, fall back to the original 3-column insert so nothing
+// breaks. Never throws into the request path.
+async function logMarketingChat(sessionId: string, userMessage: string, assistantText: string) {
+  try {
+    if (!sessionId || !userMessage) return;
+    const supa = createAdminClient();
+    const t0 = new Date();
+    const t1 = new Date(t0.getTime() + 1); // keep user before assistant when sorted by created_at
+    const rows: any[] = [
+      { session_id: String(sessionId).slice(0, 100), role: 'user', content: String(userMessage).slice(0, 8000), created_at: t0.toISOString() },
+    ];
+    if (assistantText && assistantText.trim()) {
+      rows.push({ session_id: String(sessionId).slice(0, 100), role: 'assistant', content: String(assistantText).slice(0, 8000), created_at: t1.toISOString() });
+    }
+    const withOrigin = rows.map((r) => ({ ...r, user_type: 'prospect', agency_id: null, source: 'marketing' }));
+    const { error } = await supa.from('widget_chat_log').insert(withOrigin);
+    if (error) {
+      await supa.from('widget_chat_log').insert(rows); // origin columns not migrated yet
+    }
+  } catch (e: any) {
+    console.error('marketing chat log failed (non-blocking):', e?.message);
+  }
+}
+
 const VOICEAI_SYSTEM_PROMPT = `You are the support assistant for VoiceAI Connect, a white-label AI receptionist platform built for marketing agencies. You help visitors and prospective agency operators understand the platform.
 
 IDENTITY:
@@ -36,6 +65,12 @@ IDENTITY:
 - Use a professional but approachable tone
 - Never make up information — if you don't know, say so and direct them to support@myvoiceaiconnect.com
 - This is software infrastructure for real businesses, not a course, coaching program, or "make money with AI" product — position accordingly
+
+FORMATTING (critical):
+Reply in plain conversational text only. No markdown or formatting symbols of any kind — no asterisks, bold, italics, bullet points, numbered lists, headers, or hashes. The chat widget prints your reply exactly as written, so any symbol shows up as a literal character. If you need to list a few things, write them in a sentence separated by commas, not as a bulleted or numbered list.
+
+WHO YOU ARE TALKING TO:
+You are talking to a PROSPECT on the public marketing site who does NOT have an account yet and cannot see any dashboard. Explain how the product works and what they get, never step-by-step dashboard navigation they cannot follow. Frame answers around what happens after they sign up. For example, if someone asks how to edit or build their website, explain that every VoiceAI Connect agency gets a white-label marketing website that is auto-generated and fully hosted for them, and that after signing up they control it entirely from their dashboard — logo, colors, content, pricing, demo phone line, and a custom domain — so there is nothing to hand-code or host themselves. Keep it benefit-oriented and invite them to start a free trial or reach out to the team for specifics.
 
 KNOWLEDGE BASE:
 
@@ -113,6 +148,9 @@ IDENTITY:
 - Use a professional but approachable tone
 - Never make up information — if you don't know, say so and suggest they contact the team${supportEmail ? ` at ${supportEmail}` : ''}
 
+FORMATTING (critical):
+Reply in plain conversational text only. No markdown or formatting symbols of any kind — no asterisks, bold, italics, bullet points, numbered lists, headers, or hashes. The chat widget prints your reply exactly as written, so any symbol shows up as a literal character.
+
 WHAT ${agencyName.toUpperCase()} OFFERS:
 ${agencyName} provides an AI-powered phone receptionist that answers your business calls 24/7. The AI greets callers professionally, answers questions about your business, books appointments to your Google Calendar in real time, takes messages, and sends you instant text summaries after every call. It handles unlimited simultaneous calls with no busy signals and detects spam automatically.
 
@@ -147,7 +185,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const { message, conversationHistory, agencyName, agencyFaqs, supportEmail } = await req.json();
+    const { message, conversationHistory, agencyName, agencyFaqs, supportEmail, sessionId } = await req.json();
 
     if (!message || typeof message !== 'string') {
       return new Response(JSON.stringify({ error: 'Message is required' }), {
@@ -228,6 +266,7 @@ export async function POST(req: NextRequest) {
 
         const decoder = new TextDecoder();
         let buffer = '';
+        let assistantText = ''; // full reply, accumulated for logging
 
         try {
           while (true) {
@@ -246,6 +285,7 @@ export async function POST(req: NextRequest) {
                 try {
                   const parsed = JSON.parse(data);
                   if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
+                    assistantText += parsed.delta.text;
                     controller.enqueue(encoder.encode(parsed.delta.text));
                   }
                 } catch {
@@ -258,6 +298,11 @@ export async function POST(req: NextRequest) {
           console.error('Stream error:', err);
         } finally {
           controller.close();
+          // Log the exchange to the admin inbox. Only the platform bot (no
+          // agencyName); agency-branded chats are that agency's own leads.
+          if (!agencyName) {
+            await logMarketingChat(sessionId, message, assistantText);
+          }
         }
       },
     });

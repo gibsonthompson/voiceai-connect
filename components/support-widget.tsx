@@ -128,6 +128,8 @@ export default function SupportWidget() {
   const [escMsg, setEscMsg] = useState('');
   const [escBusy, setEscBusy] = useState(false);
   const [escDone, setEscDone] = useState(false);
+  // Stable id so a prospect's full back-and-forth groups into one inbox thread.
+  const [sessionId] = useState(() => (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `sess-${Date.now()}-${Math.random().toString(36).slice(2)}`));
   const [escErr, setEscErr] = useState('');
   const [isAllowedDomain, setIsAllowedDomain] = useState(false);
   const [hideForClientSurface, setHideForClientSurface] = useState(false);
@@ -175,7 +177,7 @@ export default function SupportWidget() {
     setMessages(all);
     setStreaming(true);
     try {
-      const res = await fetch('/api/widget/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: msg, conversationHistory: all.slice(-10) }) });
+      const res = await fetch('/api/widget/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: msg, conversationHistory: all.slice(-10), sessionId }) });
       if (!res.ok) throw new Error('');
       const reader = res.body?.getReader();
       const dec = new TextDecoder();
