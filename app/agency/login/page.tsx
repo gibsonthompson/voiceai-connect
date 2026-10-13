@@ -28,7 +28,17 @@ export default function AgencyLoginPage() {
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
     const agency = localStorage.getItem('agency');
-    if (token && agency) { window.location.href = '/agency/dashboard'; return; }
+    if (token && agency) {
+      // Call-center accounts land in the dedicated /cc dashboard; agents go
+      // straight to their live board. Everyone else keeps the normal dashboard.
+      let dest = '/agency/dashboard';
+      try {
+        const a = JSON.parse(agency);
+        const u = JSON.parse(localStorage.getItem('user') || '{}');
+        if (a && a.is_call_center) dest = u.role === 'agency_staff' ? '/cc/live-calls' : '/cc/dashboard';
+      } catch {}
+      window.location.href = dest; return;
+    }
 
     const params = new URLSearchParams(window.location.search);
     const errorParam = params.get('error');
@@ -116,6 +126,12 @@ export default function AgencyLoginPage() {
         return;
       }
 
+      // Route call-center accounts to the dedicated /cc dashboard (agents to the
+      // live board); plain reseller agencies keep the normal dashboard.
+      if (data.agency && data.agency.is_call_center) {
+        window.location.href = data.user?.role === 'agency_staff' ? '/cc/live-calls' : '/cc/dashboard';
+        return;
+      }
       window.location.href = '/agency/dashboard';
     } catch (err) {
       console.error('Login error:', err);

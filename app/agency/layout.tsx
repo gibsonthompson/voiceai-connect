@@ -194,6 +194,17 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     if (agencyIsSuspended) { window.location.href = '/agency/reactivate'; }
   }, [loading, agencyIsSuspended]);
 
+  // Call-center accounts live in the dedicated /cc dashboard. Send them there
+  // from the old agency home (and the /agency root). Only these two paths are
+  // redirected, so deep links a call center still uses (e.g. a business detail
+  // at /agency/clients/:id) keep working. Agents go to their live board.
+  useEffect(() => {
+    if (loading || !agency?.is_call_center || !pathname) return;
+    if (pathname === '/agency' || pathname === '/agency/dashboard') {
+      window.location.href = isAgent ? '/cc/live-calls' : '/cc/dashboard';
+    }
+  }, [loading, agency?.is_call_center, isAgent, pathname]);
+
   useEffect(() => { if (!loading && shouldBlockAccess) { window.location.href = '/agency/settings'; } }, [loading, shouldBlockAccess]);
   // Permission route guard: bounce agency_staff off any page their Page Access
   // permissions don't include (covers direct-URL navigation, which the sidebar
@@ -446,7 +457,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       <main className="md:pl-64 min-h-screen" style={{ backgroundColor: theme.bg }}>
         <div key={pathname} className="agency-page-enter">{children}</div>
       </main>
-      <SupportWidget theme={theme} userType="agency" />
+      <SupportWidget theme={theme} userType="agency" agencyId={agency?.id} />
     </div>
     <TourOverlay />
     </TourProvider>
