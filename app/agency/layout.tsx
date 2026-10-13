@@ -103,9 +103,6 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
 
   const navItems: NavItem[] = [
     { href: '/agency/dashboard', label: 'Dashboard', icon: LayoutDashboard, permissionKey: 'dashboard' },
-    // Call-center only: the live wallboard across all the businesses this agency
-    // serves. Shown when the agency signed up as a call center.
-    ...(agency?.is_call_center ? [{ href: '/agency/live-calls', label: 'Live Calls', icon: Headphones } as NavItem] : []),
     { href: '/agency/clients', label: 'Clients', icon: Users, permissionKey: 'clients' },
     { href: '/agency/inbox', label: 'Inbox', icon: Inbox },
     { href: '/agency/leads', label: 'Leads', icon: Target, locked: !canUseLeadFinder, upgradeRequired: 'Pro', permissionKey: 'leads' },
@@ -415,7 +412,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       <main className="md:pl-64 min-h-screen" style={{ backgroundColor: theme.bg }}>
         <div key={pathname} className="agency-page-enter">{children}</div>
       </main>
-      <SupportWidget theme={theme} userType="agency" />
+      <SupportWidget theme={theme} userType="agency" agencyId={agency?.id} />
     </div>
     <TourOverlay />
     </TourProvider>

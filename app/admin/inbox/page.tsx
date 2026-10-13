@@ -12,7 +12,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { MessageSquare, Send, ArrowLeft, Loader2, RefreshCw, Phone, Building2, Bot } from 'lucide-react';
 
-interface InboxMessage { id: string; sender: 'in' | 'out'; body: string; at: string; kind: 'inapp' | 'sms' | 'faq' | 'feedback'; }
+interface InboxMessage { id: string; sender: 'in' | 'out'; body: string; at: string; kind: 'inapp' | 'sms' | 'faq' | 'feedback' | 'help'; }
 interface Conversation {
   key: string;
   type: 'agency' | 'faq';
@@ -24,10 +24,11 @@ interface Conversation {
   lastAt: string | null;
   lastDirection: 'in' | 'out' | null;
   lastPreview: string;
-  lastInboundKind?: 'inapp' | 'sms' | 'faq' | 'feedback';
+  lastInboundKind?: 'inapp' | 'sms' | 'faq' | 'feedback' | 'help';
   needsReply: boolean;
   readOnly?: boolean;
   escalated?: boolean;
+  faqOrigin?: { userType: string | null; source: string | null; agencyName: string | null; tag: string } | null;
 }
 
 const backendUrl = () => process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
@@ -118,7 +119,7 @@ export default function AdminInboxPage() {
       style={c.type === 'faq'
         ? { background: '#eef2ff', color: '#4338ca' }
         : { background: 'var(--a-em-soft, #ecfdf5)', color: 'var(--a-em-deep, #047857)' }}>
-      {c.type === 'faq' ? (c.escalated ? 'FAQ, escalated' : 'FAQ') : 'Agency'}
+      {c.type === 'faq' ? `${c.faqOrigin?.tag || 'Help bot'}${c.escalated ? ', escalated' : ''}` : 'Agency'}
     </span>
   );
 
@@ -184,7 +185,13 @@ export default function AdminInboxPage() {
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-semibold truncate flex items-center gap-1.5">{selected.name}<TypeTag c={selected} /></div>
                 <div className="text-[11px] flex items-center gap-1" style={{ color: 'var(--a-dim)' }}>
-                  {selected.type === 'faq' ? 'Prospect, public FAQ bot' : (selected.phone ? (<><Phone className="h-3 w-3" />{selected.phone}</>) : 'Agency')}
+                  {selected.type === 'faq'
+                    ? (selected.faqOrigin?.source === 'marketing' || selected.faqOrigin?.userType === 'prospect'
+                        ? 'Prospect, public marketing site'
+                        : selected.faqOrigin?.agencyName
+                          ? `${selected.faqOrigin.agencyName}, in-dashboard help widget`
+                          : 'In-dashboard help widget')
+                    : (selected.phone ? (<><Phone className="h-3 w-3" />{selected.phone}</>) : 'Agency')}
                 </div>
               </div>
             </div>
@@ -205,6 +212,7 @@ export default function AdminInboxPage() {
                         <div className={`mt-1 text-[10px] flex items-center gap-1.5 ${isIn ? 'justify-start' : 'justify-end'}`} style={{ color: 'var(--a-dim)' }}>
                           {m.kind === 'sms' && <span className="uppercase tracking-wide">Text</span>}
                           {m.kind === 'feedback' && <span className="uppercase tracking-wide" style={{ color: '#92400e' }}>Feedback</span>}
+                          {m.kind === 'help' && <span className="uppercase tracking-wide" style={{ color: '#4338ca' }}>Help bot</span>}
                           <span>{fmtTime(m.at)}</span>
                         </div>
                       </div>
@@ -217,7 +225,11 @@ export default function AdminInboxPage() {
 
             {selected.readOnly || selected.type === 'faq' ? (
               <div className="border-t p-3 shrink-0 text-center text-[11px]" style={{ borderColor: 'var(--a-line)', background: 'white', color: 'var(--a-dim)' }}>
-                Read-only, this is a prospect chat with the public FAQ bot.
+                {selected.faqOrigin?.source === 'marketing' || selected.faqOrigin?.userType === 'prospect'
+                  ? 'Read-only. A prospect chat with the help bot on the public marketing site.'
+                  : selected.faqOrigin?.agencyName
+                    ? `Read-only. ${selected.faqOrigin.agencyName} used the help bot inside their dashboard. To reply, message them in their agency conversation.`
+                    : 'Read-only. A logged-in user asked the help bot inside their dashboard (not a public prospect).'}
               </div>
             ) : (
               <div className="border-t p-3 shrink-0" style={{ borderColor: 'var(--a-line)', background: 'white' }}>

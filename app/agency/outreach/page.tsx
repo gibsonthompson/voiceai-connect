@@ -383,6 +383,9 @@ export default function OutreachPage() {
             <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>
               Manage email, SMS, and call script templates
             </p>
+            <p className="mt-1 text-xs" style={{ color: theme.textMuted }}>
+              VoiceAI Connect writes and tracks your outreach. You send each message from your own email or phone, then log it here so your follow-ups stay on schedule. Nothing is sent from the platform.
+            </p>
           </div>
           
           <div className="flex items-center gap-2 w-full sm:w-auto">

@@ -843,6 +843,29 @@ export default function ComposerModal({
           <>
             {/* Content - scrollable */}
             <div className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
+              {/* "We don't send it" clarity banner (email + SMS). This is the #1
+                  point of confusion: the platform drafts and tracks outreach, it
+                  does not deliver it. You send from your own email or phone. */}
+              {type !== 'linkedin' && (
+                <div
+                  className="flex items-start gap-3 rounded-lg p-3"
+                  style={{
+                    backgroundColor: isDark ? 'rgba(245,158,11,0.08)' : 'rgba(245,158,11,0.1)',
+                    border: '1px solid rgba(245,158,11,0.25)',
+                  }}
+                >
+                  {type === 'email'
+                    ? <Mail className="h-4 w-4 shrink-0 mt-0.5" style={{ color: '#f59e0b' }} />
+                    : <MessageSquare className="h-4 w-4 shrink-0 mt-0.5" style={{ color: '#f59e0b' }} />}
+                  <p className="text-xs" style={{ color: isDark ? 'rgba(252,211,77,0.95)' : '#92400e' }}>
+                    <span className="font-semibold">VoiceAI Connect doesn&apos;t send this for you.</span>{' '}
+                    {type === 'email'
+                      ? 'It writes the email and tracks your follow-ups. Copy it, send it from your own email account (Gmail, Outlook, etc.), then hit Log so your sequence stays accurate. Nothing goes out from here, and it won’t show in your Sent folder unless you send it yourself.'
+                      : 'It writes the text and tracks your follow-ups. Copy it, send it from your own phone, then hit Log so your sequence stays accurate. Nothing goes out from here.'}
+                  </p>
+                </div>
+              )}
+
               {/* Sequence Info Banner */}
               <div 
                 className="flex items-center gap-3 rounded-lg p-3"
@@ -854,7 +877,7 @@ export default function ComposerModal({
                     This will be {sequenceLabel}
                   </p>
                   <p className="text-xs" style={{ color: theme.textMuted }}>
-                    {type === 'linkedin' ? 'LinkedIn messages' : type === 'email' ? 'Emails' : 'SMS'} sent to this lead: {
+                    {type === 'linkedin' ? 'LinkedIn messages' : type === 'email' ? 'Emails' : 'SMS'} logged for this lead: {
                       type === 'email' ? outreachCounts.email : type === 'sms' ? outreachCounts.sms : outreachCounts.linkedin
                     }
                   </p>
@@ -1067,8 +1090,10 @@ export default function ComposerModal({
                 <p className="text-xs" style={{ color: isDark ? 'rgba(147, 197, 253, 0.8)' : '#1d4ed8' }}>
                   {type === 'linkedin' ? (
                     <>Copy the message, then open their LinkedIn profile to paste it as a direct message. Use "Copy, Open &amp; Log" to do it all in one click.</>
+                  ) : type === 'email' ? (
+                    <>Copy the subject and body, then send it from your own email account. "Copy All &amp; Log" copies everything and records that you reached out, so your follow-up queue stays accurate. It does not send the email.</>
                   ) : (
-                    <>Copy the subject and body into your email client. Use the copy buttons above each field, or "Copy All &amp; Log" below to copy everything at once and record it as sent.</>
+                    <>Copy the message, then send it from your own phone. "Copy All &amp; Log" copies it and records that you reached out, so your follow-up queue stays accurate. It does not send the text.</>
                   )}
                 </p>
               </div>
