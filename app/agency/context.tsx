@@ -71,6 +71,9 @@ interface User {
   first_name?: string;
   last_name?: string;
   permissions?: Record<string, boolean> | null;
+  // Call-center agent scoping: the businesses a manager assigned to this agent.
+  // null/absent = unrestricted. Only meaningful for agency_staff in a call center.
+  assigned_client_ids?: string[] | null;
 }
 
 interface Branding {
@@ -94,6 +97,11 @@ interface AgencyContextType {
   demoMode: boolean;
   toggleDemoMode: () => void;
   hasPermission: (key: string) => boolean;
+  // Call-center roles. isAgent = this is an agency_staff user inside a call-center
+  // agency (an agent who monitors calls), as opposed to a manager (agency_owner).
+  // assignedClientIds is the agent's scoped businesses (null = all).
+  isAgent: boolean;
+  assignedClientIds: string[] | null;
 }
 
 const defaultBranding: Branding = {
@@ -117,6 +125,8 @@ const AgencyContext = createContext<AgencyContextType>({
   demoMode: false,
   toggleDemoMode: () => {},
   hasPermission: () => true,
+  isAgent: false,
+  assignedClientIds: null,
 });
 
 export function useAgency() {
@@ -407,6 +417,12 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
     return user.permissions[key] !== false;
   };
 
+  // A call-center agent is agency staff inside an agency that signed up as a call
+  // center. Managers are agency_owner. Used to give agents a focused nav (their
+  // wallboard + assigned businesses) instead of the full agency surface.
+  const isAgent = !!(agency?.is_call_center && user?.role === 'agency_staff');
+  const assignedClientIds = Array.isArray(user?.assigned_client_ids) ? user!.assigned_client_ids! : null;
+
   return (
     <AgencyContext.Provider value={{
       agency,
@@ -421,6 +437,8 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
       demoMode,
       toggleDemoMode,
       hasPermission,
+      isAgent,
+      assignedClientIds,
     }}>
       {children}
     </AgencyContext.Provider>

@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react';
 import {
   Users, Plus, Loader2, Trash2, Eye, EyeOff, RefreshCw,
   Check, AlertCircle, CheckCircle2, Circle, Phone, Mail, Copy,
-  Lock, Bell, BellOff, ChevronDown, ChevronUp
+  Lock, Bell, BellOff, ChevronDown, ChevronUp, Building2, Headphones
 } from 'lucide-react';
 import UpgradeGate from './UpgradeGate';
+import { useAgency } from '@/app/agency/context';
 
 // ============================================================================
 // TYPES
@@ -20,9 +21,22 @@ interface TeamMember {
   permissions: Record<string, boolean>;
   notification_prefs: Record<string, boolean>;
   status: 'active' | 'invited' | 'disabled';
+  // Call-center agent scoping: the businesses this agent may see/handle.
+  // null = unrestricted (not an agent). Only used for call-center agencies.
+  assigned_client_ids: string[] | null;
   last_login: string | null;
   created_at: string;
 }
+
+interface AgencyClientLite { id: string; business_name: string; }
+
+// Permission preset applied to a call-center agent. They need dashboard (to load
+// their wallboard) and clients (to open their assigned businesses); everything
+// else off. Their actual reach is then narrowed to assigned_client_ids server-side.
+const AGENT_PERMISSION_PRESET: Record<string, boolean> = {
+  dashboard: true, clients: true, leads: false, outreach: false,
+  analytics: false, marketing: false, settings: false, billing: false,
+};
 
 interface TeamLimits {
   allowed: boolean;
@@ -59,17 +73,27 @@ const NOTIFICATION_LABELS: Record<string, string> = {
 // COMPONENT
 // ============================================================================
 export default function AgencyTeamTab({ agencyId, theme }: Props) {
+  const { agency } = useAgency();
+  // A call-center agency manages AGENTS: every team member is an agent scoped to
+  // the businesses the manager assigns them. Plain reseller agencies keep the
+  // original Page-Access team model untouched.
+  const isCallCenter = agency?.is_call_center === true;
+
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [limits, setLimits] = useState<TeamLimits>({ allowed: true, current: 0, max: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  // Agency businesses, for the agent assignment picker (call center only).
+  const [clients, setClients] = useState<AgencyClientLite[]>([]);
+
   // Add form
   const [showAddForm, setShowAddForm] = useState(false);
   const [addName, setAddName] = useState('');
   const [addEmail, setAddEmail] = useState('');
   const [addPhone, setAddPhone] = useState('');
+  const [addAssigned, setAddAssigned] = useState<string[]>([]);
   const [adding, setAdding] = useState(false);
 
   // Expanded cards
@@ -101,7 +125,23 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
     }
   };
 
+  // Load the agency's businesses once, for the agent assignment picker.
+  const fetchClients = async () => {
+    try {
+      const res = await fetch(`${backendUrl}/api/agency/${agencyId}/clients`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      const list: AgencyClientLite[] = (data.clients || [])
+        .map((c: any) => ({ id: c.id, business_name: c.business_name || 'Business' }))
+        .sort((a: AgencyClientLite, b: AgencyClientLite) => a.business_name.localeCompare(b.business_name));
+      setClients(list);
+    } catch { /* non-fatal: picker just shows no businesses */ }
+  };
+
   useEffect(() => { fetchTeam(); }, [agencyId]);
+  useEffect(() => { if (isCallCenter) fetchClients(); }, [agencyId, isCallCenter]);
 
   // ============================================================================
   // ADD MEMBER
@@ -114,18 +154,26 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
     setAdding(true);
     setError(null);
     try {
+      // Call-center agents are created with the agent permission preset and their
+      // assigned businesses. Plain reseller members keep the server's defaults.
+      const body: any = { name: addName.trim(), email: addEmail.trim(), phone: addPhone.trim() || null };
+      if (isCallCenter) {
+        body.permissions = AGENT_PERMISSION_PRESET;
+        body.assigned_client_ids = addAssigned;
+      }
       const res = await fetch(`${backendUrl}/api/agency/${agencyId}/team`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ name: addName.trim(), email: addEmail.trim(), phone: addPhone.trim() || null }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to add team member');
-      
+
       setMembers(prev => [...prev, data.member]);
       setLimits(prev => ({ ...prev, current: prev.current + 1 }));
-      setSuccess(`${data.member.display_name} added! ${addPhone ? 'Credentials sent via SMS.' : 'Share the credentials below.'}`);
-      setAddName(''); setAddEmail(''); setAddPhone('');
+      const noun = isCallCenter ? 'Agent' : '';
+      setSuccess(`${data.member.display_name} added${noun ? ` as an ${noun.toLowerCase()}` : ''}! ${addPhone ? 'Credentials sent via SMS.' : 'Share the credentials below.'}`);
+      setAddName(''); setAddEmail(''); setAddPhone(''); setAddAssigned([]);
       setShowAddForm(false);
       setExpandedId(data.member.id); // Auto-expand new member to show password
       setTimeout(() => setSuccess(null), 5000);
@@ -159,6 +207,33 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
       // Revert
       setMembers(prev => prev.map(m => m.id === memberId ? { ...m, permissions: member.permissions } : m));
       setError('Failed to update permissions');
+    }
+  };
+
+  // ============================================================================
+  // UPDATE AGENT BUSINESS ASSIGNMENTS (call center)
+  // ============================================================================
+  const toggleAssignment = async (memberId: string, clientId: string) => {
+    const member = members.find(m => m.id === memberId);
+    if (!member) return;
+    const current = Array.isArray(member.assigned_client_ids) ? member.assigned_client_ids : [];
+    const next = current.includes(clientId)
+      ? current.filter(id => id !== clientId)
+      : [...current, clientId];
+
+    // Optimistic
+    setMembers(prev => prev.map(m => m.id === memberId ? { ...m, assigned_client_ids: next } : m));
+
+    try {
+      const res = await fetch(`${backendUrl}/api/agency/${agencyId}/team/${memberId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ assigned_client_ids: next }),
+      });
+      if (!res.ok) throw new Error('Failed to update');
+    } catch {
+      setMembers(prev => prev.map(m => m.id === memberId ? { ...m, assigned_client_ids: current } : m));
+      setError('Failed to update assigned businesses');
     }
   };
 
@@ -295,9 +370,13 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-base sm:text-lg font-medium mb-1">Team Members</h3>
+          <h3 className="text-base sm:text-lg font-medium mb-1">{isCallCenter ? 'Agents' : 'Team Members'}</h3>
           <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
-            {limits.max === 0 ? 'Upgrade your plan to add team members.' : countText}
+            {limits.max === 0
+              ? `Upgrade your plan to add ${isCallCenter ? 'agents' : 'team members'}.`
+              : isCallCenter
+                ? `${countText.replace('team members', 'agents')} · each sees only the businesses you assign them`
+                : countText}
           </p>
         </div>
         {canAddMembers && (
@@ -308,7 +387,7 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
             style={{ backgroundColor: theme.primary, color: theme.primaryText }}
           >
             <Plus className="h-4 w-4" />
-            Add Member
+            {isCallCenter ? 'Add Agent' : 'Add Member'}
           </button>
         )}
       </div>
@@ -331,7 +410,7 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
       {/* Add form */}
       {showAddForm && (
         <div className="rounded-xl p-4" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-          <h4 className="text-sm font-medium mb-3">Add Team Member</h4>
+          <h4 className="text-sm font-medium mb-3">{isCallCenter ? 'Add Agent' : 'Add Team Member'}</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
             <div>
               <label className="block text-xs mb-1" style={{ color: theme.textMuted }}>Full Name *</label>
@@ -362,6 +441,51 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
             />
             <p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>Login credentials will be sent here via SMS</p>
           </div>
+
+          {/* Agent business assignment (call center) */}
+          {isCallCenter && (
+            <div className="mb-4">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <Building2 className="h-3.5 w-3.5" style={{ color: theme.textMuted }} />
+                <label className="block text-xs font-medium" style={{ color: theme.text }}>Assigned businesses</label>
+              </div>
+              <p className="text-[10px] mb-2" style={{ color: theme.textMuted }}>
+                This agent will only see and handle the businesses you check here. You can change this anytime.
+              </p>
+              {clients.length === 0 ? (
+                <p className="text-xs italic rounded-lg px-3 py-2" style={{ color: theme.textMuted, backgroundColor: theme.hover }}>
+                  No businesses yet. Add a client first, then assign it here.
+                </p>
+              ) : (
+                <>
+                  <div className="flex items-center gap-3 mb-2">
+                    <button type="button" onClick={() => setAddAssigned(clients.map(c => c.id))} className="text-[11px] font-medium" style={{ color: theme.primary }}>Select all</button>
+                    <button type="button" onClick={() => setAddAssigned([])} className="text-[11px] font-medium" style={{ color: theme.textMuted }}>Clear</button>
+                    <span className="text-[11px] ml-auto" style={{ color: theme.textMuted }}>{addAssigned.length} of {clients.length} selected</span>
+                  </div>
+                  <div className="max-h-44 overflow-y-auto rounded-lg divide-y" style={{ border: `1px solid ${theme.inputBorder}`, borderColor: theme.inputBorder }}>
+                    {clients.map(c => {
+                      const sel = addAssigned.includes(c.id);
+                      return (
+                        <button
+                          key={c.id} type="button"
+                          onClick={() => setAddAssigned(prev => prev.includes(c.id) ? prev.filter(id => id !== c.id) : [...prev, c.id])}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors"
+                          style={{ backgroundColor: sel ? theme.primary15 : 'transparent' }}
+                        >
+                          {sel
+                            ? <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: theme.primary }} />
+                            : <Circle className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted }} />}
+                          <span className="text-xs truncate" style={{ color: sel ? theme.text : theme.textMuted }}>{c.business_name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           <div className="flex items-center gap-2">
             <button
               onClick={handleAdd} disabled={adding}
@@ -372,7 +496,7 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
               {adding ? 'Adding...' : 'Add Member'}
             </button>
             <button
-              onClick={() => { setShowAddForm(false); setAddName(''); setAddEmail(''); setAddPhone(''); }}
+              onClick={() => { setShowAddForm(false); setAddName(''); setAddEmail(''); setAddPhone(''); setAddAssigned([]); }}
               className="rounded-lg px-4 py-2 text-sm font-medium"
               style={{ color: theme.textMuted }}
             >
@@ -477,7 +601,50 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
                       </button>
                     </div>
 
-                    {/* Permissions */}
+                    {/* Call center: assigned businesses. Reseller: Page Access. */}
+                    {isCallCenter ? (
+                      <div>
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <Building2 className="h-3.5 w-3.5" style={{ color: theme.textMuted }} />
+                          <p className="text-xs font-medium" style={{ color: theme.textMuted }}>Assigned businesses</p>
+                          <span className="text-[11px] ml-auto" style={{ color: theme.textMuted }}>
+                            {(member.assigned_client_ids?.length ?? 0)} of {clients.length}
+                          </span>
+                        </div>
+                        {clients.length === 0 ? (
+                          <p className="text-xs italic rounded-lg px-3 py-2" style={{ color: theme.textMuted, backgroundColor: theme.hover }}>
+                            No businesses yet. Add a client first, then assign it here.
+                          </p>
+                        ) : (
+                          <>
+                            {(member.assigned_client_ids?.length ?? 0) === 0 && (
+                              <div className="flex items-start gap-2 rounded-lg px-3 py-2 mb-2" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
+                                <AlertCircle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" style={{ color: theme.warningText }} />
+                                <p className="text-[11px]" style={{ color: theme.warningText }}>No businesses assigned — this agent sees an empty board until you assign at least one.</p>
+                              </div>
+                            )}
+                            <div className="max-h-44 overflow-y-auto rounded-lg divide-y" style={{ border: `1px solid ${theme.border}`, borderColor: theme.border }}>
+                              {clients.map(c => {
+                                const sel = (member.assigned_client_ids || []).includes(c.id);
+                                return (
+                                  <button
+                                    key={c.id} type="button"
+                                    onClick={() => toggleAssignment(member.id, c.id)}
+                                    className="w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors"
+                                    style={{ backgroundColor: sel ? theme.primary15 : 'transparent' }}
+                                  >
+                                    {sel
+                                      ? <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: theme.primary }} />
+                                      : <Circle className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted }} />}
+                                    <span className="text-xs truncate" style={{ color: sel ? theme.text : theme.textMuted }}>{c.business_name}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ) : (
                     <div>
                       <p className="text-xs font-medium mb-2" style={{ color: theme.textMuted }}>Page Access</p>
                       <div className="grid grid-cols-2 gap-1.5">
@@ -507,6 +674,7 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
                         })}
                       </div>
                     </div>
+                    )}
 
                     {/* Notifications */}
                     <div>
@@ -569,15 +737,15 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
       {/* Empty state — shows when the agency can add members but has none */}
       {members.length === 0 && (canAddMembers || locked) && !showAddForm && (
         <div className="rounded-xl p-6 text-center" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
-          <Users className="h-8 w-8 mx-auto mb-2" style={{ color: theme.textMuted }} />
-          <p className="text-sm font-medium mb-1" style={{ color: theme.text }}>No team members yet</p>
-          <p className="text-xs mb-3" style={{ color: theme.textMuted }}>Add team members to give them access to your agency dashboard.</p>
+          {isCallCenter ? <Headphones className="h-8 w-8 mx-auto mb-2" style={{ color: theme.textMuted }} /> : <Users className="h-8 w-8 mx-auto mb-2" style={{ color: theme.textMuted }} />}
+          <p className="text-sm font-medium mb-1" style={{ color: theme.text }}>{isCallCenter ? 'No agents yet' : 'No team members yet'}</p>
+          <p className="text-xs mb-3" style={{ color: theme.textMuted }}>{isCallCenter ? 'Add agents and assign each one the businesses they should monitor.' : 'Add team members to give them access to your agency dashboard.'}</p>
           <button
             onClick={() => setShowAddForm(true)}
             className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-medium"
             style={{ backgroundColor: theme.primary, color: theme.primaryText }}
           >
-            <Plus className="h-3.5 w-3.5" /> Add First Member
+            <Plus className="h-3.5 w-3.5" /> {isCallCenter ? 'Add First Agent' : 'Add First Member'}
           </button>
         </div>
       )}

@@ -75,7 +75,7 @@ function TourLauncher({ theme }: { theme: any }) {
 
 function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { agency, branding, loading, effectivePlan, hasPermission } = useAgency();
+  const { agency, branding, loading, effectivePlan, hasPermission, isAgent } = useAgency();
   const { canUseMarketingSite, canUseDemoPhoneNumber, canUseAiLab, canUseLeadFinder, hasWhiteLabel, planName } = usePlanFeatures();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -103,6 +103,9 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
 
   const navItems: NavItem[] = [
     { href: '/agency/dashboard', label: 'Dashboard', icon: LayoutDashboard, permissionKey: 'dashboard' },
+    // Call-center only: the live wallboard across all the businesses this agency
+    // serves. Shown when the agency signed up as a call center.
+    ...(agency?.is_call_center ? [{ href: '/agency/live-calls', label: 'Live Calls', icon: Headphones } as NavItem] : []),
     { href: '/agency/clients', label: 'Clients', icon: Users, permissionKey: 'clients' },
     { href: '/agency/inbox', label: 'Inbox', icon: Inbox },
     { href: '/agency/leads', label: 'Leads', icon: Target, locked: !canUseLeadFinder, upgradeRequired: 'Pro', permissionKey: 'leads' },
@@ -117,7 +120,15 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     { href: '/agency/settings', label: 'Settings', icon: Settings },
   ];
 
-  const filteredNavItems = navItems.filter(item => {
+  // Call-center agents get a focused nav: just their Live Calls wallboard, which
+  // is their whole workspace (opening a call hands off to the per-call monitor,
+  // and the board also lists their assigned businesses). Everything else on the
+  // agency surface belongs to the manager, so it is hidden for agents.
+  const AGENT_NAV: NavItem[] = [
+    { href: '/agency/live-calls', label: 'Live Calls', icon: Headphones },
+  ];
+
+  const filteredNavItems = isAgent ? AGENT_NAV : navItems.filter(item => {
     // Settings holds both the settings tabs and the Billing sub-tab, so show
     // the link if the member has either permission. The settings page itself
     // gates the individual tabs.
@@ -132,6 +143,10 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   // and super_admins pass everything via hasPermission.
   const canAccessCurrentPath = (): boolean => {
     if (!pathname) return true;
+    // Agents are confined to their wallboard within the agency shell (direct-URL
+    // navigation to any other /agency page bounces back to it). The per-call
+    // monitor lives at /live/* outside this shell and is authorized server-side.
+    if (isAgent) return pathname.startsWith('/agency/live-calls');
     if (pathname.startsWith('/agency/settings')) return hasPermission('settings') || hasPermission('billing');
     const matched = Object.keys(PATH_PERMISSIONS).find(prefix => pathname.startsWith(prefix));
     if (!matched) return true; // plan-gated or always-open route
@@ -412,7 +427,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       <main className="md:pl-64 min-h-screen" style={{ backgroundColor: theme.bg }}>
         <div key={pathname} className="agency-page-enter">{children}</div>
       </main>
-      <SupportWidget theme={theme} userType="agency" agencyId={agency?.id} />
+      <SupportWidget theme={theme} userType="agency" />
     </div>
     <TourOverlay />
     </TourProvider>

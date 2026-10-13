@@ -79,15 +79,22 @@ export default function CallDetailPage() {
 
   const hipaaMode = client?.hipaa_mode === true;
 
-  // The live-call / takeover features are a call-center (client-staff) tool. An
-  // agency-level viewer does not use them, so the "who handled it" section is
-  // hidden for them. (A client user, i.e. the call center, always sees it.)
+  // Is the person viewing this a dashboard user of the managing agency (owner or
+  // staff/agent), as opposed to the end business itself?
   const isAgencyViewer = useMemo(() => {
     try {
       const u = JSON.parse(localStorage.getItem('user') || '{}');
       return u.role === 'agency_owner' || u.role === 'agency_staff';
     } catch { return false; }
   }, []);
+
+  // Who sees the post-call "who handled this call" review. The live-call /
+  // takeover tooling belongs to a call center (managers + agents), so:
+  //   - the end business always sees it;
+  //   - an agency viewer sees it only when the agency runs a call center;
+  //   - a plain reseller agency viewer does not (it doesn't apply to them).
+  const agencyIsCallCenter = client?.agency?.is_call_center === true;
+  const showHandledBy = !isAgencyViewer || agencyIsCallCenter;
 
   useEffect(() => { if (client && callId) fetchCallDetail(); }, [client, callId]);
   useEffect(() => { if (client) fetchContacts(); }, [client]);
@@ -304,8 +311,9 @@ export default function CallDetailPage() {
           )}
 
           {/* Who handled this call — the call-center view: AI only, or who
-              listened / took over. Hidden for agency-level viewers. */}
-          {!isAgencyViewer && (() => {
+              listened / took over. Shown to the end business and to call-center
+              agency viewers (managers + agents); hidden for plain resellers. */}
+          {showHandledBy && (() => {
             const events = (call.call_metadata?.supervisor_events) || [];
             const tookOver = events.some(e => e.action === 'jumped_in');
             const handler = (events.find(e => e.name)?.name) || 'A teammate';

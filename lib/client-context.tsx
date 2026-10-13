@@ -66,6 +66,10 @@ interface Client {
     support_phone: string | null;
     website_theme: 'light' | 'dark' | 'auto' | null;
     client_header_mode?: 'agency_name' | 'business_name' | null;
+    // Call-center account type. When true the managing agency runs a call center,
+    // so the post-call "who handled this call" review is shown to agency viewers
+    // (managers + agents), not just the end business.
+    is_call_center?: boolean;
     plan_features?: Record<string, Record<string, boolean>>;
     allow_client_branding?: boolean;
     marketing_domain?: string | null;

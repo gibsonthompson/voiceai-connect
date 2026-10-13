@@ -10,7 +10,7 @@
 // ============================================================================
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Headphones, PhoneCall, Radio, UserCheck, Loader2, CircleDot } from 'lucide-react';
+import { Headphones, PhoneCall, Radio, UserCheck, Loader2, CircleDot, Building2, ChevronRight } from 'lucide-react';
 import { useAgency } from '../context';
 
 interface LiveCall {
@@ -23,6 +23,12 @@ interface LiveCall {
   beingMonitored: boolean;
   startedAt: string;
   vapiCallId: string | null;
+}
+
+interface Business {
+  clientId: string;
+  businessName: string;
+  live: boolean;
 }
 
 const POLL_MS = 4000;
@@ -44,9 +50,10 @@ function fmtPhone(p: string | null): string {
 }
 
 export default function AgencyLiveWallboard() {
-  const { agency } = useAgency();
+  const { agency, isAgent } = useAgency();
   const accent = (agency as any)?.primary_color || '#10b981';
   const [calls, setCalls] = useState<LiveCall[]>([]);
+  const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(Date.now());
   const timerRef = useRef<any>(null);
@@ -61,7 +68,10 @@ export default function AgencyLiveWallboard() {
       });
       if (r.ok) {
         const d = await r.json();
-        if (d.success) setCalls(Array.isArray(d.calls) ? d.calls : []);
+        if (d.success) {
+          setCalls(Array.isArray(d.calls) ? d.calls : []);
+          setBusinesses(Array.isArray(d.businesses) ? d.businesses : []);
+        }
       }
     } catch { /* keep the last good board */ }
     finally { setLoading(false); }
@@ -95,7 +105,7 @@ export default function AgencyLiveWallboard() {
           </div>
           <div className="min-w-0">
             <h1 className="text-lg sm:text-xl lg:text-2xl font-semibold tracking-tight text-gray-900 dark:text-white truncate">Live Calls</h1>
-            <p className="text-xs sm:text-[13px] text-gray-500 dark:text-gray-400">Every call happening right now across your businesses</p>
+            <p className="text-xs sm:text-[13px] text-gray-500 dark:text-gray-400">Every call happening right now across {isAgent ? 'the businesses assigned to you' : 'your businesses'}</p>
           </div>
         </div>
         <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full" style={{ backgroundColor: `${accent}14`, color: accent }}>
@@ -105,42 +115,80 @@ export default function AgencyLiveWallboard() {
 
       {loading ? (
         <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400"><Loader2 className="h-4 w-4 animate-spin" /> Loading the board...</div>
-      ) : calls.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-gray-200 dark:border-white/10 py-20 flex flex-col items-center justify-center text-center">
-          <CircleDot className="h-9 w-9 mb-3 text-gray-300 dark:text-gray-600" />
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-200">No live calls right now</p>
-          <p className="text-[13px] mt-1 text-gray-500 dark:text-gray-400">When a caller reaches one of your businesses, it appears here instantly.</p>
-        </div>
       ) : (
-        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {calls.map((c) => (
-            <a
-              key={c.sessionId}
-              href={`/live/${c.clientId}?mode=monitor`}
-              className="group rounded-2xl p-4 sm:p-5 bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20 transition shadow-sm"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="font-semibold text-sm sm:text-[15px] text-gray-900 dark:text-white truncate">{c.businessName}</p>
-                  <p className="text-[13px] text-gray-500 dark:text-gray-400 truncate">{fmtPhone(c.callerNumber)}</p>
-                </div>
-                <span className="text-[11px] font-semibold tabular-nums px-2 py-1 rounded-lg flex-shrink-0 text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-white/5">
-                  {fmtElapsed(c.startedAt, now)}
-                </span>
+        <>
+          {/* Live now */}
+          {calls.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-gray-200 dark:border-white/10 py-12 flex flex-col items-center justify-center text-center">
+              <CircleDot className="h-8 w-8 mb-2.5 text-gray-300 dark:text-gray-600" />
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-200">No live calls right now</p>
+              <p className="text-[13px] mt-1 text-gray-500 dark:text-gray-400">When a caller reaches one of {isAgent ? 'your assigned businesses' : 'your businesses'}, it appears here instantly.</p>
+            </div>
+          ) : (
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              {calls.map((c) => (
+                <a
+                  key={c.sessionId}
+                  href={`/live/${c.clientId}?mode=monitor`}
+                  className="group rounded-2xl p-4 sm:p-5 bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20 transition shadow-sm"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-sm sm:text-[15px] text-gray-900 dark:text-white truncate">{c.businessName}</p>
+                      <p className="text-[13px] text-gray-500 dark:text-gray-400 truncate">{fmtPhone(c.callerNumber)}</p>
+                    </div>
+                    <span className="text-[11px] font-semibold tabular-nums px-2 py-1 rounded-lg flex-shrink-0 text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-white/5">
+                      {fmtElapsed(c.startedAt, now)}
+                    </span>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold">
+                      <span className="h-2 w-2 rounded-full animate-pulse" style={{ backgroundColor: statusColor(c) }} />
+                      <span style={{ color: statusColor(c) }}>{statusLabel(c)}</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold opacity-0 group-hover:opacity-100 transition" style={{ color: accent }}>
+                      {c.beingMonitored ? <UserCheck className="h-4 w-4" /> : <PhoneCall className="h-4 w-4" />}
+                      Open
+                    </span>
+                  </div>
+                </a>
+              ))}
+            </div>
+          )}
+
+          {/* Business roster — open any business even when it is quiet. */}
+          {businesses.length > 0 && (
+            <div className="mt-7 sm:mt-9">
+              <div className="flex items-center gap-2 mb-3">
+                <Building2 className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                <h2 className="text-[13px] sm:text-sm font-semibold text-gray-700 dark:text-gray-200">
+                  {isAgent ? 'Your businesses' : 'All businesses'}
+                </h2>
+                <span className="text-[12px] text-gray-400 dark:text-gray-500">{businesses.length}</span>
               </div>
-              <div className="mt-3 flex items-center justify-between gap-2">
-                <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold">
-                  <span className="h-2 w-2 rounded-full animate-pulse" style={{ backgroundColor: statusColor(c) }} />
-                  <span style={{ color: statusColor(c) }}>{statusLabel(c)}</span>
-                </span>
-                <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold opacity-0 group-hover:opacity-100 transition" style={{ color: accent }}>
-                  {c.beingMonitored ? <UserCheck className="h-4 w-4" /> : <PhoneCall className="h-4 w-4" />}
-                  Open
-                </span>
+              <div className="rounded-2xl overflow-hidden border border-gray-200 dark:border-white/10 divide-y divide-gray-100 dark:divide-white/[0.06] bg-white dark:bg-white/[0.02]">
+                {businesses.map((b) => (
+                  <a
+                    key={b.clientId}
+                    href={`/live/${b.clientId}?mode=monitor`}
+                    className="group flex items-center justify-between gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/[0.03] transition"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      {b.live ? (
+                        <span className="h-2 w-2 rounded-full flex-shrink-0 animate-pulse" style={{ backgroundColor: '#22c55e' }} />
+                      ) : (
+                        <span className="h-2 w-2 rounded-full flex-shrink-0 bg-gray-300 dark:bg-gray-600" />
+                      )}
+                      <span className="text-sm text-gray-900 dark:text-white truncate">{b.businessName}</span>
+                      {b.live && <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-md flex-shrink-0" style={{ backgroundColor: '#22c55e1a', color: '#16a34a' }}>Live</span>}
+                    </div>
+                    <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-300 dark:text-gray-600 group-hover:text-gray-500 dark:group-hover:text-gray-400 transition" />
+                  </a>
+                ))}
               </div>
-            </a>
-          ))}
-        </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
