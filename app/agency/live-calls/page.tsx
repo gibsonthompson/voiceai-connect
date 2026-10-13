@@ -1,17 +1,23 @@
 'use client';
 
 // ============================================================================
-// Call-center Live Wallboard — /agency/live-calls
+// Call-center Live Wallboard - /agency/live-calls
 //
 // Every call live right now across all the businesses this call center serves.
-// Managers (and, in a later phase, assigned agents) watch this and open any call
-// to listen or jump in. Polls the agency live-calls endpoint for a near-live
-// board; opening a call hands off to the per-call live monitor at /live/[client].
+// Managers watch all businesses; an assigned agent sees only theirs. Opening a
+// call hands off to the per-call live monitor at /live/[client].
+//
+// Theming: uses the agency theme (useTheme) with inline styles, exactly like the
+// rest of the dashboard, so it white-labels correctly in both light and dark.
+// (It must NOT use Tailwind `dark:` classes - those follow the browser/system
+// dark mode, not the agency's chosen website_theme, which is what turned this
+// page black on a light-theme agency.)
 // ============================================================================
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Headphones, PhoneCall, Radio, UserCheck, Loader2, CircleDot, Building2, ChevronRight } from 'lucide-react';
 import { useAgency } from '../context';
+import { useTheme } from '../../../hooks/useTheme';
 
 interface LiveCall {
   sessionId: string;
@@ -32,6 +38,8 @@ interface Business {
 }
 
 const POLL_MS = 4000;
+const LIVE_GREEN = '#22c55e';
+const HUMAN_AMBER = '#f59e0b';
 
 function fmtElapsed(fromIso: string, now: number): string {
   const start = Date.parse(fromIso);
@@ -51,7 +59,8 @@ function fmtPhone(p: string | null): string {
 
 export default function AgencyLiveWallboard() {
   const { agency, isAgent } = useAgency();
-  const accent = (agency as any)?.primary_color || '#10b981';
+  const theme = useTheme();
+  const accent = theme.primary;
   const [calls, setCalls] = useState<LiveCall[]>([]);
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
@@ -91,38 +100,39 @@ export default function AgencyLiveWallboard() {
     return 'AI handling';
   };
   const statusColor = (c: LiveCall) => {
-    if (c.humanOnCall) return '#f59e0b';
+    if (c.humanOnCall) return HUMAN_AMBER;
     if (c.beingMonitored) return accent;
-    return '#22c55e';
+    return LIVE_GREEN;
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 min-h-screen bg-gray-50 dark:bg-[#0f0f0e]">
+    <div className="p-4 sm:p-6 lg:p-8 min-h-screen" style={{ backgroundColor: theme.bg, color: theme.text }}>
+      {/* Header */}
       <div className="flex items-center justify-between gap-3 mb-5 sm:mb-7">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: `${accent}1a` }}>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>
             <Headphones className="h-5 w-5" style={{ color: accent }} />
           </div>
           <div className="min-w-0">
-            <h1 className="text-lg sm:text-xl lg:text-2xl font-semibold tracking-tight text-gray-900 dark:text-white truncate">Live Calls</h1>
-            <p className="text-xs sm:text-[13px] text-gray-500 dark:text-gray-400">Every call happening right now across {isAgent ? 'the businesses assigned to you' : 'your businesses'}</p>
+            <h1 className="text-lg sm:text-xl lg:text-2xl font-semibold tracking-tight truncate" style={{ color: theme.text }}>Live Calls</h1>
+            <p className="text-xs sm:text-[13px]" style={{ color: theme.textMuted }}>Every call happening right now across {isAgent ? 'the businesses assigned to you' : 'your businesses'}</p>
           </div>
         </div>
-        <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full" style={{ backgroundColor: `${accent}14`, color: accent }}>
+        <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full" style={{ backgroundColor: theme.primary15, color: accent }}>
           <Radio className="h-3.5 w-3.5" /> {calls.length} live
         </span>
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400"><Loader2 className="h-4 w-4 animate-spin" /> Loading the board...</div>
+        <div className="flex items-center gap-2 text-sm" style={{ color: theme.textMuted }}><Loader2 className="h-4 w-4 animate-spin" /> Loading the board...</div>
       ) : (
         <>
           {/* Live now */}
           {calls.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-gray-200 dark:border-white/10 py-12 flex flex-col items-center justify-center text-center">
-              <CircleDot className="h-8 w-8 mb-2.5 text-gray-300 dark:text-gray-600" />
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-200">No live calls right now</p>
-              <p className="text-[13px] mt-1 text-gray-500 dark:text-gray-400">When a caller reaches one of {isAgent ? 'your assigned businesses' : 'your businesses'}, it appears here instantly.</p>
+            <div className="rounded-2xl py-12 flex flex-col items-center justify-center text-center" style={{ border: `1px dashed ${theme.border}` }}>
+              <CircleDot className="h-8 w-8 mb-2.5" style={{ color: theme.textSubtle }} />
+              <p className="text-sm font-medium" style={{ color: theme.text }}>No live calls right now</p>
+              <p className="text-[13px] mt-1" style={{ color: theme.textMuted }}>When a caller reaches one of {isAgent ? 'your assigned businesses' : 'your businesses'}, it appears here instantly.</p>
             </div>
           ) : (
             <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
@@ -130,14 +140,17 @@ export default function AgencyLiveWallboard() {
                 <a
                   key={c.sessionId}
                   href={`/live/${c.clientId}?mode=monitor`}
-                  className="group rounded-2xl p-4 sm:p-5 bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20 transition shadow-sm"
+                  className="group rounded-2xl p-4 sm:p-5 transition"
+                  style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = theme.primary30; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = theme.border; }}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="font-semibold text-sm sm:text-[15px] text-gray-900 dark:text-white truncate">{c.businessName}</p>
-                      <p className="text-[13px] text-gray-500 dark:text-gray-400 truncate">{fmtPhone(c.callerNumber)}</p>
+                      <p className="font-semibold text-sm sm:text-[15px] truncate" style={{ color: theme.text }}>{c.businessName}</p>
+                      <p className="text-[13px] truncate" style={{ color: theme.textMuted }}>{fmtPhone(c.callerNumber)}</p>
                     </div>
-                    <span className="text-[11px] font-semibold tabular-nums px-2 py-1 rounded-lg flex-shrink-0 text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-white/5">
+                    <span className="text-[11px] font-semibold tabular-nums px-2 py-1 rounded-lg flex-shrink-0" style={{ color: theme.textMuted, backgroundColor: theme.hover }}>
                       {fmtElapsed(c.startedAt, now)}
                     </span>
                   </div>
@@ -156,33 +169,32 @@ export default function AgencyLiveWallboard() {
             </div>
           )}
 
-          {/* Business roster — open any business even when it is quiet. */}
+          {/* Business roster - open any business even when it is quiet. */}
           {businesses.length > 0 && (
             <div className="mt-7 sm:mt-9">
               <div className="flex items-center gap-2 mb-3">
-                <Building2 className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-                <h2 className="text-[13px] sm:text-sm font-semibold text-gray-700 dark:text-gray-200">
+                <Building2 className="h-4 w-4" style={{ color: theme.textMuted }} />
+                <h2 className="text-[13px] sm:text-sm font-semibold" style={{ color: theme.text }}>
                   {isAgent ? 'Your businesses' : 'All businesses'}
                 </h2>
-                <span className="text-[12px] text-gray-400 dark:text-gray-500">{businesses.length}</span>
+                <span className="text-[12px]" style={{ color: theme.textMuted }}>{businesses.length}</span>
               </div>
-              <div className="rounded-2xl overflow-hidden border border-gray-200 dark:border-white/10 divide-y divide-gray-100 dark:divide-white/[0.06] bg-white dark:bg-white/[0.02]">
-                {businesses.map((b) => (
+              <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${theme.border}`, backgroundColor: theme.card }}>
+                {businesses.map((b, i) => (
                   <a
                     key={b.clientId}
                     href={`/live/${b.clientId}?mode=monitor`}
-                    className="group flex items-center justify-between gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/[0.03] transition"
+                    className="group flex items-center justify-between gap-3 px-4 py-3 transition"
+                    style={{ borderTop: i === 0 ? 'none' : `1px solid ${theme.borderSubtle}` }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = theme.hover; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      {b.live ? (
-                        <span className="h-2 w-2 rounded-full flex-shrink-0 animate-pulse" style={{ backgroundColor: '#22c55e' }} />
-                      ) : (
-                        <span className="h-2 w-2 rounded-full flex-shrink-0 bg-gray-300 dark:bg-gray-600" />
-                      )}
-                      <span className="text-sm text-gray-900 dark:text-white truncate">{b.businessName}</span>
-                      {b.live && <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-md flex-shrink-0" style={{ backgroundColor: '#22c55e1a', color: '#16a34a' }}>Live</span>}
+                      <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: b.live ? LIVE_GREEN : theme.textSubtle }} />
+                      <span className="text-sm truncate" style={{ color: theme.text }}>{b.businessName}</span>
+                      {b.live && <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-md flex-shrink-0" style={{ backgroundColor: `${LIVE_GREEN}1a`, color: LIVE_GREEN }}>Live</span>}
                     </div>
-                    <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-300 dark:text-gray-600 group-hover:text-gray-500 dark:group-hover:text-gray-400 transition" />
+                    <ChevronRight className="h-4 w-4 flex-shrink-0" style={{ color: theme.textSubtle }} />
                   </a>
                 ))}
               </div>

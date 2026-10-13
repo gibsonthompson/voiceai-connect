@@ -15,6 +15,9 @@ interface Agency {
   status: string;
   // Call-center account type (set at signup): unlocks the live wallboard + agents.
   is_call_center?: boolean;
+  // Call-center growth-tools add-on: re-enables the reseller/growth tabs that are
+  // stripped from the call-center nav by default. Defaults false.
+  cc_growth_addon?: boolean;
   plan_type: string;
   access_plan: string | null;
   subscription_status: string;

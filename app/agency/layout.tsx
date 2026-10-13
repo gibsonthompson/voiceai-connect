@@ -3,7 +3,7 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe, Phone, Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Zap, Paintbrush, Clock, Headphones, Check, Crown, Shield, Inbox, Compass, type LucideIcon } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe, Phone, Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Zap, Paintbrush, Clock, Headphones, Headset, Check, Crown, Shield, Inbox, Compass, type LucideIcon } from 'lucide-react';
 import { AgencyProvider, useAgency } from './context';
 import { usePlanFeatures } from '../../hooks/usePlanFeatures';
 import { useTheme } from '../../hooks/useTheme';
@@ -107,6 +107,10 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     // serves. Shown when the agency signed up as a call center.
     ...(agency?.is_call_center ? [{ href: '/agency/live-calls', label: 'Live Calls', icon: Headphones } as NavItem] : []),
     { href: '/agency/clients', label: 'Clients', icon: Users, permissionKey: 'clients' },
+    // Call-center only: managing agents (staff) is a first-class surface for a
+    // call center, so it lives in the top-level nav here rather than buried in
+    // Settings. Agents themselves get AGENT_NAV and never see this.
+    ...(agency?.is_call_center ? [{ href: '/agency/agents', label: 'Agents', icon: Headset } as NavItem] : []),
     { href: '/agency/inbox', label: 'Inbox', icon: Inbox },
     { href: '/agency/leads', label: 'Leads', icon: Target, locked: !canUseLeadFinder, upgradeRequired: 'Pro', permissionKey: 'leads' },
     { href: '/agency/outreach', label: 'Outreach', icon: Send, locked: !canUseLeadFinder, upgradeRequired: 'Pro', permissionKey: 'outreach' },
@@ -128,7 +132,19 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     { href: '/agency/live-calls', label: 'Live Calls', icon: Headphones },
   ];
 
+  // Call-center managers run an operations console, not an SMB growth dashboard,
+  // so the reseller/growth tabs (finding and selling to new clients) are stripped
+  // by default. A call center that buys the growth add-on (cc_growth_addon) gets
+  // them back. Plain reseller agencies are unaffected.
+  const CC_GROWTH_HREFS = new Set([
+    '/agency/leads', '/agency/outreach', '/agency/referrals', '/agency/demo-phone', '/agency/marketing',
+  ]);
+  const stripGrowthForCallCenter = !!agency?.is_call_center && !agency?.cc_growth_addon;
+
   const filteredNavItems = isAgent ? AGENT_NAV : navItems.filter(item => {
+    // Call-center screening: hide the growth/reseller cluster unless the add-on
+    // is active.
+    if (stripGrowthForCallCenter && CC_GROWTH_HREFS.has(item.href)) return false;
     // Settings holds both the settings tabs and the Billing sub-tab, so show
     // the link if the member has either permission. The settings page itself
     // gates the individual tabs.
@@ -147,6 +163,9 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     // navigation to any other /agency page bounces back to it). The per-call
     // monitor lives at /live/* outside this shell and is authorized server-side.
     if (isAgent) return pathname.startsWith('/agency/live-calls');
+    // Call-center screening: a stripped growth page is off-limits by direct URL
+    // too, unless the growth add-on is active.
+    if (stripGrowthForCallCenter && Array.from(CC_GROWTH_HREFS).some(href => pathname.startsWith(href))) return false;
     if (pathname.startsWith('/agency/settings')) return hasPermission('settings') || hasPermission('billing');
     const matched = Object.keys(PATH_PERMISSIONS).find(prefix => pathname.startsWith(prefix));
     if (!matched) return true; // plan-gated or always-open route
