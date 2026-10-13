@@ -26,8 +26,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Phone, PhoneOff, Mic, MicOff, Radio, Loader2, Calendar, CalendarCheck,
-  BookOpen, PhoneForwarded, MessageSquare, Sparkles, Send, Building2,
-  ChevronRight, CircleDot, Headphones, VolumeX, UserPlus, Undo2,
+  BookOpen, PhoneForwarded, MessageSquare, Sparkles, Building2,
+  CircleDot, Headphones, VolumeX, UserPlus, Undo2,
+  UserCheck, ShieldAlert,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -60,24 +61,26 @@ interface Activity { id: string; tool: string; label: string; detail: string | n
 
 type Theme = ReturnType<typeof palette>;
 
-// Smoothly reveal streamed transcript text WITHOUT adding latency. The problem:
-// VAPI sends partials in multi-word bursts (~every 100-200ms), so replacing the
-// whole string makes text "snap" in jerky chunks. This evens out the cadence by
-// revealing characters on a rAF loop at a rate that scales with how far behind
-// it is: a steady floor during quiet stretches, and fast catch-up when a big
-// burst lands, so it can never fall behind the data (a new burst just pulls the
-// target forward). When the text is a fresh utterance (not an extension of what
-// is shown), it restarts from 0. Idle frames do nothing, so it is cheap.
-//   BASE_CPS   - floor reveal speed (chars/sec); ~double natural speech so small
-//                deltas clear in a frame or two.
-//   CATCH_UP_S - any backlog is cleared within this window, so a large burst is
-//                revealed in ~250ms instead of popping in at once.
-const SMOOTH_BASE_CPS = 140;
-const SMOOTH_CATCH_UP_S = 0.25;
+// Smoothly reveal streamed transcript text so it FLOWS WITH the spoken audio,
+// without adding latency. VAPI sends partials in multi-word bursts, so replacing
+// the whole string makes text snap in jerky chunks. We reveal characters on a
+// rAF loop at a natural pace, tracked as a FRACTIONAL position so sub-one-char-
+// per-frame rates are honored (advancing by a whole char every frame would force
+// ~60 chars/sec and race far ahead of the voice). The rate has a natural floor
+// and only accelerates when it is genuinely behind, so it can never fall behind
+// the data (a new burst pulls the target forward) nor run ahead of speech. A
+// fresh utterance (not an extension of what is shown) restarts from 0.
+//   BASE_CPS   - natural reveal pace in chars/sec. ~20 reads like a person
+//                speaking (natural speech is ~15); low enough that text tracks
+//                the voice instead of anticipating it.
+//   CATCH_UP_S - window to clear a real backlog, so it speeds up only when it
+//                has fallen behind (keeps max lag ~1s) rather than racing.
+const SMOOTH_BASE_CPS = 20;
+const SMOOTH_CATCH_UP_S = 1.0;
 function useSmoothReveal(target: string): string {
   const [shown, setShown] = useState('');
   const targetRef = useRef('');
-  const shownLenRef = useRef(0);
+  const posRef = useRef(0); // fractional reveal position (chars)
   const emittedRef = useRef('');
   const lastRef = useRef(0);
   const rafRef = useRef<number | null>(null);
@@ -87,7 +90,7 @@ function useSmoothReveal(target: string): string {
   const shownNow = shown;
   if (targetRef.current !== target) {
     targetRef.current = target;
-    if (!target.startsWith(shownNow)) { shownLenRef.current = 0; emittedRef.current = ''; }
+    if (!target.startsWith(shownNow)) { posRef.current = 0; emittedRef.current = ''; }
   }
 
   useEffect(() => {
@@ -96,19 +99,18 @@ function useSmoothReveal(target: string): string {
       const dt = Math.min(0.1, (now - lastRef.current) / 1000);
       lastRef.current = now;
       const tgt = targetRef.current;
-      let len = shownLenRef.current;
-      if (len > tgt.length) len = tgt.length; // target shrank/reset: snap down
-      if (len < tgt.length) {
-        const remaining = tgt.length - len;
+      let pos = posRef.current;
+      if (pos > tgt.length) pos = tgt.length; // target shrank/reset: snap down
+      if (pos < tgt.length) {
+        const remaining = tgt.length - pos;
         const rate = Math.max(SMOOTH_BASE_CPS, remaining / SMOOTH_CATCH_UP_S);
-        len = Math.min(tgt.length, len + Math.max(1, Math.ceil(rate * dt)));
+        pos = Math.min(tgt.length, pos + rate * dt); // fractional: no forced min
       }
-      // Re-render only when what we show actually changes. Compare against the
-      // ref (stable), never a captured `shown` (this effect runs once, so that
-      // would be stale). Track the last emitted string on the ref too.
-      const next = tgt.slice(0, len);
+      posRef.current = pos;
+      // Re-render only when the revealed text actually changes. Compare against
+      // the ref (stable), never a captured `shown` (this effect runs once).
+      const next = tgt.slice(0, Math.floor(pos));
       if (next !== emittedRef.current) {
-        shownLenRef.current = len;
         emittedRef.current = next;
         setShown(next);
       }
@@ -133,9 +135,18 @@ const TOOL_META: Record<string, { label: string; Icon: any }> = {
   send_sms: { label: 'Texting the caller', Icon: MessageSquare },
   barge_connected: { label: 'A teammate joined the call', Icon: UserPlus },
   barge_ended: { label: 'Teammate left the call', Icon: Undo2 },
+  barge_dialing: { label: 'A teammate is listening in', Icon: Headphones },
+  barge_returned: { label: 'Handed the call back to the AI', Icon: Undo2 },
+  caller_recognized: { label: 'Recognized returning caller', Icon: UserCheck },
+  spam_flagged: { label: 'Flagged as spam', Icon: ShieldAlert },
 };
+// The server's broadcast label is authoritative when present (it carries the
+// real detail, e.g. WHO took over or WHICH link was texted); TOOL_META only
+// supplies the icon and a fallback label for client-side (demo) events that
+// pass no label.
 function toolMeta(tool: string, fallbackLabel?: string) {
-  return TOOL_META[tool] || { label: fallbackLabel || 'Working on it', Icon: Sparkles };
+  const m = TOOL_META[tool];
+  return { label: fallbackLabel || (m && m.label) || 'Working on it', Icon: (m && m.Icon) || Sparkles };
 }
 
 const uid = () => `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -183,6 +194,10 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
 
   const [callState, setCallState] = useState<CallState>('idle');
   const [statusLabel, setStatusLabel] = useState<string>(mode === 'monitor' ? 'Waiting for a call' : 'Ready');
+  // True ONLY while a human has actually taken over the call. Set from status
+  // events (true on agent_connected, false on every other status) so the pill
+  // can never claim someone is on the call when no one is.
+  const [humanOnCall, setHumanOnCall] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [speaking, setSpeaking] = useState<'assistant' | 'caller' | null>(null);
 
@@ -204,10 +219,8 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
   // whatever VAPI last sent (see useSmoothReveal).
   const smoothPartial = useSmoothReveal(partial?.text || '');
 
-  const [takeoverOpen, setTakeoverOpen] = useState(false);
-  const [sayText, setSayText] = useState('');
-  const [transferNumber, setTransferNumber] = useState('');
-  const [controlBusy, setControlBusy] = useState(false);
+  // Note shown in the footer for demo-mode call errors (the old VAPI-channel
+  // "take over" panel was removed; the conference barge flow is the one path).
   const [controlNote, setControlNote] = useState<string | null>(null);
 
   // ---- Live monitor seat (listen + jump-in), conference over WebRTC --------
@@ -251,6 +264,15 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
   const token = useMemo(() => {
     try { return localStorage.getItem('auth_token') || ''; } catch { return ''; }
   }, []);
+  // The logged-in user's display name, sent with listen-start so the monitor
+  // attributes the listen / jump-in / hand-back events to this person (not an
+  // anonymous "teammate") for everyone watching the call.
+  const agentName = useMemo(() => {
+    try {
+      const u = JSON.parse(localStorage.getItem('user') || '{}');
+      return (u.name || u.full_name || u.firstName || u.email || '').toString().trim() || null;
+    } catch { return null; }
+  }, []);
 
   const accent = info?.branding?.primary_color || '#6366f1';
   const accentText = useMemo(() => contrastOn(accent), [accent]);
@@ -274,6 +296,15 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
     })();
     return () => { alive = false; };
   }, [clientId, token]);
+
+  // Warm the Telnyx WebRTC SDK chunk as soon as we know this is a barge-capable
+  // call, so pressing "Listen in" does not also wait for that JS to download.
+  // Shaves the first-click delay; the dial/negotiation itself is unaffected.
+  useEffect(() => {
+    if (mode === 'monitor' && info?.barge_supported) {
+      import('@telnyx/webrtc').catch(() => { /* best effort; startListen imports again */ });
+    }
+  }, [mode, info?.barge_supported]);
 
   // ---- helpers to append to the feed --------------------------------------
   const addLine = useCallback((role: 'caller' | 'assistant', text: string) => {
@@ -395,19 +426,19 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
     } else if (ev.type === 'status') {
       const s = String(ev.status || '').toLowerCase();
       const lbl = ev.label ? String(ev.label) : null;
-      if (s === 'in-progress') { setCallState('live'); setStatusLabel(lbl || 'Live'); setBridged(null); }
-      else if (s === 'ringing' || s === 'queued') { setCallState('connecting'); setStatusLabel(lbl || 'Ringing'); }
-      else if (s === 'forwarding') { setStatusLabel('Transferring'); addActivity('transferCall'); }
+      if (s === 'in-progress') { setCallState('live'); setStatusLabel(lbl || 'Live'); setBridged(null); setHumanOnCall(false); }
+      else if (s === 'ringing' || s === 'queued') { setCallState('connecting'); setStatusLabel(lbl || 'Ringing'); setHumanOnCall(false); }
+      else if (s === 'forwarding') { setStatusLabel('Transferring'); addActivity('transferCall'); setHumanOnCall(false); }
       // Own-the-call warm transfer lifecycle (telnyx_cc): dialing the team, then
       // connected (bridged) to a person. Stay "live" throughout; the pill label
       // tells the viewer where the call is.
-      else if (s === 'dialing_team' || s === 'transferring') { setCallState('live'); setStatusLabel(lbl || 'Transferring to the team'); }
-      else if (s === 'bridged') { setCallState('live'); setStatusLabel(lbl || 'Connected to the team'); setBridged(lbl || 'Connected to the team'); setPartial(null); }
+      else if (s === 'dialing_team' || s === 'transferring') { setCallState('live'); setStatusLabel(lbl || 'Transferring to the team'); setHumanOnCall(false); }
+      else if (s === 'bridged') { setCallState('live'); setStatusLabel(lbl || 'Connected to the team'); setBridged(lbl || 'Connected to the team'); setPartial(null); setHumanOnCall(false); }
       // Browser human-barge: a teammate joined and is talking to the caller. Stay
       // "live"; the pill tells every viewer a person is on. The viewer who
       // actually jumped in gets their own live state from the WebRTC leg.
-      else if (s === 'agent_connected') { setCallState('live'); setStatusLabel(lbl || 'Teammate on the call'); setBridged(null); setPartial(null); }
-      else if (s === 'ended') { setCallState('ended'); setStatusLabel('Call ended'); setSpeaking(null); setPartial(null); setBridged(null); if (bargeStateRef.current !== 'idle') { cleanupBarge(); setBargeState('idle'); } }
+      else if (s === 'agent_connected') { setCallState('live'); setStatusLabel(lbl || 'A teammate is on the call'); setBridged(null); setPartial(null); setHumanOnCall(true); }
+      else if (s === 'ended') { setCallState('ended'); setStatusLabel('Call ended'); setSpeaking(null); setPartial(null); setBridged(null); setHumanOnCall(false); if (bargeStateRef.current !== 'idle') { cleanupBarge(); setBargeState('idle'); } }
     } else if (ev.type === 'takeover') {
       if (ev.action === 'jump_in') addActivity('barge_connected', null, 'A teammate joined the call');
       else if (ev.action === 'jump_out') addActivity('barge_ended', null, ev.mode === 'end_call' ? 'Teammate ended the call' : 'Teammate handed back to the AI');
@@ -491,27 +522,6 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
 
   useEffect(() => () => { try { vapiRef.current?.stop(); } catch {} }, []);
 
-  const sendControl = useCallback(async (action: string, extra?: Record<string, any>) => {
-    const callId = callIdRef.current;
-    if (!callId) { setControlNote('No live call to control yet.'); return; }
-    setControlBusy(true); setControlNote(null);
-    try {
-      const res = await fetch(`${API}/api/client/${clientId}/live/control`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ callId, action, ...(extra || {}) }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || 'Control failed');
-      if (action === 'say') setSayText('');
-      if (action === 'transfer') setTransferNumber('');
-    } catch (e: any) {
-      setControlNote(e?.message || 'Control failed');
-    } finally {
-      setControlBusy(false);
-    }
-  }, [clientId, token]);
-
   // ---- take a seat on the live call (listen), over WebRTC -------------------
   const startListen = useCallback(async () => {
     const callId = callIdRef.current;
@@ -558,7 +568,7 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
           const lsRes = await fetch(`${API}/api/client/${clientId}/live/listen-start`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ callId }),
+            body: JSON.stringify({ callId, agentName }),
           });
           const ls = await lsRes.json();
           if (!lsRes.ok || !ls.success) throw new Error(ls.error || 'Could not open live audio.');
@@ -614,7 +624,7 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
       cleanupBarge();
       setBargeState('idle');
     }
-  }, [clientId, token, cleanupBarge]);
+  }, [clientId, token, cleanupBarge, agentName]);
 
   // Jump in: flip the seat from listening to talking (the backend drops the AI
   // and unmutes us in the conference). The WebRTC leg stays up throughout.
@@ -734,6 +744,11 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
 
   const live = callState === 'live';
   const isDemo = mode === 'demo';
+  // Final guarantee: never show an "on the call" status unless a human really is
+  // on. If a reset event were ever missed, fall back to a truthful label.
+  const pillLabel = (!humanOnCall && /on the call/i.test(statusLabel))
+    ? (callState === 'live' ? 'AI on the call' : statusLabel)
+    : statusLabel;
 
   return (
     <div className="h-[100dvh] overflow-hidden flex flex-col" style={{ backgroundColor: t.bg, color: t.text }}>
@@ -753,7 +768,7 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <StatusPill state={callState} label={statusLabel} t={t} />
+          <StatusPill state={callState} label={pillLabel} t={t} />
         </div>
       </header>
 
@@ -872,44 +887,6 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
             })}
           </div>
 
-          {/* Takeover (monitor mode only) */}
-          {mode === 'monitor' && (
-            <div className="px-4 sm:px-6 py-3" style={{ borderTop: `1px solid ${t.border}` }}>
-              <button onClick={() => setTakeoverOpen((v) => !v)}
-                      className="w-full flex items-center justify-between text-xs font-semibold uppercase tracking-wide py-1"
-                      style={{ color: t.textMuted }}>
-                Take over the call
-                <ChevronRight className={`h-4 w-4 transition-transform ${takeoverOpen ? 'rotate-90' : ''}`} />
-              </button>
-              {takeoverOpen && (
-                <div className="mt-3 space-y-2">
-                  <div className="flex gap-2">
-                    <input value={sayText} onChange={(e) => setSayText(e.target.value)}
-                           placeholder="Make the AI say..." className="flex-1 rounded-lg px-3 py-2 text-sm outline-none"
-                           style={{ backgroundColor: t.inputBg, border: `1px solid ${t.border}`, color: t.text }} />
-                    <button disabled={controlBusy || !sayText.trim()} onClick={() => sendControl('say', { text: sayText })}
-                            className="rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-40" style={{ backgroundColor: accent, color: accentText }}>
-                      <Send className="h-4 w-4" />
-                    </button>
-                  </div>
-                  <div className="flex gap-2">
-                    <input value={transferNumber} onChange={(e) => setTransferNumber(e.target.value)}
-                           placeholder="Transfer to +1..." className="flex-1 rounded-lg px-3 py-2 text-sm outline-none"
-                           style={{ backgroundColor: t.inputBg, border: `1px solid ${t.border}`, color: t.text }} />
-                    <button disabled={controlBusy || !transferNumber.trim()} onClick={() => sendControl('transfer', { number: transferNumber })}
-                            className="rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-40" style={{ backgroundColor: t.surfaceStrong, color: t.text }}>
-                      <PhoneForwarded className="h-4 w-4" />
-                    </button>
-                  </div>
-                  <div className="flex gap-2">
-                    <button disabled={controlBusy} onClick={() => sendControl('mute')} className="flex-1 rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-40" style={{ backgroundColor: t.surfaceStrong, color: t.text }}>Mute AI</button>
-                    <button disabled={controlBusy} onClick={() => sendControl('unmute')} className="flex-1 rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-40" style={{ backgroundColor: t.surfaceStrong, color: t.text }}>Unmute</button>
-                    <button disabled={controlBusy} onClick={() => sendControl('end')} className="flex-1 rounded-lg px-3 py-2 text-sm font-medium text-white disabled:opacity-40" style={{ backgroundColor: 'rgba(239,68,68,0.85)' }}>End</button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
         </aside>
       </div>
 
