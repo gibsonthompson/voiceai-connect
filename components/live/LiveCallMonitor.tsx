@@ -60,6 +60,68 @@ interface Activity { id: string; tool: string; label: string; detail: string | n
 
 type Theme = ReturnType<typeof palette>;
 
+// Smoothly reveal streamed transcript text WITHOUT adding latency. The problem:
+// VAPI sends partials in multi-word bursts (~every 100-200ms), so replacing the
+// whole string makes text "snap" in jerky chunks. This evens out the cadence by
+// revealing characters on a rAF loop at a rate that scales with how far behind
+// it is: a steady floor during quiet stretches, and fast catch-up when a big
+// burst lands, so it can never fall behind the data (a new burst just pulls the
+// target forward). When the text is a fresh utterance (not an extension of what
+// is shown), it restarts from 0. Idle frames do nothing, so it is cheap.
+//   BASE_CPS   - floor reveal speed (chars/sec); ~double natural speech so small
+//                deltas clear in a frame or two.
+//   CATCH_UP_S - any backlog is cleared within this window, so a large burst is
+//                revealed in ~250ms instead of popping in at once.
+const SMOOTH_BASE_CPS = 140;
+const SMOOTH_CATCH_UP_S = 0.25;
+function useSmoothReveal(target: string): string {
+  const [shown, setShown] = useState('');
+  const targetRef = useRef('');
+  const shownLenRef = useRef(0);
+  const emittedRef = useRef('');
+  const lastRef = useRef(0);
+  const rafRef = useRef<number | null>(null);
+
+  // Update the target synchronously on each change; if the new text is not an
+  // extension of what we have already shown, restart the reveal from 0.
+  const shownNow = shown;
+  if (targetRef.current !== target) {
+    targetRef.current = target;
+    if (!target.startsWith(shownNow)) { shownLenRef.current = 0; emittedRef.current = ''; }
+  }
+
+  useEffect(() => {
+    const tick = (now: number) => {
+      if (!lastRef.current) lastRef.current = now;
+      const dt = Math.min(0.1, (now - lastRef.current) / 1000);
+      lastRef.current = now;
+      const tgt = targetRef.current;
+      let len = shownLenRef.current;
+      if (len > tgt.length) len = tgt.length; // target shrank/reset: snap down
+      if (len < tgt.length) {
+        const remaining = tgt.length - len;
+        const rate = Math.max(SMOOTH_BASE_CPS, remaining / SMOOTH_CATCH_UP_S);
+        len = Math.min(tgt.length, len + Math.max(1, Math.ceil(rate * dt)));
+      }
+      // Re-render only when what we show actually changes. Compare against the
+      // ref (stable), never a captured `shown` (this effect runs once, so that
+      // would be stale). Track the last emitted string on the ref too.
+      const next = tgt.slice(0, len);
+      if (next !== emittedRef.current) {
+        shownLenRef.current = len;
+        emittedRef.current = next;
+        setShown(next);
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); lastRef.current = 0; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return shown;
+}
+
 // Canonical tool -> friendly label + icon. Keeps the demo (client-side events)
 // and the monitor (server events) showing the same language.
 const TOOL_META: Record<string, { label: string; Icon: any }> = {
@@ -137,6 +199,10 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
   // stamping it to arriving here. Proves the WebSocket fast path is actually
   // winning in production instead of silently falling back to buffered SSE.
   const [feedStat, setFeedStat] = useState<{ via: string; ms: number } | null>(null);
+  // Smoothly revealed version of the in-progress partial, so live words stream
+  // in instead of snapping in word-bursts. No added latency: it catches up to
+  // whatever VAPI last sent (see useSmoothReveal).
+  const smoothPartial = useSmoothReveal(partial?.text || '');
 
   const [takeoverOpen, setTakeoverOpen] = useState(false);
   const [sayText, setSayText] = useState('');
@@ -742,11 +808,11 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
               waiting for a chat bubble to pop in. */}
           {(callState === 'live' || partial) && !bridged && (
             <div
-              className="flex-none border-t px-4 sm:px-6 py-3"
-              style={{ borderColor: t.borderSubtle, backgroundColor: 'rgba(127,127,127,0.06)' }}
+              className="flex-none border-t px-4 sm:px-6 py-3 flex items-start"
+              style={{ borderColor: t.borderSubtle, backgroundColor: 'rgba(127,127,127,0.06)', minHeight: '3.75rem' }}
             >
               {partial ? (
-                <div className="flex items-start gap-2.5">
+                <div className="flex items-start gap-2.5 w-full">
                   <span
                     className="mt-1.5 h-2 w-2 rounded-full flex-none animate-pulse"
                     style={{ backgroundColor: partial.role === 'caller' ? '#22c55e' : accent }}
@@ -755,7 +821,17 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
                     <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: t.textFaint }}>
                       {partial.role === 'caller' ? 'Caller' : 'AI'} speaking
                     </span>
-                    <p className="text-sm leading-snug" style={{ color: t.text }}>{partial.text}</p>
+                    <p className="text-sm leading-snug" style={{ color: t.text }}>
+                      {smoothPartial}
+                      <span
+                        className="inline-block w-[2px] h-[0.95em] align-text-bottom ml-0.5 rounded-sm"
+                        style={{
+                          backgroundColor: partial.role === 'caller' ? '#22c55e' : accent,
+                          // Solid while still catching up to the latest words, dim once caught up.
+                          opacity: smoothPartial.length < partial.text.length ? 0.9 : 0.3,
+                        }}
+                      />
+                    </p>
                   </div>
                 </div>
               ) : (
