@@ -13,6 +13,8 @@ interface Agency {
   secondary_color: string;
   accent_color: string;
   status: string;
+  // Call-center account type (set at signup): unlocks the live wallboard + agents.
+  is_call_center?: boolean;
   plan_type: string;
   access_plan: string | null;
   subscription_status: string;

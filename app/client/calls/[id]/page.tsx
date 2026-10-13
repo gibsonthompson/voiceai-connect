@@ -30,11 +30,26 @@ interface Call {
   is_spam: boolean | null;
   spam_reason: string | null;
   call_language: string | null;
+  appointment_booked: boolean | null;
+  appointment_time: string | null;
+  call_metadata: { supervisor_events?: { name: string | null; action: string; at: string }[] } | null;
 }
 
 const LANGUAGE_NAMES: Record<string, string> = {
   en: 'English', es: 'Spanish', fr: 'French', de: 'German', pt: 'Portuguese',
   ja: 'Japanese', ko: 'Korean', zh: 'Chinese', it: 'Italian', nl: 'Dutch',
+};
+
+// Readable verbs for the supervisor timeline on the post-call review.
+const SUP_ACTION: Record<string, string> = {
+  listening: 'started listening in',
+  jumped_in: 'took over the call',
+  handed_back: 'handed the call back to the AI',
+  left: 'stopped monitoring',
+  ended_call: 'ended the call',
+};
+const fmtEventTime = (iso: string) => {
+  try { return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }); } catch { return ''; }
 };
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -63,6 +78,16 @@ export default function CallDetailPage() {
   const [textSent, setTextSent] = useState(false);
 
   const hipaaMode = client?.hipaa_mode === true;
+
+  // The live-call / takeover features are a call-center (client-staff) tool. An
+  // agency-level viewer does not use them, so the "who handled it" section is
+  // hidden for them. (A client user, i.e. the call center, always sees it.)
+  const isAgencyViewer = useMemo(() => {
+    try {
+      const u = JSON.parse(localStorage.getItem('user') || '{}');
+      return u.role === 'agency_owner' || u.role === 'agency_staff';
+    } catch { return false; }
+  }, []);
 
   useEffect(() => { if (client && callId) fetchCallDetail(); }, [client, callId]);
   useEffect(() => { if (client) fetchContacts(); }, [client]);
@@ -139,6 +164,7 @@ export default function CallDetailPage() {
 
   const getCallStatusLabel = (c: Call) => {
     if (c.is_spam || c.call_status === 'spam') return 'Spam Blocked';
+    if (c.appointment_booked) return 'Booked';
     if (c.call_status === 'transferred' || c.transfer_status === 'transferred') return 'Transferred';
     if (c.transfer_status === 'transfer_failed') return 'Transfer Failed';
     return 'Completed';
@@ -276,6 +302,49 @@ export default function CallDetailPage() {
               <p className="text-[13px] sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>{call.ai_summary}</p>
             </div>
           )}
+
+          {/* Who handled this call — the call-center view: AI only, or who
+              listened / took over. Hidden for agency-level viewers. */}
+          {!isAgencyViewer && (() => {
+            const events = (call.call_metadata?.supervisor_events) || [];
+            const tookOver = events.some(e => e.action === 'jumped_in');
+            const handler = (events.find(e => e.name)?.name) || 'A teammate';
+            return (
+              <div className="rounded-2xl p-5 sm:p-6 fu fu2" style={glass}>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl"
+                    style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.1 : 0.06) }}>
+                    <User className="h-5 w-5" style={{ color: theme.primary }} />
+                  </div>
+                  <h2 className="font-semibold text-sm sm:text-[15px] tracking-tight" style={{ color: theme.text }}>Who handled this call</h2>
+                </div>
+                {events.length === 0 ? (
+                  <p className="text-[13px] sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>
+                    Handled entirely by the AI.
+                    {call.appointment_booked ? ` An appointment was booked${call.appointment_time ? ` for ${call.appointment_time}` : ''}.` : ''}
+                  </p>
+                ) : (
+                  <>
+                    <p className="text-[13px] sm:text-sm mb-3" style={{ color: theme.text }}>
+                      {tookOver ? `${handler} took over this call.` : `${handler} listened in on this call.`}
+                    </p>
+                    <ol className="space-y-2">
+                      {events.map((e, i) => (
+                        <li key={i} className="flex items-start gap-2.5 text-[13px] sm:text-sm">
+                          <span className="mt-1.5 h-1.5 w-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: theme.primary }} />
+                          <span style={{ color: theme.textMuted }}>
+                            <span style={{ color: theme.text, fontWeight: 600 }}>{e.name || 'A teammate'}</span>{' '}
+                            {SUP_ACTION[e.action] || e.action}
+                            {e.at ? <span style={{ color: theme.textMuted4 }}> · {fmtEventTime(e.at)}</span> : null}
+                          </span>
+                        </li>
+                      ))}
+                    </ol>
+                  </>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Recording — hidden when HIPAA mode is active */}
           {!hipaaMode && call.recording_url && (
