@@ -160,6 +160,12 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
   const localStreamRef = useRef<MediaStream | null>(null);
   const bargeStateRef = useRef<typeof bargeState>('idle');
   useEffect(() => { bargeStateRef.current = bargeState; }, [bargeState]);
+  // Answer each inbound seat dial at most once, and never let the Telnyx
+  // notification handler run re-entrantly. The SDK dispatches state changes
+  // synchronously; without these guards a conference change could re-enter the
+  // handler and recurse ("Maximum call stack size exceeded"), crashing the page.
+  const bargeAnsweredRef = useRef<string | null>(null);
+  const notifyBusyRef = useRef(false);
 
   const [prefersDark] = useState<boolean>(() => readPrefersDark());
   const t = useMemo(() => palette(prefersDark), [prefersDark]);
@@ -224,6 +230,7 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
     try { telnyxRtcRef.current?.disconnect(); } catch {}
     try { localStreamRef.current?.getTracks().forEach((tr) => tr.stop()); } catch {}
     telnyxCallRef.current = null; telnyxRtcRef.current = null; localStreamRef.current = null;
+    bargeAnsweredRef.current = null; notifyBusyRef.current = false;
     setAgentMuted(false);
   }, []);
 
@@ -498,27 +505,40 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
       });
 
       rtc.on('telnyx.notification', (n: any) => {
-        const call = n?.call;
-        if (!call) return;
-        telnyxCallRef.current = call;
-        const st = call.state;
-        if (st === 'ringing') {
-          // Inbound dial from our backend: answer it to take the seat.
-          try { call.answer(); } catch {}
-        } else if (st === 'active') {
-          try {
-            const el: any = document.getElementById('barge-remote-audio');
-            if (el && call.remoteStream) { el.srcObject = call.remoteStream; el.play?.().catch(() => {}); }
-          } catch {}
-          // Seated: hearing the call live. Stay in 'barged' if we already
-          // escalated (the audio leg is shared across listen and talk).
-          setBargeState((s) => (s === 'barged' ? 'barged' : 'listening'));
-        } else if (st === 'hangup' || st === 'destroy') {
-          if (bargeStateRef.current !== 'idle' && bargeStateRef.current !== 'leaving') {
-            cleanupBarge();
-            setBargeState('idle');
+        // Re-entrancy guard: if a notification arrives while we are still
+        // handling one (the SDK dispatches synchronously), skip it instead of
+        // recursing. We always act on the latest state via telnyxCallRef.
+        if (notifyBusyRef.current) return;
+        notifyBusyRef.current = true;
+        try {
+          const call = n?.call;
+          if (!call) return;
+          telnyxCallRef.current = call;
+          const st = call.state;
+          if (st === 'ringing') {
+            // Inbound dial from our backend: answer it ONCE to take the seat.
+            if (bargeAnsweredRef.current !== call.id) {
+              bargeAnsweredRef.current = call.id;
+              try { call.answer(); } catch {}
+            }
+          } else if (st === 'active') {
+            try {
+              const el: any = document.getElementById('barge-remote-audio');
+              if (el && call.remoteStream && el.srcObject !== call.remoteStream) {
+                el.srcObject = call.remoteStream; el.play?.().catch(() => {});
+              }
+            } catch {}
+            // Seated: hearing the call live. Stay in 'barged' if we already
+            // escalated (the audio leg is shared across listen and talk).
+            setBargeState((s) => (s === 'barged' ? 'barged' : 'listening'));
+          } else if (st === 'hangup' || st === 'destroy') {
+            if (bargeStateRef.current !== 'idle' && bargeStateRef.current !== 'leaving') {
+              cleanupBarge();
+              setBargeState('idle');
+            }
           }
-        }
+        } catch { /* a bad notification must never crash the monitor */ }
+        finally { notifyBusyRef.current = false; }
       });
 
       rtc.on('telnyx.error', () => { setBargeErr('Browser audio error. Try again.'); });
@@ -650,7 +670,7 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
   const isDemo = mode === 'demo';
 
   return (
-    <div className="min-h-[100dvh] flex flex-col" style={{ backgroundColor: t.bg, color: t.text }}>
+    <div className="h-[100dvh] overflow-hidden flex flex-col" style={{ backgroundColor: t.bg, color: t.text }}>
       {/* Header: white-label brand + status */}
       <header className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3" style={{ borderBottom: `1px solid ${t.border}` }}>
         <div className="flex items-center gap-3 min-w-0">
@@ -706,7 +726,6 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
               </div>
             )}
             {lines.map((l) => <Bubble key={l.id} role={l.role} text={l.text} t={t} accent={accent} accentText={accentText} />)}
-            {partial && <Bubble role={partial.role} text={partial.text} t={t} accent={accent} accentText={accentText} faded />}
             {bridged && (
               <div className="rounded-lg px-3 py-2.5 text-xs leading-relaxed" style={{ backgroundColor: t.borderSubtle, color: t.textMuted }}>
                 <span style={{ color: t.text, fontWeight: 600 }}>{bridged}.</span>{' '}
@@ -715,6 +734,38 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
             )}
             <div ref={transcriptEndRef} />
           </div>
+
+          {/* Live caption strip: pinned at the bottom of the transcript pane so
+              the words being spoken RIGHT NOW are always on screen without
+              scrolling. Finalized lines flow into the history above; this shows
+              the in-progress partial live, which reads as real-time instead of
+              waiting for a chat bubble to pop in. */}
+          {(callState === 'live' || partial) && !bridged && (
+            <div
+              className="flex-none border-t px-4 sm:px-6 py-3"
+              style={{ borderColor: t.borderSubtle, backgroundColor: 'rgba(127,127,127,0.06)' }}
+            >
+              {partial ? (
+                <div className="flex items-start gap-2.5">
+                  <span
+                    className="mt-1.5 h-2 w-2 rounded-full flex-none animate-pulse"
+                    style={{ backgroundColor: partial.role === 'caller' ? '#22c55e' : accent }}
+                  />
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: t.textFaint }}>
+                      {partial.role === 'caller' ? 'Caller' : 'AI'} speaking
+                    </span>
+                    <p className="text-sm leading-snug" style={{ color: t.text }}>{partial.text}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full flex-none animate-pulse" style={{ backgroundColor: accent }} />
+                  <span className="text-xs" style={{ color: t.textFaint }}>Live. Words appear here the moment they are spoken.</span>
+                </div>
+              )}
+            </div>
+          )}
         </section>
 
         {/* Activity rail */}
