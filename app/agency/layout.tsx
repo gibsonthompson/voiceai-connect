@@ -40,6 +40,13 @@ const PATH_PERMISSIONS: Record<string, string> = {
   '/agency/clients': 'clients',
   '/agency/leads': 'leads',
   '/agency/outreach': 'outreach',
+  // The marketing kit lives at /agency/marketing-kit but is an OUTREACH asset
+  // (it is reached from Outreach and its back arrow says "Back to Outreach"),
+  // so gate it under 'outreach', not 'marketing'. It must be listed as its own
+  // key because the matcher below is boundary-aware: without it, the shorter
+  // '/agency/marketing' prefix would no longer catch '/agency/marketing-kit'
+  // and the route would fall through to "open".
+  '/agency/marketing-kit': 'outreach',
   '/agency/analytics': 'analytics',
   '/agency/payments': 'billing',
   '/agency/marketing': 'marketing',
@@ -167,7 +174,13 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     // too, unless the growth add-on is active.
     if (stripGrowthForCallCenter && Array.from(CC_GROWTH_HREFS).some(href => pathname.startsWith(href))) return false;
     if (pathname.startsWith('/agency/settings')) return hasPermission('settings') || hasPermission('billing');
-    const matched = Object.keys(PATH_PERMISSIONS).find(prefix => pathname.startsWith(prefix));
+    // Match on a path boundary (exact, or prefix followed by "/"), longest key
+    // first, so a short prefix like '/agency/marketing' can't swallow a distinct
+    // sibling route like '/agency/marketing-kit'. Plain startsWith conflated the
+    // two and gated the marketing kit under the wrong permission.
+    const matched = Object.keys(PATH_PERMISSIONS)
+      .sort((a, b) => b.length - a.length)
+      .find(prefix => pathname === prefix || pathname.startsWith(prefix + '/'));
     if (!matched) return true; // plan-gated or always-open route
     return hasPermission(PATH_PERMISSIONS[matched]);
   };
@@ -275,7 +288,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     window.location.href = '/agency/login';
   };
 
-  const isActive = (href: string) => { if (href === '/agency/dashboard') return pathname === '/agency/dashboard' || pathname === '/agency'; if (href === '/agency/settings') return pathname?.startsWith('/agency/settings'); if (href === '/agency/templates') return pathname?.startsWith('/agency/templates'); return pathname?.startsWith(href); };
+  const isActive = (href: string) => { if (href === '/agency/dashboard') return pathname === '/agency/dashboard' || pathname === '/agency'; if (href === '/agency/settings') return pathname?.startsWith('/agency/settings'); if (href === '/agency/templates') return pathname?.startsWith('/agency/templates'); if (href === '/agency/outreach') return pathname?.startsWith('/agency/outreach') || pathname?.startsWith('/agency/marketing-kit'); if (href === '/agency/marketing') return pathname === '/agency/marketing' || pathname?.startsWith('/agency/marketing/'); return pathname?.startsWith(href); };
 
   // ── LOADING SKELETON ────────────────────────────────────────────────
   // Only renders on the FIRST dashboard load (or hard refresh), when the
