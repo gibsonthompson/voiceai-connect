@@ -18,7 +18,7 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, Headphones, Headset, Building2, BarChart3, Settings, LogOut, Menu, X, ChevronRight, Radio, type LucideIcon } from 'lucide-react';
+import { LayoutDashboard, Headphones, Headset, Building2, BarChart3, Settings, LogOut, Menu, X, ChevronRight, Radio, ClipboardList, Inbox, type LucideIcon } from 'lucide-react';
 import { AgencyProvider, useAgency } from '../agency/context';
 import { useTheme } from '../../hooks/useTheme';
 import DynamicFavicon from '@/components/DynamicFavicon';
@@ -29,7 +29,7 @@ function WaveformIcon({ className, color }: { className?: string; color?: string
   return (<svg viewBox="0 0 24 24" fill="none" className={className}><rect x="2" y="9" width="2" height="6" rx="1" fill={color || 'currentColor'} opacity="0.6" /><rect x="5" y="7" width="2" height="10" rx="1" fill={color || 'currentColor'} opacity="0.8" /><rect x="8" y="4" width="2" height="16" rx="1" fill={color || 'currentColor'} /><rect x="11" y="6" width="2" height="12" rx="1" fill={color || 'currentColor'} /><rect x="14" y="3" width="2" height="18" rx="1" fill={color || 'currentColor'} /><rect x="17" y="7" width="2" height="10" rx="1" fill={color || 'currentColor'} opacity="0.8" /><rect x="20" y="9" width="2" height="6" rx="1" fill={color || 'currentColor'} opacity="0.6" /></svg>);
 }
 
-interface NavItem { href: string; label: string; icon: LucideIcon; }
+interface NavItem { href: string; label: string; icon: LucideIcon; badge?: number; }
 
 function isSuspended(status: string | null | undefined): boolean {
   return status === 'suspended' || status === 'canceled' || status === 'cancelled';
@@ -41,6 +41,24 @@ function CallCenterShell({ children }: { children: ReactNode }) {
   const theme = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [openFollowups, setOpenFollowups] = useState(0);
+
+  // Poll the open follow-up count so the Messages nav shows a live backlog badge.
+  useEffect(() => {
+    if (loading || !agency?.id || !agency.is_call_center) return;
+    let stop = false;
+    const load = async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        const base = process.env.NEXT_PUBLIC_API_URL || '';
+        const r = await fetch(`${base}/api/agency/${agency.id}/cc/messages/count`, { headers: { Authorization: `Bearer ${token}` } });
+        if (r.ok) { const d = await r.json(); if (!stop && d.success) setOpenFollowups(d.open || 0); }
+      } catch { /* badge is best-effort */ }
+    };
+    load();
+    const iv = setInterval(load, 30000);
+    return () => { stop = true; clearInterval(iv); };
+  }, [loading, agency?.id, agency?.is_call_center]);
 
   const agencyIsSuspended = isSuspended(agency?.status);
   // Once loaded, send non-call-center agencies to the normal dashboard, and
@@ -59,19 +77,28 @@ function CallCenterShell({ children }: { children: ReactNode }) {
   const MANAGER_NAV: NavItem[] = [
     { href: '/cc/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/cc/live-calls', label: 'Live Calls', icon: Headphones },
+    { href: '/cc/calls', label: 'Calls', icon: ClipboardList },
+    { href: '/cc/messages', label: 'Messages', icon: Inbox, badge: openFollowups },
     { href: '/cc/businesses', label: 'Businesses', icon: Building2 },
     { href: '/cc/agents', label: 'Agents', icon: Headset },
     { href: '/cc/analytics', label: 'Analytics', icon: BarChart3 },
     { href: '/cc/settings', label: 'Settings', icon: Settings },
   ];
-  const AGENT_NAV: NavItem[] = [{ href: '/cc/live-calls', label: 'Live Calls', icon: Headphones }];
+  // Agents get their wallboard, the call history, and the follow-up inbox - all
+  // scoped to the businesses assigned to them.
+  const AGENT_NAV: NavItem[] = [
+    { href: '/cc/live-calls', label: 'Live Calls', icon: Headphones },
+    { href: '/cc/calls', label: 'Calls', icon: ClipboardList },
+    { href: '/cc/messages', label: 'Messages', icon: Inbox, badge: openFollowups },
+  ];
   const navItems = isAgent ? AGENT_NAV : MANAGER_NAV;
 
-  // Confine agents to their wallboard within this shell (direct-URL navigation
-  // elsewhere bounces back). The per-call monitor lives at /live/* outside here.
+  // Confine agents to the pages meant for them; a direct URL elsewhere bounces
+  // back to the wallboard. The per-call monitor lives at /live/* outside here.
   useEffect(() => {
     if (loading || !pathname) return;
-    if (isAgent && !pathname.startsWith('/cc/live-calls')) { window.location.href = '/cc/live-calls'; }
+    const agentAllowed = pathname.startsWith('/cc/live-calls') || pathname.startsWith('/cc/calls') || pathname.startsWith('/cc/messages');
+    if (isAgent && !agentAllowed) { window.location.href = '/cc/live-calls'; }
   }, [loading, pathname, isAgent]);
 
   const isActive = (href: string) => pathname === href || pathname?.startsWith(href + '/');
@@ -120,7 +147,11 @@ function CallCenterShell({ children }: { children: ReactNode }) {
               onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover; }}
               onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}>
               <span className="flex items-center gap-3"><Icon className="h-5 w-5" />{item.label}</span>
-              {active && <ChevronRight className="h-4 w-4 md:hidden" />}
+              {item.badge ? (
+                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+                  {item.badge > 99 ? '99+' : item.badge}
+                </span>
+              ) : (active && <ChevronRight className="h-4 w-4 md:hidden" />)}
             </Link>
           );
         })}
