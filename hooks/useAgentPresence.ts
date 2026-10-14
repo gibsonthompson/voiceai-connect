@@ -55,6 +55,10 @@ export function useAgentPresence(enabled: boolean) {
   const [offers, setOffers] = useState<EscalationOffer[]>([]);
   const [status, setStatusState] = useState<'available' | 'away'>('available');
   const [connected, setConnected] = useState(false);
+  const notifySupported = typeof window !== 'undefined' && 'Notification' in window;
+  const [notifyPermission, setNotifyPermission] = useState<NotificationPermission>(
+    notifySupported ? Notification.permission : 'denied'
+  );
 
   const seenRef = useRef<Set<string>>(new Set());
   const channelRef = useRef<string | null>(null);
@@ -62,16 +66,47 @@ export function useAgentPresence(enabled: boolean) {
   const supaRef = useRef<any>(null);
   const statusRef = useRef<'available' | 'away'>('available');
   const expiryTimers = useRef<Record<string, any>>({});
+  const notifiedRef = useRef<Set<string>>(new Set());       // one OS notification per offer
+  const notifObjs = useRef<Record<string, Notification>>({}); // so we can close them
+
+  // Fire a desktop notification for a NEW offer, but only when the /cc tab is
+  // not the focused window (if the agent is looking at /cc they already see the
+  // on-screen pop). One per offer id, ever, within the session.
+  const maybeNotify = useCallback((offer: EscalationOffer) => {
+    try {
+      if (!notifySupported || Notification.permission !== 'granted') return;
+      if (!offer || !offer.id || notifiedRef.current.has(offer.id)) return;
+      const focused = typeof document !== 'undefined' && !document.hidden && (document.hasFocus ? document.hasFocus() : true);
+      if (focused) return; // they can see the pop; don't double-alert
+      notifiedRef.current.add(offer.id);
+      const title = offer.test ? 'Test escalation' : 'A caller needs a human';
+      const bodyBits = [offer.businessName, offer.reason || offer.summary].filter(Boolean);
+      const n = new Notification(title, {
+        body: bodyBits.join(' — ') || 'Open the console to take the call.',
+        tag: `esc-${offer.id}`,
+        requireInteraction: !offer.test,
+      });
+      n.onclick = () => { try { window.focus(); } catch {} try { n.close(); } catch {} };
+      notifObjs.current[offer.id] = n;
+    } catch { /* notifications are best-effort */ }
+  }, [notifySupported]);
+
+  const closeNotif = (offerId: string) => {
+    try { notifObjs.current[offerId]?.close(); } catch {}
+    delete notifObjs.current[offerId];
+  };
 
   const dismiss = useCallback((offerId: string) => {
     setOffers((cur) => cur.filter((o) => o.id !== offerId));
     const t = expiryTimers.current[offerId];
     if (t) { clearTimeout(t); delete expiryTimers.current[offerId]; }
+    closeNotif(offerId);
   }, []);
 
   const addOffer = useCallback((offer: EscalationOffer) => {
     if (!offer || !offer.id) return;
     setOffers((cur) => (cur.some((o) => o.id === offer.id) ? cur : [...cur, offer]));
+    maybeNotify(offer);
     // Auto-clear the pop when the offer expires, so a stale card never lingers.
     if (offer.expiresAt) {
       const ms = Date.parse(offer.expiresAt) - Date.now();
@@ -79,7 +114,14 @@ export function useAgentPresence(enabled: boolean) {
         expiryTimers.current[offer.id] = setTimeout(() => dismiss(offer.id), ms + 500);
       }
     }
-  }, [dismiss]);
+  }, [dismiss, maybeNotify]);
+
+  // Ask the browser for notification permission (needs a user gesture).
+  const requestNotify = useCallback(async () => {
+    if (!notifySupported) return;
+    try { const p = await Notification.requestPermission(); setNotifyPermission(p); }
+    catch { /* ignore */ }
+  }, [notifySupported]);
 
   // Route one inbound event (from either transport) through the seen-set.
   const applyEvent = useCallback((ev: any) => {
@@ -208,5 +250,5 @@ export function useAgentPresence(enabled: boolean) {
     } catch { /* non-fatal */ }
   }, [dismiss]);
 
-  return { offers, status, setStatus, claim, decline, dismiss, connected };
+  return { offers, status, setStatus, claim, decline, dismiss, connected, notifySupported, notifyPermission, requestNotify };
 }

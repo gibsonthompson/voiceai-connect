@@ -636,6 +636,11 @@ function AgencySignupForm({ isEmbed }: { isEmbed: boolean }) {
   // a "Sign in instead" link next to the error rather than a dead message.
   const [existingAccount, setExistingAccount] = useState(false);
   const [referralCode, setReferralCode] = useState<string | null>(null);
+  // Call-center signup entry: /signup?type=call-center (or ?cc=1) creates the
+  // agency with is_call_center=true, so it lands in the /cc console on first login.
+  const isCallCenter = searchParams.get('type') === 'call-center'
+    || searchParams.get('type') === 'callcenter'
+    || searchParams.get('cc') === '1';
   
   const [formData, setFormData] = useState({
     firstName: '', lastName: '', email: '', country: '',
@@ -721,6 +726,7 @@ function AgencySignupForm({ isEmbed }: { isEmbed: boolean }) {
           email: formData.email, firstName: formData.firstName,
           lastName: formData.lastName, country: formData.country,
           referralCode: referralCode,
+          is_call_center: isCallCenter,
         }),
       });
 
@@ -833,8 +839,8 @@ function AgencySignupForm({ isEmbed }: { isEmbed: boolean }) {
                 <Sparkles className="h-4 w-4 text-emerald-400" />
                 <span className="text-emerald-300/90">14-day free trial</span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Get Started Free</h1>
-              <p className="mt-2 text-[#fafaf9]/50">Launch your AI voice agency in minutes</p>
+              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">{isCallCenter ? 'Start Your AI Call Center' : 'Get Started Free'}</h1>
+              <p className="mt-2 text-[#fafaf9]/50">{isCallCenter ? 'Answer calls for every business you serve, from one console' : 'Launch your AI voice agency in minutes'}</p>
             </div>
 
             <button onClick={handleGoogleSignup} disabled={googleLoading || loading}

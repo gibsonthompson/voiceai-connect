@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
-import { Building2, Search, PhoneCall, ExternalLink, Loader2, CircleDot } from 'lucide-react';
+import { Building2, Search, PhoneCall, Settings, Loader2, CircleDot, Plus } from 'lucide-react';
 import { useAgency } from '../../agency/context';
 import { useTheme } from '../../../hooks/useTheme';
 
@@ -83,6 +83,9 @@ export default function CallCenterBusinesses() {
             <p className="text-xs sm:text-[13px]" style={{ color: theme.textMuted }}>Every business you answer for. {rows.length} total.</p>
           </div>
         </div>
+        <Link href="/agency/clients/new" className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold flex-shrink-0 transition" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+          <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Add business</span><span className="sm:hidden">Add</span>
+        </Link>
       </div>
 
       <div className="relative mb-4 max-w-sm">
@@ -117,7 +120,7 @@ export default function CallCenterBusinesses() {
                 </div>
                 <div className="flex items-center gap-1.5 flex-shrink-0">
                   <Link href={`/live/${b.id}?mode=monitor`} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold" style={{ backgroundColor: theme.primary15, color: theme.primary }} title="Open live monitor"><PhoneCall className="h-3.5 w-3.5" /><span className="hidden sm:inline">Monitor</span></Link>
-                  <Link href={`/agency/clients/${b.id}`} className="inline-flex items-center justify-center rounded-lg h-8 w-8" style={{ backgroundColor: theme.hover, color: theme.textMuted }} title="Business details"><ExternalLink className="h-3.5 w-3.5" /></Link>
+                  <Link href={`/cc/businesses/${b.id}`} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium" style={{ backgroundColor: theme.hover, color: theme.textMuted }} title="Configure this business"><Settings className="h-3.5 w-3.5" /><span className="hidden sm:inline">Configure</span></Link>
                 </div>
               </div>
             );
