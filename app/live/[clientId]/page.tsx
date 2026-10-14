@@ -22,6 +22,9 @@ function LiveInner() {
   const search = useSearchParams();
   const clientId = (params?.clientId as string) || '';
   const mode = search.get('mode') === 'monitor' ? 'monitor' : 'demo';
+  // Arriving from an escalation screen-pop "take the call": seat + jump in
+  // automatically so the agent is on the caller in one click.
+  const autoJoin = mode === 'monitor' && search.get('autojoin') === '1';
 
   if (!clientId) {
     return (
@@ -30,7 +33,7 @@ function LiveInner() {
       </div>
     );
   }
-  return <LiveCallMonitor clientId={clientId} mode={mode} />;
+  return <LiveCallMonitor clientId={clientId} mode={mode} autoJoin={autoJoin} />;
 }
 
 export default function LiveCallPage() {

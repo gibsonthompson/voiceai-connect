@@ -188,7 +188,7 @@ function palette(dark: boolean) {
       };
 }
 
-export default function LiveCallMonitor({ clientId, mode }: { clientId: string; mode: Mode }) {
+export default function LiveCallMonitor({ clientId, mode, autoJoin = false }: { clientId: string; mode: Mode; autoJoin?: boolean }) {
   const [info, setInfo] = useState<Info | null>(null);
   const [loadErr, setLoadErr] = useState<string | null>(null);
 
@@ -239,6 +239,9 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
   const localStreamRef = useRef<MediaStream | null>(null);
   const bargeStateRef = useRef<typeof bargeState>('idle');
   useEffect(() => { bargeStateRef.current = bargeState; }, [bargeState]);
+  // One-shot guards for the escalation "take the call" auto-join (seat + jump in).
+  const autoJoinStartedRef = useRef(false);
+  const autoJoinJumpedRef = useRef(false);
   // Answer each inbound seat dial at most once, and never let the Telnyx
   // notification handler run re-entrantly. The SDK dispatches state changes
   // synchronously; without these guards a conference change could re-enter the
@@ -645,6 +648,27 @@ export default function LiveCallMonitor({ clientId, mode }: { clientId: string; 
       setBargeErr(e?.message || 'Could not jump in.');
     }
   }, [clientId, token]);
+
+  // ---- escalation auto-join -------------------------------------------------
+  // When the agent arrived here from an escalation screen-pop (autoJoin), seat
+  // them the moment the live call is up, then jump them in the moment the seat
+  // is listening. Each step fires once, and only from a clean idle seat with no
+  // human already on the call, so it never fights a manual takeover.
+  useEffect(() => {
+    if (!autoJoin || mode !== 'monitor' || !info?.barge_supported) return;
+    if (autoJoinStartedRef.current) return;
+    if (callState !== 'live' || humanOnCall) return;
+    if (bargeStateRef.current !== 'idle') return;
+    autoJoinStartedRef.current = true;
+    startListen();
+  }, [autoJoin, mode, info?.barge_supported, callState, humanOnCall, startListen]);
+
+  useEffect(() => {
+    if (!autoJoin || autoJoinJumpedRef.current) return;
+    if (bargeState !== 'listening') return;
+    autoJoinJumpedRef.current = true;
+    jumpIn();
+  }, [autoJoin, bargeState, jumpIn]);
 
   // Hand the caller back to the AI but STAY seated, listening.
   const handBack = useCallback(async () => {
