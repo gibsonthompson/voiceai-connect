@@ -1,20 +1,20 @@
 'use client';
 
-import { useState, useEffect, useRef, type CSSProperties, type ComponentType, type ReactNode } from 'react';
+import { useState, useEffect, useRef, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { 
-  Users, Search, Plus, ChevronRight, ChevronDown, Loader2, ArrowUpRight,
-  Target, Phone, Mail, MessageSquare, Calendar, TrendingUp,
-  ExternalLink, BookOpen, Lightbulb, Filter, AlertCircle, X, Lock, Clock,
-  CheckCircle2, FileSpreadsheet
+import {
+  Users, Search, Plus, ChevronDown, Loader2,
+  Target, Phone, PhoneCall, Mail, MessageSquare, Calendar, Clock,
+  AlertCircle, X, Check, Info, Filter, FileSpreadsheet, SkipForward,
+  ExternalLink, Sparkles,
 } from 'lucide-react';
 import { useAgency } from '../context';
 import LockedFeatureOverlay from '@/components/LockedFeature';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import { useTheme } from '../../../hooks/useTheme';
 import { CustomSelect } from '@/components/ui/custom-select';
-import { getDemoLeads, getDemoLeadStats } from '../demoData';
+import { getDemoLeads } from '../demoData';
 import CSVImportModal from '@/components/CSVImportModal';
 import ComposerModal from '@/components/ComposerModal';
 
@@ -38,18 +38,6 @@ interface Lead {
   };
 }
 
-interface LeadStats {
-  total: number;
-  new: number;
-  contacted: number;
-  qualified: number;
-  proposal: number;
-  won: number;
-  lost: number;
-  followUpsToday: number;
-  overdueFollowUps: number;
-}
-
 interface FollowUpItem {
   lead_id: string;
   business_name: string;
@@ -60,35 +48,6 @@ interface FollowUpItem {
   due_date: string;
   urgency: 'overdue' | 'due_today' | 'upcoming';
   days_overdue: number;
-}
-
-const LEAD_TIPS = [
-  {
-    title: 'Find Leads Automatically',
-    description: 'Pull local businesses by industry and location in seconds.',
-    url: '/agency/leads/finder',
-    category: 'Prospecting',
-  },
-  {
-    title: 'How to Pitch AI Receptionists',
-    description: 'Pain points, ROI arguments, and objection handling.',
-    url: '/blog/pitch-ai-receptionists-home-services',
-    category: 'Sales',
-  },
-  {
-    title: '5 Cold Outreach Templates',
-    description: 'Email templates with 10-15% reply rates.',
-    url: '/blog/cold-outreach-templates-that-work',
-    category: 'Outreach',
-  },
-];
-
-function formatCurrency(cents: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-  }).format(cents / 100);
 }
 
 function formatPhone(phone?: string | null): string {
@@ -132,109 +91,11 @@ function timeSince(dateStr: string): string {
   return `${Math.floor(days / 365)}y ago`;
 }
 
-type FilterMode = 'all' | 'follow-up-today' | 'overdue' | 'active' | 'sequence-due';
-
 // ---------------------------------------------------------------------------
-// Presentational pieces for the leads page. These are theme-agnostic: every
-// colour comes from the --lp-* CSS variables set once on the page root, so
-// hover and active states are pure CSS. No per-element inline styles and no
-// JS onMouseEnter/onMouseLeave handlers.
+// Inline status pill with a portaled dropdown (reused on the focus card and the
+// queue rows). Portaled to document.body so the list card's overflow can't clip
+// it; the --lp-* surface vars are re-applied on the portal element.
 // ---------------------------------------------------------------------------
-
-type StatTone = 'default' | 'primary' | 'warning' | 'error' | 'info';
-
-const STAT_TONE: Record<StatTone, { icon: string; iconBg: string; activeBg: string; activeBorder: string }> = {
-  default: { icon: 'text-[var(--lp-muted)]',   iconBg: 'bg-[var(--lp-hover)]',       activeBg: 'bg-[var(--lp-card)]',       activeBorder: 'border-[var(--lp-border)]' },
-  primary: { icon: 'text-[var(--lp-primary)]', iconBg: 'bg-[var(--lp-primary-15)]',  activeBg: 'bg-[var(--lp-primary-15)]', activeBorder: 'border-[var(--lp-primary)]' },
-  warning: { icon: 'text-[var(--lp-warning)]', iconBg: 'bg-[var(--lp-warning-bg)]',  activeBg: 'bg-[var(--lp-warning-bg)]', activeBorder: 'border-[var(--lp-warning)]' },
-  error:   { icon: 'text-[var(--lp-error)]',   iconBg: 'bg-[var(--lp-error-bg)]',    activeBg: 'bg-[var(--lp-error-bg)]',   activeBorder: 'border-[var(--lp-error)]' },
-  info:    { icon: 'text-[var(--lp-info)]',    iconBg: 'bg-[var(--lp-info-bg)]',     activeBg: 'bg-[var(--lp-info-bg)]',    activeBorder: 'border-[var(--lp-info)]' },
-};
-
-function StatCard({ label, value, icon: Icon, tone = 'default', active = false, onClick }: {
-  label: string;
-  value: ReactNode;
-  icon: ComponentType<{ className?: string }>;
-  tone?: StatTone;
-  active?: boolean;
-  onClick?: () => void;
-}) {
-  const t = STAT_TONE[tone];
-  const shell = active ? `${t.activeBg} border ${t.activeBorder}` : 'bg-[var(--lp-card)] border border-[var(--lp-border)]';
-  const inner = (
-    <div className="flex items-center gap-2 sm:gap-3">
-      <div className={`flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg flex-shrink-0 ${t.iconBg}`}>
-        <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${t.icon}`} />
-      </div>
-      <div className="min-w-0">
-        <p className="text-[10px] sm:text-sm text-[var(--lp-muted)]">{label}</p>
-        <p className="text-lg sm:text-xl font-semibold truncate text-[var(--lp-text)]">{value}</p>
-      </div>
-    </div>
-  );
-  if (!onClick) return <div className={`rounded-xl p-3 sm:p-5 ${shell}`}>{inner}</div>;
-  return (
-    <button onClick={onClick} className={`rounded-xl p-3 sm:p-5 text-left w-full transition-colors hover:brightness-[0.98] ${shell}`}>
-      {inner}
-    </button>
-  );
-}
-
-function OverdueBanner({ count, onClick }: { count: number; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="w-full mb-4 sm:mb-6 rounded-xl p-3 sm:p-4 flex items-center justify-between text-left transition-colors bg-[var(--lp-warning-bg)] border border-[var(--lp-warning-border)] hover:brightness-[0.98]"
-    >
-      <div className="flex items-center gap-2 sm:gap-3">
-        <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-[var(--lp-warning)]" />
-        <div>
-          <p className="font-medium text-sm text-[var(--lp-warning-text)]">{count} overdue follow-up{count > 1 ? 's' : ''}</p>
-          <p className="text-xs hidden sm:block text-[var(--lp-muted)]">Click to view leads that need attention</p>
-        </div>
-      </div>
-      <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-[var(--lp-warning)]" />
-    </button>
-  );
-}
-
-function TipsPanel({ tips, onHide }: { tips: typeof LEAD_TIPS; onHide: () => void }) {
-  return (
-    <div className="mb-6 sm:mb-8 rounded-xl overflow-hidden bg-[var(--lp-primary-15)] border border-[var(--lp-border)]">
-      <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 border-b border-[var(--lp-border)]">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg flex-shrink-0 bg-[var(--lp-primary-15)]">
-            <Lightbulb className="h-4 w-4 sm:h-5 sm:w-5 text-[var(--lp-primary)]" />
-          </div>
-          <div>
-            <h3 className="font-medium text-sm text-[var(--lp-text)]">Lead Generation Tips</h3>
-            <p className="text-xs hidden sm:block text-[var(--lp-muted)]">Guides to grow your pipeline</p>
-          </div>
-        </div>
-        <button onClick={onHide} className="text-xs transition-colors text-[var(--lp-muted)] hover:text-[var(--lp-text)]">Hide</button>
-      </div>
-      <div className="grid gap-2 sm:gap-3 p-3 sm:p-5 sm:grid-cols-3">
-        {tips.map((tip, index) => (
-          <a
-            key={index}
-            href={tip.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group rounded-lg p-3 sm:p-4 transition-colors bg-[var(--lp-card)] border border-[var(--lp-border)] hover:bg-[var(--lp-hover)]"
-          >
-            <div className="flex items-start justify-between gap-2 mb-1 sm:mb-2">
-              <span className="text-[10px] sm:text-xs font-medium px-2 py-0.5 rounded bg-[var(--lp-primary-15)] text-[var(--lp-primary)]">{tip.category}</span>
-              <ExternalLink className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0 text-[var(--lp-muted)]" />
-            </div>
-            <h4 className="font-medium text-xs sm:text-sm mb-0.5 sm:mb-1 line-clamp-2 text-[var(--lp-text)]">{tip.title}</h4>
-            <p className="text-[10px] sm:text-xs line-clamp-2 hidden sm:block text-[var(--lp-muted)]">{tip.description}</p>
-          </a>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function InlineStatusSelect({ value, bg, text, options, onChange }: {
   value: string;
   bg: string;
@@ -242,14 +103,8 @@ function InlineStatusSelect({ value, bg, text, options, onChange }: {
   options: { value: string; label: string; color: string }[];
   onChange: (status: string) => void;
 }) {
-  // Custom pill dropdown rendered through a portal so it can't be clipped by the
-  // list card's overflow, and so the tap never bubbles into the row's link.
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
-  // The menu is portaled to document.body, OUTSIDE the leads-page root where the
-  // --lp-* vars are defined, so they resolve to nothing there and the menu paints
-  // see-through. Capture the resolved surface colors from the in-scope trigger
-  // button and re-apply them as vars on the portal element below.
   const [surface, setSurface] = useState({ card: '#ffffff', border: '#e5e7eb', hover: 'rgba(0,0,0,0.05)', text: '#111827' });
   const btnRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -278,7 +133,6 @@ function InlineStatusSelect({ value, bg, text, options, onChange }: {
       <button
         ref={btnRef}
         type="button"
-        onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -314,7 +168,6 @@ function InlineStatusSelect({ value, bg, text, options, onChange }: {
             <button
               key={o.value}
               type="button"
-              onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); onChange(o.value); setOpen(false); }}
               className="flex w-full items-center gap-2 px-3 py-2 text-xs text-left hover:bg-[var(--lp-hover)] cursor-pointer"
             >
@@ -329,116 +182,317 @@ function InlineStatusSelect({ value, bg, text, options, onChange }: {
   );
 }
 
-function LeadRow({ lead, statusBg, statusText, statusOptions, onStatusChange, followUpToday, followUpOverdue, queueItem, isLast }: {
+// ---------------------------------------------------------------------------
+// Call outcomes. A couple of them move the lead's status so the queue reflects
+// reality (interested -> qualified, not interested -> lost). The rest only log.
+// ---------------------------------------------------------------------------
+const CALL_OUTCOMES: { value: string; label: string; status?: string }[] = [
+  { value: 'connected', label: 'Connected' },
+  { value: 'interested', label: 'Interested', status: 'qualified' },
+  { value: 'no_answer', label: 'No answer' },
+  { value: 'voicemail', label: 'Left voicemail' },
+  { value: 'callback', label: 'Call back later' },
+  { value: 'not_interested', label: 'Not interested', status: 'lost' },
+];
+
+// ---------------------------------------------------------------------------
+// Log-call modal. Dials from the user's own phone (tel:) and records the call
+// through /outreach/log (type: call), the same path the composer uses for email
+// and SMS, so the call counts toward the lead's history, updates "last
+// contacted", and schedules the next follow-up. Nothing here places a call for
+// the agency; it dials their device and logs the result.
+// ---------------------------------------------------------------------------
+function LogCallModal({ isOpen, onClose, lead, onLogged, isDark, primary }: {
+  isOpen: boolean;
+  onClose: () => void;
   lead: Lead;
-  statusBg: string;
-  statusText: string;
-  statusOptions: { value: string; label: string; color: string }[];
-  onStatusChange: (leadId: string, status: string) => void;
-  onComposer: (lead: Lead, type: 'email' | 'sms') => void;
-  followUpToday: boolean;
-  followUpOverdue: boolean;
-  queueItem?: FollowUpItem;
-  isLast: boolean;
+  onLogged: (outcome: string, note: string) => void;
+  isDark: boolean;
+  primary: string;
 }) {
-  const queueColor = queueItem && queueItem.urgency === 'overdue' ? 'text-[var(--lp-error)]' : 'text-[var(--lp-primary)]';
+  const [outcome, setOutcome] = useState<string>('connected');
+  const [note, setNote] = useState('');
+
+  useEffect(() => {
+    if (isOpen) { setOutcome('connected'); setNote(''); }
+  }, [isOpen, lead.id]);
+
+  if (!isOpen) return null;
   const phone = formatPhone(lead.phone);
+  const dialHref = lead.phone ? `tel:${lead.phone.replace(/[^\d+]/g, '')}` : undefined;
+
   return (
-    <Link
-      href={`/agency/leads/${lead.id}`}
-      prefetch={false}
-      className={`group block px-4 sm:px-6 py-3 sm:py-4 transition-colors hover:bg-[var(--lp-hover)] ${isLast ? '' : 'border-b border-[var(--lp-border-subtle)]'}`}
-    >
-      {/* Mobile */}
-      <div className="lg:hidden">
-        <div className="flex items-center justify-between mb-2">
-          <div className="min-w-0">
-            <p className="font-medium text-sm truncate text-[var(--lp-text)]">{lead.business_name}</p>
-            <p className="text-xs truncate text-[var(--lp-muted)]">{lead.contact_name || phone || lead.email || 'No contact info'}</p>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
+      <div className="absolute inset-0 backdrop-blur-sm" style={{ backgroundColor: isDark ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.4)' }} onClick={onClose} />
+      <div className="relative w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col bg-[var(--lp-card)] border border-[var(--lp-border)]">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-[var(--lp-border-subtle)]">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg shrink-0 bg-[var(--lp-info-bg)]">
+              <PhoneCall className="h-4 w-4 text-[var(--lp-info)]" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="font-semibold text-sm sm:text-base text-[var(--lp-text)]">Log a call</h2>
+              <p className="text-xs truncate text-[var(--lp-muted)]">{lead.contact_name || lead.business_name}</p>
+            </div>
           </div>
-          <ArrowUpRight className="h-4 w-4 flex-shrink-0 text-[var(--lp-muted)]" />
+          <button onClick={onClose} className="rounded-lg p-2 transition-colors text-[var(--lp-muted)] hover:bg-[var(--lp-hover)]"><X className="h-5 w-5" /></button>
         </div>
-        <div className="flex items-center justify-between text-xs sm:text-sm">
+
+        <div className="p-4 sm:p-6 space-y-4">
+          {/* Dial from your own phone */}
+          {dialHref ? (
+            <a href={dialHref} className="flex items-center justify-center gap-2 w-full rounded-xl px-4 py-3 text-sm font-semibold transition-[filter] hover:brightness-95" style={{ backgroundColor: 'var(--lp-info-bg)', border: '1px solid var(--lp-info)', color: 'var(--lp-info)' }}>
+              <Phone className="h-4 w-4" />
+              Call {phone} from your phone
+            </a>
+          ) : (
+            <div className="flex items-center gap-2 rounded-xl px-4 py-3 text-xs bg-[var(--lp-hover)] text-[var(--lp-muted)]">
+              <Info className="h-4 w-4 shrink-0" />
+              No phone number on file for this lead.
+            </div>
+          )}
+
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-wide mb-2 text-[var(--lp-muted)]">How did it go?</label>
+            <div className="grid grid-cols-2 gap-2">
+              {CALL_OUTCOMES.map((o) => {
+                const active = outcome === o.value;
+                return (
+                  <button
+                    key={o.value}
+                    onClick={() => setOutcome(o.value)}
+                    className="rounded-lg px-3 py-2 text-xs font-medium text-left transition-colors border"
+                    style={{
+                      backgroundColor: active ? 'var(--lp-primary-15)' : 'var(--lp-card)',
+                      borderColor: active ? 'var(--lp-primary)' : 'var(--lp-border)',
+                      color: active ? 'var(--lp-primary)' : 'var(--lp-text)',
+                    }}
+                  >
+                    {o.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-wide mb-2 text-[var(--lp-muted)]">Note <span className="normal-case font-normal">(optional)</span></label>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="What was said, next step, anything to remember..."
+              rows={3}
+              className="w-full rounded-xl px-3 py-2.5 text-sm transition-colors focus:outline-none bg-[var(--lp-input)] border border-[var(--lp-input-border)] text-[var(--lp-text)]"
+              style={{ resize: 'vertical', minHeight: '72px' }}
+            />
+          </div>
+        </div>
+
+        <div className="shrink-0 px-4 sm:px-6 py-3 sm:py-4 border-t border-[var(--lp-border-subtle)]" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
           <div className="flex items-center gap-2">
-            <InlineStatusSelect value={lead.status} bg={statusBg} text={statusText} options={statusOptions} onChange={(s) => onStatusChange(lead.id, s)} />
-            {followUpOverdue && <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-[var(--lp-error)]" />}
-            {followUpToday && !followUpOverdue && <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-[var(--lp-warning)]" />}
-            {!followUpOverdue && !followUpToday && queueItem && <Mail className={`h-3 w-3 sm:h-4 sm:w-4 ${queueColor}`} />}
-            {!lead.next_follow_up && !queueItem && (
-              <span className="text-[10px] text-[var(--lp-muted)] truncate">{lead.outreach?.last_contacted ? `Contacted ${timeSince(lead.outreach.last_contacted)}` : 'Never contacted'}</span>
+            <button onClick={onClose} className="flex-1 sm:flex-none rounded-xl px-4 py-2.5 text-sm font-medium transition-colors bg-[var(--lp-card)] border border-[var(--lp-border)] text-[var(--lp-muted)] hover:bg-[var(--lp-hover)]">Cancel</button>
+            <button
+              onClick={() => onLogged(outcome, note.trim())}
+              className="flex-[1.3] sm:flex-none flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-[filter] hover:brightness-95"
+              style={{ backgroundColor: primary, color: '#ffffff' }}
+            >
+              <Check className="h-4 w-4" />
+              Log call
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// The focus card: one lead at a time, with the actions to work it. This is the
+// centrepiece of the page, everything else exists to feed it the next lead.
+// ---------------------------------------------------------------------------
+function FocusCard({
+  lead, position, total, statusOptions, getStatusStyle, onStatus, onEmail, onSms, onCall, onSkip, queueItem,
+}: {
+  lead: Lead;
+  position: number;
+  total: number;
+  statusOptions: { value: string; label: string; color: string }[];
+  getStatusStyle: (s: string) => { bg: string; text: string; border: string };
+  onStatus: (leadId: string, status: string) => void;
+  onEmail: () => void;
+  onSms: () => void;
+  onCall: () => void;
+  onSkip: () => void;
+  queueItem?: FollowUpItem;
+}) {
+  const [showWhy, setShowWhy] = useState(false);
+  const phone = formatPhone(lead.phone);
+  const ss = getStatusStyle(lead.status);
+  const followUpOverdue = !!(lead.next_follow_up && isOverdue(lead.next_follow_up) && !['won', 'lost'].includes(lead.status));
+  const followUpToday = !!(lead.next_follow_up && isToday(lead.next_follow_up) && !followUpOverdue);
+  const lastContacted = lead.outreach?.last_contacted || null;
+
+  const actionBtn = 'flex items-center justify-center gap-2 rounded-xl px-3 py-3 text-sm font-semibold transition-colors';
+
+  return (
+    <div className="rounded-2xl overflow-hidden bg-[var(--lp-card)] border border-[var(--lp-border)]">
+      {/* Top meta strip */}
+      <div className="flex items-center justify-between px-4 sm:px-6 pt-4 sm:pt-5">
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-[var(--lp-muted)]">
+          <Target className="h-3.5 w-3.5 text-[var(--lp-primary)]" />
+          Working lead {total > 0 ? `${position} of ${total}` : ''}
+        </span>
+        {followUpOverdue && (
+          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium bg-[var(--lp-error-bg)] border border-[var(--lp-error-border)] text-[var(--lp-error)]"><AlertCircle className="h-3 w-3" />Overdue</span>
+        )}
+        {followUpToday && (
+          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium bg-[var(--lp-warning-bg)] border border-[var(--lp-warning-border)] text-[var(--lp-warning)]"><Calendar className="h-3 w-3" />Due today</span>
+        )}
+        {!followUpOverdue && !followUpToday && queueItem && (
+          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium bg-[var(--lp-primary-15)] border border-[var(--lp-primary-30)] text-[var(--lp-primary)]"><Mail className="h-3 w-3" />{queueItem.next_template_name}</span>
+        )}
+      </div>
+
+      {/* Identity */}
+      <div className="px-4 sm:px-6 pt-3">
+        <div className="flex items-start gap-3 sm:gap-4">
+          <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl flex-shrink-0 bg-[var(--lp-primary-15)]">
+            <span className="text-xl sm:text-2xl font-semibold text-[var(--lp-primary)]">{lead.business_name?.charAt(0)?.toUpperCase() || '?'}</span>
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-lg sm:text-xl font-semibold tracking-tight truncate text-[var(--lp-text)]">{lead.business_name}</h2>
+              <InlineStatusSelect value={lead.status} bg={ss.bg} text={ss.text} options={statusOptions} onChange={(s) => onStatus(lead.id, s)} />
+            </div>
+            {lead.industry && (
+              <span className="mt-1 inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium capitalize bg-[var(--lp-hover)] text-[var(--lp-muted)]">{lead.industry.replace(/_/g, ' ')}</span>
             )}
           </div>
         </div>
-      </div>
 
-      {/* Desktop */}
-      <div className="hidden lg:grid lg:grid-cols-12 gap-4 items-center">
-        <div className="col-span-3 min-w-0">
-          <p className="font-medium truncate text-[var(--lp-text)]">{lead.business_name}</p>
-          {lead.industry && (
-            <span className="mt-1 inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium capitalize bg-[var(--lp-hover)] text-[var(--lp-muted)]">{lead.industry.replace(/_/g, ' ')}</span>
+        {/* Contact rows */}
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          <div className="flex items-center gap-2 rounded-lg px-3 py-2.5 bg-[var(--lp-hover)]">
+            <Users className="h-4 w-4 shrink-0 text-[var(--lp-muted)]" />
+            <span className="text-sm truncate text-[var(--lp-text)]">{lead.contact_name || 'No contact name'}</span>
+          </div>
+          <div className="flex items-center gap-2 rounded-lg px-3 py-2.5 bg-[var(--lp-hover)]">
+            <Phone className="h-4 w-4 shrink-0 text-[var(--lp-muted)]" />
+            {phone ? <a href={`tel:${lead.phone.replace(/[^\d+]/g, '')}`} className="text-sm truncate text-[var(--lp-text)] hover:underline">{phone}</a> : <span className="text-sm text-[var(--lp-muted)]">No phone</span>}
+          </div>
+          <div className="flex items-center gap-2 rounded-lg px-3 py-2.5 bg-[var(--lp-hover)] sm:col-span-2">
+            <Mail className="h-4 w-4 shrink-0 text-[var(--lp-muted)]" />
+            {lead.email ? <span className="text-sm truncate text-[var(--lp-text)]">{lead.email}</span> : <span className="text-sm text-[var(--lp-muted)]">No email</span>}
+          </div>
+        </div>
+
+        {/* Last contacted / follow-up line */}
+        <div className="mt-3 flex items-center gap-2 text-xs text-[var(--lp-muted)]">
+          <Clock className="h-3.5 w-3.5 shrink-0" />
+          {lastContacted ? <span>Last contacted {timeSince(lastContacted)}</span> : <span>Never contacted</span>}
+          {lead.next_follow_up && !['won', 'lost'].includes(lead.status) && (
+            <span className="before:content-['·'] before:mx-1.5">Follow-up {parseLocalDate(lead.next_follow_up).toLocaleDateString()}</span>
           )}
         </div>
+      </div>
 
-        <div className="col-span-3 min-w-0">
-          {(() => {
-            let primary = '', secondary = '', secondaryIsPhone = false;
-            if (lead.contact_name) { primary = lead.contact_name; secondary = phone || lead.email || ''; secondaryIsPhone = !!phone; }
-            else if (phone) { primary = phone; secondary = lead.email || ''; }
-            else if (lead.email) { primary = lead.email; }
-            if (!primary) return <p className="text-sm text-[var(--lp-muted)]">No contact info</p>;
-            return (
-              <>
-                <p className="text-sm truncate text-[var(--lp-text)]">{primary}</p>
-                {secondary && (
-                  <p className="text-xs truncate flex items-center gap-1 text-[var(--lp-muted)]">
-                    {secondaryIsPhone ? <Phone className="h-3 w-3 flex-shrink-0" /> : <Mail className="h-3 w-3 flex-shrink-0" />}
-                    {secondary}
-                  </p>
-                )}
-              </>
-            );
-          })()}
-        </div>
+      {/* Primary actions */}
+      <div className="px-4 sm:px-6 pt-4 grid grid-cols-3 gap-2">
+        <button onClick={onEmail} className={`${actionBtn} bg-[var(--lp-primary-15)] border border-[var(--lp-primary-30)] text-[var(--lp-primary)] hover:brightness-95`}>
+          <Mail className="h-4 w-4" />
+          <span className="hidden sm:inline">Draft email</span><span className="sm:hidden">Email</span>
+        </button>
+        <button onClick={onSms} className={`${actionBtn}`} style={{ backgroundColor: 'rgba(6,182,212,0.12)', border: '1px solid rgba(6,182,212,0.3)', color: 'var(--lp-info)' }}>
+          <MessageSquare className="h-4 w-4" />
+          <span className="hidden sm:inline">Draft text</span><span className="sm:hidden">Text</span>
+        </button>
+        <button onClick={onCall} className={`${actionBtn} bg-[var(--lp-hover)] border border-[var(--lp-border)] text-[var(--lp-text)] hover:brightness-95`}>
+          <PhoneCall className="h-4 w-4" />
+          <span className="hidden sm:inline">Call + log</span><span className="sm:hidden">Call</span>
+        </button>
+      </div>
 
-        <div className="col-span-2">
-          <InlineStatusSelect value={lead.status} bg={statusBg} text={statusText} options={statusOptions} onChange={(s) => onStatusChange(lead.id, s)} />
-        </div>
-
-        <div className="col-span-3">
-          {lead.next_follow_up ? (
-            <div className="flex items-center gap-2">
-              {followUpOverdue && <AlertCircle className="h-4 w-4 flex-shrink-0 text-[var(--lp-error)]" />}
-              {followUpToday && !followUpOverdue && <Calendar className="h-4 w-4 flex-shrink-0 text-[var(--lp-warning)]" />}
-              <div>
-                <p className={`text-sm ${followUpOverdue ? 'text-[var(--lp-error)]' : followUpToday ? 'text-[var(--lp-warning)]' : 'text-[var(--lp-text)]'}`}>{parseLocalDate(lead.next_follow_up).toLocaleDateString()}</p>
-                {followUpOverdue && <p className="text-xs text-[var(--lp-error)]">Overdue</p>}
-                {followUpToday && !followUpOverdue && <p className="text-xs text-[var(--lp-warning)]">Today</p>}
-              </div>
+      {/* "You send it" clarity, where the action actually happens */}
+      <div className="px-4 sm:px-6 pt-3">
+        <div className="rounded-xl p-3 bg-[var(--lp-primary-15)] border border-[var(--lp-border)]">
+          <div className="flex items-start gap-2.5">
+            <Info className="h-4 w-4 shrink-0 mt-0.5 text-[var(--lp-primary)]" />
+            <div className="min-w-0">
+              <p className="text-xs leading-relaxed text-[var(--lp-text)]">
+                <span className="font-semibold">You send these, VoiceAI Connect doesn&apos;t.</span>{' '}
+                It writes the email or text and keeps your follow-ups on track. Send it from your own email or phone, then log it here so the next step is scheduled for you.
+              </p>
+              <button onClick={() => setShowWhy((v) => !v)} className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-[var(--lp-primary)]">
+                {showWhy ? 'Hide' : 'Why you send it yourself'}
+                <ChevronDown className={`h-3 w-3 transition-transform ${showWhy ? 'rotate-180' : ''}`} />
+              </button>
+              {showWhy && (
+                <p className="mt-2 text-[11px] leading-relaxed text-[var(--lp-muted)]">
+                  Cold emails and texts sent from a shared platform address or a pooled number land in spam and get numbers flagged fast. Sending from your own inbox and phone keeps your sender reputation, your deliverability, and your replies all in one place. VoiceAI Connect writes the message, keeps your sequence straight, and records every send so you always know where a lead stands. The one time the platform does message a person directly is the AI receptionist texting a caller back during a live call, from the client&apos;s own number.
+                </p>
+              )}
             </div>
-          ) : queueItem ? (
-            <div className="flex items-center gap-2">
-              <Mail className={`h-4 w-4 flex-shrink-0 ${queueColor}`} />
-              <div>
-                <p className={`text-sm truncate ${queueColor}`}>{queueItem.next_template_name}</p>
-                <p className={`text-xs ${queueItem.urgency === 'overdue' ? 'text-[var(--lp-error)]' : 'text-[var(--lp-muted)]'}`}>{queueItem.urgency === 'overdue' ? `${queueItem.days_overdue}d overdue` : queueItem.urgency === 'due_today' ? 'Due today' : 'Due soon'}</p>
-              </div>
-            </div>
-          ) : lead.outreach?.last_contacted ? (
-            <div className="flex items-center gap-1.5">
-              <Clock className="h-3.5 w-3.5 flex-shrink-0 text-[var(--lp-muted)]" />
-              <p className="text-sm text-[var(--lp-muted)]">Contacted {timeSince(lead.outreach.last_contacted)}</p>
-            </div>
-          ) : (
-            <p className="text-sm text-[var(--lp-muted)]">Never contacted</p>
-          )}
-        </div>
-
-        <div className="col-span-1 flex justify-end items-center">
-          <ChevronRight className="h-4 w-4 text-[var(--lp-muted)]" />
+          </div>
         </div>
       </div>
-    </Link>
+
+      {/* Secondary actions */}
+      <div className="px-4 sm:px-6 py-4 grid grid-cols-2 gap-2">
+        <button onClick={onSkip} className="flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors bg-[var(--lp-card)] border border-[var(--lp-border)] text-[var(--lp-muted)] hover:bg-[var(--lp-hover)]">
+          <SkipForward className="h-4 w-4" />
+          Skip for now
+        </button>
+        <Link href={`/agency/leads/${lead.id}`} prefetch={false} className="flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors bg-[var(--lp-card)] border border-[var(--lp-border)] text-[var(--lp-muted)] hover:bg-[var(--lp-hover)]">
+          <ExternalLink className="h-4 w-4" />
+          Full details
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Compact queue row. Clicking it promotes the lead into the focus card; the
+// external-link icon opens the full lead detail page.
+// ---------------------------------------------------------------------------
+function QueueRow({ lead, onFocus, isLast, queueItem }: {
+  lead: Lead;
+  onFocus: () => void;
+  isLast: boolean;
+  queueItem?: FollowUpItem;
+}) {
+  const phone = formatPhone(lead.phone);
+  const followUpOverdue = !!(lead.next_follow_up && isOverdue(lead.next_follow_up) && !['won', 'lost'].includes(lead.status));
+  const followUpToday = !!(lead.next_follow_up && isToday(lead.next_follow_up) && !followUpOverdue);
+  const lastContacted = lead.outreach?.last_contacted || null;
+
+  return (
+    <div className={`group flex items-center gap-3 px-4 sm:px-6 py-3 transition-colors hover:bg-[var(--lp-hover)] ${isLast ? '' : 'border-b border-[var(--lp-border-subtle)]'}`}>
+      <button onClick={onFocus} className="flex-1 min-w-0 flex items-center gap-3 text-left">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0 bg-[var(--lp-hover)]">
+          <span className="text-sm font-medium text-[var(--lp-muted)]">{lead.business_name?.charAt(0)?.toUpperCase() || '?'}</span>
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="font-medium text-sm truncate text-[var(--lp-text)]">{lead.business_name}</p>
+          <p className="text-xs truncate text-[var(--lp-muted)]">{lead.contact_name || phone || lead.email || 'No contact info'}</p>
+        </div>
+        <div className="hidden sm:flex items-center gap-2 shrink-0">
+          {followUpOverdue && <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--lp-error)]"><AlertCircle className="h-3 w-3" />Overdue</span>}
+          {followUpToday && <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--lp-warning)]"><Calendar className="h-3 w-3" />Today</span>}
+          {!followUpOverdue && !followUpToday && queueItem && <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--lp-primary)]"><Mail className="h-3 w-3" />Step {queueItem.next_sequence_order}</span>}
+          {!followUpOverdue && !followUpToday && !queueItem && (
+            <span className="text-[11px] text-[var(--lp-muted)]">{lastContacted ? timeSince(lastContacted) : 'New'}</span>
+          )}
+        </div>
+      </button>
+      <button onClick={onFocus} className="shrink-0 inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors bg-[var(--lp-card)] border border-[var(--lp-border)] text-[var(--lp-muted)] hover:bg-[var(--lp-hover)] hover:text-[var(--lp-text)]" aria-label="Work this lead">
+        <Target className="h-3.5 w-3.5" />
+        <span className="hidden sm:inline">Work</span>
+      </button>
+      <Link href={`/agency/leads/${lead.id}`} prefetch={false} className="shrink-0 rounded-lg p-1.5 transition-colors text-[var(--lp-muted)] hover:bg-[var(--lp-card)] hover:text-[var(--lp-text)]" aria-label="Open full details">
+        <ExternalLink className="h-4 w-4" />
+      </Link>
+    </div>
   );
 }
 
@@ -447,108 +501,65 @@ export default function AgencyLeadsPage() {
   const theme = useTheme();
   const { canUseLeadFinder } = usePlanFeatures();
   const isFreePlan = !canUseLeadFinder;
+  const readOnly = demoMode || isFreePlan;
+
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [stats, setStats] = useState<LeadStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState('priority');
-  const [filterMode, setFilterMode] = useState<FilterMode>('all');
-  const [showTips, setShowTips] = useState(true);
   const [showCSVImport, setShowCSVImport] = useState(false);
+
+  // Focus-station state
+  const [currentId, setCurrentId] = useState<string | null>(null);
+  const [skippedIds, setSkippedIds] = useState<Set<string>>(new Set());
+
+  // Action modals
   const [composerOpen, setComposerOpen] = useState(false);
   const [composerType, setComposerType] = useState<'email' | 'sms'>('email');
-  const [composerLead, setComposerLead] = useState<Lead | null>(null);
+  const [actionLeadId, setActionLeadId] = useState<string | null>(null);
+  const [logCallOpen, setLogCallOpen] = useState(false);
 
-  // Follow-up queue (sequence-based)
+  // Follow-up queue (sequence-based), drives the "step due" badges.
   const [followUpQueue, setFollowUpQueue] = useState<FollowUpItem[]>([]);
-  const [followUpSummary, setFollowUpSummary] = useState<{ overdue: number; due_today: number; upcoming: number; total: number } | null>(null);
 
   const getStatusStyle = (status: string) => {
     switch (status) {
-      case 'new':
-        return { bg: theme.infoBg, text: theme.info, border: theme.infoBorder };
-      case 'contacted':
-        return { bg: theme.warningBg, text: theme.warning, border: theme.warningBorder };
-      case 'qualified':
-        return { bg: theme.primary15, text: theme.primary, border: theme.primary30 };
-      case 'proposal':
-        return { bg: 'rgba(6,182,212,0.1)', text: theme.isDark ? '#22d3ee' : '#0891b2', border: 'rgba(6,182,212,0.2)' };
-      case 'won':
-        return { bg: theme.primary15, text: theme.primary, border: theme.primary30 };
-      case 'lost':
-        return { bg: theme.errorBg, text: theme.error, border: theme.errorBorder };
-      default:
-        return { bg: theme.hover, text: theme.textMuted, border: theme.border };
+      case 'new': return { bg: theme.infoBg, text: theme.info, border: theme.infoBorder };
+      case 'contacted': return { bg: theme.warningBg, text: theme.warning, border: theme.warningBorder };
+      case 'qualified': return { bg: theme.primary15, text: theme.primary, border: theme.primary30 };
+      case 'proposal': return { bg: 'rgba(6,182,212,0.1)', text: theme.isDark ? '#22d3ee' : '#0891b2', border: 'rgba(6,182,212,0.2)' };
+      case 'won': return { bg: theme.primary15, text: theme.primary, border: theme.primary30 };
+      case 'lost': return { bg: theme.errorBg, text: theme.error, border: theme.errorBorder };
+      default: return { bg: theme.hover, text: theme.textMuted, border: theme.border };
     }
   };
 
   const getStatusLabel = (status: string) => {
-    const labels: Record<string, string> = {
-      new: 'New',
-      contacted: 'Contacted',
-      qualified: 'Qualified',
-      proposal: 'Proposal',
-      won: 'Won',
-      lost: 'Lost',
-    };
+    const labels: Record<string, string> = { new: 'New', contacted: 'Contacted', qualified: 'Qualified', proposal: 'Proposal', won: 'Won', lost: 'Lost' };
     return labels[status] || status;
   };
 
   useEffect(() => {
     if (!agency) return;
-
-    // Demo mode OR Free plan → render demo leads so the page is alive
-    // behind the LockedFeatureOverlay (or in normal demo mode for Pro/Scale).
-    // Real fetch only runs once they upgrade.
-    if (demoMode || isFreePlan) {
+    if (readOnly) {
       setLeads(getDemoLeads() as Lead[]);
-      setStats(getDemoLeadStats() as LeadStats);
       setLoading(false);
       return;
     }
-
     fetchLeads();
     fetchFollowUpQueue();
   }, [agency, demoMode, isFreePlan]);
 
   const fetchLeads = async () => {
     if (!agency) return;
-
     try {
       const token = localStorage.getItem('auth_token');
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
-
-      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/leads`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/leads`, { headers: { 'Authorization': `Bearer ${token}` } });
       if (response.ok) {
         const data = await response.json();
         setLeads(data.leads || []);
-        
-        const allLeads = data.leads || [];
-        
-        const calculatedStats: LeadStats = {
-          total: allLeads.length,
-          new: allLeads.filter((l: Lead) => l.status === 'new').length,
-          contacted: allLeads.filter((l: Lead) => l.status === 'contacted').length,
-          qualified: allLeads.filter((l: Lead) => l.status === 'qualified').length,
-          proposal: allLeads.filter((l: Lead) => l.status === 'proposal').length,
-          won: allLeads.filter((l: Lead) => l.status === 'won').length,
-          lost: allLeads.filter((l: Lead) => l.status === 'lost').length,
-          followUpsToday: allLeads.filter((l: Lead) => {
-            if (!l.next_follow_up) return false;
-            return isToday(l.next_follow_up);
-          }).length,
-          overdueFollowUps: allLeads.filter((l: Lead) => {
-            if (!l.next_follow_up) return false;
-            if (['won', 'lost'].includes(l.status)) return false;
-            return isOverdue(l.next_follow_up);
-          }).length,
-        };
-        
-        setStats(calculatedStats);
       }
     } catch (error) {
       console.error('Failed to fetch leads:', error);
@@ -559,27 +570,21 @@ export default function AgencyLeadsPage() {
 
   const fetchFollowUpQueue = async () => {
     if (!agency || demoMode) return;
-
     try {
       const token = localStorage.getItem('auth_token');
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
-
-      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/leads/follow-up-queue`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/leads/follow-up-queue`, { headers: { 'Authorization': `Bearer ${token}` } });
       if (response.ok) {
         const data = await response.json();
         setFollowUpQueue(data.queue || []);
-        setFollowUpSummary(data.summary || null);
       }
     } catch (error) {
       console.error('Failed to fetch follow-up queue:', error);
     }
   };
 
-  // Working order: due/overdue follow-ups and untouched leads rise; a lead you
-  // just contacted sinks to the bottom (unless a follow-up is due).
+  // Working order: overdue follow-ups and untouched leads rise, a lead you just
+  // contacted (or that has a future follow-up) sinks. Skipped leads go last.
   const leadSortKey = (l: Lead): [number, number] => {
     if (l.status === 'won' || l.status === 'lost') return [5, 0];
     const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
@@ -595,27 +600,19 @@ export default function AgencyLeadsPage() {
     return [4, lc];
   };
 
-  const filteredLeads = leads.filter(lead => {
-    const matchesSearch = !searchQuery || 
+  // Build the work queue: filter, drop closed leads (unless explicitly filtered
+  // to a status), then order by the chosen sort with skipped leads pushed down.
+  const base = leads.filter((lead) => {
+    const matchesSearch = !searchQuery ||
       lead.business_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       lead.contact_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       lead.email?.toLowerCase().includes(searchQuery.toLowerCase());
-    
     const matchesStatus = !statusFilter || lead.status === statusFilter;
-    
-    let matchesFilterMode = true;
-    if (filterMode === 'follow-up-today') {
-      matchesFilterMode = lead.next_follow_up ? isToday(lead.next_follow_up) : false;
-    } else if (filterMode === 'overdue') {
-      matchesFilterMode = lead.next_follow_up ? isOverdue(lead.next_follow_up) && !['won', 'lost'].includes(lead.status) : false;
-    } else if (filterMode === 'active') {
-      matchesFilterMode = !['won', 'lost'].includes(lead.status);
-    } else if (filterMode === 'sequence-due') {
-      matchesFilterMode = followUpQueue.some(q => q.lead_id === lead.id);
-    }
-    
-    return matchesSearch && matchesStatus && matchesFilterMode;
-  }).sort((a, b) => {
+    return matchesSearch && matchesStatus;
+  });
+  const scoped = (statusFilter ? base : base.filter((l) => !['won', 'lost'].includes(l.status)))
+    .filter((l) => !skippedIds.has(l.id));
+  const workQueue = [...scoped].sort((a, b) => {
     if (sortBy === 'industry') {
       const ia = (a.industry || '').toLowerCase(), ib = (b.industry || '').toLowerCase();
       if (ia !== ib) { if (!ia) return 1; if (!ib) return -1; return ia.localeCompare(ib); }
@@ -632,23 +629,31 @@ export default function AgencyLeadsPage() {
     return ka[1] - kb[1];
   });
 
-  const clearFilters = () => {
-    setSearchQuery('');
-    setStatusFilter(null);
-    setFilterMode('all');
+  const currentLead = workQueue.find((l) => l.id === currentId) || workQueue[0] || null;
+  const currentIndex = currentLead ? workQueue.findIndex((l) => l.id === currentLead.id) : -1;
+  const upNext = currentLead ? workQueue.filter((l) => l.id !== currentLead.id) : workQueue;
+
+  const totalActive = leads.filter((l) => !['won', 'lost'].includes(l.status)).length;
+  const overdueCount = leads.filter((l) => l.next_follow_up && isOverdue(l.next_follow_up) && !['won', 'lost'].includes(l.status)).length;
+
+  // Move the focus to the lead after the one just acted on. currentId is an id,
+  // so it survives the re-sort that the action triggers.
+  const advanceFrom = (actedId: string) => {
+    const idx = workQueue.findIndex((l) => l.id === actedId);
+    const next = workQueue[idx + 1] || workQueue.find((l) => l.id !== actedId) || null;
+    setCurrentId(next ? next.id : null);
   };
 
-  const handleStatClick = (mode: FilterMode) => {
-    setFilterMode(mode);
-    setStatusFilter(null);
+  // Optimistic: stamp last_contacted now so the acted lead sinks immediately,
+  // before the refetch returns the authoritative counts/follow-up.
+  const markContactedLocal = (leadId: string) => {
+    const now = new Date().toISOString();
+    setLeads((prev) => prev.map((l) => l.id === leadId ? { ...l, outreach: { ...(l.outreach || {}), last_contacted: now } } : l));
   };
 
-  // Inline status change from the leads list. Optimistic local update, then
-  // PATCH the confirmed endpoint. In demo / free mode the leads are demo data,
-  // so we update locally only and skip the network call.
   const handleStatusChange = async (leadId: string, newStatus: string) => {
-    setLeads(prev => prev.map(l => (l.id === leadId ? { ...l, status: newStatus } : l)));
-    if (demoMode || isFreePlan || !agency) return;
+    setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, status: newStatus } : l)));
+    if (readOnly || !agency) return;
     try {
       const token = localStorage.getItem('auth_token');
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
@@ -663,11 +668,62 @@ export default function AgencyLeadsPage() {
     }
   };
 
-  const openComposer = (lead: Lead, type: 'email' | 'sms') => {
-    setComposerLead(lead);
-    setComposerType(type);
-    setComposerOpen(true);
+  const openEmail = () => { if (!currentLead) return; setActionLeadId(currentLead.id); setComposerType('email'); setComposerOpen(true); };
+  const openSms = () => { if (!currentLead) return; setActionLeadId(currentLead.id); setComposerType('sms'); setComposerOpen(true); };
+  const openCall = () => { if (!currentLead) return; setActionLeadId(currentLead.id); setLogCallOpen(true); };
+
+  // Fired when the composer logs an email/SMS. Advance, sink the lead, refetch.
+  const handleComposerSent = () => {
+    if (actionLeadId) { advanceFrom(actionLeadId); markContactedLocal(actionLeadId); }
+    if (!readOnly) { fetchLeads(); fetchFollowUpQueue(); }
   };
+
+  // Log a call through the same /outreach/log path the composer uses, so the
+  // call counts, updates "last contacted", and schedules the next follow-up.
+  const handleLogCall = async (outcome: string, note: string) => {
+    const lead = actionLeadId ? leads.find((l) => l.id === actionLeadId) : null;
+    setLogCallOpen(false);
+    setActionLeadId(null);
+    if (!lead) return;
+
+    const meta = CALL_OUTCOMES.find((o) => o.value === outcome);
+    const label = meta?.label || 'Call';
+
+    advanceFrom(lead.id);
+    markContactedLocal(lead.id);
+    if (meta?.status) setLeads((prev) => prev.map((l) => (l.id === lead.id ? { ...l, status: meta.status as string } : l)));
+
+    if (readOnly || !agency) return;
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      await fetch(`${backendUrl}/api/agency/${agency.id}/outreach/log`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          leadId: lead.id,
+          type: 'call',
+          toPhone: lead.phone || null,
+          subject: `Call: ${label}`,
+          body: note || label,
+          call_outcome: outcome,
+          call_notes: note || null,
+          updateLeadStatus: meta?.status || null,
+          tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          userId: user.id,
+        }),
+      });
+      fetchLeads();
+      fetchFollowUpQueue();
+    } catch (error) {
+      console.error('Failed to log call:', error);
+    }
+  };
+
+  const focusLead = (id: string) => { setCurrentId(id); if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const skipCurrent = () => { if (!currentLead) return; const id = currentLead.id; advanceFrom(id); setSkippedIds((prev) => new Set(prev).add(id)); };
+  const clearSkips = () => setSkippedIds(new Set());
 
   if (contextLoading || loading) {
     return (
@@ -677,14 +733,6 @@ export default function AgencyLeadsPage() {
     );
   }
 
-  const hasActiveFilters = searchQuery || statusFilter || filterMode !== 'all';
-
-  // Full Leads UI – used as the LockedFeatureOverlay children when Free
-  // (populated with demo data via the useEffect above), AND as the direct
-  // return for Pro/Scale agencies with real data.
-  // Theme tokens exposed once as CSS variables so the markup below (and the
-  // extracted components) can style with plain classes and CSS :hover instead
-  // of per-element inline styles and JS hover handlers.
   const lpVars = {
     '--lp-primary': theme.primary,
     '--lp-primary-text': theme.primaryText,
@@ -701,7 +749,6 @@ export default function AgencyLeadsPage() {
     '--lp-warning': theme.warning,
     '--lp-warning-bg': theme.warningBg,
     '--lp-warning-border': theme.warningBorder,
-    '--lp-warning-text': theme.warningText,
     '--lp-error': theme.error,
     '--lp-error-bg': theme.errorBg,
     '--lp-error-border': theme.errorBorder,
@@ -710,90 +757,41 @@ export default function AgencyLeadsPage() {
   } as CSSProperties;
 
   const statusOptions = ['new', 'contacted', 'qualified', 'proposal', 'won', 'lost'].map((v) => ({
-    value: v,
-    label: getStatusLabel(v),
-    color: getStatusStyle(v).text,
+    value: v, label: getStatusLabel(v), color: getStatusStyle(v).text,
   }));
+
+  const hasFilters = Boolean(searchQuery || statusFilter);
+  const currentQueueItem = currentLead ? followUpQueue.find((q) => q.lead_id === currentLead.id) : undefined;
 
   const pageContent = (
     <div className="p-4 sm:p-6 lg:p-8" style={lpVars}>
-
       {/* Header */}
-      <div className="mb-6 sm:mb-8">
+      <div className="mb-5 sm:mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0 bg-[var(--lp-primary-15)]"><Users className="h-5 w-5 text-[var(--lp-primary)]" /></div>
             <div>
               <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[var(--lp-text)]">Leads</h1>
               <p className="mt-0.5 text-sm text-[var(--lp-muted)]">
-                {stats?.total || 0} total leads
-                {stats && stats.overdueFollowUps > 0 && (
-                  <span className="ml-2 text-[var(--lp-warning)]">{stats.overdueFollowUps} overdue</span>
-                )}
+                {totalActive} active
+                {overdueCount > 0 && <span className="ml-2 text-[var(--lp-warning)]">{overdueCount} overdue</span>}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <Link href="/agency/leads/finder" prefetch={false} className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-[filter] bg-[var(--lp-primary)] text-[var(--lp-primary-text)] hover:brightness-95">
-              <Search className="h-4 w-4" />
-              Find Leads
+              <Search className="h-4 w-4" />Find Leads
             </Link>
             <button onClick={() => setShowCSVImport(true)} className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors bg-[var(--lp-input)] border border-[var(--lp-input-border)] text-[var(--lp-muted)] hover:bg-[var(--lp-hover)]">
-              <FileSpreadsheet className="h-4 w-4" />
-              Import Leads
+              <FileSpreadsheet className="h-4 w-4" />Import
             </button>
             <Link href="/agency/leads/new" prefetch={false} className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors bg-[var(--lp-input)] border border-[var(--lp-input-border)] text-[var(--lp-muted)] hover:bg-[var(--lp-hover)]">
-              <Plus className="h-4 w-4" />
-              Add Lead
+              <Plus className="h-4 w-4" />Add Lead
             </Link>
           </div>
         </div>
       </div>
-
-      {/* Overdue banner */}
-      {stats && stats.overdueFollowUps > 0 && filterMode !== 'overdue' && (
-        <OverdueBanner count={stats.overdueFollowUps} onClick={() => handleStatClick('overdue')} />
-      )}
-
-      {/* Tips */}
-      {showTips && !hasActiveFilters && (
-        <TipsPanel tips={LEAD_TIPS} onHide={() => setShowTips(false)} />
-      )}
-
-      {/* Stats */}
-      {stats && stats.total > 0 && (
-        <div className={`grid gap-2 sm:gap-4 ${followUpSummary && followUpSummary.total > 0 ? 'grid-cols-3' : 'grid-cols-2'} mb-4 sm:mb-8`}>
-          <StatCard label="Active" value={stats.total - stats.won - stats.lost} icon={Target} tone="info" active={filterMode === 'active'} onClick={() => handleStatClick('active')} />
-          {followUpSummary && followUpSummary.total > 0 && (
-            <StatCard label="Sequence Due" value={followUpSummary.total} icon={Mail} tone={followUpSummary.overdue > 0 ? 'error' : 'primary'} active={filterMode === 'sequence-due'} onClick={() => handleStatClick('sequence-due')} />
-          )}
-          <StatCard label="Today" value={stats.followUpsToday} icon={Calendar} tone="warning" active={filterMode === 'follow-up-today'} onClick={() => handleStatClick('follow-up-today')} />
-        </div>
-      )}
-
-      {/* Active filter chips */}
-      {hasActiveFilters && (
-        <div className="flex items-center gap-2 mb-3 sm:mb-4 flex-wrap">
-          <span className="text-xs sm:text-sm text-[var(--lp-muted)]">Filtering:</span>
-          {filterMode === 'follow-up-today' && (
-            <span className="inline-flex items-center gap-1 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium bg-[var(--lp-warning-bg)] border border-[var(--lp-warning-border)] text-[var(--lp-warning)]"><Calendar className="h-3 w-3" />Today</span>
-          )}
-          {filterMode === 'overdue' && (
-            <span className="inline-flex items-center gap-1 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium bg-[var(--lp-error-bg)] border border-[var(--lp-error-border)] text-[var(--lp-error)]"><AlertCircle className="h-3 w-3" />Overdue</span>
-          )}
-          {filterMode === 'active' && (
-            <span className="inline-flex items-center gap-1 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium bg-[var(--lp-info-bg)] border border-[var(--lp-info)] text-[var(--lp-info)]"><Target className="h-3 w-3" />Active</span>
-          )}
-          {filterMode === 'sequence-due' && (
-            <span className="inline-flex items-center gap-1 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium bg-[var(--lp-primary-15)] border border-[var(--lp-primary-30)] text-[var(--lp-primary)]"><Mail className="h-3 w-3" />Sequence Due</span>
-          )}
-          {statusFilter && (
-            <span className="inline-flex items-center gap-1 rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium" style={{ backgroundColor: getStatusStyle(statusFilter).bg, border: `1px solid ${getStatusStyle(statusFilter).border}`, color: getStatusStyle(statusFilter).text }}>{getStatusLabel(statusFilter)}</span>
-          )}
-          <button onClick={clearFilters} className="inline-flex items-center gap-1 text-xs transition-colors ml-1 text-[var(--lp-muted)] hover:text-[var(--lp-text)]"><X className="h-3 w-3" />Clear</button>
-        </div>
-      )}
 
       {/* Search & filters */}
       <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-4 sm:mb-6">
@@ -807,12 +805,11 @@ export default function AgencyLeadsPage() {
             className="w-full rounded-xl pl-10 pr-4 py-2.5 text-sm transition-colors focus:outline-none bg-[var(--lp-input)] border border-[var(--lp-input-border)] text-[var(--lp-text)]"
           />
         </div>
-
         <div className="flex gap-2">
           <div className="flex-1 sm:flex-none sm:w-44">
             <CustomSelect
               value={statusFilter || ''}
-              onChange={(v) => { setStatusFilter(v || null); if (v) setFilterMode('all'); }}
+              onChange={(v) => setStatusFilter(v || null)}
               options={[
                 { value: '', label: 'All Status' },
                 { value: 'new', label: 'New' },
@@ -825,7 +822,6 @@ export default function AgencyLeadsPage() {
               ui={{ inputStyle: { backgroundColor: 'var(--lp-input)', border: '1px solid var(--lp-input-border)', color: 'var(--lp-muted)' }, text: 'var(--lp-text)', muted: 'var(--lp-muted)', panelBg: theme.isDark ? '#232321' : '#ffffff', panelBorder: 'var(--lp-input-border)', hover: theme.hover, accent: theme.primary, isDark: theme.isDark }}
             />
           </div>
-
           <div className="flex-1 sm:flex-none sm:w-44">
             <CustomSelect
               value={sortBy}
@@ -839,96 +835,80 @@ export default function AgencyLeadsPage() {
               ui={{ inputStyle: { backgroundColor: 'var(--lp-input)', border: '1px solid var(--lp-input-border)', color: 'var(--lp-muted)' }, text: 'var(--lp-text)', muted: 'var(--lp-muted)', panelBg: theme.isDark ? '#232321' : '#ffffff', panelBorder: 'var(--lp-input-border)', hover: theme.hover, accent: theme.primary, isDark: theme.isDark }}
             />
           </div>
-
-          {!showTips && (
-            <button
-              onClick={() => setShowTips(true)}
-              className="flex items-center justify-center rounded-xl px-3 py-2.5 transition-colors bg-[var(--lp-input)] border border-[var(--lp-input-border)] text-[var(--lp-muted)] hover:bg-[var(--lp-hover)]"
-            >
-              <BookOpen className="h-4 w-4" />
-            </button>
-          )}
         </div>
       </div>
 
-      {/* Leads list */}
-      <div className="rounded-xl overflow-hidden bg-[var(--lp-card)] border border-[var(--lp-border)]">
-        {filteredLeads.length === 0 ? (
-          <div className="py-12 sm:py-20 text-center px-4">
-            <div className="mx-auto flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-[var(--lp-primary-15)]">
-              {hasActiveFilters ? (
-                <Filter className="h-6 w-6 sm:h-8 sm:w-8 text-[var(--lp-primary)]" />
-              ) : (
-                <Target className="h-6 w-6 sm:h-8 sm:w-8 text-[var(--lp-primary)]" />
-              )}
-            </div>
-            <p className="mt-4 font-medium text-sm sm:text-base text-[var(--lp-text)]">
-              {hasActiveFilters ? 'No leads match your filters' : 'No leads yet'}
-            </p>
-            <p className="text-xs sm:text-sm mt-1 mb-4 text-[var(--lp-muted)]">
-              {hasActiveFilters ? 'Try adjusting your filters' : 'Start building your pipeline'}
-            </p>
-            {hasActiveFilters ? (
-              <button onClick={clearFilters} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors border border-[var(--lp-input-border)] text-[var(--lp-muted)] hover:bg-[var(--lp-hover)]">
-                <X className="h-4 w-4" />
-                Clear Filters
+      {/* Focus card */}
+      {currentLead ? (
+        <FocusCard
+          lead={currentLead}
+          position={currentIndex + 1}
+          total={workQueue.length}
+          statusOptions={statusOptions}
+          getStatusStyle={getStatusStyle}
+          onStatus={handleStatusChange}
+          onEmail={openEmail}
+          onSms={openSms}
+          onCall={openCall}
+          onSkip={skipCurrent}
+          queueItem={currentQueueItem}
+        />
+      ) : (
+        <div className="rounded-2xl py-12 sm:py-16 text-center px-4 bg-[var(--lp-card)] border border-[var(--lp-border)]">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[var(--lp-primary-15)]">
+            {skippedIds.size > 0 ? <Check className="h-7 w-7 text-[var(--lp-primary)]" /> : hasFilters ? <Filter className="h-7 w-7 text-[var(--lp-primary)]" /> : <Sparkles className="h-7 w-7 text-[var(--lp-primary)]" />}
+          </div>
+          <p className="mt-4 font-medium text-base text-[var(--lp-text)]">
+            {skippedIds.size > 0 ? 'You worked the whole queue' : hasFilters ? 'No leads match your filters' : 'No leads yet'}
+          </p>
+          <p className="text-sm mt-1 mb-4 text-[var(--lp-muted)]">
+            {skippedIds.size > 0 ? 'Every lead here has been actioned or skipped.' : hasFilters ? 'Try adjusting your search or status filter.' : 'Find or import leads to start working your pipeline.'}
+          </p>
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            {skippedIds.size > 0 ? (
+              <button onClick={clearSkips} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-[filter] bg-[var(--lp-primary)] text-[var(--lp-primary-text)] hover:brightness-95">
+                <SkipForward className="h-4 w-4" />Bring back skipped
+              </button>
+            ) : hasFilters ? (
+              <button onClick={() => { setSearchQuery(''); setStatusFilter(null); }} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors border border-[var(--lp-input-border)] text-[var(--lp-muted)] hover:bg-[var(--lp-hover)]">
+                <X className="h-4 w-4" />Clear filters
               </button>
             ) : (
-              <div className="flex items-center justify-center gap-3 flex-wrap">
-                <Link href="/agency/leads/finder" prefetch={false} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-[filter] bg-[var(--lp-primary)] text-[var(--lp-primary-text)] hover:brightness-95">
-                  <Search className="h-4 w-4" />
-                  Find Leads
-                </Link>
-                <Link href="/agency/leads/new" prefetch={false} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors border border-[var(--lp-input-border)] text-[var(--lp-muted)] hover:bg-[var(--lp-hover)]">
-                  <Plus className="h-4 w-4" />
-                  Add Lead
-                </Link>
-                <button onClick={() => setShowCSVImport(true)} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors border border-[var(--lp-input-border)] text-[var(--lp-muted)] hover:bg-[var(--lp-hover)]">
-                  <FileSpreadsheet className="h-4 w-4" />
-                  Import Leads
-                </button>
-              </div>
+              <>
+                <Link href="/agency/leads/finder" prefetch={false} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-[filter] bg-[var(--lp-primary)] text-[var(--lp-primary-text)] hover:brightness-95"><Search className="h-4 w-4" />Find Leads</Link>
+                <button onClick={() => setShowCSVImport(true)} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors border border-[var(--lp-input-border)] text-[var(--lp-muted)] hover:bg-[var(--lp-hover)]"><FileSpreadsheet className="h-4 w-4" />Import Leads</button>
+              </>
             )}
           </div>
-        ) : (
-          <div>
-            {/* Desktop column header */}
-            <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-4 text-xs font-medium uppercase tracking-wide text-[var(--lp-muted)] border-b border-[var(--lp-border)]">
-              <div className="col-span-3">Business</div>
-              <div className="col-span-3">Contact</div>
-              <div className="col-span-2">Status</div>
-              <div className="col-span-3">Follow-up</div>
-              <div className="col-span-1"></div>
-            </div>
+        </div>
+      )}
 
-            <div>
-              {filteredLeads.map((lead, idx) => {
-                const followUpToday = !!(lead.next_follow_up && isToday(lead.next_follow_up));
-                const followUpOverdue = !!(lead.next_follow_up && isOverdue(lead.next_follow_up) && !['won', 'lost'].includes(lead.status));
-                const ss = getStatusStyle(lead.status);
-                const queueItem = followUpQueue.find(q => q.lead_id === lead.id);
-                return (
-                  <LeadRow
-                    key={lead.id}
-                    lead={lead}
-                    statusBg={ss.bg}
-                    statusText={ss.text}
-                    statusOptions={statusOptions}
-                    onStatusChange={handleStatusChange}
-                    onComposer={openComposer}
-                    followUpToday={followUpToday}
-                    followUpOverdue={followUpOverdue}
-                    queueItem={queueItem}
-                    isLast={idx === filteredLeads.length - 1}
-                  />
-                );
-              })}
-            </div>
+      {/* Up next queue */}
+      {upNext.length > 0 && (
+        <div className="mt-4 sm:mt-6 rounded-2xl overflow-hidden bg-[var(--lp-card)] border border-[var(--lp-border)]">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-[var(--lp-border)]">
+            <h3 className="text-sm font-medium text-[var(--lp-text)]">Up next <span className="text-[var(--lp-muted)]">({upNext.length})</span></h3>
+            {skippedIds.size > 0 && (
+              <button onClick={clearSkips} className="inline-flex items-center gap-1 text-xs font-medium transition-colors text-[var(--lp-muted)] hover:text-[var(--lp-text)]">
+                <SkipForward className="h-3.5 w-3.5" />Bring back {skippedIds.size} skipped
+              </button>
+            )}
           </div>
-        )}
-      </div>
+          <div>
+            {upNext.map((lead, idx) => (
+              <QueueRow
+                key={lead.id}
+                lead={lead}
+                onFocus={() => focusLead(lead.id)}
+                isLast={idx === upNext.length - 1}
+                queueItem={followUpQueue.find((q) => q.lead_id === lead.id)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
-      {/* CSV Import Modal */}
+      {/* CSV Import */}
       {agency && (
         <CSVImportModal
           isOpen={showCSVImport}
@@ -939,21 +919,40 @@ export default function AgencyLeadsPage() {
         />
       )}
 
-      {/* Quick outreach (email / SMS) via the shared composer, agency mode */}
-      {agency && composerLead && (
-        <ComposerModal
-          isOpen={composerOpen}
-          onClose={() => { setComposerOpen(false); setComposerLead(null); }}
-          agencyId={agency.id}
-          lead={composerLead}
-          type={composerType}
-          onSent={() => { fetchLeads(); fetchFollowUpQueue(); }}
-        />
-      )}
+      {/* Email / SMS composer (shared, agency mode). It drafts + logs, it never sends. */}
+      {agency && actionLeadId && composerOpen && (() => {
+        const l = leads.find((x) => x.id === actionLeadId);
+        if (!l) return null;
+        return (
+          <ComposerModal
+            isOpen={composerOpen}
+            onClose={() => { setComposerOpen(false); setActionLeadId(null); }}
+            agencyId={agency.id}
+            lead={l}
+            type={composerType}
+            onSent={handleComposerSent}
+          />
+        );
+      })()}
+
+      {/* Log-call modal */}
+      {actionLeadId && logCallOpen && (() => {
+        const l = leads.find((x) => x.id === actionLeadId);
+        if (!l) return null;
+        return (
+          <LogCallModal
+            isOpen={logCallOpen}
+            onClose={() => { setLogCallOpen(false); setActionLeadId(null); }}
+            lead={l}
+            onLogged={handleLogCall}
+            isDark={theme.isDark}
+            primary={theme.primary}
+          />
+        );
+      })()}
     </div>
   );
 
-  // Free plan: wrap the populated-with-demo-data UI in the LockedFeatureOverlay.
   if (!canUseLeadFinder) {
     return (
       <LockedFeatureOverlay
@@ -963,7 +962,7 @@ export default function AgencyLeadsPage() {
         features={[
           'Google Maps business prospecting',
           '13 email + SMS outreach templates',
-          'Visual pipeline with follow-up tracking',
+          'Focused one-lead-at-a-time work queue',
           'CSV import and export',
         ]}
       >
