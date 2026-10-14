@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import {
   Users, Plus, Loader2, Trash2, Eye, EyeOff, RefreshCw,
   Check, AlertCircle, CheckCircle2, Circle, Phone, Mail, Copy,
-  Lock, Bell, BellOff, ChevronDown, ChevronUp, Building2, Headphones
+  Lock, Bell, BellOff, ChevronDown, ChevronUp, Building2, Headphones, Headset
 } from 'lucide-react';
 import UpgradeGate from './UpgradeGate';
 import { useAgency } from '@/app/agency/context';
@@ -24,6 +24,9 @@ interface TeamMember {
   // Call-center agent scoping: the businesses this agent may see/handle.
   // null = unrestricted (not an agent). Only used for call-center agencies.
   assigned_client_ids: string[] | null;
+  // Call-center agent call delivery: how an escalated call reaches them.
+  call_delivery?: 'browser' | 'phone';
+  agent_phone?: string | null;
   last_login: string | null;
   created_at: string;
 }
@@ -94,6 +97,8 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
   const [addEmail, setAddEmail] = useState('');
   const [addPhone, setAddPhone] = useState('');
   const [addAssigned, setAddAssigned] = useState<string[]>([]);
+  const [addCallDelivery, setAddCallDelivery] = useState<'browser' | 'phone'>('browser');
+  const [addAgentPhone, setAddAgentPhone] = useState('');
   const [adding, setAdding] = useState(false);
 
   // Expanded cards
@@ -160,6 +165,8 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
       if (isCallCenter) {
         body.permissions = AGENT_PERMISSION_PRESET;
         body.assigned_client_ids = addAssigned;
+        body.call_delivery = addCallDelivery;
+        body.agent_phone = addCallDelivery === 'phone' ? (addAgentPhone.trim() || null) : null;
       }
       const res = await fetch(`${backendUrl}/api/agency/${agencyId}/team`, {
         method: 'POST',
@@ -173,7 +180,7 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
       setLimits(prev => ({ ...prev, current: prev.current + 1 }));
       const noun = isCallCenter ? 'Agent' : '';
       setSuccess(`${data.member.display_name} added${noun ? ` as an ${noun.toLowerCase()}` : ''}! ${addPhone ? 'Credentials sent via SMS.' : 'Share the credentials below.'}`);
-      setAddName(''); setAddEmail(''); setAddPhone(''); setAddAssigned([]);
+      setAddName(''); setAddEmail(''); setAddPhone(''); setAddAssigned([]); setAddCallDelivery('browser'); setAddAgentPhone('');
       setShowAddForm(false);
       setExpandedId(data.member.id); // Auto-expand new member to show password
       setTimeout(() => setSuccess(null), 5000);
@@ -234,6 +241,27 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
     } catch {
       setMembers(prev => prev.map(m => m.id === memberId ? { ...m, assigned_client_ids: current } : m));
       setError('Failed to update assigned businesses');
+    }
+  };
+
+  // ============================================================================
+  // UPDATE AGENT CALL DELIVERY (call center): browser vs phone (+ number)
+  // ============================================================================
+  const updateDelivery = async (memberId: string, patch: { call_delivery?: 'browser' | 'phone'; agent_phone?: string | null }) => {
+    const member = members.find(m => m.id === memberId);
+    if (!member) return;
+    const prevVals = { call_delivery: member.call_delivery, agent_phone: member.agent_phone };
+    setMembers(prev => prev.map(m => m.id === memberId ? { ...m, ...patch } : m));
+    try {
+      const res = await fetch(`${backendUrl}/api/agency/${agencyId}/team/${memberId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(patch),
+      });
+      if (!res.ok) throw new Error('Failed to update');
+    } catch {
+      setMembers(prev => prev.map(m => m.id === memberId ? { ...m, ...prevVals } : m));
+      setError('Failed to update call delivery');
     }
   };
 
@@ -486,6 +514,28 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
             </div>
           )}
 
+          {/* Agent call delivery (call center): browser (ring in dashboard) or phone */}
+          {isCallCenter && (
+            <div className="mb-4">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <Headset className="h-3.5 w-3.5" style={{ color: theme.textMuted }} />
+                <label className="block text-xs font-medium" style={{ color: theme.text }}>How this agent takes calls</label>
+              </div>
+              <div className="inline-flex rounded-lg p-0.5 mb-2" style={{ backgroundColor: theme.hover }}>
+                {(['browser', 'phone'] as const).map(opt => (
+                  <button key={opt} type="button" onClick={() => setAddCallDelivery(opt)} className="px-3 py-1.5 text-xs font-semibold rounded-md transition-colors capitalize" style={addCallDelivery === opt ? { backgroundColor: theme.isDark ? '#050505' : '#ffffff', color: theme.text } : { color: theme.textMuted }}>
+                    {opt === 'browser' ? 'In the dashboard' : 'On their phone'}
+                  </button>
+                ))}
+              </div>
+              {addCallDelivery === 'phone' ? (
+                <input type="tel" value={addAgentPhone} onChange={(e) => setAddAgentPhone(e.target.value)} placeholder="+1 (555) 123-4567" className="w-full sm:w-1/2 rounded-lg px-3 py-2 text-sm block" style={{ backgroundColor: theme.isDark ? '#050505' : '#ffffff', border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+              ) : (
+                <p className="text-[10px]" style={{ color: theme.textMuted }}>Escalated calls ring this agent inside the dashboard. They click to take over.</p>
+              )}
+            </div>
+          )}
+
           <div className="flex items-center gap-2">
             <button
               onClick={handleAdd} disabled={adding}
@@ -496,7 +546,7 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
               {adding ? 'Adding...' : 'Add Member'}
             </button>
             <button
-              onClick={() => { setShowAddForm(false); setAddName(''); setAddEmail(''); setAddPhone(''); setAddAssigned([]); }}
+              onClick={() => { setShowAddForm(false); setAddName(''); setAddEmail(''); setAddPhone(''); setAddAssigned([]); setAddCallDelivery('browser'); setAddAgentPhone(''); }}
               className="rounded-lg px-4 py-2 text-sm font-medium"
               style={{ color: theme.textMuted }}
             >
@@ -643,6 +693,29 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
                             </div>
                           </>
                         )}
+
+                        {/* Call delivery */}
+                        <div className="mt-4 pt-3" style={{ borderTop: `1px solid ${theme.border}` }}>
+                          <div className="flex items-center gap-1.5 mb-2">
+                            <Headset className="h-3.5 w-3.5" style={{ color: theme.textMuted }} />
+                            <p className="text-xs font-medium" style={{ color: theme.textMuted }}>How this agent takes calls</p>
+                          </div>
+                          <div className="inline-flex rounded-lg p-0.5 mb-2" style={{ backgroundColor: theme.hover }}>
+                            {(['browser', 'phone'] as const).map(opt => {
+                              const active = (member.call_delivery || 'browser') === opt;
+                              return (
+                                <button key={opt} type="button" onClick={() => updateDelivery(member.id, { call_delivery: opt, ...(opt === 'browser' ? { agent_phone: null } : {}) })} className="px-3 py-1.5 text-xs font-semibold rounded-md transition-colors" style={active ? { backgroundColor: theme.card, color: theme.text } : { color: theme.textMuted }}>
+                                  {opt === 'browser' ? 'In the dashboard' : 'On their phone'}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          {(member.call_delivery || 'browser') === 'phone' ? (
+                            <input type="tel" defaultValue={member.agent_phone || ''} onBlur={(e) => { const v = e.target.value.trim(); if (v !== (member.agent_phone || '')) updateDelivery(member.id, { agent_phone: v || null }); }} placeholder="+1 (555) 123-4567" className="w-full sm:w-2/3 rounded-lg px-3 py-2 text-sm block" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                          ) : (
+                            <p className="text-[11px]" style={{ color: theme.textMuted }}>Escalated calls ring this agent in the dashboard. They click to take over.</p>
+                          )}
+                        </div>
                       </div>
                     ) : (
                     <div>
