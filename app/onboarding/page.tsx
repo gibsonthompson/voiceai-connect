@@ -344,8 +344,10 @@ function OnboardingContent() {
     if (!agencyDetails.name.trim()) { setError('Please enter your agency name'); return; }
     if (!agencyDetails.phone.trim()) { setError('Please enter your phone number'); return; }
     if (!isValidPhone(agencyDetails.phone, agencyDetails.country)) { setError('Please enter a valid phone number'); return; }
-    if (!agencyDetails.referralSource) { setError('Please select how you heard about us'); return; }
-    const result = await saveStep(1, { name: agencyDetails.name.trim(), phone: agencyDetails.phone, referral_source: agencyDetails.referralSource, country: agencyDetails.country });
+    // "How did you hear about us?" is captured once on the signup page (the vac_sr
+    // cookie -> referral_source, which feeds the agency signup SMS), so onboarding
+    // no longer re-asks or overwrites it.
+    const result = await saveStep(1, { name: agencyDetails.name.trim(), phone: agencyDetails.phone, country: agencyDetails.country });
     if (result?.success) {
       // NOTE: The test client is no longer auto-provisioned here. It is now an
       // on-demand "activate when you're ready" tool — just like the demo phone —
@@ -466,14 +468,6 @@ function OnboardingContent() {
                     className="flex-1 min-w-0 bg-transparent rounded-r-xl pl-3 pr-4 py-4 text-lg text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:outline-none" />
                 </div>
                 <p className="mt-2 text-xs text-[#fafaf9]/40">We use your country to route your calls and texts correctly, and for support and account notifications.</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#fafaf9]/70 mb-2">How did you hear about us?</label>
-                <ReferralSelect
-                  value={agencyDetails.referralSource}
-                  options={REFERRAL_OPTIONS}
-                  onChange={(v) => { setAgencyDetails({ ...agencyDetails, referralSource: v }); setError(''); }}
-                />
               </div>
             </div>
             <div className="max-w-md mx-auto p-5 rounded-xl border border-white/[0.06] bg-white/[0.02]">
