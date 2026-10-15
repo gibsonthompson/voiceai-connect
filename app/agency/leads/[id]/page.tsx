@@ -65,15 +65,6 @@ interface SequenceInfo {
   pending_steps: any[];
 }
 
-const STATUS_OPTIONS = [
-  { value: 'new', label: 'New', color: 'blue' },
-  { value: 'contacted', label: 'Contacted', color: 'amber' },
-  { value: 'qualified', label: 'Qualified', color: 'purple' },
-  { value: 'proposal', label: 'Proposal Sent', color: 'cyan' },
-  { value: 'won', label: 'Won', color: 'emerald' },
-  { value: 'lost', label: 'Lost', color: 'red' },
-];
-
 const SOURCE_OPTIONS = [
   { value: 'lead_finder_maps', label: 'Google Maps' },
   { value: 'google_search', label: 'Google Search' },
@@ -163,25 +154,6 @@ export default function LeadDetailPage() {
     estimated_value: '',
     next_follow_up: '',
   });
-
-  const getStatusStyle = (status: string) => {
-    switch (status) {
-      case 'new':
-        return { bg: theme.infoBg, text: theme.info, border: theme.infoBorder };
-      case 'contacted':
-        return { bg: theme.warningBg, text: theme.warning, border: theme.warningBorder };
-      case 'qualified':
-        return { bg: 'rgba(168,85,247,0.1)', text: theme.isDark ? '#a78bfa' : '#7c3aed', border: 'rgba(168,85,247,0.2)' };
-      case 'proposal':
-        return { bg: 'rgba(6,182,212,0.1)', text: theme.isDark ? '#22d3ee' : '#0891b2', border: 'rgba(6,182,212,0.2)' };
-      case 'won':
-        return { bg: theme.primary15, text: theme.primary, border: theme.primary30 };
-      case 'lost':
-        return { bg: theme.errorBg, text: theme.error, border: theme.errorBorder };
-      default:
-        return { bg: theme.hover, text: theme.textMuted, border: theme.border };
-    }
-  };
 
   useEffect(() => {
     if (!agency || !leadId) return;
@@ -358,42 +330,6 @@ export default function LeadDetailPage() {
     } catch (err: any) {
       setError(err.message || 'Failed to delete lead');
       setDeleting(false);
-    }
-  };
-
-  const handleQuickStatusChange = async (newStatus: string) => {
-    if (demoMode) {
-      setFormData(prev => ({ ...prev, status: newStatus }));
-      setSuccessMessage('Status updated (demo)');
-      setTimeout(() => setSuccessMessage(''), 2000);
-      return;
-    }
-    if (!agency || !leadId) return;
-
-    try {
-      const token = localStorage.getItem('auth_token');
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
-
-      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/leads/${leadId}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: newStatus, userId: user.id }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setLead(data.lead);
-        setFormData(prev => ({ ...prev, status: newStatus }));
-        setSuccessMessage('Status updated');
-        setActivityKey(prev => prev + 1);
-        setTimeout(() => setSuccessMessage(''), 2000);
-      }
-    } catch (err) {
-      console.error('Failed to update status:', err);
     }
   };
 
@@ -725,35 +661,6 @@ export default function LeadDetailPage() {
 
       </div>
 
-      {/* Quick Status Buttons */}
-      <div className="mb-6 sm:mb-8">
-        <p className="text-xs sm:text-sm mb-2 sm:mb-3" style={{ color: theme.textMuted }}>Pipeline Stage</p>
-        <div className="flex flex-wrap gap-2">
-          {STATUS_OPTIONS.map((status) => {
-            const style = getStatusStyle(status.value);
-            const isActive = formData.status === status.value;
-            return (
-              <button
-                key={status.value}
-                onClick={() => handleQuickStatusChange(status.value)}
-                className="rounded-full px-3 py-1.5 text-xs sm:text-sm font-medium transition-all"
-                style={isActive ? {
-                  backgroundColor: style.bg,
-                  border: `1px solid ${style.text}`,
-                  color: style.text,
-                } : {
-                  backgroundColor: theme.card,
-                  border: `1px solid ${theme.inputBorder}`,
-                  color: theme.textMuted,
-                }}
-              >
-                {status.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
         {/* Left Column */}
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
@@ -841,26 +748,16 @@ export default function LeadDetailPage() {
 
         {/* Right Column */}
         <div className="space-y-4 sm:space-y-6">
-          {/* Lead Status & Source */}
+          {/* Deal Value & Follow-up */}
           <div 
             className="rounded-xl p-4 sm:p-6"
             style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
           >
             <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base" style={{ color: theme.text }}>
               <Tag className="h-4 w-4" style={{ color: theme.textMuted }} />
-              Lead Details
+              Details
             </h3>
             <div className="space-y-3 sm:space-y-4">
-              <div>
-                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Status</label>
-                <CustomSelect
-                  value={formData.status}
-                  onChange={(v) => setFormData(prev => ({ ...prev, status: v }))}
-                  options={STATUS_OPTIONS}
-                  disabled={demoMode}
-                  ui={dropdownUi}
-                />
-              </div>
               <div>
                 <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Source</label>
                 <CustomSelect
@@ -872,18 +769,6 @@ export default function LeadDetailPage() {
                   ui={dropdownUi}
                 />
               </div>
-            </div>
-          </div>
-
-          {/* Deal Value & Follow-up */}
-          <div 
-            className="rounded-xl p-4 sm:p-6"
-            style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
-          >
-            <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base" style={{ color: theme.text }}>
-              Details
-            </h3>
-            <div className="space-y-3 sm:space-y-4">
               <div>
                 <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>
                   Scheduled Follow-up

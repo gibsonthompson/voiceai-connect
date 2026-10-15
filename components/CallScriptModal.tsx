@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import {
   X, Loader2, Phone, PhoneCall, PhoneOff, ChevronDown, ChevronUp,
   Copy, Check, Lightbulb, Building2, User, Mail, Globe, Tag,
-  DollarSign, Calendar, FileText, Clock, ExternalLink, MessageSquare,
+  DollarSign, Calendar, Clock, ExternalLink, MessageSquare,
   Target, ThumbsUp, PhoneForwarded, ThumbsDown, Voicemail, Ban,
   Smile, HelpCircle, Timer, Handshake, CalendarCheck, Headphones,
   ArrowUp, Volume2
@@ -178,14 +178,14 @@ const CALL_OUTCOMES: CallOutcomeOption[] = [
 // ============================================================================
 
 const COLD_CALL_TIPS = [
-  { icon: <Smile className="h-3.5 w-3.5" />, tip: 'Smile before dialing — it changes your tone and energy.' },
+  { icon: <Smile className="h-3.5 w-3.5" />, tip: 'Smile before dialing, it changes your tone and energy.' },
   { icon: <HelpCircle className="h-3.5 w-3.5" />, tip: 'Ask open-ended questions to keep the conversation going.' },
-  { icon: <Volume2 className="h-3.5 w-3.5" />, tip: 'Mirror their language and pace — match their energy.' },
-  { icon: <Timer className="h-3.5 w-3.5" />, tip: 'Pause for 2 seconds after your pitch — let them process.' },
+  { icon: <Volume2 className="h-3.5 w-3.5" />, tip: 'Mirror their language and pace, match their energy.' },
+  { icon: <Timer className="h-3.5 w-3.5" />, tip: 'Pause for 2 seconds after your pitch, let them process.' },
   { icon: <Handshake className="h-3.5 w-3.5" />, tip: 'Handle objections with empathy: "I totally understand…"' },
-  { icon: <CalendarCheck className="h-3.5 w-3.5" />, tip: 'Always set a next step — never end a call without one.' },
+  { icon: <CalendarCheck className="h-3.5 w-3.5" />, tip: 'Always set a next step, never end a call without one.' },
   { icon: <Clock className="h-3.5 w-3.5" />, tip: 'Best call times: 10-11:30am and 1:30-3pm local time.' },
-  { icon: <ArrowUp className="h-3.5 w-3.5" />, tip: 'Stand up while calling — it gives your voice more energy.' },
+  { icon: <ArrowUp className="h-3.5 w-3.5" />, tip: 'Stand up while calling, it gives your voice more energy.' },
 ];
 
 // ============================================================================
@@ -365,7 +365,7 @@ export default function CallScriptModal({
   // Refs
   const scriptRef = useRef<HTMLDivElement>(null);
 
-  // Tips visibility — collapsed by default so the script has the most room and
+  // Tips visibility, collapsed by default so the script has the most room and
   // needs the least scrolling. Only auto-open if the rep explicitly expanded
   // them before (we store 'false' = shown, 'true' = dismissed).
   useEffect(() => {
@@ -558,7 +558,6 @@ export default function CallScriptModal({
           userId: user.id,
           call_outcome: selectedOutcome || null,
           call_notes: callNotes,
-          ...(outcomeData?.updatesStatus ? { updateLeadStatus: outcomeData.updatesStatus } : {}),
         }),
       });
 
@@ -715,7 +714,7 @@ export default function CallScriptModal({
         )}
 
         {/* ═══════════════════════════════════════════════════════════
-            MAIN CONTENT — Two columns on desktop, stacked on mobile
+            MAIN CONTENT, Two columns on desktop, stacked on mobile
             ═══════════════════════════════════════════════════════════ */}
         <div className="flex-1 overflow-y-auto flex flex-col lg:flex-row min-h-0">
 
@@ -890,9 +889,6 @@ export default function CallScriptModal({
                 {lead.estimated_value != null && lead.estimated_value > 0 && (
                   <InfoRow icon={<DollarSign className="h-3.5 w-3.5" />} label="Value" value={`$${lead.estimated_value.toLocaleString()}`} theme={theme} />
                 )}
-                {lead.status && (
-                  <InfoRow icon={<FileText className="h-3.5 w-3.5" />} label="Status" value={lead.status} theme={theme} capitalize />
-                )}
                 {lead.next_follow_up && (
                   <InfoRow
                     icon={<Calendar className="h-3.5 w-3.5" />}
@@ -1008,7 +1004,7 @@ export default function CallScriptModal({
             {/* Spacer on desktop */}
             <div className="hidden sm:block flex-1" />
 
-            {/* Log Call — Primary */}
+            {/* Log Call, Primary */}
             <button
               onClick={handleLogCall}
               disabled={logging || loggedSuccess}
