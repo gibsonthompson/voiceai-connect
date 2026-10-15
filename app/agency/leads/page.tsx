@@ -699,7 +699,7 @@ export default function AgencyLeadsPage() {
             isOpen={logCallOpen}
             onClose={() => { setLogCallOpen(false); setActionLeadId(null); }}
             agencyId={agency.id}
-            lead={l}
+            lead={{ ...l, website: l.website ?? undefined, notes: l.notes ?? undefined }}
             onSent={handleCallSent}
           />
         );
