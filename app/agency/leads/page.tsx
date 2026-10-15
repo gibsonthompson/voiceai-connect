@@ -7,7 +7,7 @@ import {
   Users, Search, Plus, ChevronDown, Loader2,
   Target, Phone, PhoneCall, Mail, MessageSquare, Calendar, Clock,
   AlertCircle, X, Check, Info, Filter, FileSpreadsheet, SkipForward,
-  ExternalLink, Sparkles,
+  ExternalLink, Sparkles, MapPin, Globe, FileText, Copy,
 } from 'lucide-react';
 import { useAgency } from '../context';
 import LockedFeatureOverlay from '@/components/LockedFeature';
@@ -30,6 +30,8 @@ interface Lead {
   estimated_value: number;
   next_follow_up: string | null;
   created_at: string;
+  notes?: string | null;
+  website?: string | null;
   outreach?: {
     last_contacted?: string | null;
     email_count?: number;
@@ -79,6 +81,25 @@ function isOverdue(dateStr: string): boolean {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   return date < today;
+}
+
+// Pull a human 'City, ST' from a lead's notes. The lead finder writes the
+// business address into notes as an 'Address: ...' line (there's no dedicated
+// column), so we parse that. Falls back to the raw address, or null if none.
+function parseLocation(notes?: string | null): string | null {
+  if (!notes) return null;
+  const m = /(?:^|\n)\s*Address:\s*(.+)/i.exec(notes);
+  if (!m) return null;
+  let addr = m[1].trim().replace(/,?\s*(USA|United States)\s*$/i, '').trim();
+  const parts = addr.split(',').map((x) => x.trim()).filter(Boolean);
+  if (parts.length >= 2) {
+    const last = parts[parts.length - 1];
+    const stateMatch = /([A-Za-z]{2})\b/.exec(last);
+    const st = stateMatch ? stateMatch[1].toUpperCase() : last;
+    const city = parts[parts.length - 2];
+    if (city) return `${city}, ${st}`;
+  }
+  return addr || null;
 }
 
 function timeSince(dateStr: string): string {
@@ -196,26 +217,90 @@ const CALL_OUTCOMES: { value: string; label: string; status?: string }[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Log-call modal. Dials from the user's own phone (tel:) and records the call
-// through /outreach/log (type: call), the same path the composer uses for email
-// and SMS, so the call counts toward the lead's history, updates "last
-// contacted", and schedules the next follow-up. Nothing here places a call for
-// the agency; it dials their device and logs the result.
+// Cold-call modal. Shows the agency's cold-call SCRIPT for this lead (pulled
+// from their Outreach call_script templates, variables filled in), lets them
+// dial from their own phone (tel:), then records the call through /outreach/log
+// (type: call), the same path the composer uses for email and SMS, so the call
+// counts toward the lead's history, updates "last contacted", and schedules the
+// next follow-up. Nothing here places a call for the agency; it dials their
+// device and logs the result.
 // ---------------------------------------------------------------------------
-function LogCallModal({ isOpen, onClose, lead, onLogged, isDark, primary }: {
+function LogCallModal({ isOpen, onClose, lead, onLogged, isDark, primary, agencyId, readOnly }: {
   isOpen: boolean;
   onClose: () => void;
   lead: Lead;
   onLogged: (outcome: string, note: string) => void;
   isDark: boolean;
   primary: string;
+  agencyId: string;
+  readOnly: boolean;
 }) {
   const [outcome, setOutcome] = useState<string>('connected');
   const [note, setNote] = useState('');
+  const [scripts, setScripts] = useState<{ id: string; name: string; body: string; sequence_order: number | null; created_at: string }[]>([]);
+  const [selectedId, setSelectedId] = useState<string>('');
+  const [scriptBody, setScriptBody] = useState('');
+  const [loadingScripts, setLoadingScripts] = useState(false);
+  const [composing, setComposing] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [showScript, setShowScript] = useState(true);
 
+  // Substitute the chosen script's variables against this lead via the same
+  // compose endpoint the email/SMS composer uses. Falls back to the raw body.
+  const selectScript = async (id: string, list = scripts) => {
+    setSelectedId(id);
+    const tmpl = list.find((x) => x.id === id);
+    setScriptBody(tmpl?.body || '');
+    if (readOnly || !agencyId) return;
+    setComposing(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const res = await fetch(`${backendUrl}/api/agency/${agencyId}/outreach/compose`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ templateId: id, leadId: lead.id }),
+      });
+      if (res.ok) { const d = await res.json(); setScriptBody(d.body || tmpl?.body || ''); }
+    } catch { /* keep the raw body */ }
+    finally { setComposing(false); }
+  };
+
+  // Load the agency's cold-call scripts when the modal opens, ordered intro ->
+  // follow-up -> close, and compose the first one against this lead.
   useEffect(() => {
-    if (isOpen) { setOutcome('connected'); setNote(''); }
-  }, [isOpen, lead.id]);
+    if (!isOpen) return;
+    setOutcome('connected'); setNote(''); setCopied(false); setShowScript(true);
+    setScripts([]); setSelectedId(''); setScriptBody('');
+    if (readOnly || !agencyId) return;
+    let cancelled = false;
+    (async () => {
+      setLoadingScripts(true);
+      try {
+        const token = localStorage.getItem('auth_token');
+        const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+        const res = await fetch(`${backendUrl}/api/agency/${agencyId}/templates?type=call_script`, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (res.ok && !cancelled) {
+          const data = await res.json();
+          const list = (data.templates || []).slice().sort((a: { sequence_order: number | null; created_at: string }, b: { sequence_order: number | null; created_at: string }) => {
+            const ao = a.sequence_order ?? 999, bo = b.sequence_order ?? 999;
+            if (ao !== bo) return ao - bo;
+            return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
+          });
+          setScripts(list);
+          if (list.length > 0) selectScript(list[0].id, list);
+        }
+      } catch { /* non-blocking: logging still works without a script */ }
+      finally { if (!cancelled) setLoadingScripts(false); }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, lead.id, agencyId, readOnly]);
+
+  const copyScript = async () => {
+    if (!scriptBody) return;
+    try { await navigator.clipboard.writeText(scriptBody); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* ignore */ }
+  };
 
   if (!isOpen) return null;
   const phone = formatPhone(lead.phone);
@@ -224,21 +309,21 @@ function LogCallModal({ isOpen, onClose, lead, onLogged, isDark, primary }: {
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
       <div className="absolute inset-0 backdrop-blur-sm" style={{ backgroundColor: isDark ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.4)' }} onClick={onClose} />
-      <div className="relative w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col bg-[var(--lp-card)] border border-[var(--lp-border)]">
-        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-[var(--lp-border-subtle)]">
+      <div className="relative w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[92vh] bg-[var(--lp-card)] border border-[var(--lp-border)]">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-[var(--lp-border-subtle)] shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg shrink-0 bg-[var(--lp-info-bg)]">
               <PhoneCall className="h-4 w-4 text-[var(--lp-info)]" />
             </div>
             <div className="min-w-0">
-              <h2 className="font-semibold text-sm sm:text-base text-[var(--lp-text)]">Log a call</h2>
+              <h2 className="font-semibold text-sm sm:text-base text-[var(--lp-text)]">Cold call</h2>
               <p className="text-xs truncate text-[var(--lp-muted)]">{lead.contact_name || lead.business_name}</p>
             </div>
           </div>
           <button onClick={onClose} className="rounded-lg p-2 transition-colors text-[var(--lp-muted)] hover:bg-[var(--lp-hover)]"><X className="h-5 w-5" /></button>
         </div>
 
-        <div className="p-4 sm:p-6 space-y-4">
+        <div className="p-4 sm:p-6 space-y-4 overflow-y-auto">
           {/* Dial from your own phone */}
           {dialHref ? (
             <a href={dialHref} className="flex items-center justify-center gap-2 w-full rounded-xl px-4 py-3 text-sm font-semibold transition-[filter] hover:brightness-95" style={{ backgroundColor: 'var(--lp-info-bg)', border: '1px solid var(--lp-info)', color: 'var(--lp-info)' }}>
@@ -252,15 +337,51 @@ function LogCallModal({ isOpen, onClose, lead, onLogged, isDark, primary }: {
             </div>
           )}
 
+          {/* Cold-call script */}
+          <div className="rounded-xl border border-[var(--lp-border)] overflow-hidden">
+            <div className="flex items-center justify-between gap-2 px-3 py-2 bg-[var(--lp-hover)]">
+              <div className="flex items-center gap-2 min-w-0">
+                <FileText className="h-4 w-4 shrink-0 text-[var(--lp-muted)]" />
+                {scripts.length > 1 ? (
+                  <select value={selectedId} onChange={(e) => selectScript(e.target.value)} className="bg-transparent text-xs font-medium focus:outline-none text-[var(--lp-text)] cursor-pointer max-w-[190px] truncate">
+                    {scripts.map((sc) => <option key={sc.id} value={sc.id}>{sc.name}</option>)}
+                  </select>
+                ) : (
+                  <span className="text-xs font-medium truncate text-[var(--lp-text)]">{scripts[0]?.name || 'Call script'}</span>
+                )}
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                {scriptBody && (
+                  <button onClick={copyScript} className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors text-[var(--lp-muted)] hover:bg-[var(--lp-card)]">
+                    {copied ? <><Check className="h-3 w-3" />Copied</> : <><Copy className="h-3 w-3" />Copy</>}
+                  </button>
+                )}
+                <button onClick={() => setShowScript((v) => !v)} className="rounded-md p-1 text-[var(--lp-muted)] hover:bg-[var(--lp-card)]" aria-label="Toggle script"><ChevronDown className={`h-4 w-4 transition-transform ${showScript ? '' : '-rotate-90'}`} /></button>
+              </div>
+            </div>
+            {showScript && (
+              <div className="px-3 py-3 max-h-56 overflow-y-auto">
+                {loadingScripts || composing ? (
+                  <div className="flex items-center gap-2 text-xs text-[var(--lp-muted)]"><Loader2 className="h-4 w-4 animate-spin" />Loading script...</div>
+                ) : scriptBody ? (
+                  <p className="text-xs leading-relaxed whitespace-pre-wrap text-[var(--lp-text)]">{scriptBody}</p>
+                ) : (
+                  <p className="text-xs text-[var(--lp-muted)]">{readOnly ? 'Your cold-call scripts show up here on a live plan.' : 'No call scripts yet. Add one under Outreach and it shows here.'}</p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Outcome */}
           <div>
             <label className="block text-xs font-medium uppercase tracking-wide mb-2 text-[var(--lp-muted)]">How did it go?</label>
             <div className="grid grid-cols-2 gap-2">
-              {CALL_OUTCOMES.map((o) => {
-                const active = outcome === o.value;
+              {CALL_OUTCOMES.map((oc) => {
+                const active = outcome === oc.value;
                 return (
                   <button
-                    key={o.value}
-                    onClick={() => setOutcome(o.value)}
+                    key={oc.value}
+                    onClick={() => setOutcome(oc.value)}
                     className="rounded-lg px-3 py-2 text-xs font-medium text-left transition-colors border"
                     style={{
                       backgroundColor: active ? 'var(--lp-primary-15)' : 'var(--lp-card)',
@@ -268,13 +389,14 @@ function LogCallModal({ isOpen, onClose, lead, onLogged, isDark, primary }: {
                       color: active ? 'var(--lp-primary)' : 'var(--lp-text)',
                     }}
                   >
-                    {o.label}
+                    {oc.label}
                   </button>
                 );
               })}
             </div>
           </div>
 
+          {/* Note */}
           <div>
             <label className="block text-xs font-medium uppercase tracking-wide mb-2 text-[var(--lp-muted)]">Note <span className="normal-case font-normal">(optional)</span></label>
             <textarea
@@ -331,6 +453,9 @@ function FocusCard({
   const followUpOverdue = !!(lead.next_follow_up && isOverdue(lead.next_follow_up) && !['won', 'lost'].includes(lead.status));
   const followUpToday = !!(lead.next_follow_up && isToday(lead.next_follow_up) && !followUpOverdue);
   const lastContacted = lead.outreach?.last_contacted || null;
+  const location = parseLocation(lead.notes);
+  const websiteHref = lead.website ? (lead.website.startsWith('http') ? lead.website : `https://${lead.website}`) : null;
+  const websiteLabel = lead.website ? lead.website.replace(/^https?:\/\//, '').replace(/\/$/, '') : '';
 
   const actionBtn = 'flex items-center justify-center gap-2 rounded-xl px-3 py-3 text-sm font-semibold transition-colors';
 
@@ -384,6 +509,18 @@ function FocusCard({
             <Mail className="h-4 w-4 shrink-0 text-[var(--lp-muted)]" />
             {lead.email ? <span className="text-sm truncate text-[var(--lp-text)]">{lead.email}</span> : <span className="text-sm text-[var(--lp-muted)]">No email</span>}
           </div>
+          {location && (
+            <div className="flex items-center gap-2 rounded-lg px-3 py-2.5 bg-[var(--lp-hover)]">
+              <MapPin className="h-4 w-4 shrink-0 text-[var(--lp-muted)]" />
+              <span className="text-sm truncate text-[var(--lp-text)]">{location}</span>
+            </div>
+          )}
+          {websiteHref && (
+            <div className="flex items-center gap-2 rounded-lg px-3 py-2.5 bg-[var(--lp-hover)]">
+              <Globe className="h-4 w-4 shrink-0 text-[var(--lp-muted)]" />
+              <a href={websiteHref} target="_blank" rel="noopener noreferrer" className="text-sm truncate text-[var(--lp-primary)] hover:underline">{websiteLabel}</a>
+            </div>
+          )}
         </div>
 
         {/* Last contacted / follow-up line */}
@@ -400,15 +537,15 @@ function FocusCard({
       <div className="px-4 sm:px-6 pt-4 grid grid-cols-3 gap-2">
         <button onClick={onEmail} className={`${actionBtn} bg-[var(--lp-primary-15)] border border-[var(--lp-primary-30)] text-[var(--lp-primary)] hover:brightness-95`}>
           <Mail className="h-4 w-4" />
-          <span className="hidden sm:inline">Draft email</span><span className="sm:hidden">Email</span>
+          <span className="hidden sm:inline">Draft Email</span><span className="sm:hidden">Email</span>
         </button>
         <button onClick={onSms} className={`${actionBtn}`} style={{ backgroundColor: 'rgba(6,182,212,0.12)', border: '1px solid rgba(6,182,212,0.3)', color: 'var(--lp-info)' }}>
           <MessageSquare className="h-4 w-4" />
-          <span className="hidden sm:inline">Draft text</span><span className="sm:hidden">Text</span>
+          <span className="hidden sm:inline">Draft Text</span><span className="sm:hidden">Text</span>
         </button>
         <button onClick={onCall} className={`${actionBtn} bg-[var(--lp-hover)] border border-[var(--lp-border)] text-[var(--lp-text)] hover:brightness-95`}>
           <PhoneCall className="h-4 w-4" />
-          <span className="hidden sm:inline">Call + log</span><span className="sm:hidden">Call</span>
+          <span className="hidden sm:inline">Call + Log</span><span className="sm:hidden">Call</span>
         </button>
       </div>
 
@@ -416,18 +553,18 @@ function FocusCard({
       <div className="px-4 sm:px-6 pt-3">
         <div className="rounded-xl p-3 bg-[var(--lp-primary-15)] border border-[var(--lp-border)]">
           <div className="flex items-start gap-2.5">
-            <Info className="h-4 w-4 shrink-0 mt-0.5 text-[var(--lp-primary)]" />
+            <Info className="h-5 w-5 shrink-0 mt-0.5 text-[var(--lp-primary)]" />
             <div className="min-w-0">
-              <p className="text-xs leading-relaxed text-[var(--lp-text)]">
+              <p className="text-sm leading-relaxed text-[var(--lp-text)]">
                 <span className="font-semibold">You send these, VoiceAI Connect doesn&apos;t.</span>{' '}
                 It writes the email or text and keeps your follow-ups on track. Send it from your own email or phone, then log it here so the next step is scheduled for you.
               </p>
-              <button onClick={() => setShowWhy((v) => !v)} className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-[var(--lp-primary)]">
+              <button onClick={() => setShowWhy((v) => !v)} className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-[var(--lp-primary)]">
                 {showWhy ? 'Hide' : 'Why you send it yourself'}
                 <ChevronDown className={`h-3 w-3 transition-transform ${showWhy ? 'rotate-180' : ''}`} />
               </button>
               {showWhy && (
-                <p className="mt-2 text-[11px] leading-relaxed text-[var(--lp-muted)]">
+                <p className="mt-2 text-xs leading-relaxed text-[var(--lp-muted)]">
                   Cold emails and texts sent from a shared platform address or a pooled number land in spam and get numbers flagged fast. Sending from your own inbox and phone keeps your sender reputation, your deliverability, and your replies all in one place. VoiceAI Connect writes the message, keeps your sequence straight, and records every send so you always know where a lead stands. The one time the platform does message a person directly is the AI receptionist texting a caller back during a live call, from the client&apos;s own number.
                 </p>
               )}
@@ -551,6 +688,33 @@ export default function AgencyLeadsPage() {
     fetchFollowUpQueue();
   }, [agency, demoMode, isFreePlan]);
 
+  // Persist the work session's skipped leads and current position per agency,
+  // so a refresh doesn't un-skip leads or bounce you back to the top of the
+  // queue. localStorage is wrapped in try/catch (private mode / blocked storage).
+  useEffect(() => {
+    if (!agency) return;
+    try {
+      const rawSkip = localStorage.getItem(`vac_leads_skipped_${agency.id}`);
+      if (rawSkip) setSkippedIds(new Set(JSON.parse(rawSkip)));
+      const rawCur = localStorage.getItem(`vac_leads_current_${agency.id}`);
+      if (rawCur) setCurrentId(rawCur);
+    } catch { /* storage unavailable */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agency]);
+
+  useEffect(() => {
+    if (!agency) return;
+    try { localStorage.setItem(`vac_leads_skipped_${agency.id}`, JSON.stringify(Array.from(skippedIds))); } catch { /* ignore */ }
+  }, [agency, skippedIds]);
+
+  useEffect(() => {
+    if (!agency) return;
+    try {
+      if (currentId) localStorage.setItem(`vac_leads_current_${agency.id}`, currentId);
+      else localStorage.removeItem(`vac_leads_current_${agency.id}`);
+    } catch { /* ignore */ }
+  }, [agency, currentId]);
+
   const fetchLeads = async () => {
     if (!agency) return;
     try {
@@ -613,7 +777,11 @@ export default function AgencyLeadsPage() {
   const scoped = (statusFilter ? base : base.filter((l) => !['won', 'lost'].includes(l.status)))
     .filter((l) => !skippedIds.has(l.id));
   const workQueue = [...scoped].sort((a, b) => {
-    if (sortBy === 'industry') {
+    if (sortBy === 'email') {
+      const ea = a.email && a.email.includes('@') ? 0 : 1;
+      const eb = b.email && b.email.includes('@') ? 0 : 1;
+      if (ea !== eb) return ea - eb; // leads with an email first, junk sinks
+    } else if (sortBy === 'industry') {
       const ia = (a.industry || '').toLowerCase(), ib = (b.industry || '').toLowerCase();
       if (ia !== ib) { if (!ia) return 1; if (!ib) return -1; return ia.localeCompare(ib); }
     } else if (sortBy === 'name') {
@@ -828,6 +996,7 @@ export default function AgencyLeadsPage() {
               onChange={(v) => setSortBy(v || 'priority')}
               options={[
                 { value: 'priority', label: 'Sort: Priority' },
+                { value: 'email', label: 'Sort: Has email' },
                 { value: 'industry', label: 'Sort: Industry' },
                 { value: 'name', label: 'Sort: Name (A to Z)' },
                 { value: 'newest', label: 'Sort: Newest' },
@@ -947,6 +1116,8 @@ export default function AgencyLeadsPage() {
             onLogged={handleLogCall}
             isDark={theme.isDark}
             primary={theme.primary}
+            agencyId={agency?.id || ''}
+            readOnly={readOnly}
           />
         );
       })()}

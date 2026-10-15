@@ -492,7 +492,7 @@ export default function LeadDetailPage() {
                 </button>
               ) : (
                 <button onClick={() => router.push(`/agency/clients/new?fromLead=${lead?.id}`)} className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-sm font-medium text-white transition-colors" style={{ backgroundColor: theme.primary }}>
-                  <User className="h-4 w-4" /><span className="hidden sm:inline">Convert to client</span>
+                  <User className="h-4 w-4" /><span className="hidden sm:inline">Convert to Client</span>
                 </button>
               )}
               <button

@@ -125,9 +125,20 @@ export default function OutreachPage() {
     return matchesSearch && matchesType;
   });
 
-  const emailTemplates = filteredTemplates.filter(t => t.type === 'email');
-  const smsTemplates = filteredTemplates.filter(t => t.type === 'sms');
-  const callScriptTemplates = filteredTemplates.filter(t => t.type === 'call_script');
+  // Deterministic order within each type. Call scripts seed with a null
+  // sequence_order, so without this they render newest-first (Demo Close on
+  // top, Intro at the bottom). Rank the known default scripts intro -> follow
+  // -> close; everything else keeps its own sequence_order then created_at.
+  const CALL_SCRIPT_RANK: Record<string, number> = { 'Intro / Discovery Call': 1, 'Follow-Up Call': 2, 'Demo Close Call': 3 };
+  const orderVal = (t: Template) => (t.sequence_order != null ? t.sequence_order : (CALL_SCRIPT_RANK[t.name] ?? 999));
+  const byOrder = (a: Template, b: Template) => {
+    const d = orderVal(a) - orderVal(b);
+    if (d !== 0) return d;
+    return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
+  };
+  const emailTemplates = filteredTemplates.filter(t => t.type === 'email').sort(byOrder);
+  const smsTemplates = filteredTemplates.filter(t => t.type === 'sms').sort(byOrder);
+  const callScriptTemplates = filteredTemplates.filter(t => t.type === 'call_script').sort(byOrder);
 
   if (!canUseLeadFinder) {
     const previewEmails = [

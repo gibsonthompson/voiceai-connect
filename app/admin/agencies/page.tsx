@@ -441,7 +441,8 @@ export default function AdminAgenciesPage() {
         const d = planRank(a.plan_type) - planRank(b.plan_type);
         return d !== 0 ? d : (a.name || '').localeCompare(b.name || '');
       }
-      return 0; // 'recent': keep the server's order
+      // 'recent': newest signups first (don't depend on server order)
+      return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
     });
   const suggestions = search.trim() ? filteredAgencies.slice(0, 7) : [];
   const showSuggestions = searchFocused && search.trim().length > 0 && suggestions.length > 0;
@@ -453,15 +454,6 @@ export default function AdminAgenciesPage() {
     else if (e.key === 'Enter') { if (highlightIndex >= 0 && suggestions[highlightIndex]) { e.preventDefault(); openAgency(suggestions[highlightIndex].id); } }
     else if (e.key === 'Escape') { setSearchFocused(false); setHighlightIndex(-1); }
   };
-
-  // ── Onboarding funnel (unchanged logic) ────────────────────────────────────
-  const fnlTotal = agencies.length;
-  const fnlCompleted = agencies.filter(a => a.onboarding_completed).length;
-  const fnlNamed = agencies.filter(a => a.onboarding_completed || (a.onboarding_step ?? 0) >= 2).length;
-  const fnlPreName = agencies.filter(a => !a.onboarding_completed && (a.onboarding_step ?? 0) < 2).length;
-  const fnlPreFinish = agencies.filter(a => !a.onboarding_completed && (a.onboarding_step ?? 0) >= 2).length;
-  const fnlBounced = fnlPreName + fnlPreFinish;
-  const fnlPct = (n: number) => (fnlTotal > 0 ? Math.round((n / fnlTotal) * 100) : 0);
 
   // ── badge renderers using shared helpers ────────────────────────────────────
   const statusBadge = (status: string) => { const b = getStatusBadge(status); return (<span className="inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[10px] font-medium" style={{ color: b.color, background: b.bg, borderColor: b.border }}><span className="h-1.5 w-1.5 rounded-full" style={{ background: b.color }} />{b.label}</span>); };
@@ -483,55 +475,6 @@ export default function AdminAgenciesPage() {
         <div className="a-card p-4"><p className={label}>Stripe</p><p className="mt-1.5 text-xl font-semibold text-[var(--a-ink)] a-num">{summary.stripe_connected}</p><p className="mt-1 text-[11px] text-[var(--a-dim)]">connected</p></div>
       </div>)}
 
-      {!loading && fnlTotal > 0 && (
-        <div className="a-card p-5 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-[13px] font-semibold text-[var(--a-ink)]">Onboarding Funnel</h2>
-              <p className="text-[11px] text-[var(--a-dim)] mt-0.5">Where signups drop off before finishing password &amp; card{statusFilter ? ` \u00b7 filtered: ${statusFilter}` : ''}</p>
-            </div>
-            <span className="text-[11px] text-[var(--a-dim)]">{fnlTotal} loaded</span>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3 mb-4">
-            <div className="a-card p-3.5">
-              <p className={label}>Signed up</p>
-              <p className="mt-1.5 text-2xl font-semibold text-[var(--a-ink)] a-num">{fnlTotal}</p>
-              <p className="mt-1 text-[11px] text-[var(--a-dim)]">100%</p>
-            </div>
-            <div className="a-card p-3.5">
-              <p className={label}>Named agency</p>
-              <p className="mt-1.5 text-2xl font-semibold text-[var(--a-cyan)] a-num">{fnlNamed}</p>
-              <p className="mt-1 text-[11px] text-[var(--a-dim)]">{fnlPct(fnlNamed)}% &middot; reached plan/password</p>
-            </div>
-            <div className="rounded-[18px] p-3.5 border" style={{ background: 'var(--a-em-soft)', borderColor: 'var(--a-em-line)' }}>
-              <p className="text-[10px] font-medium uppercase tracking-[0.1em]" style={{ color: 'var(--a-em-deep)' }}>Completed</p>
-              <p className="mt-1.5 text-2xl font-semibold a-num" style={{ color: 'var(--a-em-deep)' }}>{fnlCompleted}</p>
-              <p className="mt-1 text-[11px]" style={{ color: 'var(--a-em-deep)' }}>{fnlPct(fnlCompleted)}% &middot; password + card done</p>
-            </div>
-          </div>
-
-          <div className="rounded-[14px] p-3.5 border" style={{ background: 'var(--a-amber-soft)', borderColor: '#F0DCA8' }}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Target className="h-4 w-4" style={{ color: 'var(--a-amber)' }} />
-                <p className="text-[12px] font-semibold" style={{ color: 'var(--a-amber)' }}>Bounced before password &amp; card</p>
-              </div>
-              <p className="text-lg font-semibold a-num" style={{ color: 'var(--a-amber)' }}>{fnlBounced}<span className="text-[12px] font-normal ml-1.5 opacity-70">{fnlPct(fnlBounced)}%</span></p>
-            </div>
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              <div className="flex items-center justify-between rounded-lg bg-white/70 px-3 py-2">
-                <span className="text-[11px] text-[var(--a-muted)]">Named, never finished</span>
-                <span className="text-[13px] font-semibold a-num" style={{ color: 'var(--a-amber)' }}>{fnlPreFinish}</span>
-              </div>
-              <div className="flex items-center justify-between rounded-lg bg-white/70 px-3 py-2">
-                <span className="text-[11px] text-[var(--a-muted)]">Never named agency</span>
-                <span className="text-[13px] font-semibold text-[var(--a-muted)] a-num">{fnlPreName}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         {/* Search with live typeahead: matches name, email, phone, slug, and domain */}
