@@ -23,7 +23,7 @@ import {
   Building2, Search, Filter, Users, ExternalLink, Loader2, ChevronDown, MoreVertical,
   UserCheck, Ban, Phone, DollarSign, Target, PhoneCall, Globe, Clock, CreditCard, Mail,
   Shield, TrendingUp, Calendar, Zap, Copy, Check, FlaskConical, MessageSquare,
-  CheckCircle2, Circle, X, LogIn, ArrowUpDown,
+  CheckCircle2, Circle, X, LogIn, ArrowUpDown, Download,
 } from 'lucide-react';
 import {
   formatPhone, formatDate, formatDateTime, timeAgo, formatCurrencyCents,
@@ -240,6 +240,8 @@ export default function AdminAgenciesPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [sortBy, setSortBy] = useState<'recent' | 'plan'>('recent');
+  const [tierFilter, setTierFilter] = useState<'all' | 'free' | 'pro' | 'scale'>('all');
+  const [exporting, setExporting] = useState(false);
   const [actionMenu, setActionMenu] = useState<string | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [expandedData, setExpandedData] = useState<Record<string, ExpandedData>>({});
@@ -434,8 +436,22 @@ export default function AdminAgenciesPage() {
   // Plan tiers ranked high -> low so 'Plan type' sort surfaces paying agencies first.
   const PLAN_RANK: Record<string, number> = { scale: 0, enterprise: 0, pro: 1, professional: 1, growth: 2, free: 3, starter: 3 };
   const planRank = (pt?: string | null) => (pt && pt in PLAN_RANK ? PLAN_RANK[pt] : 3);
+  // Normalize an agency to one of three billing tiers. access_plan (what admin granted)
+  // wins over plan_type (what they signed up on) so manual upgrades are reflected.
+  const tierOf = (a: Agency): 'free' | 'pro' | 'scale' => {
+    const raw = String(a.access_plan || a.plan_type || '').toLowerCase().trim();
+    if (raw === 'scale' || raw === 'enterprise') return 'scale';
+    if (raw === 'pro' || raw === 'professional' || raw === 'growth') return 'pro';
+    return 'free';
+  };
+  // Tier counts over the full (status-filtered) set so chip totals don't shift with search/tier.
+  const tierCounts = agencies.reduce(
+    (acc, a) => { acc[tierOf(a)] += 1; acc.all += 1; return acc; },
+    { all: 0, free: 0, pro: 0, scale: 0 } as Record<'all' | 'free' | 'pro' | 'scale', number>,
+  );
   const filteredAgencies = agencies
     .filter(a => matchAgency(a, search))
+    .filter(a => tierFilter === 'all' || tierOf(a) === tierFilter)
     .sort((a, b) => {
       if (sortBy === 'plan') {
         const d = planRank(a.plan_type) - planRank(b.plan_type);
@@ -446,6 +462,73 @@ export default function AdminAgenciesPage() {
     });
   const suggestions = search.trim() ? filteredAgencies.slice(0, 7) : [];
   const showSuggestions = searchFocused && search.trim().length > 0 && suggestions.length > 0;
+
+  // Export the currently filtered set (status + search + tier all respected) to CSV.
+  const exportCsv = () => {
+    if (!filteredAgencies.length) return;
+    setExporting(true);
+    try {
+      // RFC-4180 escaping: wrap in quotes, double internal quotes. Null/undefined -> empty.
+      const esc = (v: unknown) => {
+        if (v === null || v === undefined) return '';
+        const s = String(v);
+        return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+      };
+      const yn = (v: unknown) => (v === true ? 'Yes' : v === false ? 'No' : '');
+      const iso = (v?: string | null) => (v ? new Date(v).toISOString() : '');
+      const columns: { header: string; value: (a: Agency) => unknown }[] = [
+        { header: 'Name', value: a => a.name },
+        { header: 'Email', value: a => a.email },
+        { header: 'Slug', value: a => a.slug },
+        { header: 'Tier', value: a => tierOf(a) },
+        { header: 'Plan Type', value: a => a.plan_type },
+        { header: 'Access Plan', value: a => a.access_plan },
+        { header: 'Subscription Status', value: a => a.subscription_status },
+        { header: 'Account Status', value: a => a.status },
+        { header: 'Phone', value: a => (a.phone ? formatPhone(a.phone) : '') },
+        { header: 'Country', value: a => a.country },
+        { header: 'Currency', value: a => a.currency },
+        { header: 'Timezone', value: a => a.timezone },
+        { header: 'Clients', value: a => a.client_count ?? 0 },
+        { header: 'Calls', value: a => a.call_count ?? 0 },
+        { header: 'Leads', value: a => a.lead_count ?? 0 },
+        { header: 'Users', value: a => a.user_count ?? 0 },
+        { header: 'Payments', value: a => a.payment_count ?? 0 },
+        { header: 'Revenue USD', value: a => ((a.total_revenue ?? 0) / 100).toFixed(2) },
+        { header: 'Stripe Connected', value: a => yn(!!a.stripe_account_id) },
+        { header: 'Charges Enabled', value: a => yn(a.stripe_charges_enabled) },
+        { header: 'Payouts Enabled', value: a => yn(a.stripe_payouts_enabled) },
+        { header: 'Onboarding Complete', value: a => yn(a.onboarding_completed) },
+        { header: 'Marketing Domain', value: a => a.marketing_domain },
+        { header: 'Domain Verified', value: a => yn(a.domain_verified) },
+        { header: 'Demo Number', value: a => (a.demo_phone_number ? formatPhone(a.demo_phone_number) : '') },
+        { header: 'Referral Code', value: a => a.referral_code },
+        { header: 'Referred By', value: a => a.referred_by },
+        { header: 'Trial Ends', value: a => iso(a.trial_ends_at) },
+        { header: 'Created', value: a => iso(a.created_at) },
+        { header: 'Last Login', value: a => iso(a.last_login_at) },
+        { header: 'Last Active', value: a => iso(a.last_active_at) },
+      ];
+      const rows = [
+        columns.map(c => esc(c.header)).join(','),
+        ...filteredAgencies.map(a => columns.map(c => esc(c.value(a))).join(',')),
+      ];
+      // Prepend BOM so Excel reads UTF-8 names correctly.
+      const blob = new Blob(['﻿' + rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const stamp = new Date().toISOString().slice(0, 10);
+      const scope = [tierFilter !== 'all' ? tierFilter : null, statusFilter || null].filter(Boolean).join('-');
+      link.href = url;
+      link.download = `agencies${scope ? '-' + scope : ''}-${stamp}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const onSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!showSuggestions) return;
@@ -560,6 +643,55 @@ export default function AdminAgenciesPage() {
             <option value="plan">Sort: Plan type</option>
           </select>
         </div>
+
+        {/* Export the current view (status + search + tier) to CSV */}
+        <button
+          type="button"
+          onClick={exportCsv}
+          disabled={exporting || filteredAgencies.length === 0}
+          className="inline-flex items-center justify-center gap-2 shrink-0 rounded-lg px-4 text-[13px] font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{ background: 'var(--a-em)', color: '#04140D' }}
+          title={filteredAgencies.length === 0 ? 'No agencies to export' : `Export ${filteredAgencies.length} agenc${filteredAgencies.length === 1 ? 'y' : 'ies'} to CSV`}
+        >
+          {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          <span>Export CSV</span>
+        </button>
+      </div>
+
+      {/* Tier filter chips: free / pro / scale with live counts */}
+      <div className="flex flex-wrap items-center gap-2 mb-6">
+        {([
+          { key: 'all', label: 'All Tiers', count: tierCounts.all },
+          { key: 'free', label: 'Free', count: tierCounts.free },
+          { key: 'pro', label: 'Pro', count: tierCounts.pro },
+          { key: 'scale', label: 'Scale', count: tierCounts.scale },
+        ] as { key: 'all' | 'free' | 'pro' | 'scale'; label: string; count: number }[]).map(t => {
+          const active = tierFilter === t.key;
+          return (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setTierFilter(t.key)}
+              className="inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-colors"
+              style={{
+                background: active ? 'var(--a-em)' : 'var(--a-card)',
+                borderColor: active ? 'var(--a-em)' : 'var(--a-line-2)',
+                color: active ? '#fff' : 'var(--a-muted)',
+              }}
+            >
+              <span>{t.label}</span>
+              <span
+                className="inline-flex items-center justify-center rounded-full min-w-[20px] px-1.5 text-[11px] font-semibold tabular-nums"
+                style={{
+                  background: active ? 'rgba(255,255,255,0.22)' : 'var(--a-em-soft)',
+                  color: active ? '#fff' : 'var(--a-em-deep)',
+                }}
+              >
+                {t.count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       <div className="a-panel">
@@ -644,7 +776,7 @@ export default function AdminAgenciesPage() {
 
                   {expandedData[agency.id] && (
                     <div className="mt-5 pt-5 border-t border-[var(--a-line)] space-y-5">
-                      {/* Support — requests and feedback this agency has sent in, unified */}
+                      {/* Support - requests and feedback this agency has sent in, unified */}
                       {(() => {
                         const sr = (expandedData[agency.id].support_requests || []).map((r: any) => ({ ...r, _kind: 'support' }));
                         const fb = (expandedData[agency.id].feedback || []).map((r: any) => ({ ...r, _kind: 'feedback' }));
@@ -694,7 +826,7 @@ export default function AdminAgenciesPage() {
                         );
                       })()}
 
-                      {/* Support bot chats — what this agency asked the in-dashboard AI support bot */}
+                      {/* Support bot chats - what this agency asked the in-dashboard AI support bot */}
                       {(() => {
                         const log = expandedData[agency.id].support_bot_log || [];
                         if (log.length === 0) return null;
