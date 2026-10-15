@@ -25,6 +25,16 @@ function qrImg(data: string, size = 300): string {
 }
 const money = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Math.max(0, Math.round(n)));
 
+// Display a US number as (XXX) XXX-XXXX. Leaves anything that isn't a 10-digit
+// (or 1 + 10) number untouched so international / short numbers aren't mangled.
+function formatPhone(phone?: string | null): string {
+  if (!phone) return '';
+  const digits = phone.replace(/\D/g, '');
+  const ten = digits.length === 11 && digits.startsWith('1') ? digits.slice(1) : digits;
+  if (ten.length === 10) return `(${ten.slice(0, 3)}) ${ten.slice(3, 6)}-${ten.slice(6)}`;
+  return phone;
+}
+
 export default function MissedCallCalculatorPage() {
   const { agency, branding } = useAgency();
   const theme = useTheme();
@@ -163,8 +173,8 @@ export default function MissedCallCalculatorPage() {
             <img src={qrImg(demo ? `tel:${demo.replace(/[^\d+]/g, '')}` : signupUrl, 220)} alt="QR" width={110} height={110} style={{ width: 110, height: 110, border: '1px solid #e5e7eb', borderRadius: 10, padding: 6, background: '#fff' }} />
             <div style={{ flex: 1, minWidth: 200 }}>
               <p style={{ margin: 0, fontWeight: 800, color: '#0f172a', fontSize: 16 }}>{demo ? 'Scan to hear it answer live' : 'Scan to get started'}</p>
-              {demo && <p style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 800, color: primary }}>{demo}</p>}
-              <p style={{ margin: '6px 0 0', fontSize: 13, color: '#475569' }}>{name}{agency?.phone ? ` · ${agency.phone}` : ''} · {signupUrl.replace(/^https?:\/\//, '')}</p>
+              {demo && <p style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 800, color: primary }}>{formatPhone(demo)}</p>}
+              <p style={{ margin: '6px 0 0', fontSize: 13, color: '#475569' }}>{name}{agency?.phone ? ` · ${formatPhone(agency.phone)}` : ''} · {signupUrl.replace(/^https?:\/\//, '')}</p>
             </div>
           </div>
           <p style={{ marginTop: 18, fontSize: 11, color: '#94a3b8' }}>Estimate based on the figures provided. Actual results vary.</p>

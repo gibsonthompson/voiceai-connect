@@ -419,6 +419,25 @@ export default function ComposerModal({
     await handleLogAsSent();
   };
 
+  // Open Gmail's compose window in a new tab, prefilled with the lead's
+  // address, the subject and the body. The agency stays signed in to their own
+  // Gmail, so it opens in their account; nothing is sent until they hit send.
+  const openGmailCompose = () => {
+    const to = lead.email || recipientOverride.trim();
+    const params = new URLSearchParams({ view: 'cm', fs: '1', tf: '1' });
+    if (to) params.set('to', to);
+    if (subject) params.set('su', subject);
+    if (body) params.set('body', body);
+    window.open(`https://mail.google.com/mail/?${params.toString()}`, '_blank', 'noopener,noreferrer');
+  };
+
+  // Email one-click: copy as a backup, open Gmail prefilled, then log + advance.
+  const handleOpenGmailAndLog = async () => {
+    await handleCopyAll();
+    openGmailCompose();
+    await handleLogAsSent();
+  };
+
   /** LinkedIn Stage 1: Copy connection note, open profile, and log */
   const handleConnectAndLog = async () => {
     if (connectionNote) {
@@ -843,28 +862,6 @@ export default function ComposerModal({
           <>
             {/* Content - scrollable */}
             <div className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
-              {/* "We don't send it" clarity banner (email + SMS). This is the #1
-                  point of confusion: the platform drafts and tracks outreach, it
-                  does not deliver it. You send from your own email or phone. */}
-              {type !== 'linkedin' && (
-                <div
-                  className="flex items-start gap-3 rounded-lg p-3"
-                  style={{
-                    backgroundColor: isDark ? 'rgba(245,158,11,0.08)' : 'rgba(245,158,11,0.1)',
-                    border: '1px solid rgba(245,158,11,0.25)',
-                  }}
-                >
-                  {type === 'email'
-                    ? <Mail className="h-4 w-4 shrink-0 mt-0.5" style={{ color: '#f59e0b' }} />
-                    : <MessageSquare className="h-4 w-4 shrink-0 mt-0.5" style={{ color: '#f59e0b' }} />}
-                  <p className="text-xs" style={{ color: isDark ? 'rgba(252,211,77,0.95)' : '#92400e' }}>
-                    <span className="font-semibold">VoiceAI Connect doesn&apos;t send this for you.</span>{' '}
-                    {type === 'email'
-                      ? 'It writes the email and tracks your follow-ups. Copy it, send it from your own email account (Gmail, Outlook, etc.), then hit Log so your sequence stays accurate. Nothing goes out from here, and it won’t show in your Sent folder unless you send it yourself.'
-                      : 'It writes the text and tracks your follow-ups. Copy it, send it from your own phone, then hit Log so your sequence stays accurate. Nothing goes out from here.'}
-                  </p>
-                </div>
-              )}
 
               {/* Sequence Info Banner */}
               <div 
@@ -1091,9 +1088,9 @@ export default function ComposerModal({
                   {type === 'linkedin' ? (
                     <>Copy the message, then open their LinkedIn profile to paste it as a direct message. Use "Copy, Open &amp; Log" to do it all in one click.</>
                   ) : type === 'email' ? (
-                    <>Copy the subject and body, then send it from your own email account. "Copy All &amp; Log" copies everything and records that you reached out, so your follow-up queue stays accurate. It does not send the email.</>
+                    <>"Open Gmail &amp; Log" opens Gmail in a new tab with the email filled in, copies it as a backup, and records the touch so your follow-up queue stays accurate. On Outlook or another email? Hit "Copy &amp; Log" instead, then paste it into your own email in the other tab. Either way VoiceAI Connect doesn&apos;t send it, you do.</>
                   ) : (
-                    <>Copy the message, then send it from your own phone. "Copy All &amp; Log" copies it and records that you reached out, so your follow-up queue stays accurate. It does not send the text.</>
+                    <>Copy the message, then send it from your own phone. "Copy &amp; Log" copies it and records that you reached out, so your follow-up queue stays accurate. It does not send the text.</>
                   )}
                 </p>
               </div>
@@ -1137,30 +1134,48 @@ export default function ComposerModal({
                       )}
                     </button>
                   </>
+                ) : type === 'sms' ? (
+                  <button
+                    onClick={handleCopyAndLog}
+                    disabled={!body || loggedSuccess}
+                    className="flex-[1.6] sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-3 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
+                    style={{
+                      backgroundColor: primaryColor,
+                      color: primaryLight ? '#050505' : '#ffffff',
+                    }}
+                  >
+                    {loggedSuccess ? (
+                      <><Check className="h-4 w-4 shrink-0" /><span>Logged!</span></>
+                    ) : (
+                      <><Copy className="h-4 w-4 shrink-0" /><span className="whitespace-nowrap">Copy &amp; Log</span></>
+                    )}
+                  </button>
                 ) : (
                   <>
+                    {/* Copy & Log is the universal path (works with any email
+                        provider); Open Gmail & Log is the one-click Gmail route. */}
                     <button
-                      onClick={handleCopyAll}
-                      disabled={!body}
+                      onClick={handleCopyAndLog}
+                      disabled={!body || loggedSuccess}
                       className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-3 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
-                      style={{ 
+                      style={{
                         backgroundColor: theme.cardBg,
                         border: `1px solid ${theme.border}`,
                         color: theme.textMuted,
                       }}
                     >
-                      {copied === 'all' ? (
-                        <><Check className="h-4 w-4 shrink-0" style={{ color: primaryColor }} /><span>Copied!</span></>
+                      {loggedSuccess ? (
+                        <><Check className="h-4 w-4 shrink-0" style={{ color: primaryColor }} /><span>Logged!</span></>
                       ) : (
-                        <><Clipboard className="h-4 w-4 shrink-0" /><span>Copy All</span></>
+                        <><Copy className="h-4 w-4 shrink-0" /><span>Copy &amp; Log</span></>
                       )}
                     </button>
-                    
+
                     <button
-                      onClick={handleCopyAndLog}
+                      onClick={handleOpenGmailAndLog}
                       disabled={!body || loggedSuccess}
-                      className="flex-[1.3] sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-3 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
-                      style={{ 
+                      className="flex-[1.4] sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-3 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
+                      style={{
                         backgroundColor: primaryColor,
                         color: primaryLight ? '#050505' : '#ffffff',
                       }}
@@ -1168,7 +1183,7 @@ export default function ComposerModal({
                       {loggedSuccess ? (
                         <><Check className="h-4 w-4 shrink-0" /><span>Logged!</span></>
                       ) : (
-                        <><Copy className="h-4 w-4 shrink-0" /><span className="whitespace-nowrap">Copy All &amp; Log</span></>
+                        <><ExternalLink className="h-4 w-4 shrink-0" /><span className="whitespace-nowrap">Open Gmail &amp; Log</span></>
                       )}
                     </button>
                   </>
