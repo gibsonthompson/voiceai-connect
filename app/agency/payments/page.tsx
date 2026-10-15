@@ -7,10 +7,6 @@ import {
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
-import dynamic from 'next/dynamic';
-
-// Stripe's embedded Payouts UI is browser-only, so load it without SSR.
-const StripePayoutsPanel = dynamic(() => import('@/components/StripePayoutsPanel'), { ssr: false });
 
 interface BalanceAmount { amount: number; currency: string; }
 interface Payout {
@@ -333,10 +329,6 @@ export default function AgencyPaymentsPage() {
   const pending = sumByCurrency(data.pending, cur);
   const otherAvailable = (data.available || []).filter((b) => (b.currency || '').toLowerCase() !== cur && b.amount !== 0);
   const payouts = data.recent_payouts || [];
-  // Show Stripe's native payout UI (with the real, eligibility-checked Instant
-  // option) when the publishable key is configured; otherwise fall back to the
-  // read-only payout list so the page still works.
-  const hasPayoutPanel = !demoMode && !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY && !!agency?.id && !!data.connected;
   const charges = data.recent_charges || [];
   // Prefer the DB-backed client payments (reliable, carry the paying business
   // name); fall back to the live Stripe charge list only if we have none.
@@ -481,12 +473,10 @@ export default function AgencyPaymentsPage() {
       <div className="mb-6 sm:mb-8 rounded-xl" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
         <div className="flex items-center gap-2.5 p-4 sm:p-5" style={{ borderBottom: `1px solid ${theme.border}` }}>
           <ArrowDownToLine className="h-4 w-4" style={{ color: theme.textMuted }} />
-          <h2 className="font-medium text-sm sm:text-base" style={{ color: theme.text }}>Payouts</h2>
+          <h2 className="font-medium text-sm sm:text-base" style={{ color: theme.text }}>Recent payouts</h2>
         </div>
         <div className="p-4 sm:p-5">
-          {hasPayoutPanel ? (
-            <StripePayoutsPanel agencyId={agency?.id ?? ''} backendUrl={backendUrl} primaryColor={theme.primary} isDark={theme.isDark} />
-          ) : payouts.length === 0 ? (
+          {payouts.length === 0 ? (
             <div className="py-8 text-center">
               <p className="text-sm" style={{ color: theme.textMuted }}>No payouts yet. They appear once you have an available balance and Stripe sends it to your bank.</p>
             </div>
