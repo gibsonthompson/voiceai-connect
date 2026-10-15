@@ -1,5 +1,6 @@
 'use client';
 
+import type { Lead } from '@/types/lead';
 import { useState, useEffect, type CSSProperties } from 'react';
 import Link from 'next/link';
 import {
@@ -17,28 +18,6 @@ import { getDemoLeads } from '../demoData';
 import CSVImportModal from '@/components/CSVImportModal';
 import ComposerModal from '@/components/ComposerModal';
 import CallScriptModal from '@/components/CallScriptModal';
-
-interface Lead {
-  id: string;
-  business_name: string;
-  contact_name: string;
-  email: string;
-  phone: string;
-  industry: string;
-  source: string;
-  status: string;
-  estimated_value: number;
-  next_follow_up: string | null;
-  created_at: string;
-  notes?: string | null;
-  website?: string | null;
-  outreach?: {
-    last_contacted?: string | null;
-    email_count?: number;
-    sms_count?: number;
-    call_count?: number;
-  };
-}
 
 interface FollowUpItem {
   lead_id: string;
@@ -699,7 +678,7 @@ export default function AgencyLeadsPage() {
             isOpen={logCallOpen}
             onClose={() => { setLogCallOpen(false); setActionLeadId(null); }}
             agencyId={agency.id}
-            lead={{ ...l, website: l.website ?? undefined, notes: l.notes ?? undefined }}
+            lead={l}
             onSent={handleCallSent}
           />
         );

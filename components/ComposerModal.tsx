@@ -1,5 +1,6 @@
 'use client';
 
+import type { Lead } from '@/types/lead';
 import { useState, useEffect, useRef } from 'react';
 import { 
   X, Loader2, Mail, MessageSquare, Copy, Check, 
@@ -8,22 +9,13 @@ import {
 import { useAgency } from '@/app/agency/context';
 import { getDemoTemplates, composeDemoMessage, logDemoOutreach } from '@/app/agency/demoData';
 
-// Safe wrapper — allows ComposerModal to work outside AgencyProvider (admin mode)
+// Safe wrapper, allows ComposerModal to work outside AgencyProvider (admin mode)
 function useSafeAgency(adminMode: boolean) {
   if (adminMode) {
     return { agency: null, branding: null, demoMode: false };
   }
   // eslint-disable-next-line react-hooks/rules-of-hooks
   return useAgency();
-}
-
-interface Lead {
-  id: string;
-  business_name: string;
-  contact_name: string;
-  email: string;
-  phone: string;
-  linkedin_url?: string | null;
 }
 
 interface Template {
@@ -488,7 +480,7 @@ export default function ComposerModal({
         onClick={onClose}
       />
       
-      {/* Modal — smaller for connect stage */}
+      {/* Modal, smaller for connect stage */}
       <div 
         className={`relative w-full ${
           isConnectStage ? 'sm:max-w-lg' : type === 'email' ? 'sm:max-w-4xl' : 'sm:max-w-2xl'
@@ -551,7 +543,7 @@ export default function ComposerModal({
           </button>
         </div>
 
-        {/* LinkedIn Profile Link — shown for both stages */}
+        {/* LinkedIn Profile Link, shown for both stages */}
         {type === 'linkedin' && linkedinUrl && (
           <div className="px-4 sm:px-6 pt-3 pb-1">
             <a
@@ -578,7 +570,7 @@ export default function ComposerModal({
           </div>
         )}
 
-        {/* LinkedIn — no profile URL warning */}
+        {/* LinkedIn, no profile URL warning */}
         {type === 'linkedin' && !linkedinUrl && (
           <div className="px-4 sm:px-6 pt-3 pb-1">
             <div
@@ -590,7 +582,7 @@ export default function ComposerModal({
             >
               <Info className="h-4 w-4 shrink-0" style={{ color: '#f59e0b' }} />
               <p className="text-xs" style={{ color: '#f59e0b' }}>
-                No LinkedIn URL on file — add one via the lead edit form to enable direct linking.
+                No LinkedIn URL on file, add one via the lead edit form to enable direct linking.
               </p>
             </div>
           </div>
@@ -804,13 +796,13 @@ export default function ComposerModal({
               >
                 <Info className="h-4 w-4 shrink-0 mt-0.5" style={{ color: isDark ? '#93c5fd' : '#2563eb' }} />
                 <p className="text-xs" style={{ color: isDark ? 'rgba(147, 197, 253, 0.8)' : '#1d4ed8' }}>
-                  Write your connection note, then hit "Connect &amp; Log" — it copies the note to your clipboard, 
+                  Write your connection note, then hit "Connect &amp; Log", it copies the note to your clipboard, 
                   opens their profile, and logs the outreach. Next time you open this lead, the full message composer will be available.
                 </p>
               </div>
             </div>
 
-            {/* Footer — Connect Stage */}
+            {/* Footer, Connect Stage */}
             <div 
               className="shrink-0 px-4 sm:px-6 py-3 sm:py-4 safe-area-bottom"
               style={{ 
@@ -1107,7 +1099,7 @@ export default function ComposerModal({
               </div>
             </div>
 
-            {/* Footer — Stage 2 */}
+            {/* Footer, Stage 2 */}
             <div 
               className="shrink-0 px-4 sm:px-6 py-3 sm:py-4 safe-area-bottom"
               style={{ 

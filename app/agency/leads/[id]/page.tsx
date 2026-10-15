@@ -1,5 +1,6 @@
 'use client';
 
+import type { Lead } from '@/types/lead';
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -17,24 +18,6 @@ import { getDemoLeadDetail } from '../../demoData';
 import ActivityLog from '../../../../components/ActivityLog';
 import ComposerModal from '../../../../components/ComposerModal';
 import CallScriptModal from '../../../../components/CallScriptModal';
-
-interface Lead {
-  id: string;
-  business_name: string;
-  contact_name: string;
-  email: string;
-  phone: string;
-  website: string;
-  industry: string;
-  source: string;
-  status: string;
-  notes: string;
-  estimated_value: number;
-  next_follow_up: string | null;
-  converted_client_id: string | null;
-  created_at: string;
-  updated_at: string;
-}
 
 interface OutreachStats {
   email_count: number;

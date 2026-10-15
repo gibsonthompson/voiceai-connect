@@ -1,5 +1,6 @@
 'use client';
 
+import type { Lead } from '@/types/lead';
 import { useState, useEffect, useRef } from 'react';
 import {
   X, Loader2, Phone, PhoneCall, PhoneOff, ChevronDown, ChevronUp,
@@ -59,22 +60,6 @@ function sourceLabel(src?: string): string {
 // ============================================================================
 // TYPES
 // ============================================================================
-
-interface Lead {
-  id: string;
-  business_name: string;
-  contact_name: string;
-  email: string;
-  phone: string;
-  website?: string;
-  industry?: string;
-  source?: string;
-  status?: string;
-  estimated_value?: number;
-  next_follow_up?: string | null;
-  notes?: string;
-  created_at?: string;
-}
 
 interface CallScript {
   id: string;

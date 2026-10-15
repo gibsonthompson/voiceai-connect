@@ -1,5 +1,6 @@
 'use client';
 
+import type { Lead } from '@/types/lead';
 // ============================================================================
 // LEADS / SALES PIPELINE (reskinned, emerald on white)
 // The full CRM: pipeline queue, stats, tabs, search, inline status + follow-up
@@ -35,12 +36,6 @@ const ADMIN_LIGHT_THEME = {
   isDark: false,
 };
 
-interface Lead {
-  id: string; business_name: string; contact_name: string; email: string; phone: string;
-  website: string; linkedin_url: string | null; industry: string; source: string; status: string;
-  estimated_value: number; notes: string; next_follow_up: string | null; last_outreach_at: string | null;
-  last_outreach_type: string | null; created_at: string;
-}
 interface LeadStats { total: number; byStatus: Record<string, number>; totalValue: number; recentlyAdded: number; }
 interface PipelineData {
   queue: { overdue: Lead[]; today: Lead[]; upcoming: Lead[]; untouched: Lead[]; cold: Lead[] };
