@@ -83,7 +83,11 @@ function formatDate(ms: number | null): string {
 }
 
 function sumByCurrency(list: BalanceAmount[] | undefined, currency: string): number {
-  return (list || []).filter((b) => b.currency === currency).reduce((s, b) => s + (b.amount || 0), 0);
+  // Stripe returns currency codes lowercase ('usd'); our stored agency currency
+  // can be uppercase ('USD'). Compare case-insensitively so the balance isn't
+  // silently filtered out to $0.
+  const c = currency.toLowerCase();
+  return (list || []).filter((b) => (b.currency || '').toLowerCase() === c).reduce((s, b) => s + (b.amount || 0), 0);
 }
 
 function scheduleLabel(s: PayoutSchedule | null | undefined): string {
@@ -320,11 +324,11 @@ export default function AgencyPaymentsPage() {
   // ---------------------------------------------------------------------------
   // CONNECTED
   // ---------------------------------------------------------------------------
-  const cur = data.display_currency || 'usd';
+  const cur = (data.display_currency || 'usd').toLowerCase();
   const available = sumByCurrency(data.available, cur);
   const pending = sumByCurrency(data.pending, cur);
   const instant = sumByCurrency(data.instant_available, cur);
-  const otherAvailable = (data.available || []).filter((b) => b.currency !== cur && b.amount !== 0);
+  const otherAvailable = (data.available || []).filter((b) => (b.currency || '').toLowerCase() !== cur && b.amount !== 0);
   const payouts = data.recent_payouts || [];
   const charges = data.recent_charges || [];
   // Prefer the DB-backed client payments (reliable, carry the paying business
@@ -444,7 +448,7 @@ export default function AgencyPaymentsPage() {
                 </>
               ) : (
                 <>
-                  <p className="mt-2 text-lg sm:text-xl font-semibold tracking-tight" style={{ color: theme.textMuted }}>None scheduled</p>
+                  <p className="mt-2 text-lg sm:text-xl font-semibold tracking-tight" style={{ color: theme.textMuted }}>{pending > 0 ? 'After funds clear' : 'None scheduled'}</p>
                   <p className="mt-1 text-[11px] sm:text-xs" style={{ color: theme.textMuted }}>{scheduleLabel(data.payout_schedule)}</p>
                 </>
               )}
@@ -462,6 +466,7 @@ export default function AgencyPaymentsPage() {
           <Calendar className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted }} />
           <span className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Payout schedule:</span>
           <span className="text-xs sm:text-sm font-medium" style={{ color: theme.text }}>{scheduleLabel(data.payout_schedule)}</span>
+          <span className="text-[11px]" style={{ color: theme.textMuted }}>(managed in Stripe)</span>
         </div>
         {instant > 0 && (
           <div className="flex items-center gap-2.5 sm:ml-auto">
@@ -564,7 +569,7 @@ export default function AgencyPaymentsPage() {
       <div className="mt-6 rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
         <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
         <p className="text-xs sm:text-sm" style={{ color: theme.infoText }}>
-          Client payments go directly to your own Stripe account and pay out to your bank on your schedule. The platform never holds your funds.
+          Client payments go directly to your own Stripe account and pay out to your bank on your schedule. The platform never holds your funds and takes no cut. Stripe's standard processing fee (about 2.9% + 30¢ per payment) is deducted by Stripe before payout, so a $249 payment lands as about $241.
         </p>
       </div>
     </div>
