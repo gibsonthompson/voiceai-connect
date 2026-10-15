@@ -419,22 +419,33 @@ export default function ComposerModal({
     await handleLogAsSent();
   };
 
-  // Open Gmail's compose window in a new tab, prefilled with the lead's
-  // address, the subject and the body. The agency stays signed in to their own
-  // Gmail, so it opens in their account; nothing is sent until they hit send.
+  // Open Gmail's STANDALONE compose (view=cm&tf=1) as a sized popup window,
+  // not a full browser tab. In this mode Gmail closes the window itself once
+  // the message is sent, so the user isn't left with a stray tab. A fixed
+  // window name makes repeat sends reuse the same popup instead of stacking
+  // up. It opens in whatever Google account the agency is signed into, and
+  // nothing sends until they hit send.
   const openGmailCompose = () => {
     const to = lead.email || recipientOverride.trim();
     const params = new URLSearchParams({ view: 'cm', fs: '1', tf: '1' });
     if (to) params.set('to', to);
     if (subject) params.set('su', subject);
     if (body) params.set('body', body);
-    window.open(`https://mail.google.com/mail/?${params.toString()}`, '_blank', 'noopener,noreferrer');
+    const url = `https://mail.google.com/mail/?${params.toString()}`;
+    const width = 680, height = 820;
+    const left = Math.max(0, Math.round(((window.screen?.width || width) - width) / 2));
+    const top = Math.max(0, Math.round(((window.screen?.height || height) - height) / 2));
+    const win = window.open(url, 'vac_gmail_compose', `popup=yes,width=${width},height=${height},left=${left},top=${top}`);
+    if (win) { try { win.focus(); } catch { /* cross-origin focus can throw, ignore */ } }
+    else { window.open(url, '_blank'); } // popup blocked: fall back to a tab
   };
 
-  // Email one-click: copy as a backup, open Gmail prefilled, then log + advance.
+  // Email one-click. Open Gmail FIRST, synchronously inside the click, so the
+  // browser treats the popup as user-initiated (an await beforehand can get it
+  // blocked). Then copy as a backup and log + advance.
   const handleOpenGmailAndLog = async () => {
-    await handleCopyAll();
     openGmailCompose();
+    await handleCopyAll();
     await handleLogAsSent();
   };
 
@@ -1088,7 +1099,7 @@ export default function ComposerModal({
                   {type === 'linkedin' ? (
                     <>Copy the message, then open their LinkedIn profile to paste it as a direct message. Use "Copy, Open &amp; Log" to do it all in one click.</>
                   ) : type === 'email' ? (
-                    <>"Open Gmail &amp; Log" opens Gmail in a new tab with the email filled in, copies it as a backup, and records the touch so your follow-up queue stays accurate. On Outlook or another email? Hit "Copy &amp; Log" instead, then paste it into your own email in the other tab. Either way VoiceAI Connect doesn&apos;t send it, you do.</>
+                    <>"Open Gmail &amp; Log" pops open a Gmail compose window with the email filled in and logs the touch so your follow-up queue stays accurate. Send from that window and Gmail closes it for you. On Outlook or another email? Hit "Copy &amp; Log" instead, then paste it into your own email. Either way VoiceAI Connect doesn&apos;t send it, you do.</>
                   ) : (
                     <>Copy the message, then send it from your own phone. "Copy &amp; Log" copies it and records that you reached out, so your follow-up queue stays accurate. It does not send the text.</>
                   )}
