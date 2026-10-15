@@ -579,7 +579,7 @@ export default function MarketingKitPage() {
           <BandLogo h={44} maxW={220} />
         </div>
         <div style={{ padding: '36px' }}>
-          <Editable {...edProps('op-headline', 'Never miss another call.')} as="h3" placeholder="Headline"
+          <Editable {...edProps('op-headline', 'Never Miss Another Call.')} as="h3" placeholder="Headline"
             style={{ fontSize: 34, lineHeight: 1.1, margin: 0, fontWeight: 800, color: headingColor }} />
           <Editable {...edProps('op-subhead', 'An AI receptionist that answers every call 24/7, sounds natural, handles questions, and books jobs straight onto your calendar. Set up in about a day.')} as="p" multiline placeholder="Supporting text"
             style={{ fontSize: 17, color: bodyColor, marginTop: 14, lineHeight: 1.6 }} />
@@ -646,7 +646,7 @@ export default function MarketingKitPage() {
           <BandLogo h={34} maxW={200} />
         </div>
         <div style={{ padding: '28px', textAlign: 'center' }}>
-          <Editable {...edProps('lb-headline', 'Sorry we missed you.')} as="h3" placeholder="Headline" style={{ fontSize: 24, fontWeight: 800, margin: 0, color: headingColor }} />
+          <Editable {...edProps('lb-headline', 'Sorry We Missed You.')} as="h3" placeholder="Headline" style={{ fontSize: 24, fontWeight: 800, margin: 0, color: headingColor }} />
           <Editable {...edProps('lb-subhead', 'How many calls does your business miss? We set up an AI receptionist that answers every one, 24/7, and books the job.')} as="p" multiline placeholder="Supporting text" style={{ fontSize: 15, color: bodyColor, marginTop: 10, lineHeight: 1.6 }} />
           <Removable id="lb-qr" hidden={hidden} editing={editMode} onToggle={toggleHidden} label="QR" style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', marginTop: 18 }}>
             <img src={qrImg(demo ? telHref(demo) : signupUrl, 240)} alt="QR" width={120} height={120} style={{ width: 120, height: 120, border: '1px solid #e5e7eb', borderRadius: 10, padding: 6, background: '#fff' }} />
@@ -688,7 +688,7 @@ export default function MarketingKitPage() {
         <div style={{ width: 336, height: 192, borderRadius: 12, overflow: 'hidden', border: `1px solid ${hairline}`, background: accent, color: accentText, padding: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
           <img src={qrImg(demo ? telHref(demo) : signupUrl, 240)} alt="QR" width={110} height={110} style={{ width: 110, height: 110, borderRadius: 8, background: '#fff', padding: 6 }} />
           <div>
-            <Editable {...edProps('bc-back-headline', 'Never miss another call.')} as="p" multiline placeholder="Headline" style={{ margin: 0, fontSize: 18, fontWeight: 800, lineHeight: 1.2, color: accentText }} />
+            <Editable {...edProps('bc-back-headline', 'Never Miss Another Call.')} as="p" multiline placeholder="Headline" style={{ margin: 0, fontSize: 18, fontWeight: 800, lineHeight: 1.2, color: accentText }} />
             <Editable {...edProps('bc-back-sub', demo ? 'Scan to hear your AI answer.' : 'Scan to get started.')} as="p" placeholder="Subtext" style={{ margin: '8px 0 0', fontSize: 12, opacity: 0.9, color: accentText }} />
           </div>
         </div>

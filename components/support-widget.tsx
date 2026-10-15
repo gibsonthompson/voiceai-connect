@@ -117,7 +117,7 @@ const css = `
 export default function SupportWidget() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const [view, setView] = useState<'landing' | 'faq' | 'chat' | 'escalation'>('landing');
+  const [view, setView] = useState<'landing' | 'gate' | 'faq' | 'chat' | 'escalation'>('landing');
   const [activeFAQ, setActiveFAQ] = useState<FAQItem | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -131,6 +131,13 @@ export default function SupportWidget() {
   // Stable id so a prospect's full back-and-forth groups into one inbox thread.
   const [sessionId] = useState(() => (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `sess-${Date.now()}-${Math.random().toString(36).slice(2)}`));
   const [escErr, setEscErr] = useState('');
+  // Public FAQ-bot lead capture: name + email collected before the AI chat so
+  // every conversation reaches the admin inbox with who it was.
+  const [leadName, setLeadName] = useState('');
+  const [leadEmail, setLeadEmail] = useState('');
+  const [leadErr, setLeadErr] = useState('');
+  const [leadCaptured, setLeadCaptured] = useState(false);
+  const [pendingMsg, setPendingMsg] = useState('');
   const [isAllowedDomain, setIsAllowedDomain] = useState(false);
   const [hideForClientSurface, setHideForClientSurface] = useState(false);
   const [isNarrow, setIsNarrow] = useState(false);
@@ -162,15 +169,24 @@ export default function SupportWidget() {
     } catch { /* noop */ }
   }, [pathname]);
 
+  // Restore a name/email captured earlier this browser session so a returning
+  // visitor isn't re-asked before every chat.
+  useEffect(() => {
+    try { const raw = sessionStorage.getItem('w-lead'); if (raw) { const lead = JSON.parse(raw); if (lead && lead.n && lead.e) { setLeadName(lead.n); setLeadEmail(lead.e); setLeadCaptured(true); } } } catch { /* noop */ }
+  }, []);
+
   const open = useCallback(() => { setIsOpen(true); setTeaser(false); sessionStorage.setItem('w-t', '1'); }, []);
   const close = useCallback(() => setIsOpen(false), []);
   const goLanding = useCallback(() => { setView('landing'); setActiveFAQ(null); }, []);
   const goFAQ = useCallback((f: FAQItem) => { setActiveFAQ(f); setView('faq'); }, []);
   const goEsc = useCallback(() => { setView('escalation'); setEscDone(false); setEscErr(''); setEscName(''); setEscContact(''); setEscMsg(''); }, []);
 
-  const send = useCallback(async (text?: string) => {
+  const send = useCallback(async (text?: string, bypassGate?: boolean) => {
     const msg = text || input.trim();
     if (!msg || streaming) return;
+    // Backstop gate: every path into the chat (landing input, FAQ input, quick
+    // actions) must capture name + email first.
+    if (!leadCaptured && !bypassGate) { setPendingMsg(msg); setView('gate'); return; }
     setInput('');
     const user: ChatMessage = { role: 'user', content: msg };
     const all = [...messages, user];
@@ -189,13 +205,32 @@ export default function SupportWidget() {
       const m = FAQ_DATA.find(f => f.question.toLowerCase().includes(l.slice(0, 20)) || l.includes(f.question.toLowerCase().slice(0, 20)));
       setMessages(p => [...p, { role: 'assistant', content: m ? m.answer : "I'm having trouble connecting. Email support@myvoiceaiconnect.com and a team member will respond within one business day." }]);
     } finally { setStreaming(false); }
-  }, [input, messages, streaming]);
+  }, [input, messages, streaming, leadCaptured]);
 
   const goChat = useCallback((msg?: string) => {
+    // Gate the AI chat behind a quick name + email capture so every public
+    // conversation reaches the inbox with who it was, not just the text.
+    if (!leadCaptured) { if (msg) setPendingMsg(msg); setView('gate'); return; }
     setView('chat');
     if (msg) send(msg);
     else setTimeout(() => inputRef.current?.focus(), 100);
-  }, [send]);
+  }, [send, leadCaptured]);
+
+  const submitGate = useCallback(() => {
+    const nm = leadName.trim(); const em2 = leadEmail.trim();
+    if (!nm) { setLeadErr('Please enter your name.'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em2)) { setLeadErr('Please enter a valid email so we can follow up.'); return; }
+    try { sessionStorage.setItem('w-lead', JSON.stringify({ n: nm, e: em2 })); } catch { /* noop */ }
+    setLeadErr('');
+    setLeadCaptured(true);
+    // Record who this visitor is as a leading row in the admin inbox thread,
+    // so the public FAQ conversation shows a name + email, not just the chat.
+    try { fetch('/api/widget/visitor', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId, name: nm, contact: em2 }) }); } catch { /* non-blocking */ }
+    const pm = pendingMsg; setPendingMsg('');
+    setView('chat');
+    if (pm) setTimeout(() => send(pm, true), 0);
+    else setTimeout(() => inputRef.current?.focus(), 100);
+  }, [leadName, leadEmail, pendingMsg, send]);
 
   const doEsc = useCallback(async () => {
     if (!escName.trim() || !escContact.trim() || escBusy) return;
@@ -205,6 +240,9 @@ export default function SupportWidget() {
     try {
       const res = await fetch('/api/widget/escalate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: escName.trim(), contact: escContact.trim(), message: escMsg.trim() || undefined, conversationSummary: sum || undefined }) });
       if (!res.ok) throw new Error('Failed to send');
+      // Also stamp the prospect's identity onto this session's inbox thread, so a
+      // callback request shows the name in the admin inbox (not just the SMS).
+      try { fetch('/api/widget/visitor', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId, name: escName.trim(), contact: escContact.trim(), reason: 'Callback requested (talk to a person)' }) }); } catch { /* non-blocking */ }
       setEscDone(true);
     } catch {
       setEscErr('Something went wrong sending your message. Please email support@myvoiceaiconnect.com and we\'ll respond within one business day.');
@@ -336,6 +374,26 @@ export default function SupportWidget() {
             </div>
           )}
 
+          {/* ── Lead gate (name + email before chatting) ── */}
+          {view === 'gate' && (
+            <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
+              <p style={{ fontFamily: font, fontSize: 17, fontWeight: 500, color: '#fafaf9', letterSpacing: '-0.01em', margin: 0 }}>Before we start</p>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.38)', marginTop: 4, fontFamily: font }}>Add your name and email so a team member can follow up on anything the chat can&apos;t fully answer.</p>
+              <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <WidgetInput value={leadName} onChange={setLeadName} placeholder="Your name" label="Name" />
+                <WidgetInput value={leadEmail} onChange={setLeadEmail} placeholder="you@email.com" label="Email" />
+                {leadErr && (
+                  <p style={{ fontSize: 12, lineHeight: 1.5, color: '#f87171', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '10px 12px', margin: 0, fontFamily: font }}>{leadErr}</p>
+                )}
+                <button onClick={submitGate} disabled={!leadName.trim() || !leadEmail.trim()}
+                  style={{ padding: 11, borderRadius: 10, border: 'none', fontSize: 13, fontWeight: 500, cursor: leadName.trim() && leadEmail.trim() ? 'pointer' : 'default', fontFamily: font, transition: 'all 0.15s', background: leadName.trim() && leadEmail.trim() ? em : 'rgba(255,255,255,0.04)', color: leadName.trim() && leadEmail.trim() ? '#050505' : 'rgba(255,255,255,0.15)' }}>
+                  Start chat
+                </button>
+              </div>
+              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.18)', fontFamily: font, margin: '18px 0 0' }}>We&apos;ll only use this to follow up on your questions.</p>
+            </div>
+          )}
+
           {/* ── Chat ── */}
           {view === 'chat' && (
             <div style={{ flex: 1, overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -413,8 +471,8 @@ export default function SupportWidget() {
             </div>
           )}
 
-          {/* Input bar: hidden on escalation */}
-          {view !== 'escalation' && (
+          {/* Input bar: hidden on escalation and the lead gate */}
+          {view !== 'escalation' && view !== 'gate' && (
             <div style={{ padding: '14px 16px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
               <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}

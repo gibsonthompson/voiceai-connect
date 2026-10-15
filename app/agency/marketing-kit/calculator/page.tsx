@@ -151,7 +151,7 @@ export default function MissedCallCalculatorPage() {
         </div>
         <div style={{ padding: 36 }}>
           <h3 style={{ fontSize: 28, lineHeight: 1.15, margin: 0, fontWeight: 800, color: '#0f172a' }}>
-            What missed calls are costing {prospect.trim() || 'your business'}
+            What Missed Calls Are Costing {prospect.trim() || 'Your Business'}
           </h3>
           <div style={{ marginTop: 24, background: `${primary}12`, border: `1px solid ${primary}33`, borderRadius: 14, padding: 24, textAlign: 'center' }}>
             <p style={{ margin: 0, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#64748b', fontWeight: 700 }}>Estimated lost revenue</p>

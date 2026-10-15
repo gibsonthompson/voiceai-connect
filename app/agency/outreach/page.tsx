@@ -401,14 +401,6 @@ export default function OutreachPage() {
           
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <Link
-              href="/agency/marketing-kit"
-              className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors flex-1 sm:flex-none"
-              style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, color: theme.text }}
-            >
-              <Megaphone className="h-4 w-4" style={{ color: theme.primary }} />
-              Marketing Kit
-            </Link>
-            <Link
               href="/agency/outreach/templates/new"
               className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors flex-1 sm:flex-none"
               style={{ backgroundColor: theme.primary, color: theme.primaryText }}
