@@ -47,6 +47,21 @@ interface Financials {
   next_payout?: Payout | null;
   recent_payouts?: Payout[];
   recent_charges?: Charge[];
+  client_payments?: ClientPayment[];
+}
+
+interface ClientPayment {
+  id: string;
+  amount: number;
+  currency: string;
+  status: string | null;
+  type: string | null;
+  description: string | null;
+  plan_type: string | null;
+  created: number | null;
+  business_name: string | null;
+  customer_email: string | null;
+  is_trial?: boolean;
 }
 
 function formatMoney(cents: number, currency = 'usd'): string {
@@ -312,6 +327,17 @@ export default function AgencyPaymentsPage() {
   const otherAvailable = (data.available || []).filter((b) => b.currency !== cur && b.amount !== 0);
   const payouts = data.recent_payouts || [];
   const charges = data.recent_charges || [];
+  // Prefer the DB-backed client payments (reliable, carry the paying business
+  // name); fall back to the live Stripe charge list only if we have none.
+  const clientPayments: ClientPayment[] = (data.client_payments && data.client_payments.length > 0)
+    ? data.client_payments
+    : charges.map((c) => ({
+        id: c.id, amount: c.amount, currency: c.currency, status: c.status,
+        type: 'subscription', description: c.description, plan_type: null,
+        created: c.created, business_name: c.customer_name || c.customer_email,
+        customer_email: c.customer_email, is_trial: (c.amount || 0) === 0,
+      }));
+  const planLabel = (pt: string | null) => pt ? pt.charAt(0).toUpperCase() + pt.slice(1) : null;
   const setupIncomplete = data.charges_enabled === false || data.payouts_enabled === false;
 
   return (
@@ -491,32 +517,40 @@ export default function AgencyPaymentsPage() {
           <h2 className="font-medium text-sm sm:text-base" style={{ color: theme.text }}>Recent client payments</h2>
         </div>
         <div className="p-4 sm:p-5">
-          {charges.length === 0 ? (
+          {clientPayments.length === 0 ? (
             <div className="py-8 text-center">
-              <p className="text-sm" style={{ color: theme.textMuted }}>No payments yet. Client subscription charges show up here as they come in.</p>
+              <p className="text-sm" style={{ color: theme.textMuted }}>No client payments yet. When a client subscribes, the payment and the business show up here.</p>
             </div>
           ) : (
-            <div className="space-y-2">
-              {charges.map((c) => {
-                const ok = c.status === 'succeeded' && c.paid && !c.refunded;
+            <div className="space-y-2.5">
+              {clientPayments.map((c) => {
+                const ok = c.status === 'succeeded' || c.status === 'paid';
+                const title = c.business_name || c.customer_email || 'Client payment';
+                const plan = planLabel(c.plan_type);
+                const subBits = [plan ? `${plan} plan` : (c.description || 'Subscription'), c.created ? formatDate(c.created) : ''].filter(Boolean);
                 return (
-                  <div key={c.id} className="flex items-center justify-between rounded-xl p-3 sm:p-4" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
+                  <div key={c.id} className="flex items-center justify-between rounded-xl p-3.5 sm:p-4" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full flex-shrink-0" style={{ backgroundColor: ok ? theme.successBg : theme.hover }}>
-                        {ok ? <CheckCircle2 className="h-4 w-4" style={{ color: theme.success }} /> : <CreditCard className="h-4 w-4" style={{ color: theme.textMuted }} />}
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0 text-sm font-semibold" style={{ backgroundColor: theme.primary15, color: theme.primary }}>
+                        {(title.charAt(0) || '?').toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-medium text-sm truncate" style={{ color: theme.text }}>
-                          {c.customer_name || c.customer_email || 'Client payment'}
-                        </p>
-                        <p className="text-xs truncate" style={{ color: theme.textMuted }}>
-                          {c.description || 'Subscription'}{c.created ? ` · ${formatDate(c.created)}` : ''}
-                        </p>
+                        <p className="font-semibold text-sm truncate" style={{ color: theme.text }}>{title}</p>
+                        <p className="text-xs truncate" style={{ color: theme.textMuted }}>{subBits.join(' · ')}</p>
+                        {c.customer_email && c.business_name && (
+                          <p className="text-[11px] truncate" style={{ color: theme.textMuted }}>{c.customer_email}</p>
+                        )}
                       </div>
                     </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className="font-medium text-sm" style={{ color: theme.text }}>{formatMoney(c.amount, c.currency)}</p>
-                      {c.refunded && <p className="text-[10px]" style={{ color: theme.textMuted }}>Refunded</p>}
+                    <div className="text-right flex-shrink-0 flex flex-col items-end gap-1">
+                      {c.is_trial ? (
+                        <span className="rounded-full px-2.5 py-1 text-[10px] sm:text-xs font-medium" style={{ backgroundColor: theme.infoBg, color: theme.infoText }}>Trial</span>
+                      ) : (
+                        <p className="font-semibold text-sm" style={{ color: theme.text }}>{formatMoney(c.amount, c.currency)}</p>
+                      )}
+                      <span className="rounded-full px-2 py-0.5 text-[10px] font-medium inline-flex items-center gap-1" style={{ backgroundColor: ok ? theme.successBg : theme.hover, color: ok ? theme.success : theme.textMuted }}>
+                        {ok && <CheckCircle2 className="h-3 w-3" />}{(c.status || 'pending')}
+                      </span>
                     </div>
                   </div>
                 );

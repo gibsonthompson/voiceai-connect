@@ -267,6 +267,59 @@ export default function AgencyAnalyticsPage() {
         </div>
       </div>
 
+      {/* ── CALLS & PERFORMANCE — what the AI actually did for your clients ── */}
+      <div className="mb-6 sm:mb-8">
+        <h2 className="text-sm font-semibold mb-3" style={{ color: theme.textMuted }}>Calls &amp; performance (this month)</h2>
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-3 mb-4 sm:mb-6">
+          <CallStat icon={Phone} label="Calls answered" value={callStats.callsThisMonth} theme={theme} />
+          <CallStat icon={CalendarCheck} label="Appointments booked" value={callStats.appointmentsBooked} theme={theme} />
+          <CallStat icon={PhoneForwarded} label="Transferred to you" value={callStats.callsTransferred} theme={theme} />
+          <CallStat icon={Moon} label="After-hours caught" value={callStats.afterHoursCalls} theme={theme} />
+          <CallStat icon={ShieldX} label="Spam blocked" value={callStats.spamBlocked} theme={theme} />
+          <CallStat icon={Clock} label="Talk time (min)" value={callStats.talkMinutes} theme={theme} />
+        </div>
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2 rounded-xl p-4 sm:p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+            <h3 className="font-medium mb-4 sm:mb-6 text-sm sm:text-base" style={{ color: theme.text }}>Calls over time</h3>
+            {callsByMonth.length === 0 || maxCalls <= 0 ? (
+              <div className="h-32 sm:h-48 flex items-center justify-center"><p className="text-sm" style={{ color: theme.textMuted }}>No calls yet</p></div>
+            ) : (
+              <div className="h-32 sm:h-48">
+                <div className="flex items-end justify-between h-full gap-1 sm:gap-2">
+                  {callsByMonth.map((item, index) => {
+                    const height = maxCalls > 0 ? (item.count / maxCalls) * 100 : 0;
+                    return (
+                      <div key={item.month} className="flex-1 flex flex-col items-center gap-1 sm:gap-2">
+                        <div className="w-full flex flex-col items-center justify-end h-24 sm:h-36">
+                          <span className="text-[9px] sm:text-xs font-medium mb-1" style={{ color: theme.textMuted }}>{item.count}</span>
+                          <div className="w-full max-w-[32px] sm:max-w-[40px] rounded-t-lg transition-all duration-300" style={{ height: `${Math.max(height, 2)}%`, backgroundColor: theme.primary, opacity: 0.6 + (index / callsByMonth.length) * 0.4 }} title={`${item.count} calls`} />
+                        </div>
+                        <span className="text-[8px] sm:text-xs" style={{ color: theme.textMuted }}>{formatMonth(item.month)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+            <h3 className="font-medium mb-3 sm:mb-4 text-sm sm:text-base" style={{ color: theme.text }}>Busiest clients</h3>
+            {callsByClient.length === 0 ? (
+              <p className="text-sm" style={{ color: theme.textMuted }}>No calls yet this month</p>
+            ) : (
+              <div className="space-y-2.5">
+                {callsByClient.map((c) => (
+                  <div key={c.business_name} className="flex items-center justify-between gap-2">
+                    <span className="text-sm truncate" style={{ color: theme.text }}>{c.business_name}</span>
+                    <span className="text-sm font-semibold flex-shrink-0" style={{ color: theme.primary }}>{c.count}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* ── CLIENT BILLING & TRIALS ── */}
       {billing && (
         <div className="mb-6 sm:mb-8">
@@ -332,59 +385,6 @@ export default function AgencyAnalyticsPage() {
       )}
 
       {/* Stats Grid */}
-      {/* ── CALLS & PERFORMANCE — what the AI actually did for your clients ── */}
-      <div className="mb-6 sm:mb-8">
-        <h2 className="text-sm font-semibold mb-3" style={{ color: theme.textMuted }}>Calls &amp; performance (this month)</h2>
-        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-3 mb-4 sm:mb-6">
-          <CallStat icon={Phone} label="Calls answered" value={callStats.callsThisMonth} theme={theme} />
-          <CallStat icon={CalendarCheck} label="Appointments booked" value={callStats.appointmentsBooked} theme={theme} />
-          <CallStat icon={PhoneForwarded} label="Transferred to you" value={callStats.callsTransferred} theme={theme} />
-          <CallStat icon={Moon} label="After-hours caught" value={callStats.afterHoursCalls} theme={theme} />
-          <CallStat icon={ShieldX} label="Spam blocked" value={callStats.spamBlocked} theme={theme} />
-          <CallStat icon={Clock} label="Talk time (min)" value={callStats.talkMinutes} theme={theme} />
-        </div>
-        <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2 rounded-xl p-4 sm:p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-            <h3 className="font-medium mb-4 sm:mb-6 text-sm sm:text-base" style={{ color: theme.text }}>Calls over time</h3>
-            {callsByMonth.length === 0 || maxCalls <= 0 ? (
-              <div className="h-32 sm:h-48 flex items-center justify-center"><p className="text-sm" style={{ color: theme.textMuted }}>No calls yet</p></div>
-            ) : (
-              <div className="h-32 sm:h-48">
-                <div className="flex items-end justify-between h-full gap-1 sm:gap-2">
-                  {callsByMonth.map((item, index) => {
-                    const height = maxCalls > 0 ? (item.count / maxCalls) * 100 : 0;
-                    return (
-                      <div key={item.month} className="flex-1 flex flex-col items-center gap-1 sm:gap-2">
-                        <div className="w-full flex flex-col items-center justify-end h-24 sm:h-36">
-                          <span className="text-[9px] sm:text-xs font-medium mb-1" style={{ color: theme.textMuted }}>{item.count}</span>
-                          <div className="w-full max-w-[32px] sm:max-w-[40px] rounded-t-lg transition-all duration-300" style={{ height: `${Math.max(height, 2)}%`, backgroundColor: theme.primary, opacity: 0.6 + (index / callsByMonth.length) * 0.4 }} title={`${item.count} calls`} />
-                        </div>
-                        <span className="text-[8px] sm:text-xs" style={{ color: theme.textMuted }}>{formatMonth(item.month)}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-          <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-            <h3 className="font-medium mb-3 sm:mb-4 text-sm sm:text-base" style={{ color: theme.text }}>Busiest clients</h3>
-            {callsByClient.length === 0 ? (
-              <p className="text-sm" style={{ color: theme.textMuted }}>No calls yet this month</p>
-            ) : (
-              <div className="space-y-2.5">
-                {callsByClient.map((c) => (
-                  <div key={c.business_name} className="flex items-center justify-between gap-2">
-                    <span className="text-sm truncate" style={{ color: theme.text }}>{c.business_name}</span>
-                    <span className="text-sm font-semibold flex-shrink-0" style={{ color: theme.primary }}>{c.count}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
       <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4 mb-6 sm:mb-8">
         {/* MRR */}
         <div 
@@ -600,6 +600,7 @@ export default function AgencyAnalyticsPage() {
               {payments.slice(0, 10).map((payment, idx) => {
                 const client = clients.find(c => c.id === payment.client_id);
                 const clientName = (payment as any).client_name || client?.business_name || 'Unknown';
+                const planName = client?.plan_type ? client.plan_type.charAt(0).toUpperCase() + client.plan_type.slice(1) : null;
                 const statusColor = payment.status === 'succeeded' || payment.status === 'paid'
                   ? { bg: theme.successBg, text: theme.success }
                   : payment.status === 'pending'
@@ -622,7 +623,10 @@ export default function AgencyAnalyticsPage() {
                           >
                             {clientName.charAt(0) || '?'}
                           </div>
-                          <span className="truncate text-sm" style={{ color: theme.text }}>{clientName}</span>
+                          <div className="min-w-0">
+                            <span className="truncate block text-sm" style={{ color: theme.text }}>{clientName}</span>
+                            {planName && <span className="text-[11px]" style={{ color: theme.textMuted }}>{planName} plan</span>}
+                          </div>
                         </div>
                         <span className="font-medium text-sm" style={{ color: theme.text }}>{formatCurrency(payment.amount, agencyCountry)}</span>
                       </div>
@@ -643,12 +647,15 @@ export default function AgencyAnalyticsPage() {
                     <div className="hidden lg:grid lg:grid-cols-12 lg:gap-4 lg:items-center">
                       <div className="col-span-4 flex items-center gap-3">
                         <div 
-                          className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-medium"
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-medium flex-shrink-0"
                           style={{ backgroundColor: theme.primary15, color: theme.primary }}
                         >
                           {clientName.charAt(0) || '?'}
                         </div>
-                        <span className="truncate" style={{ color: theme.text }}>{clientName}</span>
+                        <div className="min-w-0">
+                          <span className="truncate block" style={{ color: theme.text }}>{clientName}</span>
+                          {planName && <span className="text-xs" style={{ color: theme.textMuted }}>{planName} plan</span>}
+                        </div>
                       </div>
                       
                       <div className="col-span-2 font-medium" style={{ color: theme.text }}>
