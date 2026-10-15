@@ -17,7 +17,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import {
   ArrowLeft, Loader2, Save, Phone, Clock, MessageSquare, PhoneForwarded,
-  Building2, Check, PhoneCall, CheckCircle2, AlertCircle,
+  Building2, Check, PhoneCall, CheckCircle2, AlertCircle, Bell,
 } from 'lucide-react';
 import { useAgency } from '../../../agency/context';
 import { useTheme } from '../../../../hooks/useTheme';
@@ -35,6 +35,9 @@ interface Cfg {
   serviceAreas: string[];
   vapiPhoneNumber: string | null;
   forwardingConfirmed: boolean;
+  // Post-call recap SMS to the business owner after each call.
+  postCallSms: boolean;
+  notificationPhone: string;
 }
 
 const DAYS: { key: string; label: string }[] = [
@@ -121,6 +124,7 @@ export default function BusinessConfig() {
           businessName: cfg.businessName, ownerName: cfg.ownerName, ownerPhone: cfg.ownerPhone,
           transferPhone: cfg.transferPhone, timezone: cfg.timezone, greeting: cfg.greeting,
           businessHours: cfg.businessHours, forwardingMode: cfg.forwardingMode, humanHandoff: cfg.humanHandoff,
+          postCallSms: cfg.postCallSms, notificationPhone: cfg.notificationPhone,
         }),
       });
       const d = await r.json().catch(() => ({}));
@@ -247,6 +251,32 @@ export default function BusinessConfig() {
                 className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={field} />
               <p className="text-[11.5px] mt-1.5" style={{ color: theme.textSubtle }}>Leave blank to fall back to the owner phone. Your available agents are always offered the call first.</p>
             </>
+          )}
+        </div>
+
+        {/* Post-call recap SMS */}
+        <div className="rounded-2xl p-5 sm:p-6" style={card}>
+          <SectionHead icon={Bell} title="Post-call text" sub="A recap text to the business owner after each call: who called, what they needed, the summary." />
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium" style={{ color: theme.text }}>Text the owner a recap after every call</p>
+              <p className="text-[11.5px] mt-0.5" style={{ color: theme.textSubtle }}>
+                {cfg.postCallSms ? 'On: this business gets a recap text after each call.' : 'Off: this business gets no recap text. You can still watch calls live.'}
+              </p>
+            </div>
+            <button type="button" onClick={() => set('postCallSms', !cfg.postCallSms)}
+              className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 focus:outline-none"
+              style={{ backgroundColor: cfg.postCallSms ? theme.primary : theme.hover }}>
+              <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200" style={{ transform: cfg.postCallSms ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
+            </button>
+          </div>
+          {cfg.postCallSms && (
+            <div className="mt-4">
+              <Label>Send the recap to (optional)</Label>
+              <input value={cfg.notificationPhone} onChange={(e) => set('notificationPhone', e.target.value)} placeholder={fmtPhone(cfg.ownerPhone) || '(555) 555-5555'}
+                className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={field} />
+              <p className="text-[11.5px] mt-1.5" style={{ color: theme.textSubtle }}>Goes to the business owner. Leave blank to use the owner phone. Set this to the owner&apos;s own cell so the recap never lands on a call-center line.</p>
+            </div>
           )}
         </div>
 

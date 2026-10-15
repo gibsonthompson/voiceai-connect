@@ -8,7 +8,7 @@ import {
   PhoneCall, CreditCard, Calendar, Clock, ChevronRight, Loader2,
   Copy, Check, ExternalLink, Save, RotateCcw, AlertCircle, Bot,
   X, Paintbrush, Lock, ChevronDown, Users, Shield, Trash2, Ban,
-  PhoneForwarded, CalendarCheck, AlertTriangle, ShieldX, Radio
+  PhoneForwarded, CalendarCheck, AlertTriangle, ShieldX, Radio, Bell
 } from 'lucide-react';
 import { getCallBadges } from '@/lib/call-badges';
 import { useAgency } from '../../context';
@@ -20,7 +20,7 @@ import { CustomSelect } from '@/components/ui/custom-select';
 import { TimezoneSelect } from '@/components/ui/timezone-select';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 
-interface Client { id: string; business_name: string; email: string; owner_name: string; owner_phone: string; business_city?: string; business_state?: string; business_website?: string; industry?: string; is_test_client?: boolean; plan_type: string; subscription_status: string; status: string; calls_this_month: number; monthly_call_limit?: number; minutes_this_period?: number; created_at: string; vapi_phone_number: string; vapi_assistant_id?: string; trial_ends_at?: string; logo_url?: string | null; primary_color?: string | null; secondary_color?: string | null; accent_color?: string | null; theme_mode?: string | null; login_email?: string | null; login_password?: string | null; signup_discount_code?: string | null; }
+interface Client { id: string; business_name: string; email: string; owner_name: string; owner_phone: string; business_city?: string; business_state?: string; business_website?: string; industry?: string; is_test_client?: boolean; plan_type: string; subscription_status: string; status: string; calls_this_month: number; monthly_call_limit?: number; minutes_this_period?: number; created_at: string; vapi_phone_number: string; vapi_assistant_id?: string; trial_ends_at?: string; logo_url?: string | null; primary_color?: string | null; secondary_color?: string | null; accent_color?: string | null; theme_mode?: string | null; login_email?: string | null; login_password?: string | null; signup_discount_code?: string | null; post_call_sms_enabled?: boolean | null; notification_phone?: string | null; }
 interface Call { id: string; customer_name: string; caller_phone: string; customer_phone?: string; created_at: string; urgency_level: string; call_status: string; duration_seconds?: number; duration?: number; service_requested?: string; transfer_status?: string; appointment_booked?: boolean; is_spam?: boolean; }
 
 // Logo color extraction (ported from agency branding so client logos auto-derive
@@ -210,12 +210,16 @@ export default function AgencyClientDetailPage() {
   const [ownerPhone, setOwnerPhone] = useState('');
   const [savingField, setSavingField] = useState<string | null>(null);
   const [savedField, setSavedField] = useState<string | null>(null);
+  // Post-call recap SMS, set per client by the agency. Unset is treated as on.
+  const [postCallSms, setPostCallSms] = useState(true);
+  const [postCallSmsSaving, setPostCallSmsSaving] = useState(false);
+  const [notifPhone, setNotifPhone] = useState('');
 
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
   const isFreePlan = agency?.plan_type === 'free' || agency?.plan_type === 'starter';
 
   useEffect(() => { if (client?.industry) setIndustryValue(client.industry); }, [client?.industry]);
-  useEffect(() => { if (client) { setBusinessName(client.business_name || ''); setOwnerPhone(client.owner_phone || ''); } }, [client?.business_name, client?.owner_phone]);
+  useEffect(() => { if (client) { setBusinessName(client.business_name || ''); setOwnerPhone(client.owner_phone || ''); setPostCallSms(client.post_call_sms_enabled !== false); setNotifPhone(client.notification_phone || ''); } }, [client?.business_name, client?.owner_phone, client?.post_call_sms_enabled, client?.notification_phone]);
 
   const [deleting, setDeleting] = useState(false);
   const handleDeleteClient = async () => {
@@ -381,9 +385,26 @@ export default function AgencyClientDetailPage() {
   const handleSaveTimezone = async (tz: string) => { if (!clientId || !tz) return; setTzSaving(true); setTzSaved(false); try { const token = localStorage.getItem('auth_token'); const res = await fetch(`${backendUrl}/api/client/${clientId}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ timezone: tz }) }); if (!res.ok) throw new Error('Failed to update timezone'); setTzSaved(true); setTimeout(() => setTzSaved(false), 3000); fetchClientData(); } catch (err) { console.error('Failed to save timezone:', err); } finally { setTzSaving(false); } };
   const handleSaveIndustry = async (newIndustry: string) => { if (!agency || !clientId || !newIndustry) return; setIndustrySaving(true); setIndustrySaved(false); try { const token = localStorage.getItem('auth_token'); const res = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}/industry`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ industry: newIndustry }) }); if (!res.ok) throw new Error('Failed to update industry'); setIndustryValue(newIndustry); setIndustrySaved(true); setTimeout(() => setIndustrySaved(false), 3000); fetchClientData(); } catch (err) { console.error('Failed to save industry:', err); } finally { setIndustrySaving(false); } };
 
-  const handleSaveField = async (field: 'business_name' | 'owner_phone', value: string) => {
+  const handleTogglePostCallSms = async () => {
     if (!agency || !clientId || !client) return;
-    const currentValue = (field === 'business_name' ? client.business_name : client.owner_phone) || '';
+    const next = !postCallSms;
+    setPostCallSmsSaving(true);
+    setPostCallSms(next); // optimistic
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ post_call_sms_enabled: next }),
+      });
+      if (!res.ok) setPostCallSms(!next);
+    } catch { setPostCallSms(!next); }
+    finally { setPostCallSmsSaving(false); }
+  };
+
+  const handleSaveField = async (field: 'business_name' | 'owner_phone' | 'notification_phone', value: string) => {
+    if (!agency || !clientId || !client) return;
+    const currentValue = (field === 'business_name' ? client.business_name : field === 'owner_phone' ? client.owner_phone : client.notification_phone) || '';
     const newValue = (value || '').trim();
     if (newValue === currentValue) return;
     setSavingField(field);
@@ -404,6 +425,7 @@ export default function AgencyClientDetailPage() {
       // Revert local state on error
       if (field === 'business_name') setBusinessName(currentValue);
       if (field === 'owner_phone') setOwnerPhone(currentValue);
+      if (field === 'notification_phone') setNotifPhone(currentValue);
     } finally {
       setSavingField(null);
     }
@@ -612,6 +634,43 @@ export default function AgencyClientDetailPage() {
                       />
                       <FieldStatus field="owner_phone" />
                     </div>
+                  </div>
+                </div>
+
+                {/* Post-call recap SMS - per-client toggle */}
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0 mt-0.5" style={{ backgroundColor: theme.hover }}>
+                    <Bell className="h-4 w-4" style={{ color: theme.textMuted }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs" style={{ color: theme.textMuted }}>Post-call text</p>
+                        <p className="text-sm" style={{ color: theme.text }}>{postCallSms ? 'Owner gets a recap after each call' : 'No recap text for this business'}</p>
+                      </div>
+                      <button type="button" onClick={handleTogglePostCallSms} disabled={postCallSmsSaving}
+                        className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 focus:outline-none disabled:opacity-50"
+                        style={{ backgroundColor: postCallSms ? theme.primary : (isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
+                        <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200" style={{ transform: postCallSms ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
+                      </button>
+                    </div>
+                    {postCallSms && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <input
+                          type="tel"
+                          value={notifPhone}
+                          onChange={(e) => setNotifPhone(e.target.value)}
+                          onBlur={() => handleSaveField('notification_phone', notifPhone)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                          disabled={savingField === 'notification_phone'}
+                          placeholder={ownerPhone || 'Recap goes to owner phone'}
+                          className="flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none disabled:opacity-50 transition-colors"
+                          style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
+                        />
+                        <FieldStatus field="notification_phone" />
+                      </div>
+                    )}
+                    <p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>Where the recap goes. Leave blank to use the owner phone. The text always goes to the business owner.</p>
                   </div>
                 </div>
 
