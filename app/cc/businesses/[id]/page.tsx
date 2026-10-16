@@ -26,6 +26,7 @@ import { useAgency } from '../../../agency/context';
 import { useTheme } from '../../../../hooks/useTheme';
 import { CustomSelect, type DropdownUI } from '@/components/ui/custom-select';
 import CcKnowledgeBase from '@/components/cc/CcKnowledgeBase';
+import CcVoiceSelection from '@/components/cc/CcVoiceSelection';
 import CcServices from '@/components/cc/CcServices';
 import CcStaff from '@/components/cc/CcStaff';
 import CcCalendar from '@/components/cc/CcCalendar';
@@ -267,6 +268,9 @@ export default function BusinessConfig() {
           <Label>Tone</Label>
           <CustomSelect value={cfg.aiTone} onChange={(v) => set('aiTone', v as Cfg['aiTone'])} options={TONES} ui={ddUI} />
         </div>
+
+        {/* Voice selection */}
+        <CcVoiceSelection clientId={clientId} theme={theme} />
 
         {/* Greeting */}
         <div className="rounded-2xl p-5 sm:p-6" style={card}>
