@@ -8,7 +8,7 @@ import {
   Radio, AlertTriangle, Undo2, Pencil, Sparkles, Building2, Package,
   Briefcase, X, Copy, Info,
   Play, Pause, ArrowUpRight, Maximize2, Minimize2, PhoneForwarded,
-  BookOpen, Plus, Trash2, Globe, HelpCircle, FileText, Headphones
+  BookOpen, Plus, Trash2, Globe, HelpCircle, FileText, Headphones, LogIn
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAgency } from '@/app/agency/context';
@@ -224,6 +224,7 @@ export default function AILabPage() {
   const [clients, setClients] = useState<ClientItem[]>([]);
   const [clientsLoading, setClientsLoading] = useState(true);
   const [selectedClient, setSelectedClient] = useState<ClientItem | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [clientSearch, setClientSearch] = useState('');
   const [config, setConfig] = useState<AssistantConfig | null>(null);
   const [configLoading, setConfigLoading] = useState(false);
@@ -293,6 +294,31 @@ export default function AILabPage() {
   const clientScrollRef = useRef<HTMLDivElement>(null);
   const eventLogEndRef = useRef<HTMLDivElement>(null);
   const getToken = () => localStorage.getItem('auth_token') || '';
+
+  // Log in as this client: mint a short-lived preview token and open their
+  // client dashboard in a new tab (same flow as the client detail page).
+  const handlePreviewAsClient = async () => {
+    if (!agency || !selectedClient) return;
+    setPreviewLoading(true);
+    try {
+      const r = await fetch(`${api}/api/agency/${agency.id}/clients/${selectedClient.id}/preview-token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      });
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        alert(d.error || 'Failed to generate preview token');
+        return;
+      }
+      const d = await r.json();
+      if (d.token) window.open(`/client/preview?token=${d.token}`, '_blank');
+    } catch (e) {
+      console.error('Preview failed:', e);
+      alert('Failed to open client preview');
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
   const inputStyle = { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text };
   const selectUi = { inputStyle, text: theme.text, muted: theme.textMuted, panelBg: theme.isDark ? '#232321' : '#ffffff', panelBorder: theme.border, hover: theme.hover, accent: theme.primary, isDark: theme.isDark };
 
@@ -613,6 +639,7 @@ export default function AILabPage() {
               <div className="mt-4 pt-4 flex flex-wrap items-center gap-2" style={{ borderTop: `1px solid ${theme.border}` }}>
                 <a href={`/live/${selectedClient.id}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Radio className="h-4 w-4" /> Live demo screen</a>
                 <a href={`/live/${selectedClient.id}?mode=monitor`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition hover:opacity-90" style={{ backgroundColor: theme.hover, color: theme.text, border: `1px solid ${theme.border}` }}><Headphones className="h-4 w-4" /> Monitor live call</a>
+                <button onClick={handlePreviewAsClient} disabled={previewLoading} className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: theme.hover, color: theme.text, border: `1px solid ${theme.border}` }}>{previewLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />} {previewLoading ? 'Opening...' : 'Login as Client'}</button>
                 <span className="text-[11px]" style={{ color: theme.textMuted }}>Opens a clean, white-labeled screen to screenshare on a call.</span>
               </div>
             </div>
