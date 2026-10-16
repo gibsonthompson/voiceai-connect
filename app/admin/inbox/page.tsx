@@ -10,13 +10,14 @@
 // ============================================================================
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { MessageSquare, Send, ArrowLeft, Loader2, RefreshCw, Phone, Building2, Bot } from 'lucide-react';
+import { MessageSquare, Send, ArrowLeft, Loader2, RefreshCw, Phone, Building2, Bot, ExternalLink } from 'lucide-react';
 
 interface InboxMessage { id: string; sender: 'in' | 'out'; body: string; at: string; kind: 'inapp' | 'sms' | 'faq' | 'feedback' | 'help'; }
 interface Conversation {
   key: string;
   type: 'agency' | 'faq';
   agencyId: string | null;
+  planType?: string | null;
   name: string;
   phone: string | null;
   messages: InboxMessage[];
@@ -149,6 +150,7 @@ export default function AdminInboxPage() {
                   <div className="flex items-center gap-1.5 min-w-0">
                     <span className={`text-sm truncate ${c.unread > 0 ? 'font-semibold' : 'font-medium'}`}>{c.name}</span>
                     <TypeTag c={c} />
+                    {c.type === 'agency' && c.planType && (<span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 capitalize" style={{ background: '#f1f5f9', color: '#334155' }}>{c.planType}</span>)}
                   </div>
                   <span className="text-[10px] shrink-0" style={{ color: 'var(--a-dim)' }}>{fmtTime(c.lastAt)}</span>
                 </div>
@@ -194,6 +196,16 @@ export default function AdminInboxPage() {
                     : (selected.phone ? (<><Phone className="h-3 w-3" />{selected.phone}</>) : 'Agency')}
                 </div>
               </div>
+              {selected.type === 'agency' && selected.agencyId && (
+                <a href={`/admin/agencies?expand=${selected.agencyId}`} target="_blank" rel="noopener noreferrer"
+                   className="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors hover:bg-black/5"
+                   style={{ border: '1px solid var(--a-line)', color: 'var(--a-ink)' }}
+                   title="Open this agency's account">
+                  {selected.planType && (<span className="font-semibold capitalize" style={{ color: 'var(--a-em-deep)' }}>{selected.planType}</span>)}
+                  <span>View account</span>
+                  <ExternalLink className="h-3 w-3" style={{ color: 'var(--a-dim)' }} />
+                </a>
+              )}
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
