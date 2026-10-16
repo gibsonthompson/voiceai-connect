@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useAgency } from '../../agency/context';
 import { useTheme } from '../../../hooks/useTheme';
+import { CustomSelect, type DropdownUI } from '@/components/ui/custom-select';
 
 const AGENT_PERMISSION_PRESET: Record<string, boolean> = {
   dashboard: true, clients: true, leads: false, outreach: false,
@@ -96,9 +97,11 @@ function TestEscalationPop({ agencyId, businesses, theme }: { agencyId: string; 
       <div className="flex items-center gap-2 mb-1"><Radio className="h-4 w-4" style={{ color: theme.primary }} /><h3 className="text-sm font-semibold" style={{ color: theme.text }}>Test the escalation pop</h3></div>
       <p className="text-[13px] mb-3" style={{ color: theme.textMuted }}>Fire a sample pop at the available agents assigned to a business. They see the same screen-pop a real escalation produces, with no live caller.</p>
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-        <select value={clientId} onChange={(e) => setClientId(e.target.value)} className="flex-1 rounded-xl px-3 py-2.5 text-sm outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>
-          {businesses.map((b) => <option key={b.id} value={b.id}>{b.business_name}</option>)}
-        </select>
+        <div className="flex-1">
+          <CustomSelect value={clientId} onChange={setClientId}
+            options={businesses.map((b) => ({ value: b.id, label: b.business_name }))}
+            ui={{ inputStyle: { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }, text: theme.text, muted: theme.textMuted, panelBg: theme.card, panelBorder: theme.border, hover: theme.hover, accent: theme.primary, isDark: theme.isDark }} />
+        </div>
         <button onClick={send} disabled={sending || !clientId} className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:opacity-60" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
           {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Send test pop
         </button>

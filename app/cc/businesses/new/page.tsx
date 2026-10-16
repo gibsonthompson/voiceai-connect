@@ -21,18 +21,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  ArrowLeft, Loader2, Building2, User, Phone, Mail, MapPin, Briefcase,
-  Clock, Check, AlertCircle, PhoneCall, Settings, Plus,
+  ArrowLeft, Loader2, Building2, User, Phone, Mail, MapPin,
+  Check, AlertCircle, PhoneCall, Settings, Plus,
 } from 'lucide-react';
 import { useAgency } from '../../../agency/context';
 import { useTheme } from '../../../../hooks/useTheme';
 import { SELECTABLE_INDUSTRIES } from '@/lib/industries';
-
-const TIMEZONES = [
-  'America/New_York', 'America/Chicago', 'America/Denver', 'America/Phoenix',
-  'America/Los_Angeles', 'America/Anchorage', 'Pacific/Honolulu',
-  'America/Toronto', 'America/Vancouver', 'America/Edmonton', 'America/Halifax',
-];
+import { CustomSelect, type DropdownUI } from '@/components/ui/custom-select';
 
 function genPassword(): string {
   // Readable temp password; the owner is hand-onboarded and can reset later.
@@ -72,7 +67,6 @@ export default function AddBusiness() {
   const [state, setState] = useState('');
   const [country, setCountry] = useState('US');
   const [industry, setIndustry] = useState('');
-  const [timezone, setTimezone] = useState('America/New_York');
   const [customIndustries, setCustomIndustries] = useState<{ key: string; label: string }[]>([]);
 
   const [submitting, setSubmitting] = useState(false);
@@ -177,19 +171,8 @@ export default function AddBusiness() {
 
       if (!client?.id) { setErrors(['The business was created but could not be read back. Check the Businesses list.']); return; }
 
-      // Persist the chosen timezone (the backend derives one from the phone area
-      // code; this honors the manager's explicit pick). Best-effort.
-      if (timezone) {
-        setStage('Saving settings...');
-        try {
-          await fetch(`${base}/api/agency/${agency.id}/cc/businesses/${client.id}/config`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ timezone }),
-          });
-        } catch { /* non-fatal */ }
-      }
-
+      // Timezone is derived server-side from the phone area code and the business
+      // location, so there is nothing to set here.
       setSuccess({ clientId: client.id, businessName: client.business_name || businessName.trim(), phoneNumber: client.phone_number || client.vapi_phone_number || null, email: client.email || email.trim(), tempPassword });
     } catch {
       setErrors(['Could not reach the server. Please try again.']);
@@ -200,6 +183,7 @@ export default function AddBusiness() {
 
   const card = { backgroundColor: theme.card, border: `1px solid ${theme.border}` } as React.CSSProperties;
   const field = { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text } as React.CSSProperties;
+  const ddUI: DropdownUI = { inputStyle: field, text: theme.text, muted: theme.textMuted, panelBg: theme.card, panelBorder: theme.border, hover: theme.hover, accent: theme.primary, isDark: theme.isDark };
   const Label = ({ children }: { children: React.ReactNode }) => (
     <label className="block text-[12px] font-medium mb-1.5" style={{ color: theme.textMuted }}>{children}</label>
   );
@@ -268,16 +252,8 @@ export default function AddBusiness() {
           <div className="flex items-center gap-2 mb-4"><Building2 className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="text-sm font-semibold" style={{ color: theme.text }}>Business</h2></div>
           <div className="grid sm:grid-cols-2 gap-3">
             <div className="sm:col-span-2"><Label>Business name</Label><input value={businessName} onChange={(e) => setBusinessName(e.target.value)} placeholder="Bella's Salon" className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={field} /></div>
-            <div><Label>Industry</Label>
-              <select value={industry} onChange={(e) => setIndustry(e.target.value)} className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={field}>
-                <option value="">Select industry...</option>
-                {industryOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            </div>
-            <div><Label>Time zone</Label>
-              <select value={timezone} onChange={(e) => setTimezone(e.target.value)} className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={field}>
-                {TIMEZONES.map((tz) => <option key={tz} value={tz}>{tz.replace('America/', '').replace('Pacific/', '').replace('_', ' ')}</option>)}
-              </select>
+            <div className="sm:col-span-2"><Label>Industry</Label>
+              <CustomSelect value={industry} onChange={setIndustry} options={industryOptions} placeholder="Select industry..." ui={ddUI} />
             </div>
           </div>
         </div>
@@ -301,10 +277,7 @@ export default function AddBusiness() {
             <div><Label>City</Label><input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Atlanta" className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={field} /></div>
             <div><Label>{country === 'CA' ? 'Province' : 'State'}</Label><input value={state} onChange={(e) => setState(e.target.value)} placeholder={country === 'CA' ? 'ON' : 'GA'} className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={field} /></div>
             <div><Label>Country</Label>
-              <select value={country} onChange={(e) => setCountry(e.target.value)} className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={field}>
-                <option value="US">United States</option>
-                <option value="CA">Canada</option>
-              </select>
+              <CustomSelect value={country} onChange={setCountry} options={[{ value: 'US', label: 'United States' }, { value: 'CA', label: 'Canada' }]} ui={ddUI} />
             </div>
           </div>
         </div>
