@@ -63,6 +63,7 @@ export default function AgencyLiveWallboard() {
   const accent = theme.primary;
   const [calls, setCalls] = useState<LiveCall[]>([]);
   const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [capacity, setCapacity] = useState<{ active: number; limit: number | null } | null>(null);
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(Date.now());
   const timerRef = useRef<any>(null);
@@ -80,6 +81,7 @@ export default function AgencyLiveWallboard() {
         if (d.success) {
           setCalls(Array.isArray(d.calls) ? d.calls : []);
           setBusinesses(Array.isArray(d.businesses) ? d.businesses : []);
+          setCapacity(d.capacity || null);
         }
       }
     } catch { /* keep the last good board */ }
@@ -118,9 +120,31 @@ export default function AgencyLiveWallboard() {
             <p className="text-xs sm:text-[13px]" style={{ color: theme.textMuted }}>Every call happening right now across {isAgent ? 'the businesses assigned to you' : 'your businesses'}</p>
           </div>
         </div>
-        <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full" style={{ backgroundColor: theme.primary15, color: accent }}>
-          <Radio className="h-3.5 w-3.5" /> {calls.length} live
-        </span>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {capacity && !isAgent && (() => {
+            const active = capacity.active ?? 0;
+            const limit = capacity.limit;
+            const pct = limit && limit > 0 ? Math.min(100, Math.round((active / limit) * 100)) : 0;
+            const barColor = !limit ? accent : pct >= 90 ? '#ef4444' : pct >= 70 ? HUMAN_AMBER : LIVE_GREEN;
+            return (
+              <span className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full" style={{ backgroundColor: theme.hover, color: theme.textMuted }} title={limit ? `${active} of ${limit} concurrent lines in use` : `${active} concurrent lines in use (no account cap)`}>
+                {limit ? (
+                  <>
+                    <span className="h-1.5 w-12 rounded-full overflow-hidden" style={{ backgroundColor: theme.border }}>
+                      <span className="block h-full rounded-full" style={{ width: `${Math.max(2, pct)}%`, backgroundColor: barColor }} />
+                    </span>
+                    <span style={{ color: theme.text }}>{active}/{limit} lines</span>
+                  </>
+                ) : (
+                  <span style={{ color: theme.text }}>{active} lines in use</span>
+                )}
+              </span>
+            );
+          })()}
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full" style={{ backgroundColor: theme.primary15, color: accent }}>
+            <Radio className="h-3.5 w-3.5" /> {calls.length} live
+          </span>
+        </div>
       </div>
 
       {loading ? (
