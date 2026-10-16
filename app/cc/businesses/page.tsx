@@ -83,7 +83,7 @@ export default function CallCenterBusinesses() {
             <p className="text-xs sm:text-[13px]" style={{ color: theme.textMuted }}>Every business you answer for. {rows.length} total.</p>
           </div>
         </div>
-        <Link href="/agency/clients/new" className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold flex-shrink-0 transition" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+        <Link href="/cc/businesses/new" className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold flex-shrink-0 transition" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
           <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Add business</span><span className="sm:hidden">Add</span>
         </Link>
       </div>

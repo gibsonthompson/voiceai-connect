@@ -8,7 +8,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Settings as SettingsIcon, Save, Loader2, Check, Headset, CreditCard, ExternalLink, HelpCircle, ChevronDown, Phone, PlusCircle } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Loader2, Check, Headset, Building2, ChevronRight, HelpCircle, ChevronDown, Phone, PlusCircle } from 'lucide-react';
 import { useAgency } from '../../agency/context';
 import { useTheme } from '../../../hooks/useTheme';
 
@@ -70,7 +70,7 @@ export default function CallCenterSettings() {
       onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = theme.hover; }} onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = theme.input; }}>
       <span className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Icon className="h-4 w-4" style={{ color: theme.primary }} /></span>
       <span className="min-w-0 flex-1"><span className="block text-sm font-medium truncate" style={{ color: theme.text }}>{title}</span><span className="block text-[12px] truncate" style={{ color: theme.textMuted }}>{sub}</span></span>
-      <ExternalLink className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted }} />
+      <ChevronRight className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted }} />
     </Link>
   );
 
@@ -102,16 +102,15 @@ export default function CallCenterSettings() {
             </button>
             {err && <span className="text-xs" style={{ color: theme.error }}>{err}</span>}
           </div>
-          <div className="mt-4 pt-4 flex items-center gap-2 text-[12px]" style={{ borderTop: `1px solid ${theme.borderSubtle}`, color: theme.textMuted }}>
-            <Link href="/agency/settings" className="inline-flex items-center gap-1 font-medium" style={{ color: theme.primary }}>Full account settings <ExternalLink className="h-3 w-3" /></Link>
-            <span>for branding, domains, billing details and more.</span>
+          <div className="mt-4 pt-4 text-[12px]" style={{ borderTop: `1px solid ${theme.borderSubtle}`, color: theme.textMuted }}>
+            Your call center account is invoiced directly, so there is no self-serve billing here. For branding, domains, line capacity, or billing questions, reach us at {supportEmail || 'your account contact'}.
           </div>
         </div>
 
         {/* Quick links */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {quickLink('/cc/agents', Headset, 'Agents', 'Add agents, assign businesses')}
-          {quickLink('/agency/settings?tab=billing', CreditCard, 'Billing', 'Your platform subscription')}
+          {quickLink('/cc/businesses', Building2, 'Businesses', 'The businesses you answer for')}
         </div>
 
         {/* Growth add-on status */}

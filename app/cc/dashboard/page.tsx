@@ -152,7 +152,8 @@ export default function CallCenterDashboard() {
               ) : (
                 <div className="max-h-[22rem] overflow-y-auto">
                   {data.recent.map((c, i) => (
-                    <div key={c.id} className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3" style={{ borderTop: i === 0 ? 'none' : `1px solid ${theme.borderSubtle}` }}>
+                    <Link key={c.id} href={`/cc/calls/${c.id}`} className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3 transition-colors" style={{ borderTop: i === 0 ? 'none' : `1px solid ${theme.borderSubtle}` }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = theme.hover; }} onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}>
                       <div className="min-w-0">
                         <p className="text-sm truncate" style={{ color: theme.text }}>{c.businessName}</p>
                         <p className="text-[12px] truncate" style={{ color: theme.textMuted }}>{fmtPhone(c.caller)} · {fmtDur(c.durationSeconds)}</p>
@@ -161,7 +162,7 @@ export default function CallCenterDashboard() {
                         <p className="text-[12px] font-semibold" style={{ color: outcomeColor(c.outcome) }}>{c.outcome}</p>
                         <p className="text-[11px]" style={{ color: theme.textMuted }}>{timeAgo(c.at)}</p>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               )}
