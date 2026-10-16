@@ -10,9 +10,10 @@
 // ============================================================================
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { MessageSquare, Send, ArrowLeft, Loader2, RefreshCw, Phone, Building2, Bot, ExternalLink } from 'lucide-react';
+import { MessageSquare, Send, ArrowLeft, Loader2, RefreshCw, Phone, Building2, Bot, ExternalLink, Zap } from 'lucide-react';
 
 interface InboxMessage { id: string; sender: 'in' | 'out'; body: string; at: string; kind: 'inapp' | 'sms' | 'faq' | 'feedback' | 'help'; }
+interface ActivityItem { id: string; type: string; label: string; category: string; body: string; recipientPhone: string | null; recipientType: string | null; direction: 'in' | 'out'; deliveryStatus: string | null; at: string; }
 interface Conversation {
   key: string;
   type: 'agency' | 'faq';
@@ -53,6 +54,25 @@ export default function AdminInboxPage() {
   const threadEndRef = useRef<HTMLDivElement | null>(null);
   const stickRef = useRef(true);
 
+  // Thread tabs: the clean two-way "Conversation", and the read-only "Platform
+  // activity" log (automated sends: onboarding, billing, demo follow-ups, etc.),
+  // kept out of the conversation so it doesn't crowd it.
+  const [threadTab, setThreadTab] = useState<'conversation' | 'activity'>('conversation');
+  const [activity, setActivity] = useState<ActivityItem[]>([]);
+  const [activityLoading, setActivityLoading] = useState(false);
+  const [activityFilter, setActivityFilter] = useState<string>('all');
+
+  const loadActivity = useCallback(async (agencyId: string) => {
+    setActivityLoading(true);
+    try {
+      const res = await fetch(`${backendUrl()}/api/admin/agencies/${agencyId}/platform-activity`, { headers: authHeaders() });
+      if (!res.ok) throw new Error('failed');
+      const data = await res.json();
+      setActivity(data.activity || []);
+    } catch { setActivity([]); }
+    finally { setActivityLoading(false); }
+  }, []);
+
   const load = useCallback(async () => {
     try {
       const res = await fetch(`${backendUrl()}/api/admin/inbox`, { headers: authHeaders() });
@@ -75,8 +95,15 @@ export default function AdminInboxPage() {
     return () => clearInterval(t);
   }, [load]);
 
-  useEffect(() => { stickRef.current = true; }, [selected?.key]);
-  useEffect(() => { if (stickRef.current) threadEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [selected]);
+  useEffect(() => { stickRef.current = true; setThreadTab('conversation'); setActivity([]); setActivityFilter('all'); }, [selected?.key]);
+  useEffect(() => { if (threadTab === 'conversation' && stickRef.current) threadEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [selected, threadTab]);
+
+  // Load the platform-activity log the first time the tab is opened for an agency.
+  useEffect(() => {
+    if (threadTab === 'activity' && selected?.type === 'agency' && selected.agencyId) {
+      loadActivity(selected.agencyId);
+    }
+  }, [threadTab, selected?.key, selected?.agencyId, selected?.type, loadActivity]);
 
   const markRead = async (c: Conversation) => {
     if (c.type !== 'agency' || !c.agencyId || !c.unread) return;
@@ -208,6 +235,70 @@ export default function AdminInboxPage() {
               )}
             </div>
 
+            {selected.type === 'agency' && (
+              <div className="flex items-center gap-1 px-3 border-b shrink-0" style={{ borderColor: 'var(--a-line)', background: 'white' }}>
+                {([['conversation', 'Conversation'], ['activity', 'Platform activity']] as const).map(([k, labelText]) => (
+                  <button key={k} onClick={() => setThreadTab(k)} className="relative px-3 py-2 text-xs font-medium transition-colors"
+                    style={{ color: threadTab === k ? 'var(--a-em-deep)' : 'var(--a-dim)' }}>
+                    {labelText}
+                    {threadTab === k && <span className="absolute left-2 right-2 -bottom-px h-0.5 rounded-full" style={{ background: 'var(--a-em)' }} />}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {selected.type === 'agency' && threadTab === 'activity' ? (
+              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
+                {activityLoading ? (
+                  <div className="flex items-center justify-center py-16"><Loader2 className="h-5 w-5 animate-spin" style={{ color: 'var(--a-dim)' }} /></div>
+                ) : activity.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 text-center" style={{ color: 'var(--a-dim)' }}>
+                    <Zap className="h-7 w-7 mb-2 opacity-40" />
+                    <p className="text-sm">No platform messages sent to this agency yet.</p>
+                    <p className="text-[11px] mt-1">Onboarding, billing, demo follow-ups and other automated sends show up here.</p>
+                  </div>
+                ) : (() => {
+                  const cats = Array.from(new Set(activity.map((a) => a.category)));
+                  const shown = activityFilter === 'all' ? activity : activity.filter((a) => a.category === activityFilter);
+                  return (
+                  <>
+                  {cats.length > 1 && (
+                    <div className="flex flex-wrap items-center gap-1.5 pb-1">
+                      {(['all', ...cats]).map((cat) => (
+                        <button key={cat} onClick={() => setActivityFilter(cat)}
+                          className="text-[11px] font-medium px-2.5 py-1 rounded-full transition-colors capitalize"
+                          style={activityFilter === cat
+                            ? { background: 'var(--a-em)', color: 'white' }
+                            : { background: '#f1f5f9', color: '#334155' }}>
+                          {cat === 'all' ? 'All' : cat}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {shown.map((a) => (
+                    <div key={a.id} className="rounded-xl border px-3.5 py-2.5" style={{ borderColor: 'var(--a-line)', background: 'white' }}>
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0" style={{ background: 'var(--a-em-soft, #ecfdf5)', color: 'var(--a-em-deep, #047857)' }}>{a.category}</span>
+                          <span className="text-xs font-medium truncate">{a.label}</span>
+                          {a.direction === 'in' && <span className="text-[9px] uppercase tracking-wide shrink-0" style={{ color: '#4338ca' }}>Inbound</span>}
+                        </div>
+                        <span className="text-[10px] shrink-0" style={{ color: 'var(--a-dim)' }}>{fmtTime(a.at)}</span>
+                      </div>
+                      <p className="text-[13px] whitespace-pre-wrap break-words" style={{ color: 'var(--a-ink)' }}>{a.body}</p>
+                      <div className="flex items-center gap-2 mt-1.5 text-[10px]" style={{ color: 'var(--a-dim)' }}>
+                        {a.recipientPhone && <span>To {a.recipientPhone}</span>}
+                        {a.recipientType && <span className="capitalize">{String(a.recipientType).replace(/_/g, ' ')}</span>}
+                        {a.deliveryStatus && <span className="capitalize">{a.deliveryStatus}</span>}
+                      </div>
+                    </div>
+                  ))}
+                  </>
+                  );
+                })()}
+              </div>
+            ) : (
+            <>
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
               {selected.messages.length === 0 ? (
                 <div className="flex items-center justify-center py-16 text-sm" style={{ color: 'var(--a-dim)' }}>No messages yet.</div>
@@ -258,6 +349,8 @@ export default function AdminInboxPage() {
                   {selected.lastInboundKind === 'sms' ? 'Replies go out as a text from your platform number.' : 'Replies land in the agency dashboard inbox.'} Cmd/Ctrl + Enter to send.
                 </p>
               </div>
+            )}
+            </>
             )}
           </>
         )}
