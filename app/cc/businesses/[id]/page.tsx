@@ -25,6 +25,10 @@ import {
 import { useAgency } from '../../../agency/context';
 import { useTheme } from '../../../../hooks/useTheme';
 import { CustomSelect, type DropdownUI } from '@/components/ui/custom-select';
+import CcKnowledgeBase from '@/components/cc/CcKnowledgeBase';
+import CcServices from '@/components/cc/CcServices';
+import CcStaff from '@/components/cc/CcStaff';
+import CcCalendar from '@/components/cc/CcCalendar';
 
 interface Cfg {
   businessName: string;
@@ -272,6 +276,9 @@ export default function BusinessConfig() {
             className="w-full rounded-xl px-3 py-2.5 text-sm outline-none resize-none" style={field} />
         </div>
 
+        {/* Knowledge base */}
+        <CcKnowledgeBase agencyId={agency?.id || ''} clientId={clientId} theme={theme} />
+
         {/* Hours */}
         <div className="rounded-2xl p-5 sm:p-6" style={card}>
           <SectionHead icon={Clock} title="Business hours" sub="Used for after-hours handling below." />
@@ -313,6 +320,15 @@ export default function BusinessConfig() {
             </div>
           )}
         </div>
+
+        {/* Google Calendar */}
+        <CcCalendar clientId={clientId} theme={theme} />
+
+        {/* Services */}
+        <CcServices clientId={clientId} theme={theme} />
+
+        {/* Staff */}
+        <CcStaff clientId={clientId} theme={theme} />
 
         {/* Call handling */}
         <div className="rounded-2xl p-5 sm:p-6" style={card}>
