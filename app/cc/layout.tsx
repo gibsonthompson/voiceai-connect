@@ -18,7 +18,7 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, Headphones, Headset, Building2, BarChart3, Settings, LogOut, Menu, X, ChevronRight, Radio, ClipboardList, Inbox, type LucideIcon } from 'lucide-react';
+import { LayoutDashboard, Headphones, Headset, Building2, BarChart3, Settings, LogOut, Menu, X, ChevronRight, Radio, ClipboardList, Inbox, Palette, type LucideIcon } from 'lucide-react';
 import { AgencyProvider, useAgency } from '../agency/context';
 import { useTheme } from '../../hooks/useTheme';
 import DynamicFavicon from '@/components/DynamicFavicon';
@@ -82,6 +82,7 @@ function CallCenterShell({ children }: { children: ReactNode }) {
     { href: '/cc/businesses', label: 'Businesses', icon: Building2 },
     { href: '/cc/agents', label: 'Agents', icon: Headset },
     { href: '/cc/analytics', label: 'Analytics', icon: BarChart3 },
+    { href: '/cc/branding', label: 'Branding', icon: Palette },
     { href: '/cc/settings', label: 'Settings', icon: Settings },
   ];
   // Agents get their wallboard, the call history, and the follow-up inbox - all
@@ -175,6 +176,7 @@ function CallCenterShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: theme.bg, color: theme.text }}>
+      <link rel="manifest" href="/api/cc-manifest" />
       {branding.logoUrl && <DynamicFavicon logoUrl={branding.logoUrl} appleIconUrl="/api/agency-app-icon?size=180" />}
       {/* Mobile header */}
       <div className="sticky top-0 z-30 md:hidden" style={{ backgroundColor: theme.sidebarBg, paddingTop: 'env(safe-area-inset-top)' }}>
