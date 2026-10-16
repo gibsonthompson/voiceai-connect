@@ -27,9 +27,12 @@ interface SupportWidgetProps {
   agencyId?: string;
   collectContact?: boolean;
   defaultEmail?: string;
+  // Lift the launcher above a bottom-docked composer (e.g. the Messages page)
+  // so the floating help bubble never covers the send button.
+  raised?: boolean;
 }
 
-export default function SupportWidget({ theme, userType = 'agency', openSignal, hideLauncher, openToView, agencyId, collectContact, defaultEmail }: SupportWidgetProps) {
+export default function SupportWidget({ theme, userType = 'agency', openSignal, hideLauncher, openToView, agencyId, collectContact, defaultEmail, raised }: SupportWidgetProps) {
   const [open, setOpen] = useState(false);
   useEffect(() => { if (openSignal) { setOpen(true); if (openToView) setView(openToView); if (defaultEmail) setEscalationEmail(e => e || defaultEmail); } }, [openSignal]);
   const [view, setView] = useState<WidgetView>('home');
@@ -213,7 +216,7 @@ export default function SupportWidget({ theme, userType = 'agency', openSignal, 
     return (
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-[90] w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95"
+        className={`fixed ${raised ? 'bottom-24' : 'bottom-6'} right-6 z-[90] w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95`}
         style={{
           backgroundColor: theme.primary,
           color: theme.primaryText,
@@ -227,9 +230,9 @@ export default function SupportWidget({ theme, userType = 'agency', openSignal, 
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-[90] w-[380px] max-w-[calc(100vw-2rem)] flex flex-col"
+    <div className={`fixed ${raised ? 'bottom-24' : 'bottom-6'} right-6 z-[90] w-[380px] max-w-[calc(100vw-2rem)] flex flex-col`}
       style={{
-        height: 'min(580px, calc(100vh - 6rem))',
+        height: raised ? 'min(580px, calc(100vh - 10rem))' : 'min(580px, calc(100vh - 6rem))',
         borderRadius: '20px',
         backgroundColor: panelBg,
         border: `1px solid ${theme.border}`,

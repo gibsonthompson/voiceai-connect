@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, useLayoutEffect } from 'react';
 import {
-  MessageSquare, Search, Send, ArrowLeft, Loader2, Phone, Check, CheckCheck, Plus, Users
+  MessageSquare, Search, Send, ArrowLeft, Loader2, Phone, Check, CheckCheck, Plus, Users, User
 } from 'lucide-react';
 import { useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
@@ -98,6 +98,26 @@ export default function MessagesPage() {
   const stickRef = useRef(true);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Fill exactly the space under whatever chrome sits above this page (the
+  // sidebar nav, the mobile header, and any preview / trial / payment banner),
+  // so the composer is always in view without scrolling. Measured instead of a
+  // hardcoded viewport math, which missed the banners (the preview bar pushed
+  // the composer below the fold). Recomputes on resize and after layout settles.
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [containerHeight, setContainerHeight] = useState<string>('100dvh');
+  useLayoutEffect(() => {
+    const compute = () => {
+      const el = rootRef.current;
+      if (!el) return;
+      const h = window.innerHeight - el.getBoundingClientRect().top;
+      if (h > 120) setContainerHeight(`${Math.round(h)}px`);
+    };
+    compute();
+    const t = setTimeout(compute, 60);
+    window.addEventListener('resize', compute);
+    return () => { clearTimeout(t); window.removeEventListener('resize', compute); };
+  }, []);
 
   // Track whether the user is parked near the bottom. Only then do we auto-stick
   // to new messages, so scrolling up to read history is never yanked back down.
@@ -300,14 +320,17 @@ export default function MessagesPage() {
   const providerPreview = providerMsgs.length ? providerMsgs[providerMsgs.length - 1] : null;
   const providerMatchesSearch = !searchQuery || agencyName.toLowerCase().includes(searchQuery.toLowerCase());
 
-  const Avatar = ({ name, logo, size }: { name: string; logo: string | null; size: number }) => (
-    logo
+  const Avatar = ({ name, logo, size }: { name: string; logo: string | null; size: number }) => {
+    // First letter of the name; fall back to a person icon for a bare phone
+    // number (so a contact without a name never shows a stray "(" or digit).
+    const letter = (name || '').replace(/[^a-zA-Z]/g, '').charAt(0).toUpperCase();
+    return logo
       ? <div className="rounded-full overflow-hidden flex items-center justify-center flex-shrink-0" style={{ width: size, height: size, backgroundColor: theme.isDark ? 'rgba(255,255,255,0.08)' : '#ffffff', border: `1px solid ${hairline}` }}><img src={logo} alt="" className="object-contain" style={{ width: Math.round(size * 0.64), height: Math.round(size * 0.64) }} /></div>
-      : <div className="rounded-full flex items-center justify-center flex-shrink-0 font-semibold" style={{ width: size, height: size, fontSize: size * 0.4, backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.12 : 0.08), color: primaryColor }}>{(name || '?').charAt(0).toUpperCase()}</div>
-  );
+      : <div className="rounded-full flex items-center justify-center flex-shrink-0 font-semibold" style={{ width: size, height: size, fontSize: size * 0.4, backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.12 : 0.08), color: primaryColor }}>{letter || <User style={{ width: size * 0.5, height: size * 0.5 }} />}</div>;
+  };
 
   return (
-    <div className="flex flex-col h-[calc(100dvh_-_56px_-_env(safe-area-inset-top))] sm:h-[calc(100dvh_-_64px_-_env(safe-area-inset-top))] lg:h-[100dvh]" style={{ backgroundColor: theme.bg, marginBottom: 'calc(-1 * (env(safe-area-inset-bottom) + 6rem))' }}>
+    <div ref={rootRef} className="flex flex-col" style={{ height: containerHeight, backgroundColor: theme.bg, marginBottom: 'calc(-1 * (env(safe-area-inset-bottom) + 6rem))' }}>
       <div className="flex flex-1 min-h-0">
 
         {/* ── Conversation list ─────────────────────────────────────────── */}
