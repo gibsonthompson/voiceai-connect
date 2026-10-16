@@ -201,12 +201,21 @@ export default function AddClientPage() {
     const n = Number((agency as any)?.client_trial_days);
     return Number.isFinite(n) && n >= 0 ? Math.min(Math.floor(n), 365) : 7;
   })();
+  // Per-client trial length override. For a manual client this is the free
+  // ACCESS window (live now, auto-suspends at the end until marked paid); for a
+  // connect client it is the no-card trial length. Empty = use the agency
+  // default (clientTrialDays) above.
+  const [cTrialDays, setCTrialDays] = useState('');
+  const effectiveTrialDays = (() => {
+    const n = Number(cTrialDays);
+    return cTrialDays.trim() !== '' && Number.isFinite(n) ? Math.max(0, Math.min(365, Math.floor(n))) : clientTrialDays;
+  })();
   const trialSentence = isManualBilling
-    ? (clientTrialDays > 0
-        ? `They go live now on a ${clientTrialDays}-day free access window, then auto-suspend (keeping their number) until you mark them paid. No card, no checkout.`
+    ? (effectiveTrialDays > 0
+        ? `They go live now on a ${effectiveTrialDays}-day free access window, then auto-suspend (keeping their number) until you mark them paid. No card, no checkout.`
         : `They go live immediately with no card and no checkout, and you invoice them directly.`)
-    : (clientTrialDays > 0
-        ? `They'll start on a ${clientTrialDays}-day free trial with no credit card required.`
+    : (effectiveTrialDays > 0
+        ? `They'll start on a ${effectiveTrialDays}-day free trial with no credit card required.`
         : `They go live now with no trial period.`);
 
   const isUS = form.businessCountry === 'US';
@@ -425,6 +434,7 @@ export default function AddClientPage() {
             minuteRateCents: cRate === '' ? null : parseFloat(cRate) * 100,
             callLimit: cLimit === '' ? null : parseInt(cLimit, 10),
           } } : {}),
+          ...(cTrialDays.trim() !== '' ? { trialDays: effectiveTrialDays } : {}),
           tempPassword: form.tempPassword
         })
       });
@@ -780,6 +790,34 @@ export default function AddClientPage() {
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Trial / free-access window length (per client, overrides the agency default) */}
+            <div>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: labelColor }}>
+                {isManualBilling ? 'Free access window (days)' : 'Trial length (days)'}
+              </label>
+              <input
+                type="number"
+                min={0}
+                max={365}
+                value={cTrialDays}
+                onChange={(e) => setCTrialDays(e.target.value)}
+                placeholder={String(clientTrialDays)}
+                disabled={submitting}
+                className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-colors"
+                style={inputStyle}
+              />
+              <p className="text-[11px] mt-1" style={{ color: labelColor, opacity: 0.7 }}>
+                {isManualBilling
+                  ? (effectiveTrialDays > 0
+                      ? `Client goes live now and auto-suspends after ${effectiveTrialDays} day${effectiveTrialDays === 1 ? '' : 's'} (keeping their number) until you mark them paid. Set 0 to keep them live permanently.`
+                      : 'Client goes live permanently with no free window. Enter a number of days to add one.')
+                  : (effectiveTrialDays > 0
+                      ? `No-card free trial of ${effectiveTrialDays} day${effectiveTrialDays === 1 ? '' : 's'}. Set 0 for no trial (they must upgrade to activate).`
+                      : 'No trial, the client must upgrade to activate. Enter a number of days to add a free trial.')}
+                {' '}Leave blank to use your account default ({clientTrialDays} day{clientTrialDays === 1 ? '' : 's'}).
+              </p>
             </div>
 
             {/* Country Picker */}
