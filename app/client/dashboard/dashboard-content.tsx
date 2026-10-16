@@ -167,6 +167,16 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
   // (white-glove / manual billing). When on, the trial banners and the Voice
   // Minutes / usage card are suppressed entirely.
   const hideBilling = !!(client.agency as any)?.hide_client_billing;
+  // Call-usage meter visibility (agency toggle, independent of hide_client_billing).
+  const showCallUsage = !hideBilling && (client.agency as any)?.show_client_call_usage !== false;
+  // Whether the client can self-upgrade: agency allows plan changes, billing is
+  // self-serve (not manual), not a test client, and the subscription section is shown.
+  const canSelfUpgrade =
+    !!(client.agency as any)?.allow_client_plan_changes &&
+    !isManual &&
+    !(client as any).is_test_client &&
+    (client.agency as any)?.show_client_subscription !== false;
+  const providerName = (client.agency as any)?.name || 'your provider';
 
   // ── Trial type discrimination ─────────────────────────────────────────────
   // Two different trials share subscription_status === 'trial':
@@ -281,15 +291,16 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
                 <p className="font-semibold text-sm" style={{ color: theme.text }}>
                   {stats.trialDaysLeft > 0 ? `${stats.trialDaysLeft} day${stats.trialDaysLeft !== 1 ? 's' : ''} left in your trial` : 'Your trial has ended'}
                 </p>
-                <p className="text-xs" style={{ color: theme.textMuted }}>Upgrade to keep your AI receptionist active.</p>
+                <p className="text-xs" style={{ color: theme.textMuted }}>{canSelfUpgrade ? 'Upgrade to keep your AI receptionist active.' : `Contact ${providerName} to keep your AI receptionist active.`}</p>
               </div>
             </div>
-            {/* FIXED: was /client/upgrade (404), now /client/upgrade-required */}
-            <a href="/client/upgrade-required"
-              className="rounded-xl px-5 py-2.5 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] text-center"
-              style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
-              Upgrade Now
-            </a>
+            {canSelfUpgrade && (
+              <a href="/client/upgrade-required"
+                className="rounded-xl px-5 py-2.5 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] text-center"
+                style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+                Upgrade Now
+              </a>
+            )}
           </div>
         </div>
       )}
@@ -350,7 +361,7 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 mb-5 sm:mb-7">
 
         {/* Phone Number Card */}
-        <div className="lg:col-span-7 rounded-2xl p-5 sm:p-6 fu fu2" style={glass}>
+        <div className={`${showCallUsage ? 'lg:col-span-7' : 'lg:col-span-12'} rounded-2xl p-5 sm:p-6 fu fu2`} style={glass}>
           <div className="flex items-center justify-between mb-4">
             <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: theme.textMuted }}>
               Your AI Number
@@ -416,6 +427,7 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
         </div>
 
         {/* Stats */}
+        {showCallUsage && (
         <div className="lg:col-span-5 grid grid-cols-2 lg:grid-cols-1 gap-4 sm:gap-5">
           <div className="rounded-2xl p-5 sm:p-6 fu fu3" style={glass}>
             <div className="flex items-center justify-between">
@@ -463,6 +475,7 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
             </div>
           </div>
         </div>
+        )}
       </div>
 
       {/* VOICE MINUTES. Rendered only when the agency bills this client per
@@ -473,7 +486,7 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
           reads as free. A manual client is excluded because it is billed by its
           agency outside the platform, so a platform per-minute charge projection
           does not apply to it. */}
-      {!hideBilling && minutePassThroughOn && !isManual && (
+      {showCallUsage && minutePassThroughOn && !isManual && (
         <div className="rounded-2xl p-5 sm:p-6 mb-5 sm:mb-7 fu fu5" style={glass}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">

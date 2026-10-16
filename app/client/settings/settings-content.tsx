@@ -248,6 +248,9 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   // Agency can hide all billing/subscription UI from the client (white-glove /
   // manual billing). When on, the whole Subscription card is suppressed.
   const hideBilling = !!(client.agency as any)?.hide_client_billing;
+  // Granular agency toggles (independent of the master hide_client_billing).
+  const showSubscription = !hideBilling && (client.agency as any)?.show_client_subscription !== false;
+  const showCallUsage = !hideBilling && (client.agency as any)?.show_client_call_usage !== false;
   // Self-billed providers (Paystack / Flutterwave): the platform owns the billing
   // schedule, so both share one set of management UI driven by these helpers.
   const selfBilled = client.billing_mode === 'paystack' || client.billing_mode === 'flutterwave';
@@ -466,12 +469,14 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
         )}
 
         {/* Subscription & Billing */}
-        {!hideBilling && (
+        {showSubscription && (
         <SectionCard icon={CreditCard} title="Subscription" theme={theme} primaryColor={theme.primary}>
           <div className="space-y-3 sm:space-y-4">
             <div className="flex items-center justify-between"><div><label className="text-[10px] sm:text-xs block mb-0.5 sm:mb-1" style={{ color: theme.textMuted4 }}>Current Plan</label><div className="text-base sm:text-xl font-bold capitalize" style={{ color: theme.primary }}>{(client as any).pricing_mode === 'custom' ? 'Custom' : (client.plan_type || 'Trial')}</div></div><span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold" style={statusStyle}>{client.subscription_status === 'active' ? 'Active' : client.subscription_status === 'trial' ? 'Trial' : client.subscription_status || 'Unknown'}</span></div>
             {client.subscription_status === 'trial' && daysRemaining !== null && (<div className="p-2 sm:p-3 rounded-lg" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}><div className="font-semibold text-xs sm:text-sm" style={{ color: theme.warningText }}>{daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left in trial</div><div className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.warningText }}>Ends {formatDate(client.trial_ends_at)}</div></div>)}
+            {showCallUsage && (
             <div className="grid grid-cols-3 gap-2 sm:gap-3"><div className="p-2 sm:p-3 rounded-lg text-center" style={{ backgroundColor: theme.bg }}><div className="text-base sm:text-lg font-bold" style={{ color: theme.primary }}>{client.monthly_call_limit || '∞'}</div><div className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Limit</div></div><div className="p-2 sm:p-3 rounded-lg text-center" style={{ backgroundColor: theme.bg }}><div className="text-base sm:text-lg font-bold" style={{ color: theme.primary }}>{client.calls_this_month || 0}</div><div className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Used</div></div><div className="p-2 sm:p-3 rounded-lg text-center" style={{ backgroundColor: theme.bg }}><div className="text-base sm:text-lg font-bold" style={{ color: theme.primary }}>{client.monthly_call_limit ? Math.max(0, client.monthly_call_limit - (client.calls_this_month || 0)) : '∞'}</div><div className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Left</div></div></div>
+            )}
             {((client as any).payment_provider === 'flutterwave' && !['active', 'canceling', 'past_due'].includes((client as any).flutterwave_status)) ? (
               <div className="space-y-2">
                 <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Add a card to start your subscription. You&apos;re billed monthly and can cancel anytime.</p>
