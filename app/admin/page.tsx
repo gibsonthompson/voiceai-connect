@@ -85,7 +85,6 @@ function buildSignupMailto(a: Agency): string {
 }
 
 export default function AdminOverviewPage() {
-  const [stats, setStats] = useState<Stats | null>(null);
   const [calls, setCalls] = useState<CallRow[]>([]);
   const [attentionCount, setAttentionCount] = useState(0);
   const [agencies, setAgencies] = useState<Agency[]>([]);
@@ -96,7 +95,6 @@ export default function AdminOverviewPage() {
   // Per-section load flags so each panel paints the instant its OWN request
   // lands, instead of the whole page blocking on the slowest one. Every request
   // fires in parallel on mount (see the effect below).
-  const [statsLoading, setStatsLoading] = useState(true);
   const [agenciesLoading, setAgenciesLoading] = useState(true);
   const [demosLoading, setDemosLoading] = useState(true);
 
@@ -133,11 +131,6 @@ export default function AdminOverviewPage() {
   // longer awaited after the others; it was a fifth request in series, one
   // extra round-trip on the critical path, and now races with the rest.
   useEffect(() => {
-    adminGet('/api/admin/dashboard')
-      .then((d) => setStats(d.stats || null))
-      .catch((e) => console.error(e))
-      .finally(() => setStatsLoading(false));
-
     adminGet('/api/admin/agencies?limit=100')
       .then((d) => setAgencies(d.agencies || []))
       .catch((e) => console.error(e))
@@ -235,77 +228,6 @@ export default function AdminOverviewPage() {
       <h1 className="text-[22px] font-semibold tracking-tight text-[var(--a-ink)]">Overview</h1>
       <p className="mt-1 text-sm text-[var(--a-dim)]">Is everything working, who just signed up, and what needs action.</p>
 
-      {/* OP STRIP */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mt-5">
-        <OpTile label="Calls This Month" value={formatNumber(stats?.callsThisMonth)} foot={`${stats?.totalClients || 0} clients answering`} tone="hero" loading={statsLoading} />
-        <OpTile label="Needs Attention" value={String(attentionCount)} foot="Failed or no outcome" tone="alert" onClick={() => changeFilter('attention')} />
-        <OpTile label="New Signups (7d)" value={String((stats?.recentAgencies || 0) + (stats?.recentClients || 0))} foot={`${stats?.recentAgencies || 0} agencies, ${stats?.recentClients || 0} clients`} tone="grow" loading={statsLoading} />
-        <OpTile label="Active Agencies" value={String(stats?.activeAgencies || 0)} foot={`${stats?.trialAgencies || 0} on trial`} loading={statsLoading} />
-      </div>
-
-      {/* ── BILLING & TRIALS (agencies) ── */}
-      <div className="a-eyebrow mt-8">Billing &amp; Trials</div>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-        <OpTile label="Paying Agencies" value={String(billing?.counts?.paying ?? '—')} foot="pro + scale" tone="hero" loading={!billing} />
-        <OpTile label="On Trial" value={String(billing?.counts?.trialing ?? '—')} foot="convert before they lapse" tone="grow" loading={!billing} />
-        <OpTile label="Pending Payment" value={String(billing?.counts?.pendingPayment ?? '—')} foot="signed up, never paid" tone={billing?.counts?.pendingPayment > 0 ? 'alert' : undefined} loading={!billing} />
-        <OpTile label="Overdue" value={String(billing?.counts?.pastDue ?? '—')} foot="payment failed" tone={billing?.counts?.pastDue > 0 ? 'alert' : undefined} loading={!billing} />
-      </div>
-      {billing && (
-        <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4 items-start">
-            <div className="a-panel">
-              <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]"><h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Trials ending soon</h3><span className="text-[11px] text-[var(--a-dim)]">{billing.nearExpiringTrials.length}</span></div>
-              {billing.nearExpiringTrials.length === 0 ? <div className="p-4 text-[13px] text-[var(--a-dim)]">No active agency trials.</div> : billing.nearExpiringTrials.slice(0, 10).map((t: any, i: number) => (
-                <div key={i} className="flex items-center justify-between px-4 py-2 text-[13px]" style={{ borderTop: i ? '1px solid var(--a-line)' : 'none' }}>
-                  <span className="text-[var(--a-ink)] truncate mr-3">{t.name}</span>
-                  <span style={{ whiteSpace: 'nowrap', color: t.days_left != null && t.days_left <= 3 ? '#ef4444' : t.days_left != null && t.days_left <= 7 ? '#f59e0b' : 'var(--a-dim)' }}>{t.days_left == null ? '—' : t.days_left < 0 ? 'ended' : t.days_left === 0 ? 'today' : `${t.days_left}d`}{t.trial_ends_at ? ` · ${billDate(t.trial_ends_at)}` : ''}</span>
-                </div>
-              ))}
-            </div>
-            <div className="a-panel">
-              <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]"><h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Upcoming renewals</h3><span className="text-[11px] text-[var(--a-dim)]">{billing.upcomingRenewals.length}</span></div>
-              {billing.upcomingRenewals.length === 0 ? <div className="p-4 text-[13px] text-[var(--a-dim)]">No upcoming renewals on file.</div> : billing.upcomingRenewals.slice(0, 10).map((u: any, i: number) => (
-                <div key={i} className="flex items-center justify-between px-4 py-2 text-[13px]" style={{ borderTop: i ? '1px solid var(--a-line)' : 'none' }}>
-                  <span className="text-[var(--a-ink)] truncate mr-3">{u.name}</span>
-                  <span className="text-[var(--a-dim)]" style={{ whiteSpace: 'nowrap' }}>{u.current_period_end ? billDate(u.current_period_end) : ''}{u.days_until != null ? ` (${u.days_until}d)` : ''} · {u.plan_type}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4 items-start">
-            <div className="a-panel">
-              <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]"><h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Signed up, not paid</h3><span className="text-[11px] text-[var(--a-dim)]">{billing.pendingPayment.length}</span></div>
-              {billing.pendingPayment.length === 0 ? <div className="p-4 text-[13px] text-[var(--a-dim)]">Nobody pending.</div> : billing.pendingPayment.slice(0, 10).map((p: any, i: number) => (
-                <div key={i} className="flex items-center justify-between px-4 py-2 text-[13px]" style={{ borderTop: i ? '1px solid var(--a-line)' : 'none' }}>
-                  <span className="text-[var(--a-ink)] truncate mr-3">{p.name}</span><span style={{ whiteSpace: 'nowrap', color: '#f59e0b' }}>{p.days_waiting}d waiting</span>
-                </div>
-              ))}
-            </div>
-            <div className="a-panel">
-              <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]"><h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Overdue</h3><span className="text-[11px] text-[var(--a-dim)]">{billing.pastDue.length}</span></div>
-              {billing.pastDue.length === 0 ? <div className="p-4 text-[13px] text-[var(--a-dim)]">Nobody overdue.</div> : billing.pastDue.slice(0, 10).map((p: any, i: number) => (
-                <div key={i} className="flex items-center justify-between px-4 py-2 text-[13px]" style={{ borderTop: i ? '1px solid var(--a-line)' : 'none' }}>
-                  <span className="text-[var(--a-ink)] truncate mr-3">{p.name}</span><span style={{ whiteSpace: 'nowrap', color: '#ef4444' }}>payment failed · {p.plan_type}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="a-panel mt-4">
-            <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]"><h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Free agencies</h3><span className="text-[11px] text-[var(--a-dim)]">{billing.freeAgencies.length} · upgrade targets</span></div>
-            {billing.freeAgencies.length === 0 ? <div className="p-4 text-[13px] text-[var(--a-dim)]">No free-tier agencies.</div> : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-0.5 p-1.5">
-                {billing.freeAgencies.slice(0, 20).map((a: any, i: number) => (
-                  <div key={i} className="flex items-center justify-between px-3 py-2 text-[13px]">
-                    <span className="text-[var(--a-ink)] truncate mr-3">{a.name}</span><span className="text-[var(--a-dim)]" style={{ whiteSpace: 'nowrap' }}>{a.days_since}d old</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </>
-      )}
-
       {/* RECENT SIGNUPS (hero) */}
       <div className="a-eyebrow mt-8">Who Just Signed Up</div>
       <div className="a-panel">
@@ -348,6 +270,73 @@ export default function AdminOverviewPage() {
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* CALL FEED */}
+      <div id="call-feed" className="a-eyebrow mt-8">Live Call Feed</div>
+      <div className="a-panel">
+        <div className="flex items-center gap-3 p-4 border-b border-[var(--a-line)] flex-wrap">
+          <h3 className="text-[15px] font-semibold text-[var(--a-ink)]">All Calls</h3>
+          <div className="flex gap-1.5 flex-wrap ml-auto">
+            {CALL_FILTERS.map((f) => (
+              <button
+                key={f.key}
+                className="a-chip"
+                data-on={filter === f.key}
+                data-tone={f.key === 'attention' ? 'danger' : undefined}
+                onClick={() => changeFilter(f.key)}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="a-table">
+            <thead>
+              <tr>
+                <th>Time</th><th>Caller</th><th>Client / Agency</th><th>Outcome</th>
+                <th className="r">Duration</th><th className="r">Cost</th>
+              </tr>
+            </thead>
+            <tbody>
+              {feedLoading ? (
+                <tr><td colSpan={6}><div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-[var(--a-em)]" /></div></td></tr>
+              ) : calls.length === 0 ? (
+                <tr><td colSpan={6}><div className="py-12 text-center text-[var(--a-dim)]">No calls match this filter.</div></td></tr>
+              ) : (
+                calls.map((c) => {
+                  const o = deriveCallOutcome(c);
+                  const aid = c.agency_name ? agencyIdByName[c.agency_name.toLowerCase()] || null : null;
+                  return (
+                    <tr key={c.id} onClick={() => openCall(c)} className="cursor-pointer">
+                      <td>
+                        {timeAgo(c.created_at)}
+                        {c.needs_attention && <span className="a-dot ml-2 align-middle" style={{ background: 'var(--a-red)' }} />}
+                      </td>
+                      <td><span className="font-semibold text-[var(--a-ink)] a-num">{formatPhone(c.customer_phone)}</span></td>
+                      <td>
+                        <div className="text-[var(--a-ink)]">{c.business_name || 'Unknown client'}</div>
+                        {aid ? (
+                          <Link href={`/admin/agencies?expand=${aid}`} onClick={(e) => e.stopPropagation()} className="text-[11.5px] text-[var(--a-dim)] hover:text-[var(--a-em-deep)] transition-colors">{c.agency_name}</Link>
+                        ) : (
+                          <div className="text-[11.5px] text-[var(--a-dim)]">{c.agency_name || 'No agency'}</div>
+                        )}
+                      </td>
+                      <td>
+                        <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold" style={{ color: o.color }}>
+                          <span className="a-dot" style={{ background: o.color }} />{o.label}
+                        </span>
+                      </td>
+                      <td className="r a-num">{formatDuration(c.duration_seconds)}</td>
+                      <td className="r a-num">{c.vapi_cost != null ? formatUSD(c.vapi_cost) : '\u2013'}</td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -421,67 +410,62 @@ export default function AdminOverviewPage() {
         </div>
       </div>
 
-      {/* CALL FEED */}
-      <div id="call-feed" className="a-eyebrow mt-8">Live Call Feed</div>
-      <div className="a-panel">
-        <div className="flex items-center gap-3 p-4 border-b border-[var(--a-line)] flex-wrap">
-          <h3 className="text-[15px] font-semibold text-[var(--a-ink)]">All Calls</h3>
-          <div className="flex gap-1.5 flex-wrap ml-auto">
-            {CALL_FILTERS.map((f) => (
-              <button
-                key={f.key}
-                className="a-chip"
-                data-on={filter === f.key}
-                data-tone={f.key === 'attention' ? 'danger' : undefined}
-                onClick={() => changeFilter(f.key)}
-              >
-                {f.label}
-              </button>
-            ))}
+      {/* ── BILLING & TRIALS (agencies) ── */}
+      <div className="a-eyebrow mt-8">Billing &amp; Trials</div>
+      {billing && (
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4 items-start">
+            <div className="a-panel">
+              <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]"><h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Trials ending soon</h3><span className="text-[11px] text-[var(--a-dim)]">{billing.nearExpiringTrials.length}</span></div>
+              {billing.nearExpiringTrials.length === 0 ? <div className="p-4 text-[13px] text-[var(--a-dim)]">No active agency trials.</div> : billing.nearExpiringTrials.slice(0, 10).map((t: any, i: number) => (
+                <div key={i} className="flex items-center justify-between px-4 py-2 text-[13px]" style={{ borderTop: i ? '1px solid var(--a-line)' : 'none' }}>
+                  <span className="text-[var(--a-ink)] truncate mr-3">{t.name}</span>
+                  <span style={{ whiteSpace: 'nowrap', color: t.days_left != null && t.days_left <= 3 ? '#ef4444' : t.days_left != null && t.days_left <= 7 ? '#f59e0b' : 'var(--a-dim)' }}>{t.days_left == null ? '—' : t.days_left < 0 ? 'ended' : t.days_left === 0 ? 'today' : `${t.days_left}d`}{t.trial_ends_at ? ` · ${billDate(t.trial_ends_at)}` : ''}</span>
+                </div>
+              ))}
+            </div>
+            <div className="a-panel">
+              <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]"><h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Upcoming renewals</h3><span className="text-[11px] text-[var(--a-dim)]">{billing.upcomingRenewals.length}</span></div>
+              {billing.upcomingRenewals.length === 0 ? <div className="p-4 text-[13px] text-[var(--a-dim)]">No upcoming renewals on file.</div> : billing.upcomingRenewals.slice(0, 10).map((u: any, i: number) => (
+                <div key={i} className="flex items-center justify-between px-4 py-2 text-[13px]" style={{ borderTop: i ? '1px solid var(--a-line)' : 'none' }}>
+                  <span className="text-[var(--a-ink)] truncate mr-3">{u.name}</span>
+                  <span className="text-[var(--a-dim)]" style={{ whiteSpace: 'nowrap' }}>{u.current_period_end ? billDate(u.current_period_end) : ''}{u.days_until != null ? ` (${u.days_until}d)` : ''} · {u.plan_type}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="a-table">
-            <thead>
-              <tr>
-                <th>Time</th><th>Caller</th><th>Client / Agency</th><th>Outcome</th>
-                <th className="r">Duration</th><th className="r">Cost</th>
-              </tr>
-            </thead>
-            <tbody>
-              {feedLoading ? (
-                <tr><td colSpan={6}><div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-[var(--a-em)]" /></div></td></tr>
-              ) : calls.length === 0 ? (
-                <tr><td colSpan={6}><div className="py-12 text-center text-[var(--a-dim)]">No calls match this filter.</div></td></tr>
-              ) : (
-                calls.map((c) => {
-                  const o = deriveCallOutcome(c);
-                  return (
-                    <tr key={c.id} onClick={() => openCall(c)} className="cursor-pointer">
-                      <td>
-                        {timeAgo(c.created_at)}
-                        {c.needs_attention && <span className="a-dot ml-2 align-middle" style={{ background: 'var(--a-red)' }} />}
-                      </td>
-                      <td><span className="font-semibold text-[var(--a-ink)] a-num">{formatPhone(c.customer_phone)}</span></td>
-                      <td>
-                        <div className="text-[var(--a-ink)]">{c.business_name || 'Unknown client'}</div>
-                        <div className="text-[11.5px] text-[var(--a-dim)]">{c.agency_name || 'No agency'}</div>
-                      </td>
-                      <td>
-                        <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold" style={{ color: o.color }}>
-                          <span className="a-dot" style={{ background: o.color }} />{o.label}
-                        </span>
-                      </td>
-                      <td className="r a-num">{formatDuration(c.duration_seconds)}</td>
-                      <td className="r a-num">{c.vapi_cost != null ? formatUSD(c.vapi_cost) : '\u2013'}</td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4 items-start">
+            <div className="a-panel">
+              <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]"><h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Signed up, not paid</h3><span className="text-[11px] text-[var(--a-dim)]">{billing.pendingPayment.length}</span></div>
+              {billing.pendingPayment.length === 0 ? <div className="p-4 text-[13px] text-[var(--a-dim)]">Nobody pending.</div> : billing.pendingPayment.slice(0, 10).map((p: any, i: number) => (
+                <div key={i} className="flex items-center justify-between px-4 py-2 text-[13px]" style={{ borderTop: i ? '1px solid var(--a-line)' : 'none' }}>
+                  <span className="text-[var(--a-ink)] truncate mr-3">{p.name}</span><span style={{ whiteSpace: 'nowrap', color: '#f59e0b' }}>{p.days_waiting}d waiting</span>
+                </div>
+              ))}
+            </div>
+            <div className="a-panel">
+              <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]"><h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Overdue</h3><span className="text-[11px] text-[var(--a-dim)]">{billing.pastDue.length}</span></div>
+              {billing.pastDue.length === 0 ? <div className="p-4 text-[13px] text-[var(--a-dim)]">Nobody overdue.</div> : billing.pastDue.slice(0, 10).map((p: any, i: number) => (
+                <div key={i} className="flex items-center justify-between px-4 py-2 text-[13px]" style={{ borderTop: i ? '1px solid var(--a-line)' : 'none' }}>
+                  <span className="text-[var(--a-ink)] truncate mr-3">{p.name}</span><span style={{ whiteSpace: 'nowrap', color: '#ef4444' }}>payment failed · {p.plan_type}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="a-panel mt-4">
+            <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]"><h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Free agencies</h3><span className="text-[11px] text-[var(--a-dim)]">{billing.freeAgencies.length} · upgrade targets</span></div>
+            {billing.freeAgencies.length === 0 ? <div className="p-4 text-[13px] text-[var(--a-dim)]">No free-tier agencies.</div> : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-0.5 p-1.5">
+                {billing.freeAgencies.slice(0, 20).map((a: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between px-3 py-2 text-[13px]">
+                    <span className="text-[var(--a-ink)] truncate mr-3">{a.name}</span><span className="text-[var(--a-dim)]" style={{ whiteSpace: 'nowrap' }}>{a.days_since}d old</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
 
       {/* DRAWER (shared component) */}
       <CallDrawer callId={openId} agencyId={openAgencyId} onClose={() => { setOpenId(null); setOpenAgencyId(null); }} />
@@ -489,30 +473,6 @@ export default function AdminOverviewPage() {
   );
 }
 
-// ── op tile ─────────────────────────────────────────────────────────────────
-function OpTile({ label, value, foot, tone, onClick, loading }: { label: string; value: string; foot: string; tone?: string; onClick?: () => void; loading?: boolean }) {
-  const isHero = tone === 'hero';
-  const cls =
-    tone === 'hero' ? 'text-white' :
-    tone === 'alert' ? 'text-[var(--a-red)]' :
-    tone === 'grow' ? 'text-[var(--a-em-deep)]' : 'text-[var(--a-ink)]';
-  const bg =
-    tone === 'hero' ? { background: 'linear-gradient(150deg,#10b981,#0B9668)', border: 'none' } :
-    tone === 'alert' ? { background: 'linear-gradient(160deg,#FFF3F3,#fff)', borderColor: '#F3C9C9' } :
-    tone === 'grow' ? { background: 'linear-gradient(160deg,var(--a-em-soft),#fff)', borderColor: 'var(--a-em-line)' } :
-    undefined;
-  return (
-    <button onClick={onClick} className="a-card text-left p-4 transition-transform hover:-translate-y-px" style={bg}>
-      <div className={`text-[12px] font-semibold ${isHero ? 'text-white/85' : 'text-[var(--a-muted)]'}`}>{label}</div>
-      {loading ? (
-        <div className="mt-2.5 h-[26px] w-16 rounded-md animate-pulse" style={{ background: isHero ? 'rgba(255,255,255,0.35)' : 'var(--a-line)' }} />
-      ) : (
-        <div className={`a-num mt-2 text-[33px] font-bold leading-none ${cls}`}>{value}</div>
-      )}
-      <div className={`text-[11.5px] mt-1.5 font-medium ${isHero ? 'text-white/80' : 'text-[var(--a-dim)]'}`}>{foot}</div>
-    </button>
-  );
-}
 
 // ── flag tints for the action queue ─────────────────────────────────────────
 function flagBg(tone: string) {
