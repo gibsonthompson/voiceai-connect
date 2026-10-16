@@ -470,7 +470,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       <main className="md:pl-64 min-h-screen" style={{ backgroundColor: theme.bg }}>
         <div key={pathname} className="agency-page-enter">{children}</div>
       </main>
-      <SupportWidget theme={theme} userType="agency" agencyId={agency?.id} raised={pathname?.startsWith('/agency/inbox')} />
+      <SupportWidget theme={theme} userType="agency" agencyId={agency?.id} hideLauncher={pathname?.startsWith('/agency/inbox')} />
     </div>
     <TourOverlay />
     </TourProvider>

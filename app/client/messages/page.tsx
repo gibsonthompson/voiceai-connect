@@ -162,7 +162,7 @@ export default function MessagesPage() {
       if (r.ok) {
         const d = await r.json();
         setMessages(d.messages || []);
-        await fetch(`${getBackendUrl()}/api/sms/conversations/${convId}/read`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` } });
+        await fetch(`${getBackendUrl()}/api/sms/conversations/${client.id}/${convId}/read`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` } });
         setConversations(prev => prev.map(c => c.id === convId ? { ...c, unread_count: 0 } : c));
       }
     } catch {} finally { setMsgsLoading(false); }
