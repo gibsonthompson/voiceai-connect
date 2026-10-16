@@ -13,7 +13,7 @@ interface FAQ { question: string; answer: string; }
 const PROSPECT_FAQS: FAQ[] = [
   {
     question: 'How does the AI receptionist work?',
-    answer: 'When someone calls your business number, the AI answers immediately — no rings, no hold music. It greets the caller, answers questions about your services using information you provide, books appointments to your calendar, takes messages, and sends you a text summary after every call.',
+    answer: 'When someone calls your business number, the AI answers immediately - no rings, no hold music. It greets the caller, answers questions about your services using information you provide, books appointments to your calendar, takes messages, and sends you a text summary after every call.',
   },
   {
     question: 'Will callers know they are talking to an AI?',
@@ -25,15 +25,15 @@ const PROSPECT_FAQS: FAQ[] = [
   },
   {
     question: 'What happens after each call?',
-    answer: 'You get an instant text message with a summary — who called, what they needed, and any action items. You also get full call recordings, word-for-word transcripts, and an AI-generated analysis in your dashboard.',
+    answer: 'You get an instant text message with a summary - who called, what they needed, and any action items. You also get full call recordings, word-for-word transcripts, and an AI-generated analysis in your dashboard.',
   },
   {
     question: 'Can the AI transfer calls to me?',
-    answer: 'Yes. You set the rules — for example, transfer if the caller says it\'s urgent, mentions a specific keyword, or asks for you by name. If you do not pick up, the AI stays on the line and takes a message instead of sending the caller to voicemail.',
+    answer: 'Yes. You set the rules - for example, transfer if the caller says it\'s urgent, mentions a specific keyword, or asks for you by name. If you do not pick up, the AI stays on the line and takes a message instead of sending the caller to voicemail.',
   },
   {
     question: 'Does it work after hours and on weekends?',
-    answer: 'Yes, 24/7/365. The AI never sleeps, takes breaks, or calls in sick. Over a third of calls businesses receive come outside normal hours — this means you never miss an opportunity.',
+    answer: 'Yes, 24/7/365. The AI never sleeps, takes breaks, or calls in sick. Over a third of calls businesses receive come outside normal hours - this means you never miss an opportunity.',
   },
   {
     question: 'Does it speak Spanish?',
@@ -57,7 +57,7 @@ const PROSPECT_FAQS: FAQ[] = [
   },
   {
     question: 'Can I access this from my phone?',
-    answer: 'Yes. The dashboard works on any device — phone, tablet, or desktop. You can add it to your home screen for instant access that works like a native app. You also get text and email notifications so you do not need to check the dashboard constantly.',
+    answer: 'Yes. The dashboard works on any device - phone, tablet, or desktop. You can add it to your home screen for instant access that works like a native app. You also get text and email notifications so you do not need to check the dashboard constantly.',
   },
 ];
 
@@ -70,6 +70,7 @@ interface AgencySupportWidgetProps {
   isDark: boolean;
   pricing?: { name: string; price: number; subtitle?: string; features?: string[] }[];
   currencySymbol?: string;
+  trialDays?: number;
 }
 
 type WidgetView = 'home' | 'faq' | 'chat' | 'escalation';
@@ -102,6 +103,7 @@ export default function AgencySupportWidget({
   isDark,
   pricing,
   currencySymbol,
+  trialDays = 7,
 }: AgencySupportWidgetProps) {
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<WidgetView>('home');
@@ -179,9 +181,9 @@ export default function AgencySupportWidget({
         answer:
           `${agencyName} offers ${pricing.length} plan${pricing.length > 1 ? 's' : ''}:<br/><br/>` +
           pricing
-            .map(p => `<strong>${p.name}</strong> — ${cs}${p.price}/month${p.subtitle ? `<br/><span style="opacity:0.7">${p.subtitle}</span>` : ''}`)
+            .map(p => `<strong>${p.name}</strong> - ${cs}${p.price}/month${p.subtitle ? `<br/><span style="opacity:0.7">${p.subtitle}</span>` : ''}`)
             .join('<br/><br/>') +
-          `<br/><br/>All plans include a 7-day free trial.` +
+          (trialDays > 0 ? `<br/><br/>All plans include a ${trialDays}-day free trial.` : '') +
           (supportEmail ? ` Have a pricing question? Email ${supportEmail}.` : ''),
       }
     : null;
@@ -191,14 +193,14 @@ export default function AgencySupportWidget({
 
   // Plain-text pricing block for the AI context.
   const pricingContext = (pricing && pricing.length > 0)
-    ? 'PRICING & PLANS (these are the agency\'s actual prices — quote them exactly when asked about cost):\n' +
+    ? 'PRICING & PLANS (these are the agency\'s actual prices - quote them exactly when asked about cost):\n' +
       pricing
         .map(p => {
           const feats = (p.features || []).filter(f => !f.toLowerCase().startsWith('everything')).slice(0, 5);
-          return `- ${p.name}: ${cs}${p.price}/month${p.subtitle ? ` (${p.subtitle})` : ''}${feats.length ? ` — includes: ${feats.join(', ')}` : ''}`;
+          return `- ${p.name}: ${cs}${p.price}/month${p.subtitle ? ` (${p.subtitle})` : ''}${feats.length ? ` - includes: ${feats.join(', ')}` : ''}`;
         })
         .join('\n') +
-      '\nAll plans include a 7-day free trial.'
+      (trialDays > 0 ? `\nAll plans include a ${trialDays}-day free trial.` : '')
     : '';
 
   // Search
@@ -318,7 +320,7 @@ export default function AgencySupportWidget({
     }
   };
 
-  // Closed state — FAB button + teaser
+  // Closed state - FAB button + teaser
   if (!open) {
     const dismissTeaser = () => { setTeaser(false); try { sessionStorage.setItem('agency-w-t', '1'); } catch {} };
     return (
@@ -704,7 +706,7 @@ export default function AgencySupportWidget({
         )}
       </div>
 
-      {/* Chat input — only in chat view */}
+      {/* Chat input - only in chat view */}
       {view === 'chat' && (
         <div className="flex-shrink-0 px-4 pb-4">
           <div className="flex items-end gap-2 rounded-xl p-1.5"

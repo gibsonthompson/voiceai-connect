@@ -1,5 +1,5 @@
 // ============================================================================
-// AURORA TEMPLATE — Dark Premium Marketing Page
+// AURORA TEMPLATE, Dark Premium Marketing Page
 // Stripe/Linear/Vercel-inspired: animated mesh gradients, glassmorphism 2.0,
 // bento feature grid, scroll-triggered reveals, floating glass nav pill.
 // Accepts the same MarketingConfig as the classic template.
@@ -173,7 +173,7 @@ export default function MarketingPageAurora({ config: partial }: AuroraProps) {
             <p className="a-hero-sub">{hero.description}</p>
             <div className="a-hero-ctas">
               <a href="/get-started" className="a-btn a-btn-primary a-btn-large">
-                Start Free Trial — 7 Days Free
+                {c.signup?.trialDays === 0 ? 'Get Started' : `Start Free Trial, ${c.signup?.trialDays ?? 7} Day${(c.signup?.trialDays ?? 7) === 1 ? '' : 's'} Free`}
               </a>
               {hero.demoPhone ? (
                 <a href={telHref(hero.demoPhone)} className="a-btn a-btn-ghost a-btn-large">
@@ -186,7 +186,7 @@ export default function MarketingPageAurora({ config: partial }: AuroraProps) {
             </div>
             {hero.demoPhone && (
               <div className="a-demo-box">
-                <p className="a-demo-label">Hear it in action — call now</p>
+                <p className="a-demo-label">Hear it in action, call now</p>
                 <a href={telHref(hero.demoPhone)} className="a-demo-phone">
                   <PhoneIcon />
                   {hero.demoPhone}
@@ -267,7 +267,7 @@ export default function MarketingPageAurora({ config: partial }: AuroraProps) {
             ))}
           </div>
           <div style={{textAlign:'center',marginTop:'2.5rem'}}>
-            <a href="/get-started" className="a-btn a-btn-primary a-btn-large">Start Your 7-Day Free Trial</a>
+            <a href="/get-started" className="a-btn a-btn-primary a-btn-large">{c.signup?.trialDays === 0 ? 'Get Started' : `Start Your ${c.signup?.trialDays ?? 7}-Day Free Trial`}</a>
             <p style={{fontSize:'0.875rem',color:'var(--a-text-muted)',marginTop:'0.75rem'}}>No credit card required. Ready in 10 minutes.</p>
           </div>
         </div>
@@ -297,7 +297,7 @@ export default function MarketingPageAurora({ config: partial }: AuroraProps) {
         <div className="a-container">
           <div className="a-section-header">
             <h2>Simple Pricing. No Hidden Fees.</h2>
-            <p>All plans include the {branding.name} app, text summaries, call recordings, and 7-day free trial.</p>
+            <p>All plans include the {branding.name} app, text summaries, call recordings{c.signup?.trialDays !== 0 ? `, and a ${c.signup?.trialDays ?? 7}-day free trial` : ''}.</p>
           </div>
           <div ref={pricingRef} className="a-pricing-grid a-stagger">
             {pricing.map((tier, i) => (
@@ -318,14 +318,14 @@ export default function MarketingPageAurora({ config: partial }: AuroraProps) {
                   ))}
                 </ul>
                 <a href="/get-started" className={`a-btn a-pricing-cta ${tier.isPopular ? 'a-btn-primary' : 'a-btn-ghost'}`}>
-                  Start 7-Day Free Trial
+                  {c.signup?.trialDays === 0 ? 'Get Started' : `Start ${c.signup?.trialDays ?? 7}-Day Free Trial`}
                 </a>
               </div>
             ))}
           </div>
           <div style={{textAlign:'center',marginTop:'2rem'}}>
             <p style={{fontSize:'0.875rem',color:'var(--a-text-muted)'}}>
-              <strong>All plans include:</strong> 7-day free trial (no credit card required) · Cancel anytime · Setup in 10 minutes
+              <strong>All plans include:</strong> {[c.signup?.trialDays !== 0 ? `${c.signup?.trialDays ?? 7}-day free trial${c.signup?.cardRequired ? '' : ' (no credit card required)'}` : null, 'Cancel anytime', c.stats?.setupTime ? `Setup in ${c.stats.setupTime}` : null].filter(Boolean).join(' · ')}
             </p>
             {footer.email && (
               <p style={{fontSize:'0.875rem',color:'var(--a-primary)',fontWeight:600,marginTop:'0.5rem'}}>
@@ -370,7 +370,7 @@ export default function MarketingPageAurora({ config: partial }: AuroraProps) {
                 color: isLight(branding.primaryColor) ? 'white' : branding.primaryColor,
                 fontWeight: 700,
               }}>
-                Start Your 7-Day Free Trial
+                {c.signup?.trialDays === 0 ? 'Get Started' : `Start Your ${c.signup?.trialDays ?? 7}-Day Free Trial`}
               </a>
               {hero.demoPhone && (
                 <a href={telHref(hero.demoPhone)} style={{
@@ -400,7 +400,7 @@ export default function MarketingPageAurora({ config: partial }: AuroraProps) {
                 {branding.logoUrl && <img src={branding.logoUrl} alt={branding.name} />}
                 <span>{branding.name}</span>
               </div>
-              <p className="a-footer-tagline">Professional AI that answers every call, books appointments, and sends instant summaries — 24/7.</p>
+              <p className="a-footer-tagline">Professional AI that answers every call, books appointments, and sends instant summaries, 24/7.</p>
               {footer.email && <p style={{fontSize:'0.8125rem',color:'var(--a-text-muted)',marginTop:'0.75rem'}}><a href={`mailto:${footer.email}`} style={{color:'var(--a-text-secondary)'}}>{footer.email}</a></p>}
             </div>
             <div className="a-footer-col">

@@ -93,7 +93,7 @@ function resolveHomepageUrl(agency: Agency): string {
 }
 
 // ============================================================================
-// SVG ICONS — no inline sizing, parent controls dimensions
+// SVG ICONS - no inline sizing, parent controls dimensions
 // ============================================================================
 const PhoneIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -140,7 +140,7 @@ const ArrowRightIcon = () => (
 );
 
 // ============================================================================
-// ICON WRAPPER — constrains SVG to a specific size
+// ICON WRAPPER - constrains SVG to a specific size
 // ============================================================================
 function Icon({ children, size = '1.5rem', color }: { children: React.ReactNode; size?: string; color?: string }) {
   return <div style={{ width: size, height: size, flexShrink: 0, color, display: 'inline-flex' }}>{children}</div>;
@@ -187,7 +187,7 @@ export default function DemoPage() {
   useEffect(() => {
     if (!agency) return;
     if (agency.logo_url) setFavicon(agency.logo_url);
-    document.title = `Try ${agency.name} — Live AI Demo`;
+    document.title = `Try ${agency.name} - Live AI Demo`;
     const theme = agency.website_theme;
     document.documentElement.style.backgroundColor = theme === 'dark' ? '#0f0f0f' : '#ffffff';
     return () => { document.documentElement.style.backgroundColor = ''; };
@@ -250,17 +250,17 @@ export default function DemoPage() {
     ? agency.logo_background_color : 'transparent';
 
   const steps = [
-    { icon: <PhoneIcon />, title: 'Call the number below', desc: 'Our AI receptionist will pick up instantly — no waiting, no menus.' },
+    { icon: <PhoneIcon />, title: 'Call the number below', desc: 'Our AI receptionist will pick up instantly - no waiting, no menus.' },
     { icon: <MicIcon />, title: 'Tell it about your business', desc: 'Share your business name, type, and what you do. The AI will adapt to you on the spot.' },
     { icon: <HeadphonesIcon />, title: 'Experience your AI receptionist', desc: 'Ask it questions as if you were a customer calling your business. It answers like a trained receptionist.' },
-    { icon: <CalendarIcon />, title: 'Watch it book an appointment', desc: 'Ask to schedule something — the AI checks availability and books it to a real calendar in real time.' },
+    { icon: <CalendarIcon />, title: 'Watch it book an appointment', desc: 'Ask to schedule something - the AI checks availability and books it to a real calendar in real time.' },
   ];
 
   const benefits = [
-    'Answers every call 24/7 — no missed customers',
+    'Answers every call 24/7 - no missed customers',
     'Books appointments to Google Calendar automatically',
     'Sends you an instant text summary after each call',
-    'Speaks English and Spanish — auto-detects the language',
+    'Speaks English and Spanish - auto-detects the language',
     'Blocks spam and robocalls automatically',
     'Handles unlimited calls at the same time',
   ];
@@ -289,13 +289,13 @@ export default function DemoPage() {
         </div>
       </nav>
 
-      {/* ── HERO — Phone number is the entire focus ── */}
+      {/* ── HERO - Phone number is the entire focus ── */}
       <section className="hero" style={{ paddingBottom: '2rem' }}>
         <div className="container">
           <div className="hero-content">
             <div className="hero-badge">
               <span className="badge-dot"></span>
-              <span>Live AI Demo — Call Now</span>
+              <span>Live AI Demo - Call Now</span>
             </div>
 
             <h1 className="hero-title" style={{ marginBottom: '0.75rem' }}>
@@ -304,10 +304,10 @@ export default function DemoPage() {
             </h1>
 
             <p className="hero-subtitle" style={{ maxWidth: '560px', margin: '0 auto 1.5rem' }}>
-              Call the number below and experience exactly how {agency.name} handles calls for your business. No signup required — just call.
+              Call the number below and experience exactly how {agency.name} handles calls for your business. No signup required - just call.
             </p>
 
-            {/* Demo phone — the main CTA */}
+            {/* Demo phone - the main CTA */}
             <div style={{
               maxWidth: '480px', margin: '0 auto', borderRadius: 'var(--radius-lg)',
               background: `linear-gradient(135deg, ${pc} 0%, ${sc} 100%)`,
@@ -316,7 +316,7 @@ export default function DemoPage() {
             }}>
               <Icon size="3rem" color={textOnPrimary}><HeadphonesIcon /></Icon>
               <p style={{ fontSize: '0.875rem', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '0.75rem', marginTop: '0.75rem', opacity: 0.85, color: textOnPrimary }}>
-                Call now — it&apos;s free
+                Call now - it&apos;s free
               </p>
               <a
                 href={demoHref}
@@ -373,7 +373,7 @@ export default function DemoPage() {
         <div className="container">
           <div className="section-header">
             <h2>What Your Business Gets</h2>
-            <p>Everything included when you sign up — starting at {cs}{lowestPrice}/month.</p>
+            <p>Everything included when you sign up - starting at {cs}{lowestPrice}/month.</p>
           </div>
           <div style={{ maxWidth: '640px', margin: '0 auto' }}>
             {benefits.map((b, i) => (
@@ -397,7 +397,7 @@ export default function DemoPage() {
               <>
                 <h2 style={{ color: textOnPrimary }}>Ready to Get Started?</h2>
                 <p className="final-cta-text" style={{ color: textOnPrimary, opacity: 0.85 }}>
-                  You just experienced what every caller to your business will hear — 24/7, no missed calls, no voicemail.
+                  You just experienced what every caller to your business will hear - 24/7, no missed calls, no voicemail.
                   {_trialDays === 0 ? 'Get started' : `Start your ${_trialDays}-day free trial`} and have your own AI receptionist live in {_setupTime}.
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center', marginTop: '1.5rem' }}>
@@ -421,7 +421,7 @@ export default function DemoPage() {
               <>
                 <h2 style={{ color: textOnPrimary }}>Still Haven&apos;t Called?</h2>
                 <p className="final-cta-text" style={{ color: textOnPrimary, opacity: 0.85 }}>
-                  The best way to understand what {agency.name} does is to experience it yourself. Call the demo — it takes 30 seconds.
+                  The best way to understand what {agency.name} does is to experience it yourself. Call the demo - it takes 30 seconds.
                 </p>
                 <div className="final-cta-boxes">
                   <div className="cta-box-primary">
@@ -467,7 +467,7 @@ export default function DemoPage() {
               )}
             </a>
             <p style={{ fontSize: '0.875rem', color: 'var(--text-light)', maxWidth: '400px', margin: '0 auto 0.75rem' }}>
-              Professional AI that answers every call, books appointments, and sends you instant summaries — 24/7.
+              Professional AI that answers every call, books appointments, and sends you instant summaries - 24/7.
             </p>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', fontSize: '0.813rem' }}>
               <a href={homeUrl} style={{ color: 'var(--text-medium)' }}>Home</a>
@@ -482,7 +482,7 @@ export default function DemoPage() {
         </div>
       </footer>
 
-      {/* ── STICKY CTA — appears on scroll ── */}
+      {/* ── STICKY CTA - appears on scroll ── */}
       <div className={`sticky-cta ${stickyVisible ? 'visible' : ''}`}>
         <span className="sticky-cta-text">Ready to try {agency.name}?</span>
         <div className="sticky-cta-actions">
@@ -498,6 +498,7 @@ export default function DemoPage() {
         supportEmail={agency.support_email}
         isDark={isDark}
         currencySymbol={cs}
+        trialDays={_trialDays}
       />
     </div>
   );

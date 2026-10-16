@@ -11,7 +11,7 @@ import '@/styles/marketing.css';
 // ============================================================================
 // Build a dialable tel: href in E.164 without double-prefixing the country
 // code. A demo number stored WITH its country code (e.g. "15058332344" or
-// "+1 505 833 2344") would become "+11505..." if we blindly prepend "+1" —
+// "+1 505 833 2344") would become "+11505..." if we blindly prepend "+1",
 // that "+11" is why tapping the demo number failed to dial. Normalize instead.
 function telHref(phone: string): string {
   const digits = (phone || '').replace(/\D/g, '');
@@ -196,7 +196,7 @@ function HeroSection({ config, contrastColors }: { config: MarketingConfig; cont
           </h1>
           <p className="hero-subtitle">{hero.description}</p>
           <div className="hero-ctas">
-            <a href="/signup" className="btn-large btn-primary">Start Free Trial, 7 Days Free</a>
+            <a href="/signup" className="btn-large btn-primary">{config.signup?.trialDays === 0 ? 'Get Started' : `Start Free Trial, ${config.signup?.trialDays ?? 7} Day${(config.signup?.trialDays ?? 7) === 1 ? '' : 's'} Free`}</a>
             {hero.demoPhone ? (
               <a href="/demo" className="btn-large btn-ghost">
                 <span style={{ width: '1rem', height: '1rem', marginRight: '0.5rem', display: 'inline-flex' }}>{Icons.phone}</span>Try Live Demo
@@ -621,7 +621,7 @@ function PricingSection({ config }: { config: MarketingConfig }) {
               </div>
               <ul className="pricing-features">{tier.features.map((feature, j) => (<li key={j}>{feature.startsWith('Everything') ? <strong>{feature}</strong> : `✓ ${feature}`}</li>))}</ul>
               {tier.note && <div className="pricing-note">{tier.note}</div>}
-              <a href={tier.planKey ? `/signup?plan=${tier.planKey}` : '/signup'} className={`btn-pricing ${tier.isPopular ? 'btn-primary' : ''}`}>Start 7-Day Free Trial</a>
+              <a href={tier.planKey ? `/signup?plan=${tier.planKey}` : '/signup'} className={`btn-pricing ${tier.isPopular ? 'btn-primary' : ''}`}>{config.signup?.trialDays === 0 ? 'Get Started' : `Start ${config.signup?.trialDays ?? 7}-Day Free Trial`}</a>
               {tier.isPopular && <p className="pricing-recommendation">Most businesses choose {tier.name}</p>}
             </div>
           ))}

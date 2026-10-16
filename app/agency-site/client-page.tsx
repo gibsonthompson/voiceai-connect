@@ -305,7 +305,7 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
     // Re-apply hero AFTER the marketing_config spread so the resolved demoPhone
     // (manual override -> auto-provisioned -> platform fallback) always wins. Without
     // this, a stale hero saved in marketing_config JSONB clobbered demoPhone and the
-    // number vanished from the site — the reported bug. Same rule as pricing above.
+    // number vanished from the site - the reported bug. Same rule as pricing above.
     // The stored hero is merged first so custom badge/headline copy still survives.
     hero: {
       ...defaultMarketingConfig.hero,
@@ -340,6 +340,7 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
         isDark={isDark}
         pricing={(marketingConfig.pricing && marketingConfig.pricing.length > 0) ? marketingConfig.pricing : defaultMarketingConfig.pricing}
         currencySymbol={currencySymbol}
+        trialDays={_trialDays}
       />
     </>
   );

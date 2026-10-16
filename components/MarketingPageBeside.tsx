@@ -680,7 +680,7 @@ function Pricing({ config }: { config: MarketingConfig }) {
                 ))}
               </ul>
               {tier.note && <p className="bsd-price-note">{tier.note}</p>}
-              <a href={tier.planKey ? `/signup?plan=${tier.planKey}` : '/signup'} className={`bsd-btn bsd-btn-block ${tier.isPopular ? 'bsd-btn-primary' : 'bsd-btn-ghost'}`}>Start 7-day free trial</a>
+              <a href={tier.planKey ? `/signup?plan=${tier.planKey}` : '/signup'} className={`bsd-btn bsd-btn-block ${tier.isPopular ? 'bsd-btn-primary' : 'bsd-btn-ghost'}`}>{config.signup?.trialDays === 0 ? 'Get started' : `Start ${config.signup?.trialDays ?? 7}-day free trial`}</a>
             </div>
           ))}
         </div>
