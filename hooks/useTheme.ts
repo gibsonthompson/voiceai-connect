@@ -302,10 +302,14 @@ function buildLightTheme(primary: string, overrides?: BrandingOverrides): Theme 
   const navBorder = hasNavBgOverride ? autoNavBorder(navBg) : baseBorder;
   const navHover = hasNavBgOverride ? autoNavHover(navBg) : 'rgba(0,0,0,0.02)';
 
-  // Active item contrast check: if primary is too close to sidebar bg, use white
+  // Active item contrast. When primary has enough contrast on the nav, use it for
+  // the selected tab. Otherwise fall back to the nav's own readable (dark) text on
+  // a subtle neutral tint, NEVER white-on-white: in light mode the nav is always
+  // light, so the old '#ffffff' fallback (carried over from the dark theme) made
+  // the active tab a white label on a white sidebar, i.e. invisible.
   const primaryVisibleOnNav = hasSufficientContrast(primary, navBg);
-  const activeItemColor = primaryVisibleOnNav ? primary : '#ffffff';
-  const activeItemBg = primaryVisibleOnNav ? withAlpha(primary, 0.15) : 'rgba(255,255,255,0.1)';
+  const activeItemColor = primaryVisibleOnNav ? primary : navText;
+  const activeItemBg = primaryVisibleOnNav ? withAlpha(primary, 0.15) : 'rgba(0,0,0,0.06)';
 
   return {
     isDark: false,

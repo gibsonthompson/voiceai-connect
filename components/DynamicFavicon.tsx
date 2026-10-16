@@ -13,6 +13,13 @@ interface DynamicFaviconProps {
    * Falls back to logoUrl when not provided (unchanged behavior elsewhere).
    */
   appleIconUrl?: string | null;
+  /**
+   * Square icon for the browser-tab favicon. A wordmark logoUrl gets squished at
+   * favicon size, so when this is set (typically /api/agency-app-icon, which
+   * composites the agency's app icon or logo onto a square) it is used for the
+   * <link rel="icon"> instead. Falls back to logoUrl when not provided.
+   */
+  faviconUrl?: string | null;
 }
 
 /**
@@ -24,14 +31,14 @@ interface DynamicFaviconProps {
  * re-inserts them during hydration reconciliation. By modifying the href
  * attribute instead, the DOM nodes stay in place and Next.js doesn't interfere.
  */
-export default function DynamicFavicon({ logoUrl, primaryColor, appleIconUrl }: DynamicFaviconProps) {
+export default function DynamicFavicon({ logoUrl, primaryColor, appleIconUrl, faviconUrl }: DynamicFaviconProps) {
   useEffect(() => {
-    if (!logoUrl && !primaryColor && !appleIconUrl) return;
+    if (!logoUrl && !primaryColor && !appleIconUrl && !faviconUrl) return;
 
     // Apple touch icon first, using the dedicated square icon when provided so
     // it is never stretched. Done before the favicon early-return below so it
     // still applies when only appleIconUrl is set.
-    const appleHref = appleIconUrl || logoUrl;
+    const appleHref = appleIconUrl || faviconUrl || logoUrl;
     if (appleHref) {
       const appleLinks = document.querySelectorAll("link[rel='apple-touch-icon']");
       if (appleLinks.length > 0) {
@@ -44,10 +51,14 @@ export default function DynamicFavicon({ logoUrl, primaryColor, appleIconUrl }: 
       }
     }
 
+    // Favicon source: prefer the dedicated square icon (never squished at tab
+    // size), then the logo, then a generated brand-color mark.
+    const squareFavicon = faviconUrl || logoUrl;
+    const isRaster = !!squareFavicon;
     let href: string;
 
-    if (logoUrl) {
-      href = logoUrl;
+    if (squareFavicon) {
+      href = squareFavicon;
     } else if (primaryColor) {
       const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="${primaryColor}"/><path d="M16 8c-4.4 0-8 3.6-8 8s3.6 8 8 8 8-3.6 8-8-3.6-8-8-8zm3.5 12.5l-4-2.5v-6h1.5v5.2l3.5 2.1-.5 1.2z" fill="white"/></svg>`;
       href = `data:image/svg+xml,${encodeURIComponent(svg)}`;
@@ -60,17 +71,17 @@ export default function DynamicFavicon({ logoUrl, primaryColor, appleIconUrl }: 
     if (iconLinks.length > 0) {
       iconLinks.forEach(link => {
         link.setAttribute('href', href);
-        link.setAttribute('type', logoUrl ? 'image/png' : 'image/svg+xml');
+        link.setAttribute('type', isRaster ? 'image/png' : 'image/svg+xml');
       });
     } else {
       // No existing icon links, create one
       const link = document.createElement('link');
       link.rel = 'icon';
-      link.type = logoUrl ? 'image/png' : 'image/svg+xml';
+      link.type = isRaster ? 'image/png' : 'image/svg+xml';
       link.href = href;
       document.head.appendChild(link);
     }
-  }, [logoUrl, primaryColor, appleIconUrl]);
+  }, [logoUrl, primaryColor, appleIconUrl, faviconUrl]);
 
   return null;
 }

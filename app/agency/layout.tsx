@@ -67,7 +67,7 @@ function AgencyFavicon() {
   // appleIconUrl points at the square compositor so the iOS home-screen /
   // link-preview icon is the agency's app icon (or logo, contained), never the
   // raw wordmark stretched into a square.
-  return <DynamicFavicon logoUrl={branding.logoUrl} appleIconUrl="/api/agency-app-icon?size=180" />;
+  return <DynamicFavicon logoUrl={branding.logoUrl} faviconUrl="/api/agency-app-icon?size=96" appleIconUrl="/api/agency-app-icon?size=180" />;
 }
 
 function TourLauncher({ theme }: { theme: any }) {

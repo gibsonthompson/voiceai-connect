@@ -171,7 +171,7 @@ function CallCenterShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: theme.bg, color: theme.text }}>
-      {branding.logoUrl && <DynamicFavicon logoUrl={branding.logoUrl} appleIconUrl="/api/agency-app-icon?size=180" />}
+      {branding.logoUrl && <DynamicFavicon logoUrl={branding.logoUrl} faviconUrl="/api/agency-app-icon?size=96" appleIconUrl="/api/agency-app-icon?size=180" />}
       {/* Mobile header */}
       <div className="sticky top-0 z-30 md:hidden" style={{ backgroundColor: theme.sidebarBg, paddingTop: 'env(safe-area-inset-top)' }}>
         <header className="flex items-center justify-between h-16 px-4" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}>
