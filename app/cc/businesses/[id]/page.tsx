@@ -20,7 +20,7 @@ import { useParams } from 'next/navigation';
 import {
   ArrowLeft, Loader2, Save, Phone, Clock, MessageSquare, PhoneForwarded,
   Building2, Check, PhoneCall, CheckCircle2, AlertCircle, Bell, Bot,
-  CalendarCheck, ShieldCheck, Mic, MapPin, Plus, X, Sparkles,
+  CalendarCheck, ShieldCheck, Mic, MapPin, Plus, X, Sparkles, Globe,
 } from 'lucide-react';
 import { useAgency } from '../../../agency/context';
 import { useTheme } from '../../../../hooks/useTheme';
@@ -129,6 +129,7 @@ export default function BusinessConfig() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [areaDraft, setAreaDraft] = useState('');
+  const [areaSuggestions, setAreaSuggestions] = useState<string[]>([]);
   const [bookingDefaults, setBookingDefaults] = useState<{ minNotice: number; maxDays: number }>({ minNotice: 30, maxDays: 60 });
   // Per-section save: each card saves only its own fields (partial PUT) with its
   // own saving/saved/dirty state. No settings-wide save button.
@@ -159,6 +160,20 @@ export default function BusinessConfig() {
     })();
   }, [agency?.id, clientId]);
 
+  // Website-scraped "found on your website" service-area suggestions. Same
+  // client-scoped endpoint the end-client My Business page uses (reachable with
+  // the manager's token), so the call center gets the same suggestions.
+  const loadAreaSuggestions = useCallback(async () => {
+    if (!clientId) return;
+    try {
+      const token = localStorage.getItem('auth_token');
+      const base = process.env.NEXT_PUBLIC_API_URL || '';
+      const r = await fetch(`${base}/api/client/${clientId}/scrape-suggestions`, { headers: { Authorization: `Bearer ${token}` } });
+      if (r.ok) { const d = await r.json(); setAreaSuggestions(Array.isArray(d.areas) ? d.areas : []); }
+    } catch { /* suggestions are best-effort */ }
+  }, [clientId]);
+  useEffect(() => { loadAreaSuggestions(); }, [loadAreaSuggestions]);
+
   const set = <K extends keyof Cfg>(k: K, v: Cfg[K]) => setCfg((c) => (c ? { ...c, [k]: v } : c));
   const setDay = (day: string, patch: Partial<{ open: string; close: string; closed: boolean }>) =>
     setCfg((c) => (c && c.businessHours ? { ...c, businessHours: { ...c.businessHours, [day]: { ...c.businessHours[day], ...patch } } } : c));
@@ -168,6 +183,22 @@ export default function BusinessConfig() {
     if (!v || !cfg) return;
     if (!cfg.serviceAreas.includes(v)) set('serviceAreas', [...cfg.serviceAreas, v].slice(0, 50));
     setAreaDraft('');
+  };
+
+  // Accept a scraped area suggestion: add it to the list, drop it from the
+  // suggestions, and tell the backend not to surface it again. Still needs Save.
+  const addAreaSuggestion = (name: string) => {
+    if (!cfg) return;
+    if (!cfg.serviceAreas.includes(name)) set('serviceAreas', [...cfg.serviceAreas, name].slice(0, 50));
+    setAreaSuggestions((prev) => prev.filter((a) => a !== name));
+    try {
+      const token = localStorage.getItem('auth_token');
+      const base = process.env.NEXT_PUBLIC_API_URL || '';
+      fetch(`${base}/api/client/${clientId}/scrape-suggestions/dismiss`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ type: 'area', name }),
+      });
+    } catch { /* best-effort */ }
   };
 
   // Save just one section's fields. The backend PUT whitelists each field
@@ -341,6 +372,18 @@ export default function BusinessConfig() {
               placeholder="Add a city or region, then Enter" className="flex-1 rounded-xl px-3 py-2.5 text-sm outline-none" style={field} />
             <button onClick={addArea} className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-semibold flex-shrink-0" style={{ backgroundColor: theme.hover, color: theme.text }}><Plus className="h-4 w-4" /> Add</button>
           </div>
+          {areaSuggestions.filter((a) => !cfg.serviceAreas.includes(a)).length > 0 && (
+            <div className="mb-3 rounded-xl p-3" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.border}` }}>
+              <div className="flex items-center gap-1.5 mb-2"><Globe className="h-3.5 w-3.5" style={{ color: theme.primary }} /><span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: theme.primary }}>Found on your website</span></div>
+              <div className="flex flex-wrap gap-1.5">
+                {areaSuggestions.filter((a) => !cfg.serviceAreas.includes(a)).map((a) => (
+                  <button key={a} onClick={() => addAreaSuggestion(a)} className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12px] font-medium transition hover:opacity-90" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, color: theme.text }} title="Add this service area">
+                    <Plus className="h-3 w-3" style={{ color: theme.primary }} /> {a}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           {cfg.serviceAreas.length === 0 ? (
             <p className="text-[12px]" style={{ color: theme.textSubtle }}>None set. The AI will not claim a specific service area.</p>
           ) : (

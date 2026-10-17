@@ -54,6 +54,7 @@ export default function CcKnowledgeBase({ agencyId, clientId, theme }: { agencyI
   const [saved, setSaved] = useState(false);
   const [learning, setLearning] = useState(false);
   const [scanStep, setScanStep] = useState(0);
+  const [scanPct, setScanPct] = useState(0);
   const [showAi, setShowAi] = useState(false);
   const [msg, setMsg] = useState<{ text: string; error: boolean } | null>(null);
   const msgTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -93,11 +94,16 @@ export default function CcKnowledgeBase({ agencyId, clientId, theme }: { agencyI
 
   useEffect(() => { load(); }, [load]);
 
-  // Cycle the scan-step label while a scrape runs.
+  // Cycle the scan-step label and drive a progress percentage while a scrape
+  // runs. The scrape time varies (crawl + LLM extraction), so the percentage is
+  // a smoothed estimate that eases toward ~95% and is snapped to 100% by
+  // learnFromWebsite the moment it actually finishes.
   useEffect(() => {
     if (!learning) { setScanStep(0); return; }
-    const t = setInterval(() => setScanStep((s) => (s + 1) % SCAN_STEPS.length), 1600);
-    return () => clearInterval(t);
+    setScanPct((p) => (p > 0 && p < 100 ? p : 4));
+    const label = setInterval(() => setScanStep((s) => (s + 1) % SCAN_STEPS.length), 1600);
+    const prog = setInterval(() => setScanPct((p) => (p >= 95 ? 95 : p + Math.max(1, Math.round((95 - p) * 0.1)))), 350);
+    return () => { clearInterval(label); clearInterval(prog); };
   }, [learning]);
 
   const addFAQ = () => setFaqs((p) => [...p, { id: Date.now().toString(), question: '', answer: '' }]);
@@ -145,9 +151,9 @@ export default function CcKnowledgeBase({ agencyId, clientId, theme }: { agencyI
         body: JSON.stringify({ websiteUrl: website, faqs: formatFAQs(faqs), additionalInfo, scrapeWebsite: true }),
       });
       const d = await r.json().catch(() => ({}));
-      if (r.ok && d.success) { showMsg('Learned from the website. The AI now knows what is on it.'); await load(); }
+      if (r.ok && d.success) { setScanPct(100); showMsg('Learned from the website. The AI now knows what is on it.'); await load(); }
       else showMsg(d.error || 'Could not read that website.', true);
-    } catch { showMsg('Something went wrong reading that website.', true); } finally { setLearning(false); }
+    } catch { showMsg('Something went wrong reading that website.', true); } finally { setLearning(false); setTimeout(() => setScanPct(0), 600); }
   };
 
   const card = { backgroundColor: theme.card, border: `1px solid ${theme.border}` } as React.CSSProperties;
@@ -156,7 +162,6 @@ export default function CcKnowledgeBase({ agencyId, clientId, theme }: { agencyI
 
   return (
     <div className="rounded-2xl p-5 sm:p-6" style={card}>
-      <style>{`@keyframes ccKbScan{0%{transform:translateX(-120%)}100%{transform:translateX(320%)}}.cc-kb-scan{width:38%;animation:ccKbScan 1.4s ease-in-out infinite}`}</style>
 
       <div className="flex items-center gap-3 mb-4">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><BookOpen className="h-4 w-4" style={{ color: theme.primary }} /></div>
@@ -184,10 +189,13 @@ export default function CcKnowledgeBase({ agencyId, clientId, theme }: { agencyI
             </div>
             {learning ? (
               <div className="mt-3 rounded-xl p-3" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                <p className="text-[13px] font-semibold" style={{ color: theme.text }}>Reading the website</p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[13px] font-semibold" style={{ color: theme.text }}>Reading the website</p>
+                  <span className="text-[12px] font-semibold tabular-nums" style={{ color: theme.primary }}>{scanPct}%</span>
+                </div>
                 <p key={scanStep} className="text-[11px] mt-0.5" style={{ color: theme.textMuted }}>{SCAN_STEPS[scanStep]}...</p>
                 <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full" style={{ backgroundColor: theme.border }}>
-                  <div className="h-full rounded-full cc-kb-scan" style={{ backgroundColor: theme.primary }} />
+                  <div className="h-full rounded-full transition-all duration-300 ease-out" style={{ backgroundColor: theme.primary, width: `${scanPct}%` }} />
                 </div>
               </div>
             ) : (
