@@ -37,8 +37,18 @@ interface Agency {
 // ============================================================================
 function buildFaqCategories(agency: Agency) {
   const cs = getCurrencySymbol(agency.display_currency || agency.currency || 'USD');
-  const lowestPrice = agency.price_starter ? Math.round(agency.price_starter / 100) : 99;
-  const highestPrice = agency.price_growth ? Math.round(agency.price_growth / 100) : 299;
+  const _starter = agency.price_starter ? Math.round(agency.price_starter / 100) : null;
+  const _pro = agency.price_pro ? Math.round(agency.price_pro / 100) : null;
+  const _growth = agency.price_growth ? Math.round(agency.price_growth / 100) : null;
+  // Build an explicit per-plan line from the agency's real prices rather than a vague range.
+  const _planParts = [
+    _starter != null ? `Starter is ${cs}${_starter}/month` : null,
+    _pro != null ? `Professional is ${cs}${_pro}/month` : null,
+    _growth != null ? `Growth is ${cs}${_growth}/month` : null,
+  ].filter(Boolean) as string[];
+  const _pricingAnswer = _planParts.length
+    ? `${_planParts.length > 1 ? _planParts.slice(0, -1).join(', ') + ', and ' + _planParts.slice(-1) : _planParts[0]}. Every plan includes 24/7 AI receptionist coverage with call recordings, transcripts, AI summaries, text notifications, and Google Calendar booking.`
+    : `Visit our pricing page for current plan details on 24/7 AI receptionist coverage including call recordings, transcripts, AI summaries, text notifications, and Google Calendar booking.`;
   // Billing-aware FAQ copy so answers never contradict the agency's real offer.
   const _cardRequired = (agency as any).require_card_for_trial === true && (agency as any).stripe_charges_enabled === true;
   const _rawTrial = Number((agency as any).client_trial_days);
@@ -120,9 +130,9 @@ function buildFaqCategories(agency: Agency) {
   {
     name: 'Pricing & Billing',
     faqs: [
-      { q: 'How much does this cost?', a: `Plans range from ${cs}${lowestPrice} to ${cs}${highestPrice}/month for 24/7 AI receptionist coverage including call recordings, transcripts, AI summaries, text notifications, and Google Calendar booking. Visit our pricing page for current plan details.` },
+      { q: 'How much does this cost?', a: _pricingAnswer },
       { q: 'Is there a free trial?', a: _trialAnswer },
-      { q: 'What happens if I go over my call limit?', a: 'You\'ll be notified when you\'re approaching your limit. Depending on your plan, you can upgrade mid-cycle or pay a small per-call overage fee. No surprise bills, you\'ll always know before it happens.' },
+      { q: 'What happens if I go over my call limit?', a: 'You\'ll be notified as you approach your plan\'s limit, so there are no surprise bills. If you need more capacity, you can upgrade to a higher plan at any time from your dashboard.' },
       { q: 'Can I cancel anytime?', a: 'Yes. There are no long-term contracts or cancellation fees. You can cancel from your dashboard settings at any time.' },
     ],
   },
@@ -180,7 +190,23 @@ export default function AgencyFAQPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const faqCategories = useMemo(() => agency ? buildFaqCategories(agency) : [], [agency]);
+  // Single source of truth: the agency's own saved FAQs (Website > Content >
+  // FAQ, the same content the homepage renders). When the agency has saved
+  // their own FAQs we show exactly those, so the /faq page can never drift from
+  // the homepage or carry stale default pricing. Only when none are saved do we
+  // fall back to the built-in starter set.
+  const faqCategories = useMemo(() => {
+    if (!agency) return [];
+    const saved = (agency as any).marketing_config?.faqs;
+    if (Array.isArray(saved) && saved.length > 0) {
+      const cleaned = saved
+        .filter((f: any) => f && (f.question || f.q) && (f.answer || f.a))
+        .map((f: any) => ({ q: String(f.question || f.q), a: String(f.answer || f.a).replace(/<[^>]*>/g, '').trim() }))
+        .filter((f: any) => f.q && f.a);
+      if (cleaned.length) return [{ name: '', faqs: cleaned }];
+    }
+    return buildFaqCategories(agency);
+  }, [agency]);
 
   const filteredCategories = useMemo(() => {
     let cats = faqCategories;
@@ -261,7 +287,8 @@ export default function AgencyFAQPage() {
         </div>
       </section>
 
-      {/* CATEGORY FILTER */}
+      {/* CATEGORY FILTER (hidden when there's a single group, e.g. saved FAQs) */}
+      {faqCategories.length > 1 && (
       <section style={{ borderTop: `1px solid ${borderColor}`, borderBottom: `1px solid ${borderColor}`, padding: '0.75rem 0', position: 'sticky', top: 0, zIndex: 30, background: bg, backdropFilter: 'blur(12px)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 1.5rem', display: 'flex', gap: '0.5rem', overflowX: 'auto' }}>
           <button onClick={() => setActiveCategory(null)} style={{ padding: '0.4rem 1rem', borderRadius: 999, fontSize: '0.75rem', fontWeight: 600, border: `1px solid ${activeCategory === null ? pillActiveBg : borderColor}`, background: activeCategory === null ? pillActiveBg : 'transparent', color: activeCategory === null ? pillActiveText : pillText, cursor: 'pointer', whiteSpace: 'nowrap' }}>All ({totalQuestions})</button>
@@ -270,6 +297,7 @@ export default function AgencyFAQPage() {
           ))}
         </div>
       </section>
+      )}
 
       {/* FAQ CONTENT */}
       <section style={{ padding: '3rem 0 4rem', background: bg }}>
@@ -279,7 +307,7 @@ export default function AgencyFAQPage() {
           ) : (
             filteredCategories.map(cat => (
               <div key={cat.name} style={{ marginBottom: '3rem' }}>
-                <h2 style={{ fontSize: '1.375rem', fontWeight: 700, color: textPrimary, marginBottom: '1rem', letterSpacing: '-0.01em' }}>{cat.name}</h2>
+                {cat.name && <h2 style={{ fontSize: '1.375rem', fontWeight: 700, color: textPrimary, marginBottom: '1rem', letterSpacing: '-0.01em' }}>{cat.name}</h2>}
                 <div style={{ borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: `1px solid ${borderColor}`, background: isDark ? 'rgba(255,255,255,0.02)' : '#fafafa' }}>
                   {cat.faqs.map((faq, i) => (
                     <details key={i} style={{ borderBottom: i < cat.faqs.length - 1 ? `1px solid ${borderColor}` : 'none' }}>

@@ -76,6 +76,92 @@ export function getStatusBadge(status?: string | null): BadgeStyle {
 }
 
 // ============================================================================
+// TRIAL STATUS
+// Surfaces, in one place, whether an agency is on a trial and how long is left.
+// An agency counts as trialing when either its subscription_status is
+// trial/trialing OR its account status is trial. The trial end date lives in
+// trial_ends_at; when a trialing agency has no end date we still flag it so it
+// never silently disappears from the admin view.
+// ============================================================================
+export interface TrialLike {
+  subscription_status?: string | null;
+  status?: string | null;
+  trial_ends_at?: string | null;
+}
+
+export interface TrialInfo extends BadgeStyle {
+  isTrialing: boolean;
+  endsAt: string | null;   // ISO string, or null if not set
+  daysLeft: number | null; // whole days remaining (negative if past), null if no end date
+  ended: boolean;          // true when the trial end date is in the past
+  detail: string;          // longer phrasing for the detail panel, e.g. "Oct 20, 2026 · 4 days left"
+}
+
+// Whole days between now and an ISO date, rounded toward the end of day so a
+// trial ending later today reads as "today" (0) rather than already expired.
+function daysUntilDate(iso: string): number {
+  const end = new Date(iso).getTime();
+  const now = Date.now();
+  return Math.ceil((end - now) / 86400000);
+}
+
+export function getTrialInfo(agency: TrialLike): TrialInfo | null {
+  const sub = (agency.subscription_status || '').toLowerCase();
+  const acct = (agency.status || '').toLowerCase();
+  const isTrialing = sub === 'trial' || sub === 'trialing' || acct === 'trial';
+  if (!isTrialing) return null;
+
+  const endsAt = agency.trial_ends_at || null;
+
+  // Trialing but no end date recorded — flag it rather than hide it.
+  if (!endsAt) {
+    return {
+      isTrialing: true, endsAt: null, daysLeft: null, ended: false,
+      label: 'Trial · end date not set', detail: 'End date not set',
+      color: C.amber, bg: C.amberBg, border: C.amberLine,
+    };
+  }
+
+  const daysLeft = daysUntilDate(endsAt);
+  const dateStr = formatTrialDate(endsAt);
+
+  if (daysLeft < 0) {
+    const ago = Math.abs(daysLeft);
+    return {
+      isTrialing: true, endsAt, daysLeft, ended: true,
+      label: `Trial ended ${ago}d ago`, detail: `${dateStr} · ended ${ago} day${ago === 1 ? '' : 's'} ago`,
+      color: C.red, bg: C.redBg, border: C.redLine,
+    };
+  }
+  if (daysLeft === 0) {
+    return {
+      isTrialing: true, endsAt, daysLeft, ended: false,
+      label: 'Trial ends today', detail: `${dateStr} · ends today`,
+      color: C.amber, bg: C.amberBg, border: C.amberLine,
+    };
+  }
+  // 3 days or fewer left is the warning window.
+  const warn = daysLeft <= 3;
+  return {
+    isTrialing: true, endsAt, daysLeft, ended: false,
+    label: `Trial · ${daysLeft}d left`,
+    detail: `${dateStr} · ${daysLeft} day${daysLeft === 1 ? '' : 's'} left`,
+    color: warn ? C.amber : C.cyan,
+    bg: warn ? C.amberBg : C.cyanBg,
+    border: warn ? C.amberLine : C.cyanLine,
+  };
+}
+
+// Local date formatter (avoids a cross-import from format.ts into status.ts).
+function formatTrialDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch {
+    return iso;
+  }
+}
+
+// ============================================================================
 // CALL OUTCOME
 // The calls table has no single outcome column. The real outcome is derived
 // from call_status, urgency_level, ended_reason, transfer_status, and is_spam,
