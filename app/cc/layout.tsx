@@ -105,10 +105,14 @@ function CallCenterShell({ children }: { children: ReactNode }) {
   const handleSignOut = () => { try { localStorage.clear(); } catch {} window.location.href = '/agency/login'; };
 
   if (loading) {
+    // Theme-neutral: no explicit background (inherit the html bg the pre-paint
+    // script already set to the correct light/dark), and a neutral gray spinner
+    // instead of theme.primary, which falls back to the platform brand color
+    // before the agency theme resolves and flashed VoiceAI Connect colors here.
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: theme.bg }}>
-        <div className="flex items-center gap-2 text-sm" style={{ color: theme.textMuted }}>
-          <Radio className="h-4 w-4 animate-pulse" style={{ color: theme.primary }} /> Loading call center...
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex items-center gap-2 text-sm" style={{ color: '#9ca3af' }}>
+          <Radio className="h-4 w-4 animate-pulse" style={{ color: '#9ca3af' }} /> Loading call center...
         </div>
       </div>
     );
@@ -125,10 +129,14 @@ function CallCenterShell({ children }: { children: ReactNode }) {
       <div className="flex items-center justify-between h-16 px-5" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}>
         <div className="flex items-center gap-2.5 min-w-0">
           {branding.logoUrl ? (
-            <img src={branding.logoUrl} alt={branding.name} style={{ height: '40px', width: 'auto', maxWidth: '180px' }} className="object-contain flex-shrink-0" />
+            <img src={branding.logoUrl} alt={branding.name} style={{ height: '28px', width: 'auto' }} className="object-contain flex-shrink-0" />
           ) : (
-            <div className="flex items-center justify-center rounded-lg flex-shrink-0" style={{ height: '40px', width: '40px', backgroundColor: theme.primary15 }}><WaveformIcon className="h-5 w-5" color={theme.primary} /></div>
+            <div className="flex items-center justify-center rounded-lg flex-shrink-0" style={{ height: '30px', width: '30px', backgroundColor: theme.primary15 }}><WaveformIcon className="h-4 w-4" color={theme.primary} /></div>
           )}
+          <div className="min-w-0 leading-tight">
+            <p className="text-sm font-semibold truncate" style={{ color: theme.sidebarText }}>{branding.name}</p>
+            <p className="text-[10px] uppercase tracking-wider" style={{ color: theme.primary }}>Call Center</p>
+          </div>
         </div>
         {isMobile && <button onClick={() => setSidebarOpen(false)} className="w-10 h-10 -mr-2 flex items-center justify-center rounded-lg" style={{ color: theme.sidebarText }}><X className="h-6 w-6" /></button>}
       </div>
@@ -171,12 +179,13 @@ function CallCenterShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: theme.bg, color: theme.text }}>
-      {branding.logoUrl && <DynamicFavicon logoUrl={branding.logoUrl} faviconUrl="/api/agency-app-icon?size=96" appleIconUrl="/api/agency-app-icon?size=180" />}
+      {branding.logoUrl && <DynamicFavicon logoUrl={branding.logoUrl} appleIconUrl="/api/agency-app-icon?size=180" />}
       {/* Mobile header */}
       <div className="sticky top-0 z-30 md:hidden" style={{ backgroundColor: theme.sidebarBg, paddingTop: 'env(safe-area-inset-top)' }}>
         <header className="flex items-center justify-between h-16 px-4" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}>
           <div className="flex items-center gap-2.5 min-w-0">
-            {branding.logoUrl ? <img src={branding.logoUrl} alt={branding.name} style={{ height: '40px', width: 'auto', maxWidth: '170px' }} className="object-contain" /> : <div className="flex items-center justify-center rounded-lg" style={{ height: '40px', width: '40px', backgroundColor: theme.primary15 }}><WaveformIcon className="h-5 w-5" color={theme.primary} /></div>}
+            {branding.logoUrl ? <img src={branding.logoUrl} alt={branding.name} style={{ height: '30px', width: 'auto' }} className="object-contain" /> : <div className="flex items-center justify-center rounded-lg" style={{ height: '34px', width: '34px', backgroundColor: theme.primary15 }}><WaveformIcon className="h-5 w-5" color={theme.primary} /></div>}
+            <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: theme.primary }}>Call Center</span>
           </div>
           <button onClick={() => setSidebarOpen(true)} className="w-11 h-11 -mr-2 flex items-center justify-center rounded-xl" style={{ color: theme.sidebarText }}><Menu className="h-7 w-7" /></button>
         </header>
