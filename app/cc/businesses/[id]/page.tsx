@@ -48,6 +48,7 @@ interface Cfg {
   humanHandoff: 'transfer' | 'message';
   overflowAction: 'message' | 'callback' | 'ring_business';
   aiDirectRouting: boolean;
+  consultTransfer: boolean;
   serviceAreas: string[];
   aiTone: 'professional' | 'friendly' | 'casual' | 'clinical';
   bookingMode: 'auto_book' | 'collect_request' | 'disabled';
@@ -175,7 +176,7 @@ export default function BusinessConfig() {
           businessCity: cfg.businessCity, businessState: cfg.businessState, businessWebsite: cfg.businessWebsite,
           transferPhone: cfg.transferPhone, timezone: cfg.timezone, greeting: cfg.greeting,
           businessHours: cfg.businessHours, forwardingMode: cfg.forwardingMode, humanHandoff: cfg.humanHandoff,
-          overflowAction: cfg.overflowAction, aiDirectRouting: cfg.aiDirectRouting,
+          overflowAction: cfg.overflowAction, aiDirectRouting: cfg.aiDirectRouting, consultTransfer: cfg.consultTransfer,
           serviceAreas: cfg.serviceAreas,
           aiTone: cfg.aiTone, bookingMode: cfg.bookingMode, minBookingNotice: cfg.minBookingNotice, maxBookingDays: cfg.maxBookingDays,
           spamDetection: cfg.spamDetection, callerRecognition: cfg.callerRecognition, transferCall: cfg.transferCall,
@@ -405,6 +406,17 @@ export default function BusinessConfig() {
                     : 'Off (recommended): every handoff goes to your agents first, and the agent decides where it goes next. Turn this on only for a larger business that wants certain callers sent straight to a named department.'}
                   on={cfg.aiDirectRouting}
                   onClick={() => set('aiDirectRouting', !cfg.aiDirectRouting)}
+                />
+              </div>
+
+              <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.borderSubtle}` }}>
+                <ToggleRow
+                  title="Agents brief the recipient before connecting"
+                  sub={cfg.consultTransfer
+                    ? "On (consult transfer): when an agent hands a caller to the owner or a department, they first speak privately with that person, then connect the caller or cancel. The caller waits on hold during the brief."
+                    : "Off (quick transfer): the recipient hears who's calling and why, then the caller is connected. The agent doesn't speak to them first. Faster, but no live hand-off."}
+                  on={cfg.consultTransfer}
+                  onClick={() => set('consultTransfer', !cfg.consultTransfer)}
                 />
               </div>
             </>
