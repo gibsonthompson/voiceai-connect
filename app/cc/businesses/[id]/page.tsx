@@ -59,6 +59,9 @@ interface Cfg {
   transferCall: boolean;
   afterHoursRouting: boolean;
   smsToCaller: boolean;
+  apptOwnerSmsEnabled: boolean;
+  apptCustomerSmsEnabled: boolean;
+  apptCustomerSmsTemplate: string;
   hipaaMode: boolean;
   recordingEnabled: boolean;
   vapiPhoneNumber: string | null;
@@ -442,7 +445,20 @@ export default function BusinessConfig() {
               <p className="text-[11.5px] mt-2" style={{ color: theme.textSubtle }}>Leave either blank to use the agency default ({bookingDefaults.minNotice} min notice, {bookingDefaults.maxDays} days ahead), set in agency Settings. A value here overrides it for just this business.</p>
             </>
           )}
-          <SaveBtn fields={['bookingMode', 'minBookingNotice', 'maxBookingDays']} sk="booking" />
+          {cfg.bookingMode === 'auto_book' && (
+            <div className="mt-4 pt-4 space-y-1" style={{ borderTop: `1px solid ${theme.border}` }}>
+              <ToggleRow title="Text me when an appointment is booked" sub="A short alert to the business owner the moment the AI books, separate from the post-call recap." on={cfg.apptOwnerSmsEnabled} onClick={() => set('apptOwnerSmsEnabled', !cfg.apptOwnerSmsEnabled)} />
+              <ToggleRow title="Text the customer a booking confirmation" sub="Premium. Texts the caller a confirmation from this business's number right after they book, which cuts no-shows." on={cfg.apptCustomerSmsEnabled} onClick={() => set('apptCustomerSmsEnabled', !cfg.apptCustomerSmsEnabled)} />
+              {cfg.apptCustomerSmsEnabled && (
+                <div className="pt-2">
+                  <Label>Confirmation message</Label>
+                  <textarea value={cfg.apptCustomerSmsTemplate} onChange={(e) => set('apptCustomerSmsTemplate', e.target.value.slice(0, 320))} rows={3} placeholder="Hi {name}, your {service} with {business} is confirmed for {date} at {time}. Reply here if you need to change anything." className="w-full rounded-xl px-3 py-2.5 text-sm outline-none resize-y" style={field} />
+                  <p className="text-[11px] mt-1.5" style={{ color: theme.textSubtle }}>Placeholders: {'{name}'}, {'{business}'}, {'{service}'}, {'{date}'}, {'{time}'}, {'{staff}'}. Leave blank for the default. Sent from this business&apos;s AI number.</p>
+                </div>
+              )}
+            </div>
+          )}
+          <SaveBtn fields={['bookingMode', 'minBookingNotice', 'maxBookingDays', 'apptOwnerSmsEnabled', 'apptCustomerSmsEnabled', 'apptCustomerSmsTemplate']} sk="booking" />
         </div>
 
         {/* Google Calendar */}
