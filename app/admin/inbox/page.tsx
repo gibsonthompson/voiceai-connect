@@ -2,18 +2,23 @@
 
 // ============================================================================
 // ADMIN INBOX, one unified iMessage-style inbox for all platform comms.
-// One conversation per agency (in-app support thread + SMS replies merged),
-// plus the public FAQ-bot prospect chats as read-only conversations. A reply
-// routes to the channel the agency last used: in-app (their dashboard "VoiceAI
-// Connect" conversation) or SMS from the platform number.
-// Backend: GET /api/admin/inbox, POST /api/admin/inbox/send, /inbox/read.
+// One conversation per agency: the in-app support thread, SMS, feedback and
+// help-bot chats are ALL merged into a single thread (no tabs) so nothing is
+// split off and context stays together. Plus the public FAQ-bot prospect chats
+// as read-only conversations. Each conversation can be marked as a support item
+// and resolved; resolved persists until a newer message arrives.
+// Backend: GET /api/admin/inbox, POST /inbox/send, /inbox/read,
+// /inbox/mark-support, /inbox/resolve, /inbox/reopen.
 // ============================================================================
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { MessageSquare, Send, ArrowLeft, Loader2, RefreshCw, Phone, Building2, Bot, ExternalLink, Zap } from 'lucide-react';
+import {
+  MessageSquare, Send, ArrowLeft, Loader2, RefreshCw, Phone, Building2, Bot,
+  ExternalLink, Mail, LifeBuoy, CheckCircle2, RotateCcw,
+} from 'lucide-react';
 
+type SupportStatus = 'none' | 'support' | 'resolved';
 interface InboxMessage { id: string; sender: 'in' | 'out'; body: string; at: string; kind: 'inapp' | 'sms' | 'faq' | 'feedback' | 'help'; }
-interface ActivityItem { id: string; type: string; label: string; category: string; body: string; recipientPhone: string | null; recipientType: string | null; direction: 'in' | 'out'; deliveryStatus: string | null; at: string; }
 interface Conversation {
   key: string;
   type: 'agency' | 'faq';
@@ -21,6 +26,8 @@ interface Conversation {
   planType?: string | null;
   name: string;
   phone: string | null;
+  contactPhone?: string | null;
+  email?: string | null;
   messages: InboxMessage[];
   unread: number;
   lastAt: string | null;
@@ -30,7 +37,8 @@ interface Conversation {
   needsReply: boolean;
   readOnly?: boolean;
   escalated?: boolean;
-  faqOrigin?: { userType: string | null; source: string | null; agencyName: string | null; tag: string } | null;
+  supportStatus?: SupportStatus;
+  faqOrigin?: { userType: string | null; source: string | null; agencyName: string | null; tag: string; visitorName?: string | null; visitorContact?: string | null } | null;
 }
 
 const backendUrl = () => process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
@@ -54,25 +62,6 @@ export default function AdminInboxPage() {
   const threadEndRef = useRef<HTMLDivElement | null>(null);
   const stickRef = useRef(true);
 
-  // Thread tabs: the clean two-way "Conversation", and the read-only "Platform
-  // activity" log (automated sends: onboarding, billing, demo follow-ups, etc.),
-  // kept out of the conversation so it doesn't crowd it.
-  const [threadTab, setThreadTab] = useState<'conversation' | 'activity'>('conversation');
-  const [activity, setActivity] = useState<ActivityItem[]>([]);
-  const [activityLoading, setActivityLoading] = useState(false);
-  const [activityFilter, setActivityFilter] = useState<string>('all');
-
-  const loadActivity = useCallback(async (agencyId: string) => {
-    setActivityLoading(true);
-    try {
-      const res = await fetch(`${backendUrl()}/api/admin/agencies/${agencyId}/platform-activity`, { headers: authHeaders() });
-      if (!res.ok) throw new Error('failed');
-      const data = await res.json();
-      setActivity(data.activity || []);
-    } catch { setActivity([]); }
-    finally { setActivityLoading(false); }
-  }, []);
-
   const load = useCallback(async () => {
     try {
       const res = await fetch(`${backendUrl()}/api/admin/inbox`, { headers: authHeaders() });
@@ -95,15 +84,8 @@ export default function AdminInboxPage() {
     return () => clearInterval(t);
   }, [load]);
 
-  useEffect(() => { stickRef.current = true; setThreadTab('conversation'); setActivity([]); setActivityFilter('all'); }, [selected?.key]);
-  useEffect(() => { if (threadTab === 'conversation' && stickRef.current) threadEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [selected, threadTab]);
-
-  // Load the platform-activity log the first time the tab is opened for an agency.
-  useEffect(() => {
-    if (threadTab === 'activity' && selected?.type === 'agency' && selected.agencyId) {
-      loadActivity(selected.agencyId);
-    }
-  }, [threadTab, selected?.key, selected?.agencyId, selected?.type, loadActivity]);
+  useEffect(() => { stickRef.current = true; }, [selected?.key]);
+  useEffect(() => { if (stickRef.current) threadEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [selected]);
 
   const markRead = async (c: Conversation) => {
     if (c.type !== 'agency' || !c.agencyId || !c.unread) return;
@@ -117,6 +99,20 @@ export default function AdminInboxPage() {
   };
 
   const open = (c: Conversation) => { setSelected(c); setReply(''); markRead(c); };
+
+  // Support / resolved: mark a thread as a support item, resolve it, or reopen
+  // it. Optimistic so the badge flips immediately; the backend persists it.
+  const setThreadStatus = async (c: Conversation, action: 'mark-support' | 'resolve' | 'reopen') => {
+    const next: SupportStatus = action === 'resolve' ? 'resolved' : 'support';
+    setConversations((prev) => prev.map((x) => (x.key === c.key ? { ...x, supportStatus: next } : x)));
+    setSelected((prev) => (prev && prev.key === c.key ? { ...prev, supportStatus: next } : prev));
+    try {
+      await fetch(`${backendUrl()}/api/admin/inbox/${action}`, {
+        method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ threadKey: c.key }),
+      });
+    } catch { setError('Could not update status.'); }
+  };
 
   const send = async () => {
     const text = reply.trim();
@@ -150,6 +146,13 @@ export default function AdminInboxPage() {
       {c.type === 'faq' ? `${c.faqOrigin?.tag || 'Help bot'}${c.escalated ? ', escalated' : ''}` : 'Agency'}
     </span>
   );
+
+  // Small status chip for the list + header.
+  const StatusChip = ({ status }: { status?: SupportStatus }) => {
+    if (status === 'support') return (<span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 inline-flex items-center gap-0.5" style={{ background: '#FBF0D6', color: 'var(--a-amber, #92400e)' }}><LifeBuoy className="h-2.5 w-2.5" />Support</span>);
+    if (status === 'resolved') return (<span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 inline-flex items-center gap-0.5" style={{ background: 'var(--a-em-soft, #ecfdf5)', color: 'var(--a-em-deep, #047857)' }}><CheckCircle2 className="h-2.5 w-2.5" />Resolved</span>);
+    return null;
+  };
 
   return (
     <div className="flex h-[calc(100dvh-4rem)] overflow-hidden" style={{ color: 'var(--a-ink)' }}>
@@ -185,11 +188,14 @@ export default function AdminInboxPage() {
                   <span className="text-xs truncate" style={{ color: (c.unread > 0 || c.needsReply) ? 'var(--a-ink)' : 'var(--a-dim)' }}>
                     {c.lastDirection === 'out' ? 'You: ' : ''}{c.lastPreview}
                   </span>
-                  {c.unread > 0 ? (
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white shrink-0" style={{ background: 'var(--a-em)' }}>{c.unread}</span>
-                  ) : c.needsReply ? (
-                    <span className="w-2 h-2 rounded-full shrink-0" style={{ background: 'var(--a-em)' }} />
-                  ) : null}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <StatusChip status={c.supportStatus} />
+                    {c.unread > 0 ? (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white min-w-[18px] text-center" style={{ background: 'var(--a-em)' }}>{c.unread > 99 ? '99+' : c.unread}</span>
+                    ) : c.needsReply ? (
+                      <span className="w-2 h-2 rounded-full" style={{ background: 'var(--a-em)' }} />
+                    ) : null}
+                  </div>
                 </div>
               </button>
             ))
@@ -206,99 +212,53 @@ export default function AdminInboxPage() {
           </div>
         ) : (
           <>
-            <div className="flex items-center gap-3 px-4 h-14 border-b shrink-0" style={{ borderColor: 'var(--a-line)', background: 'white' }}>
+            <div className="flex items-center gap-3 px-4 py-2.5 border-b shrink-0" style={{ borderColor: 'var(--a-line)', background: 'white' }}>
               <button onClick={() => setSelected(null)} className="sm:hidden p-1.5 -ml-1.5 rounded-lg hover:bg-black/5" aria-label="Back"><ArrowLeft className="h-4 w-4" style={{ color: 'var(--a-dim)' }} /></button>
               <div className="h-8 w-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--a-em-soft, #ecfdf5)', color: 'var(--a-em-deep, #047857)' }}>
                 {selected.type === 'faq' ? <Bot className="h-4 w-4" /> : <Building2 className="h-4 w-4" />}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-semibold truncate flex items-center gap-1.5">{selected.name}<TypeTag c={selected} /></div>
-                <div className="text-[11px] flex items-center gap-1" style={{ color: 'var(--a-dim)' }}>
-                  {selected.type === 'faq'
-                    ? (selected.faqOrigin?.source === 'marketing' || selected.faqOrigin?.userType === 'prospect'
-                        ? 'Prospect, public marketing site'
-                        : selected.faqOrigin?.agencyName
-                          ? `${selected.faqOrigin.agencyName}, in-dashboard help widget`
-                          : 'In-dashboard help widget')
-                    : (selected.phone ? (<><Phone className="h-3 w-3" />{selected.phone}</>) : 'Agency')}
+                <div className="text-sm font-semibold truncate flex items-center gap-1.5">{selected.name}<TypeTag c={selected} /><StatusChip status={selected.supportStatus} /></div>
+                <div className="text-[11px] flex items-center gap-x-3 gap-y-0.5 flex-wrap" style={{ color: 'var(--a-dim)' }}>
+                  {selected.type === 'faq' && (
+                    <span>{selected.faqOrigin?.source === 'marketing' || selected.faqOrigin?.userType === 'prospect'
+                      ? 'Prospect, public marketing site'
+                      : selected.faqOrigin?.agencyName
+                        ? `${selected.faqOrigin.agencyName}, in-dashboard help`
+                        : 'In-dashboard help widget'}</span>
+                  )}
+                  {selected.contactPhone && (<span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" />{selected.contactPhone}</span>)}
+                  {selected.email && (<span className="inline-flex items-center gap-1 truncate"><Mail className="h-3 w-3" />{selected.email}</span>)}
+                  {selected.type === 'agency' && !selected.contactPhone && !selected.email && <span>Agency</span>}
                 </div>
               </div>
-              {selected.type === 'agency' && selected.agencyId && (
-                <a href={`/admin/agencies?expand=${selected.agencyId}`} target="_blank" rel="noopener noreferrer"
-                   className="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors hover:bg-black/5"
-                   style={{ border: '1px solid var(--a-line)', color: 'var(--a-ink)' }}
-                   title="Open this agency's account">
-                  {selected.planType && (<span className="font-semibold capitalize" style={{ color: 'var(--a-em-deep)' }}>{selected.planType}</span>)}
-                  <span>View account</span>
-                  <ExternalLink className="h-3 w-3" style={{ color: 'var(--a-dim)' }} />
-                </a>
-              )}
+
+              {/* Support / resolve controls */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                {selected.supportStatus === 'resolved' ? (
+                  <button onClick={() => setThreadStatus(selected, 'reopen')} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors hover:bg-black/5" style={{ border: '1px solid var(--a-line)', color: 'var(--a-ink)' }} title="Reopen this thread">
+                    <RotateCcw className="h-3 w-3" /> Reopen
+                  </button>
+                ) : selected.supportStatus === 'support' ? (
+                  <button onClick={() => setThreadStatus(selected, 'resolve')} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-white transition-colors hover:brightness-95" style={{ background: 'var(--a-em)' }} title="Mark resolved">
+                    <CheckCircle2 className="h-3 w-3" /> Resolve
+                  </button>
+                ) : (
+                  <button onClick={() => setThreadStatus(selected, 'mark-support')} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors hover:bg-black/5" style={{ border: '1px solid var(--a-line)', color: 'var(--a-ink)' }} title="Mark as a support item">
+                    <LifeBuoy className="h-3 w-3" /> Mark support
+                  </button>
+                )}
+                {selected.type === 'agency' && selected.agencyId && (
+                  <a href={`/admin/agencies?expand=${selected.agencyId}`} target="_blank" rel="noopener noreferrer"
+                     className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors hover:bg-black/5"
+                     style={{ border: '1px solid var(--a-line)', color: 'var(--a-ink)' }} title="Open this agency's account">
+                    <span>Account</span>
+                    <ExternalLink className="h-3 w-3" style={{ color: 'var(--a-dim)' }} />
+                  </a>
+                )}
+              </div>
             </div>
 
-            {selected.type === 'agency' && (
-              <div className="flex items-center gap-1 px-3 border-b shrink-0" style={{ borderColor: 'var(--a-line)', background: 'white' }}>
-                {([['conversation', 'Conversation'], ['activity', 'Platform activity']] as const).map(([k, labelText]) => (
-                  <button key={k} onClick={() => setThreadTab(k)} className="relative px-3 py-2 text-xs font-medium transition-colors"
-                    style={{ color: threadTab === k ? 'var(--a-em-deep)' : 'var(--a-dim)' }}>
-                    {labelText}
-                    {threadTab === k && <span className="absolute left-2 right-2 -bottom-px h-0.5 rounded-full" style={{ background: 'var(--a-em)' }} />}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {selected.type === 'agency' && threadTab === 'activity' ? (
-              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
-                {activityLoading ? (
-                  <div className="flex items-center justify-center py-16"><Loader2 className="h-5 w-5 animate-spin" style={{ color: 'var(--a-dim)' }} /></div>
-                ) : activity.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-center" style={{ color: 'var(--a-dim)' }}>
-                    <Zap className="h-7 w-7 mb-2 opacity-40" />
-                    <p className="text-sm">No platform messages sent to this agency yet.</p>
-                    <p className="text-[11px] mt-1">Onboarding, billing, demo follow-ups and other automated sends show up here.</p>
-                  </div>
-                ) : (() => {
-                  const cats = Array.from(new Set(activity.map((a) => a.category)));
-                  const shown = activityFilter === 'all' ? activity : activity.filter((a) => a.category === activityFilter);
-                  return (
-                  <>
-                  {cats.length > 1 && (
-                    <div className="flex flex-wrap items-center gap-1.5 pb-1">
-                      {(['all', ...cats]).map((cat) => (
-                        <button key={cat} onClick={() => setActivityFilter(cat)}
-                          className="text-[11px] font-medium px-2.5 py-1 rounded-full transition-colors capitalize"
-                          style={activityFilter === cat
-                            ? { background: 'var(--a-em)', color: 'white' }
-                            : { background: '#f1f5f9', color: '#334155' }}>
-                          {cat === 'all' ? 'All' : cat}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {shown.map((a) => (
-                    <div key={a.id} className="rounded-xl border px-3.5 py-2.5" style={{ borderColor: 'var(--a-line)', background: 'white' }}>
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0" style={{ background: 'var(--a-em-soft, #ecfdf5)', color: 'var(--a-em-deep, #047857)' }}>{a.category}</span>
-                          <span className="text-xs font-medium truncate">{a.label}</span>
-                          {a.direction === 'in' && <span className="text-[9px] uppercase tracking-wide shrink-0" style={{ color: '#4338ca' }}>Inbound</span>}
-                        </div>
-                        <span className="text-[10px] shrink-0" style={{ color: 'var(--a-dim)' }}>{fmtTime(a.at)}</span>
-                      </div>
-                      <p className="text-[13px] whitespace-pre-wrap break-words" style={{ color: 'var(--a-ink)' }}>{a.body}</p>
-                      <div className="flex items-center gap-2 mt-1.5 text-[10px]" style={{ color: 'var(--a-dim)' }}>
-                        {a.recipientPhone && <span>To {a.recipientPhone}</span>}
-                        {a.recipientType && <span className="capitalize">{String(a.recipientType).replace(/_/g, ' ')}</span>}
-                        {a.deliveryStatus && <span className="capitalize">{a.deliveryStatus}</span>}
-                      </div>
-                    </div>
-                  ))}
-                  </>
-                  );
-                })()}
-              </div>
-            ) : (
-            <>
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
               {selected.messages.length === 0 ? (
                 <div className="flex items-center justify-center py-16 text-sm" style={{ color: 'var(--a-dim)' }}>No messages yet.</div>
@@ -349,8 +309,6 @@ export default function AdminInboxPage() {
                   {selected.lastInboundKind === 'sms' ? 'Replies go out as a text from your platform number.' : 'Replies land in the agency dashboard inbox.'} Cmd/Ctrl + Enter to send.
                 </p>
               </div>
-            )}
-            </>
             )}
           </>
         )}
