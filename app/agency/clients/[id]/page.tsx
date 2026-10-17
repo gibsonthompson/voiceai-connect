@@ -16,6 +16,7 @@ import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import { useTheme } from '@/hooks/useTheme';
 import { getDemoClientDetail } from '../../demoData';
 import { SELECTABLE_INDUSTRIES, getIndustry, normalizeIndustry } from '@/lib/industries';
+import CancelClientModal from '@/components/CancelClientModal';
 import { CustomSelect } from '@/components/ui/custom-select';
 import { TimezoneSelect } from '@/components/ui/timezone-select';
 import { useConfirm } from '@/components/ui/confirm-dialog';
@@ -302,15 +303,17 @@ export default function AgencyClientDetailPage() {
       setCanceling(false);
     }
   };
-  const handleCancel = () => {
-    if (!client) return;
-    if (!confirm(`Cancel ${client.business_name}'s subscription at the end of their billing period? They keep service until then.`)) return;
-    postCancel({});
-  };
-  const handleCancelNow = () => {
-    if (!client) return;
-    if (!confirm(`Cancel ${client.business_name} IMMEDIATELY? This ends their service and releases their number right now, and cannot be undone.`)) return;
-    postCancel({ immediate: true });
+  // Open the themed modal (collects a free-text reason) instead of a bare
+  // confirm. The opener sets the mode; the modal just gathers the reason.
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelMode, setCancelMode] = useState<'period_end' | 'immediate'>('period_end');
+  const handleCancel = () => { if (!client) return; setCancelMode('period_end'); setCancelMsg(null); setCancelOpen(true); };
+  const handleCancelNow = () => { if (!client) return; setCancelMode('immediate'); setCancelMsg(null); setCancelOpen(true); };
+  const confirmCancel = async ({ feedback }: { feedback: string }) => {
+    const body: any = { feedback: feedback || null };
+    if (cancelMode === 'immediate') body.immediate = true;
+    await postCancel(body);
+    setCancelOpen(false);
   };
   const handleResume = () => postCancel({ resume: true });
 
@@ -1045,6 +1048,19 @@ export default function AgencyClientDetailPage() {
       </div>
 
       {confirmDialog}
+
+      <CancelClientModal
+        open={cancelOpen}
+        onClose={() => setCancelOpen(false)}
+        theme={theme}
+        title={cancelMode === 'immediate' ? `Cancel ${client?.business_name || 'this client'} now?` : `Cancel ${client?.business_name || 'this client'}'s subscription?`}
+        warningLines={cancelMode === 'immediate'
+          ? ['Ends their service and releases their phone number immediately.', 'This cannot be undone.']
+          : ['Cancels at the end of the current billing period.', 'They keep service until then.']}
+        confirmLabel={cancelMode === 'immediate' ? (isManualClient ? 'Cancel & release number' : 'Cancel now') : 'Cancel at period end'}
+        busy={canceling}
+        onConfirm={confirmCancel}
+      />
 
     </div>
   );

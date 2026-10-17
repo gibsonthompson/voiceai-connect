@@ -13,6 +13,7 @@ import ClientBrandingSection from '@/components/client/ClientBrandingSection';
 import ClientTeamSection from '@/components/client/ClientTeamSection';
 import { SectionCard } from '@/components/client/SectionCard';
 import { Toast } from '@/components/ui/toast';
+import CancelClientModal from '@/components/CancelClientModal';
 import { useClient } from '@/lib/client-context';
 
 interface Client {
@@ -293,22 +294,26 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   };
   const [canceling, setCanceling] = useState(false);
   const [cancelMsg, setCancelMsg] = useState('');
-  const handleCancelSubscription = async () => {
-    if (!confirm('Cancel your subscription at the end of your current billing period? You keep full access until then.')) return;
-    setCanceling(true); setCancelMsg('');
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelErr, setCancelErr] = useState<string | null>(null);
+  // Open the themed modal (collects a free-text reason) instead of a bare confirm.
+  const handleCancelSubscription = () => { setCancelMsg(''); setCancelErr(null); setCancelOpen(true); };
+  const submitCancel = async (feedback: string) => {
+    setCanceling(true); setCancelErr(null);
     try {
       const token = localStorage.getItem('auth_token');
       const res = await fetch(`${backendUrl}/api/client/cancel-subscription`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ client_id: client.id }),
+        body: JSON.stringify({ client_id: client.id, feedback: feedback || null }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.message || data.error || 'Failed to cancel');
+      setCancelOpen(false);
       setCancelMsg(data.cancels_at ? `Your subscription will cancel on ${new Date(data.cancels_at).toLocaleDateString()}. You keep access until then.` : 'Your subscription will cancel at the end of your billing period.');
       setTimeout(() => window.location.reload(), 1800);
     } catch (err: any) {
-      setCancelMsg(err.message || 'Something went wrong. Please try again.');
+      setCancelErr(err.message || 'Something went wrong. Please try again.');
     } finally {
       setCanceling(false);
     }
@@ -585,6 +590,18 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
       </div>
 
       <AddToHomeScreenModal clientId={client.id} theme={theme} isOpen={showPwaModal} onClose={() => setShowPwaModal(false)} manualTrigger appName={(branding.clientHeaderMode === 'business_name' ? (branding.businessName || branding.agencyName) : (branding.agencyName || branding.businessName)) || client.business_name || 'Your App'} iconUrl={`/api/agency-app-icon?size=192&clientId=${client.id}`} domain={branding.appDomain} />
+
+      <CancelClientModal
+        open={cancelOpen}
+        onClose={() => setCancelOpen(false)}
+        theme={theme}
+        title="Cancel your subscription?"
+        warningLines={['Your subscription cancels at the end of your current billing period.', 'You keep full access until then.']}
+        confirmLabel="Confirm cancellation"
+        busy={canceling}
+        error={cancelErr}
+        onConfirm={({ feedback }) => submitCancel(feedback)}
+      />
     </div>
   );
 }
