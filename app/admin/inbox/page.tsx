@@ -149,8 +149,9 @@ export default function AdminInboxPage() {
 
   // Small status chip for the list + header.
   const StatusChip = ({ status }: { status?: SupportStatus }) => {
+    // Only an open support item surfaces a chip. Once resolved (or never
+    // flagged) the row is clean, no "Resolved" badge lingering on the thread.
     if (status === 'support') return (<span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 inline-flex items-center gap-0.5" style={{ background: '#FBF0D6', color: 'var(--a-amber, #92400e)' }}><LifeBuoy className="h-2.5 w-2.5" />Support</span>);
-    if (status === 'resolved') return (<span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 inline-flex items-center gap-0.5" style={{ background: 'var(--a-em-soft, #ecfdf5)', color: 'var(--a-em-deep, #047857)' }}><CheckCircle2 className="h-2.5 w-2.5" />Resolved</span>);
     return null;
   };
 
