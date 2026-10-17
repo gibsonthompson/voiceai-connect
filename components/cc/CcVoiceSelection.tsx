@@ -6,11 +6,11 @@
 // which the backend's requirePermissionIfAuthed('ai_agent') accepts for an
 // agency owner, so no new endpoint is needed.
 //
-// Preview: not every voice ships a stock sample URL, so a button that only
-// appeared when previewUrl existed left some voices with no way to hear them.
-// We now always show the button and synthesize a short line on demand via
-// /api/voice-preview (cached per voice for the session so re-tapping does not
-// re-bill), falling back to the stock sample if synthesis is unavailable.
+// Preview: plays the business's ACTUAL saved greeting in the chosen voice (so a
+// manager hears exactly what callers will hear), synthesized on demand via
+// /api/voice-preview and cached per voice+text for the session. Falls back to a
+// generic line when no greeting is set, and to the stock sample if synthesis is
+// unavailable.
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Mic, Play, Pause, Loader2, Check, Save } from 'lucide-react';
@@ -30,7 +30,7 @@ interface Voice {
   custom?: boolean;
 }
 
-export default function CcVoiceSelection({ clientId, theme }: { clientId: string; theme: any }) {
+export default function CcVoiceSelection({ clientId, theme, greeting }: { clientId: string; theme: any; greeting?: string }) {
   const [voices, setVoices] = useState<{ female: Voice[]; male: Voice[] }>({ female: [], male: [] });
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
@@ -42,7 +42,7 @@ export default function CcVoiceSelection({ clientId, theme }: { clientId: string
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [previewLoadingId, setPreviewLoadingId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  // Cache synthesized preview object URLs per voice for the session.
+  // Cache synthesized preview object URLs per voice+text for the session.
   const previewCache = useRef<Map<string, string>>(new Map());
 
   const loadVoices = useCallback(async () => {
@@ -96,20 +96,24 @@ export default function CcVoiceSelection({ clientId, theme }: { clientId: string
 
   const preview = async (v: Voice) => {
     if (playingId === v.id) { stop(); return; }
-    const cached = previewCache.current.get(v.id);
+    // Preview the business's actual greeting (capped) so a manager hears exactly
+    // what callers hear; fall back to a generic line when no greeting is set.
+    const text = (greeting && greeting.trim()) ? greeting.trim().slice(0, 300) : PREVIEW_TEXT;
+    const cacheKey = `${v.id}|${text}`;
+    const cached = previewCache.current.get(cacheKey);
     if (cached) { playUrl(v.id, cached); return; }
     setPreviewLoadingId(v.id);
     try {
-      // Synthesize a short line in this voice. Works for every voice, including
+      // Synthesize the greeting in this voice. Works for every voice, including
       // ones with no stock sample.
       const r = await fetch('/api/voice-preview', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ voice_id: v.id, text: PREVIEW_TEXT }),
+        body: JSON.stringify({ voice_id: v.id, text }),
       });
       if (!r.ok) throw new Error('synth failed');
       const blob = await r.blob();
       const url = URL.createObjectURL(blob);
-      previewCache.current.set(v.id, url);
+      previewCache.current.set(cacheKey, url);
       setPreviewLoadingId(null);
       playUrl(v.id, url);
     } catch {
@@ -145,7 +149,7 @@ export default function CcVoiceSelection({ clientId, theme }: { clientId: string
         <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Mic className="h-4 w-4" style={{ color: theme.primary }} /></div>
         <div className="min-w-0 flex-1">
           <h2 className="font-semibold text-sm sm:text-[15px]" style={{ color: theme.text }}>Voice</h2>
-          <p className="text-[12px]" style={{ color: theme.textMuted }}>The voice callers hear. Preview one, pick it, and save.</p>
+          <p className="text-[12px]" style={{ color: theme.textMuted }}>The voice callers hear, speaking this business's greeting. Preview one, pick it, and save.</p>
         </div>
       </div>
 
@@ -176,7 +180,7 @@ export default function CcVoiceSelection({ clientId, theme }: { clientId: string
                 <div key={v.id} onClick={() => setSelectedVoiceId(v.id)} className="relative flex items-center gap-2.5 rounded-xl px-3 py-2.5 cursor-pointer transition"
                   style={{ border: `1px solid ${sel ? theme.primary : theme.border}`, backgroundColor: sel ? theme.primary15 : 'transparent' }}>
                   {v.recommended && <span className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 text-[8px] font-bold rounded-full" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>★</span>}
-                  <button onClick={(e) => { e.stopPropagation(); preview(v); }} disabled={loadingPrev} className="flex h-8 w-8 items-center justify-center rounded-full flex-shrink-0 disabled:opacity-60" style={{ backgroundColor: theme.hover, color: theme.text }} title="Preview">
+                  <button onClick={(e) => { e.stopPropagation(); preview(v); }} disabled={loadingPrev} className="flex h-8 w-8 items-center justify-center rounded-full flex-shrink-0 disabled:opacity-60" style={{ backgroundColor: theme.hover, color: theme.text }} title="Preview the greeting in this voice">
                     {loadingPrev ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5 ml-0.5" />}
                   </button>
                   <div className="min-w-0 flex-1">

@@ -5,6 +5,7 @@ import {
   Briefcase, Plus, Loader2, X, Check, Trash2, Clock, Shield,
   Pencil, ChevronDown, ChevronUp, Calendar, Users, Globe,
 } from 'lucide-react';
+import { CustomSelect, type DropdownUI } from '@/components/ui/custom-select';
 
 interface ServiceSuggestion { name: string; price?: string | null; }
 
@@ -182,8 +183,25 @@ export default function ClientServicesSection({ clientId, theme, compact, indust
   const glass = { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.8)', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` };
   const inputStyle = { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#f9fafb', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`, color: theme.text };
 
+  // Themed dropdowns (no native <select> / OS picker anywhere).
+  const ddUI: DropdownUI = { inputStyle, text: theme.text, muted: theme.textMuted, panelBg: theme.card || theme.cardBg || '#fff', panelBorder: theme.border, hover: theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', accent: theme.primary, isDark: !!theme.isDark };
+  const durationOptions = [...DURATION_OPTIONS.map((d) => ({ value: String(d), label: `${d} minutes` })), { value: 'custom', label: 'Custom...' }];
+  const bufferOptions = BUFFER_OPTIONS.map((b) => ({ value: String(b), label: b === 0 ? 'No buffer' : `${b} minutes` }));
+  // Custom-duration input shows when the saved duration isn't one of the presets.
+  const [customDur, setCustomDur] = useState(false);
+  useEffect(() => { if (showModal) setCustomDur(!DURATION_OPTIONS.includes(form.duration_minutes)); /* eslint-disable-next-line */ }, [showModal]);
+  // Lock the page behind the dashboard modal so scrolling moves the modal body,
+  // not the page underneath it.
+  useEffect(() => {
+    if (showModal && !compact) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = prev; };
+    }
+  }, [showModal, compact]);
+
   // ── Shared form fields (used by both modal and inline) ──────────────
-  const renderFormFields = () => (
+  const renderFormFields = (includeAction = true) => (
     <div className="space-y-4">
       <div>
         <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>Service Name *</label>
@@ -201,11 +219,17 @@ export default function ClientServicesSection({ clientId, theme, compact, indust
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>Duration</label>
-          <select value={form.duration_minutes} onChange={(e) => setForm({ ...form, duration_minutes: parseInt(e.target.value) })} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none cursor-pointer" style={inputStyle}>{DURATION_OPTIONS.map(d => (<option key={d} value={d}>{d} minutes</option>))}</select>
+          <CustomSelect ui={ddUI} value={customDur ? 'custom' : String(form.duration_minutes)} options={durationOptions} onChange={(v) => { if (v === 'custom') { setCustomDur(true); } else { setCustomDur(false); setForm({ ...form, duration_minutes: parseInt(v) }); } }} />
+          {customDur && (
+            <div className="mt-2 flex items-center gap-2">
+              <input type="number" min={1} max={480} step={5} value={form.duration_minutes || ''} onChange={(e) => setForm({ ...form, duration_minutes: Math.max(1, Math.min(480, parseInt(e.target.value) || 0)) })} placeholder="e.g. 75" className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none" style={inputStyle} />
+              <span className="text-xs flex-shrink-0" style={{ color: theme.textMuted }}>min</span>
+            </div>
+          )}
         </div>
         <div>
           <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>Buffer After</label>
-          <select value={form.buffer_minutes} onChange={(e) => setForm({ ...form, buffer_minutes: parseInt(e.target.value) })} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none cursor-pointer" style={inputStyle}>{BUFFER_OPTIONS.map(b => (<option key={b} value={b}>{b === 0 ? 'No buffer' : `${b} minutes`}</option>))}</select>
+          <CustomSelect ui={ddUI} value={String(form.buffer_minutes)} options={bufferOptions} onChange={(v) => setForm({ ...form, buffer_minutes: parseInt(v) })} />
         </div>
       </div>
       <div>
@@ -233,8 +257,12 @@ export default function ClientServicesSection({ clientId, theme, compact, indust
           {form.assigned_staff.length === 0 && <p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>No staff assigned, any available provider can handle this service</p>}
         </div>
       )}
-      {error && <p className="text-sm" style={{ color: '#ef4444' }}>{error}</p>}
-      <button onClick={handleSave} disabled={saving} className="w-full rounded-xl px-4 py-3 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingId ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}{saving ? 'Saving...' : editingId ? 'Update Service' : 'Add Service'}</button>
+      {includeAction && (
+        <>
+          {error && <p className="text-sm" style={{ color: '#ef4444' }}>{error}</p>}
+          <button onClick={handleSave} disabled={saving} className="w-full rounded-xl px-4 py-3 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingId ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}{saving ? 'Saving...' : editingId ? 'Update Service' : 'Add Service'}</button>
+        </>
+      )}
     </div>
   );
 
@@ -328,14 +356,20 @@ export default function ClientServicesSection({ clientId, theme, compact, indust
 
       {/* ── Dashboard mode: modal overlay ────────────────────────────── */}
       {showModal && !compact && (
-        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center" onClick={() => setShowModal(false)}>
+        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4" onClick={() => setShowModal(false)}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-          <div className="relative w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 max-h-[85vh] overflow-y-auto" style={{ backgroundColor: theme.card || theme.cardBg || '#fff', border: `1px solid ${theme.border}` }} onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-5">
+          <div className="relative w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl flex flex-col max-h-[90vh] sm:max-h-[85vh] overflow-hidden" style={{ backgroundColor: theme.card || theme.cardBg || '#fff', border: `1px solid ${theme.border}` }} onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 sm:px-6 pt-5 sm:pt-6 pb-4 flex-shrink-0" style={{ borderBottom: `1px solid ${theme.border}` }}>
               <h2 className="font-semibold text-base tracking-tight" style={{ color: theme.text }}>{editingId ? 'Edit Service' : 'Add Service'}</h2>
               <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg" style={{ color: theme.textMuted }}><X className="h-5 w-5" /></button>
             </div>
-            {renderFormFields()}
+            <div className="px-5 sm:px-6 py-5 overflow-y-auto flex-1 min-h-0">
+              {renderFormFields(false)}
+            </div>
+            <div className="px-5 sm:px-6 py-4 flex-shrink-0" style={{ borderTop: `1px solid ${theme.border}`, backgroundColor: theme.card || theme.cardBg || '#fff' }}>
+              {error && <p className="text-sm mb-2" style={{ color: '#ef4444' }}>{error}</p>}
+              <button onClick={handleSave} disabled={saving} className="w-full rounded-xl px-4 py-3 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingId ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}{saving ? 'Saving...' : editingId ? 'Update Service' : 'Add Service'}</button>
+            </div>
           </div>
         </div>
       )}

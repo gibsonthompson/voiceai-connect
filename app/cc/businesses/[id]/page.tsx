@@ -283,14 +283,18 @@ export default function BusinessConfig() {
         </div>
 
         {/* Voice selection */}
-        <CcVoiceSelection clientId={clientId} theme={theme} />
+        <CcVoiceSelection clientId={clientId} theme={theme} greeting={cfg.greeting} />
 
         {/* Greeting */}
         <div className="rounded-2xl p-5 sm:p-6" style={card}>
           <SectionHead icon={MessageSquare} title="Greeting" sub="The first thing the AI says when it answers for this business." />
           <textarea value={cfg.greeting} onChange={(e) => set('greeting', e.target.value)} rows={3} maxLength={600}
-            placeholder="Thanks for calling Bella's Salon, this is the front desk. How can I help?"
+            placeholder={`Thanks for calling ${cfg.businessName || 'your business'}. This call may be recorded for quality. How can I help?`}
             className="w-full rounded-xl px-3 py-2.5 text-sm outline-none resize-none" style={field} />
+          <div className="flex items-center gap-3 mt-2">
+            <button type="button" onClick={() => set('greeting', `Thanks for calling ${cfg.businessName || 'your business'}. This call may be recorded for quality assurance. How can I help you today?`)} className="text-[12px] font-semibold flex-shrink-0" style={{ color: theme.primary }}>Use suggested greeting</button>
+            <span className="text-[11px]" style={{ color: theme.textMuted }}>Includes a call-recording notice, recommended for two-party-consent states.</span>
+          </div>
         </div>
 
         {/* Knowledge base */}

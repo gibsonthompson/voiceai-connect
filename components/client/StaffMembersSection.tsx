@@ -6,6 +6,7 @@ import {
   Users, Plus, Loader2, X, Check, Trash2, UserPlus,
   Phone, Mail, Pencil, ChevronDown, ChevronUp, ToggleLeft, ToggleRight, Globe,
 } from 'lucide-react';
+import { CustomSelect, type DropdownUI } from '@/components/ui/custom-select';
 
 interface StaffSuggestion { name: string; role?: string | null; }
 
@@ -186,8 +187,21 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
   const glass = { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.8)', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` };
   const inputStyle = { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#f9fafb', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`, color: theme.text };
 
+  // Themed dropdowns (no native <select> / OS picker anywhere).
+  const ddUI: DropdownUI = { inputStyle, text: theme.text, muted: theme.textMuted, panelBg: theme.card || theme.cardBg || '#fff', panelBorder: theme.border, hover: theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', accent: theme.primary, isDark: !!theme.isDark };
+  const timeOptions = TIME_OPTIONS.map((t) => ({ value: t, label: t }));
+  // Lock the page behind the dashboard modal so scrolling moves the modal body,
+  // not the page underneath it (the Save button stays reachable).
+  useEffect(() => {
+    if (showModal && !compact) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = prev; };
+    }
+  }, [showModal, compact]);
+
   // ── Shared form fields (used by both modal and inline) ──────────────
-  const renderFormFields = () => (
+  const renderFormFields = (includeAction = true) => (
     <div className="space-y-3">
       <div>
         <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>Name *</label>
@@ -250,9 +264,9 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
                   <button type="button" onClick={() => setDay({ closed: !day.closed })} className="text-[10px] py-1 rounded-lg flex-shrink-0 font-medium" style={{ width: 60, backgroundColor: day.closed ? (theme.isDark ? 'rgba(239,68,68,0.12)' : '#fef2f2') : hexToRgba(theme.primary, 0.1), color: day.closed ? '#ef4444' : theme.primary }}>{day.closed ? 'Closed' : 'Open'}</button>
                   {!day.closed && (
                     <div className="flex items-center gap-1 flex-1 min-w-0">
-                      <select value={day.open} onChange={(e) => setDay({ open: e.target.value })} className="flex-1 min-w-0 rounded-lg px-2 py-1 text-[11px] focus:outline-none" style={inputStyle}>{TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}</select>
+                      <div className="flex-1 min-w-0"><CustomSelect ui={ddUI} size="sm" value={day.open} options={timeOptions} onChange={(v) => setDay({ open: v })} /></div>
                       <span className="text-[10px] flex-shrink-0" style={{ color: theme.textMuted }}>to</span>
-                      <select value={day.close} onChange={(e) => setDay({ close: e.target.value })} className="flex-1 min-w-0 rounded-lg px-2 py-1 text-[11px] focus:outline-none" style={inputStyle}>{TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}</select>
+                      <div className="flex-1 min-w-0"><CustomSelect ui={ddUI} size="sm" value={day.close} options={timeOptions} onChange={(v) => setDay({ close: v })} /></div>
                     </div>
                   )}
                 </div>
@@ -265,8 +279,12 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
         <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>Notes</label>
         <textarea placeholder={ph.notes} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none resize-none" style={inputStyle} />
       </div>
-      {error && <p className="text-sm" style={{ color: '#ef4444' }}>{error}</p>}
-      <button onClick={handleSave} disabled={saving} className="w-full rounded-xl px-4 py-3 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingId ? <Check className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}{saving ? 'Saving...' : editingId ? 'Update' : 'Add Staff Member'}</button>
+      {includeAction && (
+        <>
+          {error && <p className="text-sm" style={{ color: '#ef4444' }}>{error}</p>}
+          <button onClick={handleSave} disabled={saving} className="w-full rounded-xl px-4 py-3 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingId ? <Check className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}{saving ? 'Saving...' : editingId ? 'Update' : 'Add Staff Member'}</button>
+        </>
+      )}
     </div>
   );
 
@@ -367,14 +385,20 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
 
       {/* ── Dashboard mode: modal overlay ────────────────────────────── */}
       {showModal && !compact && (
-        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center" onClick={() => setShowModal(false)}>
+        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4" onClick={() => setShowModal(false)}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-          <div className="relative w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl p-5 sm:p-6" style={{ backgroundColor: theme.card || theme.cardBg || '#fff', border: `1px solid ${theme.border}` }} onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-5">
+          <div className="relative w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl flex flex-col max-h-[90vh] sm:max-h-[85vh] overflow-hidden" style={{ backgroundColor: theme.card || theme.cardBg || '#fff', border: `1px solid ${theme.border}` }} onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 sm:px-6 pt-5 sm:pt-6 pb-4 flex-shrink-0" style={{ borderBottom: `1px solid ${theme.border}` }}>
               <h2 className="font-semibold text-base tracking-tight" style={{ color: theme.text }}>{editingId ? 'Edit Staff Member' : 'Add Staff Member'}</h2>
               <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg" style={{ color: theme.textMuted }}><X className="h-5 w-5" /></button>
             </div>
-            {renderFormFields()}
+            <div className="px-5 sm:px-6 py-5 overflow-y-auto flex-1 min-h-0">
+              {renderFormFields(false)}
+            </div>
+            <div className="px-5 sm:px-6 py-4 flex-shrink-0" style={{ borderTop: `1px solid ${theme.border}`, backgroundColor: theme.card || theme.cardBg || '#fff' }}>
+              {error && <p className="text-sm mb-2" style={{ color: '#ef4444' }}>{error}</p>}
+              <button onClick={handleSave} disabled={saving} className="w-full rounded-xl px-4 py-3 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingId ? <Check className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}{saving ? 'Saving...' : editingId ? 'Update' : 'Add Staff Member'}</button>
+            </div>
           </div>
         </div>
       )}
