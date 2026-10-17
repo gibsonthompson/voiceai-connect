@@ -134,7 +134,10 @@ function CallCenterShell({ children }: { children: ReactNode }) {
             <div className="flex items-center justify-center rounded-lg flex-shrink-0" style={{ height: '30px', width: '30px', backgroundColor: theme.primary15 }}><WaveformIcon className="h-4 w-4" color={theme.primary} /></div>
           )}
           <div className="min-w-0 leading-tight">
-            <p className="text-sm font-semibold truncate" style={{ color: theme.sidebarText }}>{branding.name}</p>
+            {/* White-label: when a logo is set it stands in for the name, so we
+                don't print the name text beside it. The name only shows as a
+                fallback when there is no logo. */}
+            {!branding.logoUrl && <p className="text-sm font-semibold truncate" style={{ color: theme.sidebarText }}>{branding.name}</p>}
             <p className="text-[10px] uppercase tracking-wider" style={{ color: theme.primary }}>Call Center</p>
           </div>
         </div>
