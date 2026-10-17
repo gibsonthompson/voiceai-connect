@@ -61,6 +61,7 @@ export default function AdminInboxPage() {
   const [error, setError] = useState('');
   const threadEndRef = useRef<HTMLDivElement | null>(null);
   const stickRef = useRef(true);
+  const replyRef = useRef<HTMLTextAreaElement | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -86,6 +87,16 @@ export default function AdminInboxPage() {
 
   useEffect(() => { stickRef.current = true; }, [selected?.key]);
   useEffect(() => { if (stickRef.current) threadEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [selected]);
+  // Auto-grow the reply box as you type so the whole message stays visible.
+  // The composer is shrink-0 and the thread above is flex-1, so as the box
+  // grows the conversation gives up height (and scrolls) to make room. Caps at
+  // ~45vh, then the textarea scrolls internally instead of eating the panel.
+  useEffect(() => {
+    const el = replyRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [reply, selected?.key]);
 
   const markRead = async (c: Conversation) => {
     if (c.type !== 'agency' || !c.agencyId || !c.unread) return;
@@ -298,16 +309,16 @@ export default function AdminInboxPage() {
             ) : (
               <div className="border-t p-3 shrink-0" style={{ borderColor: 'var(--a-line)', background: 'white' }}>
                 <div className="flex items-end gap-2">
-                  <textarea value={reply} onChange={(e) => setReply(e.target.value)}
+                  <textarea ref={replyRef} value={reply} onChange={(e) => setReply(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); send(); } }}
                     rows={1} placeholder="Reply as VoiceAI Connect..." className="flex-1 resize-none rounded-xl border px-3.5 py-2.5 text-sm focus:outline-none"
-                    style={{ borderColor: 'var(--a-line)', color: 'var(--a-ink)', maxHeight: '8rem' }} />
+                    style={{ borderColor: 'var(--a-line)', color: 'var(--a-ink)', maxHeight: '45vh', overflowY: 'auto' }} />
                   <button onClick={send} disabled={sending || !reply.trim()} className="flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium text-white disabled:opacity-40" style={{ background: 'var(--a-em)' }}>
                     {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                   </button>
                 </div>
                 <p className="mt-1.5 text-[10px]" style={{ color: 'var(--a-dim)' }}>
-                  {selected.lastInboundKind === 'sms' ? 'Replies go out as a text from your platform number.' : 'Replies land in the agency dashboard inbox.'} Cmd/Ctrl + Enter to send.
+                  {selected.lastInboundKind === 'sms' ? 'Replies go out as a text from your platform number.' : 'Replies land in the agency dashboard inbox.'}
                 </p>
               </div>
             )}
