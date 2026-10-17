@@ -27,9 +27,9 @@ import { useTheme } from '../../../../hooks/useTheme';
 import { CustomSelect, type DropdownUI } from '@/components/ui/custom-select';
 import CcKnowledgeBase from '@/components/cc/CcKnowledgeBase';
 import CcVoiceSelection from '@/components/cc/CcVoiceSelection';
-import CcServices from '@/components/cc/CcServices';
-import CcStaff from '@/components/cc/CcStaff';
 import CcCalendar from '@/components/cc/CcCalendar';
+import ClientServicesSection from '@/components/client/ClientServicesSection';
+import StaffMembersSection from '@/components/client/StaffMembersSection';
 
 interface Cfg {
   businessName: string;
@@ -39,6 +39,7 @@ interface Cfg {
   businessCity: string;
   businessState: string;
   businessWebsite: string;
+  industry: string;
   transferPhone: string;
   timezone: string;
   greeting: string;
@@ -61,6 +62,7 @@ interface Cfg {
   forwardingConfirmed: boolean;
   postCallSms: boolean;
   notificationPhone: string;
+  optOut?: { optedOut: boolean; phone: string; since?: string | null } | null;
 }
 
 const DAYS: { key: string; label: string }[] = [
@@ -121,6 +123,7 @@ export default function BusinessConfig() {
   const [saved, setSaved] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [areaDraft, setAreaDraft] = useState('');
+  const [bookingDefaults, setBookingDefaults] = useState<{ minNotice: number; maxDays: number }>({ minNotice: 30, maxDays: 60 });
 
   useEffect(() => {
     if (!agency?.id || !clientId) return;
@@ -132,7 +135,7 @@ export default function BusinessConfig() {
         const r = await fetch(`${base}/api/agency/${agency.id}/cc/businesses/${clientId}/config`, { headers: { Authorization: `Bearer ${token}` } });
         if (!r.ok) { setNotFound(true); return; }
         const d = await r.json();
-        if (d.success) setCfg({ ...d.config, businessHours: normalizeHours(d.config.businessHours) });
+        if (d.success) { setCfg({ ...d.config, businessHours: normalizeHours(d.config.businessHours) }); if (d.agencyDefaults) setBookingDefaults(d.agencyDefaults); }
         else setNotFound(true);
       } catch { setNotFound(true); }
       finally { setLoading(false); }
@@ -318,21 +321,24 @@ export default function BusinessConfig() {
           <Label>Booking behavior</Label>
           <CustomSelect value={cfg.bookingMode} onChange={(v) => set('bookingMode', v as Cfg['bookingMode'])} options={BOOKING_MODES} ui={ddUI} />
           {cfg.bookingMode !== 'disabled' && (
-            <div className="grid sm:grid-cols-2 gap-3 mt-3">
-              <div><Label>Minimum notice (minutes)</Label><input type="number" min={0} value={cfg.minBookingNotice ?? ''} onChange={(e) => set('minBookingNotice', e.target.value === '' ? null : Number(e.target.value))} placeholder="Agency default" className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={field} /></div>
-              <div><Label>How far ahead (days)</Label><input type="number" min={1} value={cfg.maxBookingDays ?? ''} onChange={(e) => set('maxBookingDays', e.target.value === '' ? null : Number(e.target.value))} placeholder="Agency default" className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={field} /></div>
-            </div>
+            <>
+              <div className="grid sm:grid-cols-2 gap-3 mt-3">
+                <div><Label>Minimum notice (minutes)</Label><input type="number" min={0} value={cfg.minBookingNotice ?? ''} onChange={(e) => set('minBookingNotice', e.target.value === '' ? null : Number(e.target.value))} placeholder={`Agency default: ${bookingDefaults.minNotice}`} className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={field} /></div>
+                <div><Label>How far ahead (days)</Label><input type="number" min={1} value={cfg.maxBookingDays ?? ''} onChange={(e) => set('maxBookingDays', e.target.value === '' ? null : Number(e.target.value))} placeholder={`Agency default: ${bookingDefaults.maxDays}`} className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={field} /></div>
+              </div>
+              <p className="text-[11.5px] mt-2" style={{ color: theme.textSubtle }}>Leave either blank to use the agency default ({bookingDefaults.minNotice} min notice, {bookingDefaults.maxDays} days ahead), set in agency Settings. A value here overrides it for just this business.</p>
+            </>
           )}
         </div>
 
         {/* Google Calendar */}
         <CcCalendar clientId={clientId} theme={theme} />
 
-        {/* Services */}
-        <CcServices clientId={clientId} theme={theme} />
+        {/* Services (shared industry-aware editor, same as the client level) */}
+        <ClientServicesSection clientId={clientId} industry={cfg.industry} theme={theme} />
 
-        {/* Staff */}
-        <CcStaff clientId={clientId} theme={theme} />
+        {/* Staff (shared industry-aware editor, same as the client level) */}
+        <StaffMembersSection clientId={clientId} industry={cfg.industry} theme={theme} />
 
         {/* Call handling */}
         <div className="rounded-2xl p-5 sm:p-6" style={card}>
@@ -392,6 +398,14 @@ export default function BusinessConfig() {
         {/* Post-call recap SMS */}
         <div className="rounded-2xl p-5 sm:p-6" style={card}>
           <SectionHead icon={Bell} title="Post-call text" sub="A recap text to the business owner after each call: who called, what they needed, the summary." />
+          {cfg.optOut?.optedOut && (
+            <div className="rounded-xl p-3 mb-3 flex items-start gap-2.5" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
+              <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.warning }} />
+              <div className="text-[12px] leading-relaxed" style={{ color: theme.warning }}>
+                <span className="font-semibold">{fmtPhone(cfg.optOut.phone) || cfg.optOut.phone} replied STOP and has opted out of texts.</span> While opted out they get no texts from the platform at all, including this recap, until they text <span className="font-semibold">START</span> to the same number to opt back in. The toggle below has no effect until then.
+              </div>
+            </div>
+          )}
           <ToggleRow title="Text the owner a recap after every call" sub={cfg.postCallSms ? 'On: this business gets a recap text after each call.' : 'Off: this business gets no recap text. You can still watch calls live.'} on={cfg.postCallSms} onClick={() => set('postCallSms', !cfg.postCallSms)} />
           {cfg.postCallSms && (
             <div className="mt-2">

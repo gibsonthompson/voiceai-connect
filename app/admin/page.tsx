@@ -20,7 +20,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import {
   AlertTriangle, Loader2, Clock, UserPlus, Sparkles, DollarSign, ArrowRight,
-  Mail, CheckCircle2, Circle,
+  Mail, CheckCircle2, Circle, X,
 } from 'lucide-react';
 import {
   formatPhone, timeAgo, formatDuration, formatUSD, formatNumber, getPhoneLocation,
@@ -54,8 +54,9 @@ interface CallRow {
 }
 interface Agency {
   id: string; name: string; email: string; phone: string | null; country: string | null;
-  plan_type: string; subscription_status: string; created_at: string;
+  plan_type: string; access_plan?: string | null; subscription_status: string; created_at: string;
   trial_ends_at: string | null; client_count: number; referral_source: string | null;
+  last_admin_outreach_at?: string | null;
 }
 interface DemoRow {
   id: string; created_at: string; caller_phone: string; business_name: string | null;
@@ -63,25 +64,54 @@ interface DemoRow {
   vapi_success_score: string | null;
 }
 
-// Founder-style first-touch email for a fresh signup. Prefilled and editable in
-// the admin's own mail client (opens via mailto), so a real person sends it, not
-// an automated blast. The automated branded sequence is separate (backend cron).
-function buildSignupMailto(a: Agency): string {
-  const subject = 'Welcome to VoiceAI Connect';
-  const body = [
-    'Hi there,',
-    '',
-    `Saw you just set up ${a.name || 'your agency'} on VoiceAI Connect. Quick note from me directly.`,
-    '',
-    'The fastest path to your first paying client is getting your demo receptionist in front of one prospect this week. They call, they hear the AI answer as their business, and the value sells itself.',
-    '',
-    'Tell me the kind of client you are going after (home services, medical, legal, and so on) and I will point you to the setup that converts best for them.',
-    '',
-    'What are you hoping to get out of it?',
-    '',
-    'Gibson',
-  ].join('\n');
-  return `mailto:${a.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+// A free agency does not get a demo line (it provisions a real phone number, a
+// paid-plan feature), so the outreach cannot tell them to put their demo in
+// front of a prospect. Paid (pro / scale) agencies have one, so that is the
+// whole pitch. access_plan (admin-granted) wins over plan_type.
+function isFreeAgency(a: Agency): boolean {
+  const plan = String(a.access_plan || a.plan_type || '').toLowerCase().trim();
+  return plan === 'free' || plan === '';
+}
+
+// Founder-style first-touch message for a fresh signup, copied and sent from the
+// admin's own email. Two versions: paid agencies get the demo-line pitch, free
+// agencies get the "upgrade unlocks the demo line" path instead.
+function buildOutreach(a: Agency): { subject: string; body: string } {
+  const name = a.name || 'your agency';
+  if (isFreeAgency(a)) {
+    return {
+      subject: 'Welcome to VoiceAI Connect',
+      body: [
+        'Hey,',
+        '',
+        `Saw you just set up ${name} on VoiceAI Connect. Quick note from me directly.`,
+        '',
+        'You are on the free plan right now, so have a look around and get a feel for how it all works.',
+        '',
+        'When you are ready to start landing clients, upgrading unlocks your own demo line and white-label site. That demo line is what closes deals: a prospect calls it, hears the AI answer as their own business, and sells themselves.',
+        '',
+        'Tell me the kind of client you are going after and I will point you to the setup that converts best.',
+        '',
+        'Gibson',
+      ].join('\n'),
+    };
+  }
+  return {
+    subject: 'Welcome to VoiceAI Connect',
+    body: [
+      'Hey,',
+      '',
+      `Saw you just set up ${name} on VoiceAI Connect. Quick note from me directly.`,
+      '',
+      'The fastest way to land your first paying client is to get your demo receptionist in front of one prospect this week. They call your demo line, hear the AI answer as their business, and the value sells itself.',
+      '',
+      'You do not need a finished website or a full client list for that. You need one phone call.',
+      '',
+      'Tell me the kind of client you are going after and I will point you to the setup that converts best for them.',
+      '',
+      'Gibson',
+    ].join('\n'),
+  };
 }
 
 export default function AdminOverviewPage() {
@@ -101,6 +131,34 @@ export default function AdminOverviewPage() {
   // drawer (shared component owns fetch + escape handling)
   const [openId, setOpenId] = useState<string | null>(null);
   const [openAgencyId, setOpenAgencyId] = useState<string | null>(null);
+
+  // Reach-out modal: copy/paste the email + message, then log it so the row
+  // shows "reached out Xd ago". Template is editable before sending.
+  const [reachOut, setReachOut] = useState<Agency | null>(null);
+  const [oSubject, setOSubject] = useState('');
+  const [oBody, setOBody] = useState('');
+  const [copied, setCopied] = useState<string | null>(null);
+  const [logging, setLogging] = useState(false);
+
+  const openReachOut = (a: Agency) => {
+    const t = buildOutreach(a);
+    setOSubject(t.subject); setOBody(t.body); setCopied(null); setReachOut(a);
+  };
+  const copyText = async (text: string, key: string) => {
+    try { await navigator.clipboard.writeText(text); setCopied(key); setTimeout(() => setCopied((c) => (c === key ? null : c)), 1500); } catch {}
+  };
+  const logOutreach = async (a: Agency, subject: string, body: string) => {
+    setLogging(true);
+    try {
+      await fetch(`${backendUrl()}/api/admin/agencies/${a.id}/log-email`, {
+        method: 'POST', headers: { Authorization: `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject, body, recipient_email: a.email, template_key: isFreeAgency(a) ? 'signup_outreach_free' : 'signup_outreach_paid' }),
+      });
+      const now = new Date().toISOString();
+      setAgencies((prev) => prev.map((x) => (x.id === a.id ? { ...x, last_admin_outreach_at: now } : x)));
+      setReachOut(null);
+    } catch { /* keep modal open on failure */ } finally { setLogging(false); }
+  };
 
   // Resolve a call's agency to an id from the loaded agency list so the drawer
   // can deep-link to the agency without the calls feed returning agency_id.
@@ -228,6 +286,63 @@ export default function AdminOverviewPage() {
       <h1 className="text-[22px] font-semibold tracking-tight text-[var(--a-ink)]">Overview</h1>
       <p className="mt-1 text-sm text-[var(--a-dim)]">Is everything working, who just signed up, and what needs action.</p>
 
+      {/* ── BILLING & TRIALS (agencies) ── */}
+      <div className="a-eyebrow mt-8">Billing &amp; Trials</div>
+      {billing && (
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4 items-start">
+            <div className="a-panel">
+              <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]"><h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Trials ending soon</h3><span className="text-[11px] text-[var(--a-dim)]">{billing.nearExpiringTrials.length}</span></div>
+              {billing.nearExpiringTrials.length === 0 ? <div className="p-4 text-[13px] text-[var(--a-dim)]">No active agency trials.</div> : billing.nearExpiringTrials.slice(0, 10).map((t: any, i: number) => (
+                <div key={i} className="flex items-center justify-between px-4 py-2 text-[13px]" style={{ borderTop: i ? '1px solid var(--a-line)' : 'none' }}>
+                  <span className="text-[var(--a-ink)] truncate mr-3">{t.name}</span>
+                  <span style={{ whiteSpace: 'nowrap', color: t.days_left != null && t.days_left <= 3 ? '#ef4444' : t.days_left != null && t.days_left <= 7 ? '#f59e0b' : 'var(--a-dim)' }}>{t.days_left == null ? '—' : t.days_left < 0 ? 'ended' : t.days_left === 0 ? 'today' : `${t.days_left}d`}{t.trial_ends_at ? ` · ${billDate(t.trial_ends_at)}` : ''}</span>
+                </div>
+              ))}
+            </div>
+            <div className="a-panel">
+              <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]"><h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Upcoming renewals</h3><span className="text-[11px] text-[var(--a-dim)]">{billing.upcomingRenewals.length}</span></div>
+              {billing.upcomingRenewals.length === 0 ? <div className="p-4 text-[13px] text-[var(--a-dim)]">No upcoming renewals on file.</div> : billing.upcomingRenewals.slice(0, 10).map((u: any, i: number) => (
+                <div key={i} className="flex items-center justify-between px-4 py-2 text-[13px]" style={{ borderTop: i ? '1px solid var(--a-line)' : 'none' }}>
+                  <span className="text-[var(--a-ink)] truncate mr-3">{u.name}</span>
+                  <span className="text-[var(--a-dim)]" style={{ whiteSpace: 'nowrap' }}>{u.current_period_end ? billDate(u.current_period_end) : ''}{u.days_until != null ? ` (${u.days_until}d)` : ''} · {u.plan_type}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4 items-start">
+            <div className="a-panel">
+              <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]"><h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Signed up, not paid</h3><span className="text-[11px] text-[var(--a-dim)]">{billing.pendingPayment.length}</span></div>
+              {billing.pendingPayment.length === 0 ? <div className="p-4 text-[13px] text-[var(--a-dim)]">Nobody pending.</div> : billing.pendingPayment.slice(0, 10).map((p: any, i: number) => (
+                <div key={i} className="flex items-center justify-between px-4 py-2 text-[13px]" style={{ borderTop: i ? '1px solid var(--a-line)' : 'none' }}>
+                  <span className="text-[var(--a-ink)] truncate mr-3">{p.name}</span><span style={{ whiteSpace: 'nowrap', color: '#f59e0b' }}>{p.days_waiting}d waiting</span>
+                </div>
+              ))}
+            </div>
+            <div className="a-panel">
+              <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]"><h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Overdue</h3><span className="text-[11px] text-[var(--a-dim)]">{billing.pastDue.length}</span></div>
+              {billing.pastDue.length === 0 ? <div className="p-4 text-[13px] text-[var(--a-dim)]">Nobody overdue.</div> : billing.pastDue.slice(0, 10).map((p: any, i: number) => (
+                <div key={i} className="flex items-center justify-between px-4 py-2 text-[13px]" style={{ borderTop: i ? '1px solid var(--a-line)' : 'none' }}>
+                  <span className="text-[var(--a-ink)] truncate mr-3">{p.name}</span><span style={{ whiteSpace: 'nowrap', color: '#ef4444' }}>payment failed · {p.plan_type}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="a-panel mt-4">
+            <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]"><h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Free agencies</h3><span className="text-[11px] text-[var(--a-dim)]">{billing.freeAgencies.length} · upgrade targets</span></div>
+            {billing.freeAgencies.length === 0 ? <div className="p-4 text-[13px] text-[var(--a-dim)]">No free-tier agencies.</div> : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-0.5 p-1.5">
+                {billing.freeAgencies.slice(0, 20).map((a: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between px-3 py-2 text-[13px]">
+                    <span className="text-[var(--a-ink)] truncate mr-3">{a.name}</span><span className="text-[var(--a-dim)]" style={{ whiteSpace: 'nowrap' }}>{a.days_since}d old</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
       {/* RECENT SIGNUPS (hero) */}
       <div className="a-eyebrow mt-8">Who Just Signed Up</div>
       <div className="a-panel">
@@ -264,9 +379,15 @@ export default function AdminOverviewPage() {
                     </div>
                   </div>
                 </Link>
-                <a href={buildSignupMailto(a)} onClick={(e) => e.stopPropagation()} className="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[12px] font-semibold transition-colors hover:brightness-95" style={{ background: 'var(--a-em)', color: '#04140D' }} title={`Email ${a.email}`}>
-                  <Mail className="h-3.5 w-3.5" /> Reach Out
-                </a>
+                {a.last_admin_outreach_at ? (
+                  <button onClick={(e) => { e.stopPropagation(); openReachOut(a); }} className="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[12px] font-semibold transition-colors hover:brightness-95" style={{ background: 'var(--a-em-soft)', color: 'var(--a-em-deep)' }} title={`Reached out ${timeAgo(a.last_admin_outreach_at)} · reach out again`}>
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Reached out {timeAgo(a.last_admin_outreach_at)}
+                  </button>
+                ) : (
+                  <button onClick={(e) => { e.stopPropagation(); openReachOut(a); }} className="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[12px] font-semibold transition-colors hover:brightness-95" style={{ background: 'var(--a-em)', color: '#04140D' }} title={`Email ${a.email}`}>
+                    <Mail className="h-3.5 w-3.5" /> Reach Out
+                  </button>
+                )}
               </div>
             );
           })}
@@ -410,61 +531,49 @@ export default function AdminOverviewPage() {
         </div>
       </div>
 
-      {/* ── BILLING & TRIALS (agencies) ── */}
-      <div className="a-eyebrow mt-8">Billing &amp; Trials</div>
-      {billing && (
-        <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4 items-start">
-            <div className="a-panel">
-              <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]"><h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Trials ending soon</h3><span className="text-[11px] text-[var(--a-dim)]">{billing.nearExpiringTrials.length}</span></div>
-              {billing.nearExpiringTrials.length === 0 ? <div className="p-4 text-[13px] text-[var(--a-dim)]">No active agency trials.</div> : billing.nearExpiringTrials.slice(0, 10).map((t: any, i: number) => (
-                <div key={i} className="flex items-center justify-between px-4 py-2 text-[13px]" style={{ borderTop: i ? '1px solid var(--a-line)' : 'none' }}>
-                  <span className="text-[var(--a-ink)] truncate mr-3">{t.name}</span>
-                  <span style={{ whiteSpace: 'nowrap', color: t.days_left != null && t.days_left <= 3 ? '#ef4444' : t.days_left != null && t.days_left <= 7 ? '#f59e0b' : 'var(--a-dim)' }}>{t.days_left == null ? '—' : t.days_left < 0 ? 'ended' : t.days_left === 0 ? 'today' : `${t.days_left}d`}{t.trial_ends_at ? ` · ${billDate(t.trial_ends_at)}` : ''}</span>
-                </div>
-              ))}
-            </div>
-            <div className="a-panel">
-              <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]"><h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Upcoming renewals</h3><span className="text-[11px] text-[var(--a-dim)]">{billing.upcomingRenewals.length}</span></div>
-              {billing.upcomingRenewals.length === 0 ? <div className="p-4 text-[13px] text-[var(--a-dim)]">No upcoming renewals on file.</div> : billing.upcomingRenewals.slice(0, 10).map((u: any, i: number) => (
-                <div key={i} className="flex items-center justify-between px-4 py-2 text-[13px]" style={{ borderTop: i ? '1px solid var(--a-line)' : 'none' }}>
-                  <span className="text-[var(--a-ink)] truncate mr-3">{u.name}</span>
-                  <span className="text-[var(--a-dim)]" style={{ whiteSpace: 'nowrap' }}>{u.current_period_end ? billDate(u.current_period_end) : ''}{u.days_until != null ? ` (${u.days_until}d)` : ''} · {u.plan_type}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4 items-start">
-            <div className="a-panel">
-              <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]"><h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Signed up, not paid</h3><span className="text-[11px] text-[var(--a-dim)]">{billing.pendingPayment.length}</span></div>
-              {billing.pendingPayment.length === 0 ? <div className="p-4 text-[13px] text-[var(--a-dim)]">Nobody pending.</div> : billing.pendingPayment.slice(0, 10).map((p: any, i: number) => (
-                <div key={i} className="flex items-center justify-between px-4 py-2 text-[13px]" style={{ borderTop: i ? '1px solid var(--a-line)' : 'none' }}>
-                  <span className="text-[var(--a-ink)] truncate mr-3">{p.name}</span><span style={{ whiteSpace: 'nowrap', color: '#f59e0b' }}>{p.days_waiting}d waiting</span>
-                </div>
-              ))}
-            </div>
-            <div className="a-panel">
-              <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]"><h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Overdue</h3><span className="text-[11px] text-[var(--a-dim)]">{billing.pastDue.length}</span></div>
-              {billing.pastDue.length === 0 ? <div className="p-4 text-[13px] text-[var(--a-dim)]">Nobody overdue.</div> : billing.pastDue.slice(0, 10).map((p: any, i: number) => (
-                <div key={i} className="flex items-center justify-between px-4 py-2 text-[13px]" style={{ borderTop: i ? '1px solid var(--a-line)' : 'none' }}>
-                  <span className="text-[var(--a-ink)] truncate mr-3">{p.name}</span><span style={{ whiteSpace: 'nowrap', color: '#ef4444' }}>payment failed · {p.plan_type}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="a-panel mt-4">
-            <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]"><h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Free agencies</h3><span className="text-[11px] text-[var(--a-dim)]">{billing.freeAgencies.length} · upgrade targets</span></div>
-            {billing.freeAgencies.length === 0 ? <div className="p-4 text-[13px] text-[var(--a-dim)]">No free-tier agencies.</div> : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-0.5 p-1.5">
-                {billing.freeAgencies.slice(0, 20).map((a: any, i: number) => (
-                  <div key={i} className="flex items-center justify-between px-3 py-2 text-[13px]">
-                    <span className="text-[var(--a-ink)] truncate mr-3">{a.name}</span><span className="text-[var(--a-dim)]" style={{ whiteSpace: 'nowrap' }}>{a.days_since}d old</span>
-                  </div>
-                ))}
+      {/* REACH-OUT MODAL (copy/paste + log) */}
+      {reachOut && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={() => setReachOut(null)}>
+          <div className="w-full max-w-lg rounded-2xl bg-white overflow-hidden" style={{ border: '1px solid var(--a-line)' }} onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'var(--a-line)' }}>
+              <div className="min-w-0">
+                <h3 className="text-[15px] font-semibold text-[var(--a-ink)] truncate">Reach out to {reachOut.name}</h3>
+                <p className="text-[11.5px] text-[var(--a-dim)]">{isFreeAgency(reachOut) ? 'Free plan template' : 'Pro / Scale template'}{reachOut.last_admin_outreach_at ? ` · last reached out ${timeAgo(reachOut.last_admin_outreach_at)}` : ''}</p>
               </div>
-            )}
+              <button onClick={() => setReachOut(null)} className="p-1.5 rounded-lg hover:bg-black/5 shrink-0"><X className="h-4 w-4 text-[var(--a-dim)]" /></button>
+            </div>
+            <div className="p-5 space-y-3">
+              <div>
+                <label className="text-[10px] font-semibold uppercase tracking-wide text-[var(--a-dim)]">To</label>
+                <div className="mt-1 flex items-center gap-2">
+                  <input readOnly value={reachOut.email} className="a-input flex-1" />
+                  <button onClick={() => copyText(reachOut.email, 'email')} className="shrink-0 rounded-lg px-3 py-2 text-[12px] font-semibold" style={{ background: 'var(--a-em-soft)', color: 'var(--a-em-deep)' }}>{copied === 'email' ? 'Copied' : 'Copy'}</button>
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold uppercase tracking-wide text-[var(--a-dim)]">Subject</label>
+                <div className="mt-1 flex items-center gap-2">
+                  <input value={oSubject} onChange={(e) => setOSubject(e.target.value)} className="a-input flex-1" />
+                  <button onClick={() => copyText(oSubject, 'subject')} className="shrink-0 rounded-lg px-3 py-2 text-[12px] font-semibold" style={{ background: 'var(--a-em-soft)', color: 'var(--a-em-deep)' }}>{copied === 'subject' ? 'Copied' : 'Copy'}</button>
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold uppercase tracking-wide text-[var(--a-dim)]">Message</label>
+                <textarea value={oBody} onChange={(e) => setOBody(e.target.value)} rows={11} className="a-input w-full mt-1 resize-none" style={{ lineHeight: 1.6 }} />
+                <div className="mt-2 flex justify-end">
+                  <button onClick={() => copyText(oBody, 'body')} className="rounded-lg px-3 py-1.5 text-[12px] font-semibold" style={{ background: 'var(--a-em-soft)', color: 'var(--a-em-deep)' }}>{copied === 'body' ? 'Copied' : 'Copy message'}</button>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-2 px-5 py-4 border-t" style={{ borderColor: 'var(--a-line)' }}>
+              <p className="text-[11px] text-[var(--a-dim)] hidden sm:block">Copy, send from your email, then mark it logged.</p>
+              <div className="flex gap-2 ml-auto">
+                <button onClick={() => setReachOut(null)} className="rounded-lg px-3 py-2 text-[12px] font-semibold text-[var(--a-dim)] hover:bg-black/5">Cancel</button>
+                <button onClick={() => logOutreach(reachOut, oSubject, oBody)} disabled={logging} className="rounded-lg px-4 py-2 text-[12px] font-semibold disabled:opacity-50" style={{ background: 'var(--a-em)', color: '#04140D' }}>{logging ? 'Saving...' : 'Mark as reached out'}</button>
+              </div>
+            </div>
           </div>
-        </>
+        </div>
       )}
 
       {/* DRAWER (shared component) */}

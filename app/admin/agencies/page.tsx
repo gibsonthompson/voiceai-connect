@@ -549,16 +549,6 @@ export default function AdminAgenciesPage() {
     <div className="admin-scope p-5 lg:p-8 max-w-[1400px]">
       <div className="mb-6"><h1 className="text-[22px] font-semibold text-[var(--a-ink)] tracking-tight">Agencies</h1><p className="mt-1 text-sm text-[var(--a-dim)]">Manage all platform agencies</p></div>
 
-      {summary && (<div className="grid gap-3 grid-cols-2 lg:grid-cols-6 mb-6">
-        <div className="a-card p-4"><p className={label}>Agencies</p><p className="mt-1.5 text-xl font-semibold text-[var(--a-ink)] a-num">{summary.total_agencies}</p><div className="mt-1 flex items-center gap-2 text-[11px]"><span className="text-[var(--a-em-deep)] font-semibold">{summary.active} active</span><span className="text-[var(--a-dim)]">&middot;</span><span className="text-[var(--a-cyan)] font-semibold">{summary.trialing} trial</span></div></div>
-        <div className="a-card p-4"><p className={label}>Clients</p><p className="mt-1.5 text-xl font-semibold text-[var(--a-ink)] a-num">{summary.total_clients}</p><p className="mt-1 text-[11px] text-[var(--a-dim)]">across all agencies</p></div>
-        <div className="a-card p-4"><p className={label}>Total Calls</p><p className="mt-1.5 text-xl font-semibold text-[var(--a-ink)] a-num">{summary.total_calls.toLocaleString()}</p><p className="mt-1 text-[11px] text-[var(--a-dim)]">all time</p></div>
-        <div className="a-card p-4"><p className={label}>Leads</p><p className="mt-1.5 text-xl font-semibold text-[var(--a-ink)] a-num">{summary.total_leads}</p><p className="mt-1 text-[11px] text-[var(--a-dim)]">in CRM</p></div>
-        <div className="a-card p-4"><p className={label}>Revenue</p><p className="mt-1.5 text-xl font-semibold text-[var(--a-em-deep)] a-num">{formatCurrencyCents(summary.total_revenue)}</p><p className="mt-1 text-[11px] text-[var(--a-dim)]">collected</p></div>
-        <div className="a-card p-4"><p className={label}>Stripe</p><p className="mt-1.5 text-xl font-semibold text-[var(--a-ink)] a-num">{summary.stripe_connected}</p><p className="mt-1 text-[11px] text-[var(--a-dim)]">connected</p></div>
-      </div>)}
-
-
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         {/* Search with live typeahead: matches name, email, phone, slug, and domain */}
         <div ref={searchBoxRef} className="relative flex-1">

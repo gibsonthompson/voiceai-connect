@@ -5,12 +5,19 @@
 // male), previews each, and saves the choice. Uses the agency/manager token,
 // which the backend's requirePermissionIfAuthed('ai_agent') accepts for an
 // agency owner, so no new endpoint is needed.
+//
+// Preview: not every voice ships a stock sample URL, so a button that only
+// appeared when previewUrl existed left some voices with no way to hear them.
+// We now always show the button and synthesize a short line on demand via
+// /api/voice-preview (cached per voice for the session so re-tapping does not
+// re-bill), falling back to the stock sample if synthesis is unavailable.
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Mic, Play, Pause, Loader2, Check, Save } from 'lucide-react';
 
 const API = () => process.env.NEXT_PUBLIC_API_URL || '';
 const TOKEN = () => (typeof window !== 'undefined' ? localStorage.getItem('auth_token') : '');
+const PREVIEW_TEXT = 'Hi, thanks for calling! How can I help you today?';
 
 interface Voice {
   id: string;
@@ -33,7 +40,10 @@ export default function CcVoiceSelection({ clientId, theme }: { clientId: string
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [previewLoadingId, setPreviewLoadingId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  // Cache synthesized preview object URLs per voice for the session.
+  const previewCache = useRef<Map<string, string>>(new Map());
 
   const loadVoices = useCallback(async () => {
     if (!clientId) return;
@@ -55,8 +65,11 @@ export default function CcVoiceSelection({ clientId, theme }: { clientId: string
   }, [clientId]);
 
   useEffect(() => { loadVoices(); loadCurrent(); }, [loadVoices, loadCurrent]);
-  // Stop any preview playback on unmount.
-  useEffect(() => () => { if (audioRef.current) audioRef.current.pause(); }, []);
+  // Stop playback + free cached object URLs on unmount.
+  useEffect(() => () => {
+    if (audioRef.current) audioRef.current.pause();
+    previewCache.current.forEach((url) => { try { URL.revokeObjectURL(url); } catch {} });
+  }, []);
 
   const allVoices = (): Voice[] => [...(voices.female || []), ...(voices.male || [])];
   const total = allVoices().length;
@@ -65,8 +78,6 @@ export default function CcVoiceSelection({ clientId, theme }: { clientId: string
     return f.slice().sort((a, b) => (b.recommended ? 1 : 0) - (a.recommended ? 1 : 0));
   };
 
-  // Always show the active voice, even if it is not in the standard list for
-  // this business (e.g. a custom voice set directly on the assistant).
   const activeId = selectedVoiceId || currentVoiceId;
   const notInList = !!activeId && total > 0 && !allVoices().some((v) => v.id === activeId);
   const shown: Voice[] = notInList
@@ -74,15 +85,40 @@ export default function CcVoiceSelection({ clientId, theme }: { clientId: string
     : filtered();
 
   const stop = () => { if (audioRef.current) audioRef.current.pause(); setPlayingId(null); };
-  const preview = (v: Voice) => {
-    if (playingId === v.id) { stop(); return; }
+  const playUrl = (voiceId: string, url: string) => {
     stop();
-    if (!v.previewUrl) return;
-    const a = new Audio(v.previewUrl);
+    const a = new Audio(url);
     audioRef.current = a;
     a.onended = () => setPlayingId(null);
     a.onerror = () => setPlayingId(null);
-    a.play().then(() => setPlayingId(v.id)).catch(() => setPlayingId(null));
+    a.play().then(() => setPlayingId(voiceId)).catch(() => setPlayingId(null));
+  };
+
+  const preview = async (v: Voice) => {
+    if (playingId === v.id) { stop(); return; }
+    const cached = previewCache.current.get(v.id);
+    if (cached) { playUrl(v.id, cached); return; }
+    setPreviewLoadingId(v.id);
+    try {
+      // Synthesize a short line in this voice. Works for every voice, including
+      // ones with no stock sample.
+      const r = await fetch('/api/voice-preview', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ voice_id: v.id, text: PREVIEW_TEXT }),
+      });
+      if (!r.ok) throw new Error('synth failed');
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      previewCache.current.set(v.id, url);
+      setPreviewLoadingId(null);
+      playUrl(v.id, url);
+    } catch {
+      setPreviewLoadingId(null);
+      // Fall back to the stock sample when synthesis is unavailable (e.g. no
+      // ElevenLabs key configured); only fails silently if there is neither.
+      if (v.previewUrl) playUrl(v.id, v.previewUrl);
+      else setErr('Could not play a preview for this voice.');
+    }
   };
 
   const save = async () => {
@@ -134,16 +170,15 @@ export default function CcVoiceSelection({ clientId, theme }: { clientId: string
             {shown.map((v) => {
               const sel = selectedVoiceId === v.id;
               const playing = playingId === v.id;
+              const loadingPrev = previewLoadingId === v.id;
               const meta = v.custom ? 'Custom voice' : [v.accent, v.style].filter(Boolean).join(' · ');
               return (
                 <div key={v.id} onClick={() => setSelectedVoiceId(v.id)} className="relative flex items-center gap-2.5 rounded-xl px-3 py-2.5 cursor-pointer transition"
                   style={{ border: `1px solid ${sel ? theme.primary : theme.border}`, backgroundColor: sel ? theme.primary15 : 'transparent' }}>
                   {v.recommended && <span className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 text-[8px] font-bold rounded-full" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>★</span>}
-                  {v.previewUrl && (
-                    <button onClick={(e) => { e.stopPropagation(); preview(v); }} className="flex h-8 w-8 items-center justify-center rounded-full flex-shrink-0" style={{ backgroundColor: theme.hover, color: theme.text }} title="Preview">
-                      {playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5 ml-0.5" />}
-                    </button>
-                  )}
+                  <button onClick={(e) => { e.stopPropagation(); preview(v); }} disabled={loadingPrev} className="flex h-8 w-8 items-center justify-center rounded-full flex-shrink-0 disabled:opacity-60" style={{ backgroundColor: theme.hover, color: theme.text }} title="Preview">
+                    {loadingPrev ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5 ml-0.5" />}
+                  </button>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
                       <span className="font-semibold text-[13px] truncate" style={{ color: theme.text }}>{v.name}</span>
