@@ -22,8 +22,8 @@ import {
   Building2, Check, PhoneCall, CheckCircle2, AlertCircle, Bell, Bot,
   CalendarCheck, ShieldCheck, Mic, MapPin, Plus, X, Sparkles,
 } from 'lucide-react';
-import { useAgency } from '../../../agency/context';
-import { useTheme } from '../../../../hooks/useTheme';
+import { useAgency } from '../../agency/context';
+import { useTheme } from '../../../hooks/useTheme';
 import { CustomSelect, type DropdownUI } from '@/components/ui/custom-select';
 import CcKnowledgeBase from '@/components/cc/CcKnowledgeBase';
 import CcVoiceSelection from '@/components/cc/CcVoiceSelection';
