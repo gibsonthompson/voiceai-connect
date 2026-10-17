@@ -233,6 +233,13 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false }: { 
   //   leaving     = handing back / ending
   const [bargeState, setBargeState] = useState<'idle' | 'arming' | 'connecting' | 'listening' | 'barged' | 'leaving'>('idle');
   const [bargeErr, setBargeErr] = useState<string | null>(null);
+  // Agent onward-transfer: hand the live caller to the owner / staff / a number.
+  const [transferOpen, setTransferOpen] = useState(false);
+  const [transferTargets, setTransferTargets] = useState<{ owner: { label: string; number: string } | null; staff: { id: string; label: string; number: string }[] }>({ owner: null, staff: [] });
+  const [transferBusy, setTransferBusy] = useState(false);
+  const [transferErr, setTransferErr] = useState<string | null>(null);
+  const [transferCustom, setTransferCustom] = useState('');
+  const [transferNote, setTransferNote] = useState('');
   const [agentMuted, setAgentMuted] = useState(false);
   const telnyxRtcRef = useRef<any>(null);
   const telnyxCallRef = useRef<any>(null);
@@ -713,6 +720,38 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false }: { 
     setBargeState('idle');
   }, [clientId, token, cleanupBarge]);
 
+  // Open the transfer picker and load who this caller can be handed to.
+  const openTransfer = useCallback(async () => {
+    setTransferErr(null); setTransferCustom(''); setTransferNote(''); setTransferOpen(true);
+    try {
+      const r = await fetch(`${API}/api/client/${clientId}/live/transfer-targets`, { headers: { Authorization: `Bearer ${token}` } });
+      const d = await r.json();
+      if (d.success) setTransferTargets({ owner: d.owner || null, staff: Array.isArray(d.staff) ? d.staff : [] });
+    } catch { /* picker still allows a custom number */ }
+  }, [clientId, token]);
+
+  // Hand the caller onward. The backend puts the caller on hold, dials the
+  // destination with a whisper, and drops our leg, so the WebRTC call ends.
+  const doTransfer = useCallback(async (body: any) => {
+    const callId = callIdRef.current;
+    if (!callId) { setTransferErr('No live call.'); return; }
+    setTransferBusy(true); setTransferErr(null);
+    try {
+      const r = await fetch(`${API}/api/client/${clientId}/live/transfer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ callId, note: transferNote || undefined, ...body }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok && d.success) {
+        setTransferOpen(false);
+        setBargeState('leaving');
+        cleanupBarge();
+        setBargeState('idle');
+      } else { setTransferErr(d.error || 'Could not start the transfer.'); }
+    } catch { setTransferErr('Could not start the transfer.'); } finally { setTransferBusy(false); }
+  }, [clientId, token, transferNote, cleanupBarge]);
+
   // Mute / unmute the supervisor's own microphone (only meaningful while barged).
   const toggleAgentMute = useCallback(() => {
     const call = telnyxCallRef.current;
@@ -978,6 +1017,9 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false }: { 
                 <button onClick={handBack} className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold" style={{ backgroundColor: t.surfaceStrong, color: t.text }}>
                   <Undo2 className="h-4 w-4" /> Hand back to AI
                 </button>
+                <button onClick={openTransfer} className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold" style={{ backgroundColor: t.surfaceStrong, color: t.text }}>
+                  <PhoneForwarded className="h-4 w-4" /> Transfer
+                </button>
                 <button onClick={endCall} className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white" style={{ backgroundColor: 'rgba(239,68,68,0.9)' }}>
                   <PhoneOff className="h-4 w-4" /> End call
                 </button>
@@ -987,6 +1029,33 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false }: { 
                 <Loader2 className="h-4 w-4 animate-spin" /> Leaving...
               </button>
             )}
+          {transferOpen && (
+            <div className="fixed inset-0 z-[120] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => { if (!transferBusy) setTransferOpen(false); }}>
+              <div className="w-full max-w-sm rounded-2xl p-5" style={{ backgroundColor: t.surface, border: `1px solid ${t.border}` }} onClick={(e) => e.stopPropagation()}>
+                <p className="text-sm font-semibold mb-1" style={{ color: t.text }}>Transfer this caller</p>
+                <p className="text-[12px] mb-3" style={{ color: t.textMuted }}>They hear who is calling and why before they are connected. If no one answers, the AI takes a message.</p>
+                {transferErr && <p className="text-[12px] mb-2" style={{ color: 'rgb(239,68,68)' }}>{transferErr}</p>}
+                <textarea value={transferNote} onChange={(e) => setTransferNote(e.target.value)} rows={2} placeholder="Note for the person you're transferring to (optional)" className="w-full rounded-xl px-3 py-2 text-[13px] mb-3 outline-none resize-none" style={{ backgroundColor: t.surfaceStrong, color: t.text, border: `1px solid ${t.border}` }} />
+                <div className="space-y-1.5">
+                  {transferTargets.owner && (
+                    <button disabled={transferBusy} onClick={() => doTransfer({ target: 'owner' })} className="w-full text-left rounded-xl px-3 py-2.5 text-[13px] font-medium disabled:opacity-60" style={{ backgroundColor: t.surfaceStrong, color: t.text }}>{transferTargets.owner.label}</button>
+                  )}
+                  {transferTargets.staff.map((s) => (
+                    <button key={s.id} disabled={transferBusy} onClick={() => doTransfer({ target: 'staff', staffId: s.id })} className="w-full text-left rounded-xl px-3 py-2.5 text-[13px] font-medium disabled:opacity-60" style={{ backgroundColor: t.surfaceStrong, color: t.text }}>{s.label}</button>
+                  ))}
+                  {!transferTargets.owner && transferTargets.staff.length === 0 && (
+                    <p className="text-[12px] py-1" style={{ color: t.textMuted }}>No saved owner or staff numbers. Use a custom number below.</p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 mt-3">
+                  <input value={transferCustom} onChange={(e) => setTransferCustom(e.target.value)} placeholder="Custom number" className="flex-1 rounded-xl px-3 py-2 text-[13px] outline-none" style={{ backgroundColor: t.surfaceStrong, color: t.text, border: `1px solid ${t.border}` }} />
+                  <button disabled={transferBusy || !transferCustom.trim()} onClick={() => doTransfer({ target: 'custom', number: transferCustom.trim() })} className="rounded-xl px-3 py-2 text-[13px] font-semibold disabled:opacity-50" style={{ backgroundColor: t.text, color: t.surface }}>Call</button>
+                </div>
+                <button disabled={transferBusy} onClick={() => setTransferOpen(false)} className="w-full mt-3 rounded-xl px-3 py-2 text-[13px] font-medium disabled:opacity-60" style={{ color: t.textMuted }}>Cancel</button>
+                {transferBusy && <div className="flex items-center justify-center gap-2 mt-2 text-[12px]" style={{ color: t.textMuted }}><Loader2 className="h-3.5 w-3.5 animate-spin" /> Transferring...</div>}
+              </div>
+            </div>
+          )}
           </div>
         ) : (
           <div className="flex items-center gap-2 text-xs" style={{ color: t.textMuted }}>
