@@ -21,7 +21,9 @@ interface Hook {
 export default function WebhooksTab({ agency, theme }: { agency: any; theme: any }) {
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
   const isTrialing = ['trialing', 'trial'].includes(agency?.subscription_status || '');
-  const isScale = (isTrialing ? 'scale' : agency?.plan_type) === 'scale';
+  // Scale unlocks webhooks, and call-center agencies get them at any plan
+  // (mirrors the backend hasScale || is_call_center gate in api-auth.js).
+  const isScale = ((isTrialing ? 'scale' : agency?.plan_type) === 'scale') || agency?.is_call_center === true;
 
   const [hooks, setHooks] = useState<Hook[]>([]);
   const [eventTypes, setEventTypes] = useState<string[]>([]);

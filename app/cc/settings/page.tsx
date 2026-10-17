@@ -11,6 +11,8 @@ import Link from 'next/link';
 import { Settings as SettingsIcon, Save, Loader2, Check, Headset, Building2, ChevronRight, HelpCircle, ChevronDown, Phone, PlusCircle } from 'lucide-react';
 import { useAgency } from '../../agency/context';
 import { useTheme } from '../../../hooks/useTheme';
+import ApiKeysTab from '@/components/agency/ApiKeysTab';
+import WebhooksTab from '@/components/agency/WebhooksTab';
 
 const HELP = [
   { q: 'How do calls reach the AI? Do businesses keep their number?', a: 'Yes. Each business keeps its existing public number and forwards it to the AI number we provision. It is call forwarding, not porting, so their number never changes, including during a trial. Caller-ID recovery is built in, so you and the AI still see the real caller even on a forwarded call.' },
@@ -105,6 +107,16 @@ export default function CallCenterSettings() {
           <div className="mt-4 pt-4 text-[12px]" style={{ borderTop: `1px solid ${theme.borderSubtle}`, color: theme.textMuted }}>
             Your call center account is invoiced directly, so there is no self-serve billing here. For branding, domains, line capacity, or billing questions, reach us at {supportEmail || 'your account contact'}.
           </div>
+        </div>
+
+        {/* API access */}
+        <div className="rounded-2xl p-5 sm:p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+          <ApiKeysTab agency={agency} theme={theme} />
+        </div>
+
+        {/* Webhooks */}
+        <div className="rounded-2xl p-5 sm:p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+          <WebhooksTab agency={agency} theme={theme} />
         </div>
 
         {/* Quick links */}

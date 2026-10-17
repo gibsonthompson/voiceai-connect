@@ -20,7 +20,11 @@ interface ApiKey {
 export default function ApiKeysTab({ agency, theme }: { agency: any; theme: any }) {
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
   const isTrialing = ['trialing', 'trial'].includes(agency?.subscription_status || '');
-  const isScale = (isTrialing ? 'scale' : agency?.plan_type) === 'scale';
+  // Scale unlocks the API, and call-center agencies get it at any plan (mirrors
+  // the backend hasScale || is_call_center gate in api-auth.js). Without the
+  // call-center clause a call center on the pro plan hits the upgrade wall even
+  // though the API is the whole point of their tier.
+  const isScale = ((isTrialing ? 'scale' : agency?.plan_type) === 'scale') || agency?.is_call_center === true;
 
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
