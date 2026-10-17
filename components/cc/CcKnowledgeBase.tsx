@@ -44,6 +44,7 @@ const formatFAQs = (faqs: FAQ[]): string => faqs.filter((f) => f.question.trim()
 export default function CcKnowledgeBase({ agencyId, clientId, theme }: { agencyId: string; clientId: string; theme: any }) {
   const [website, setWebsite] = useState('');
   const [faqs, setFaqs] = useState<FAQ[]>([{ id: '1', question: '', answer: '' }]);
+  const [faqSuggestions, setFaqSuggestions] = useState<{ question: string; answer: string }[]>([]);
   const [additionalInfo, setAdditionalInfo] = useState('');
   const [aiContent, setAiContent] = useState('');
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
@@ -79,6 +80,14 @@ export default function CcKnowledgeBase({ agencyId, clientId, theme }: { agencyI
           setAdditionalInfo((d.data && d.data.additionalInfo) || '');
         }
       }
+      // Scraped "found on your website" FAQ suggestions. This is the client-scoped
+      // endpoint (reachable with the manager's token, same as the services
+      // suggestions on this page), so the scraped FAQs surface here to add in one
+      // tap, mirroring the services section.
+      try {
+        const sr = await fetch(`${API()}/api/client/${clientId}/scrape-suggestions`, { headers: { Authorization: `Bearer ${TOKEN()}` } });
+        if (sr.ok) { const sd = await sr.json(); setFaqSuggestions(Array.isArray(sd.faqs) ? sd.faqs : []); }
+      } catch { /* suggestions are best-effort */ }
     } catch { /* keep */ } finally { setLoading(false); }
   }, [agencyId, clientId]);
 
@@ -94,6 +103,23 @@ export default function CcKnowledgeBase({ agencyId, clientId, theme }: { agencyI
   const addFAQ = () => setFaqs((p) => [...p, { id: Date.now().toString(), question: '', answer: '' }]);
   const removeFAQ = (id: string) => setFaqs((p) => (p.length > 1 ? p.filter((f) => f.id !== id) : p));
   const updateFAQ = (id: string, k: keyof FAQ, v: string) => setFaqs((p) => p.map((f) => (f.id === id ? { ...f, [k]: v } : f)));
+
+  // Accept a scraped suggestion into the editable FAQ list (dropping the empty
+  // starter row), remove it from the suggestions, and tell the backend not to
+  // surface it again. The user still presses Save Knowledge Base to persist.
+  const addFaqSuggestion = (sg: { question: string; answer: string }) => {
+    setFaqs((prev) => {
+      const base = prev.length === 1 && !prev[0].question.trim() && !prev[0].answer.trim() ? [] : prev;
+      return [...base, { id: Date.now().toString(), question: sg.question, answer: sg.answer }];
+    });
+    setFaqSuggestions((prev) => prev.filter((s) => s.question !== sg.question));
+    try {
+      fetch(`${API()}/api/client/${clientId}/scrape-suggestions/dismiss`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` },
+        body: JSON.stringify({ type: 'faq', name: sg.question }),
+      });
+    } catch { /* best-effort */ }
+  };
 
   const save = async () => {
     setSaving(true); setSaved(false);
@@ -172,6 +198,24 @@ export default function CcKnowledgeBase({ agencyId, clientId, theme }: { agencyI
           {/* FAQs */}
           <div>
             <label className="flex items-center gap-2 text-[13px] font-medium mb-2" style={{ color: theme.text }}><HelpCircle className="h-4 w-4" style={{ color: theme.primary }} /> FAQs</label>
+
+            {faqSuggestions.length > 0 && (
+              <div className="mb-3 rounded-xl p-3" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.border}` }}>
+                <div className="flex items-center gap-1.5 mb-2"><Globe className="h-3.5 w-3.5" style={{ color: theme.primary }} /><span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: theme.primary }}>Found on your website</span></div>
+                <div className="space-y-1.5">
+                  {faqSuggestions.map((sg, i) => (
+                    <div key={i} className="flex items-start gap-2 rounded-lg px-2.5 py-2" style={{ backgroundColor: theme.card }}>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[13px] font-medium" style={{ color: theme.text }}>{sg.question}</p>
+                        <p className="text-[12px] mt-0.5" style={{ color: theme.textMuted }}>{sg.answer}</p>
+                      </div>
+                      <button onClick={() => addFaqSuggestion(sg)} title="Add this FAQ" className="inline-flex items-center justify-center h-6 w-6 rounded-full flex-shrink-0" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Plus className="h-3.5 w-3.5" /></button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2.5">
               {faqs.map((f) => (
                 <div key={f.id} className="rounded-xl p-2.5 space-y-2" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>

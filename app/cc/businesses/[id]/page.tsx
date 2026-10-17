@@ -333,6 +333,28 @@ export default function BusinessConfig() {
         {/* Knowledge base */}
         <CcKnowledgeBase agencyId={agency?.id || ''} clientId={clientId} theme={theme} />
 
+        {/* Service areas (kept with the knowledge base: both are "what the AI knows") */}
+        <div className="rounded-2xl p-5 sm:p-6" style={card}>
+          <SectionHead icon={MapPin} title="Service Areas" sub="Cities or regions this business serves, used by the AI when a caller asks." />
+          <div className="flex items-center gap-2 mb-3">
+            <input value={areaDraft} onChange={(e) => setAreaDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addArea(); } }}
+              placeholder="Add a city or region, then Enter" className="flex-1 rounded-xl px-3 py-2.5 text-sm outline-none" style={field} />
+            <button onClick={addArea} className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-semibold flex-shrink-0" style={{ backgroundColor: theme.hover, color: theme.text }}><Plus className="h-4 w-4" /> Add</button>
+          </div>
+          {cfg.serviceAreas.length === 0 ? (
+            <p className="text-[12px]" style={{ color: theme.textSubtle }}>None set. The AI will not claim a specific service area.</p>
+          ) : (
+            <div className="flex flex-wrap gap-1.5">
+              {cfg.serviceAreas.map((a) => (
+                <span key={a} className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12px] font-medium" style={{ backgroundColor: theme.primary15, color: theme.primary }}>
+                  {a}<button onClick={() => set('serviceAreas', cfg.serviceAreas.filter((x) => x !== a))} className="opacity-70 hover:opacity-100"><X className="h-3 w-3" /></button>
+                </span>
+              ))}
+            </div>
+          )}
+          <SaveBtn fields={['serviceAreas']} sk="areas" />
+        </div>
+
         {/* Hours */}
         <div className="rounded-2xl p-5 sm:p-6" style={card}>
           <SectionHead icon={Clock} title="Business Hours" sub="Used for after-hours handling below." />
@@ -462,28 +484,6 @@ export default function BusinessConfig() {
             </>
           )}
           <SaveBtn fields={['humanHandoff', 'transferPhone', 'overflowAction', 'aiDirectRouting', 'consultTransfer']} sk="escalation" />
-        </div>
-
-        {/* Service areas */}
-        <div className="rounded-2xl p-5 sm:p-6" style={card}>
-          <SectionHead icon={MapPin} title="Service Areas" sub="Cities or regions this business serves, used by the AI when a caller asks." />
-          <div className="flex items-center gap-2 mb-3">
-            <input value={areaDraft} onChange={(e) => setAreaDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addArea(); } }}
-              placeholder="Add a city or region, then Enter" className="flex-1 rounded-xl px-3 py-2.5 text-sm outline-none" style={field} />
-            <button onClick={addArea} className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-semibold flex-shrink-0" style={{ backgroundColor: theme.hover, color: theme.text }}><Plus className="h-4 w-4" /> Add</button>
-          </div>
-          {cfg.serviceAreas.length === 0 ? (
-            <p className="text-[12px]" style={{ color: theme.textSubtle }}>None set. The AI will not claim a specific service area.</p>
-          ) : (
-            <div className="flex flex-wrap gap-1.5">
-              {cfg.serviceAreas.map((a) => (
-                <span key={a} className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12px] font-medium" style={{ backgroundColor: theme.primary15, color: theme.primary }}>
-                  {a}<button onClick={() => set('serviceAreas', cfg.serviceAreas.filter((x) => x !== a))} className="opacity-70 hover:opacity-100"><X className="h-3 w-3" /></button>
-                </span>
-              ))}
-            </div>
-          )}
-          <SaveBtn fields={['serviceAreas']} sk="areas" />
         </div>
 
         {/* Post-call recap SMS */}
