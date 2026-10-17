@@ -13,7 +13,7 @@
 // ?error=calendar_scope_missing), and the status endpoint reports calendar_access
 // so an already-bad connection surfaces a reconnect prompt here.
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { CalendarDays, Loader2, Check, Link2, Link2Off, AlertTriangle } from 'lucide-react';
 
 const API = () => process.env.NEXT_PUBLIC_API_URL || '';
@@ -27,6 +27,7 @@ export default function CcCalendar({ clientId, theme }: { clientId: string; them
   const [busy, setBusy] = useState(false);
   const [justConnected, setJustConnected] = useState(false);
   const [scopeError, setScopeError] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
     if (!clientId) return;
@@ -45,12 +46,18 @@ export default function CcCalendar({ clientId, theme }: { clientId: string; them
     if (typeof window === 'undefined') return;
     const sp = new URLSearchParams(window.location.search);
     const clean = (key: string) => { const url = new URL(window.location.href); url.searchParams.delete(key); window.history.replaceState({}, '', url.toString()); };
+    const returned = sp.get('success') === 'calendar_connected' || sp.get('error') === 'calendar_scope_missing';
     if (sp.get('success') === 'calendar_connected') {
       setJustConnected(true); clean('success');
       setTimeout(() => setJustConnected(false), 4000);
     }
     if (sp.get('error') === 'calendar_scope_missing') {
       setScopeError(true); clean('error');
+    }
+    // Coming back from the Google round-trip lands at the top of a long config
+    // page; scroll this card into view so the manager sees the result in place.
+    if (returned) {
+      setTimeout(() => rootRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
     }
   }, []);
 
@@ -92,7 +99,7 @@ export default function CcCalendar({ clientId, theme }: { clientId: string; them
   const needsReconnect = connected && !calendarAccess;
 
   return (
-    <div className="rounded-2xl p-5 sm:p-6" style={card}>
+    <div ref={rootRef} className="rounded-2xl p-5 sm:p-6 scroll-mt-6" style={card}>
       <div className="flex items-center gap-3 mb-4">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><CalendarDays className="h-4 w-4" style={{ color: theme.primary }} /></div>
         <div className="min-w-0">

@@ -145,6 +145,12 @@ export default function ClientAIAgentPage() {
   // Handle calendar redirect params
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    // Returning from the Google round-trip lands at the top of this long page;
+    // scroll the calendar section back into view so the result shows in place.
+    const cameBackFromCalendar = params.get('success') === 'calendar_connected' || (params.get('error') || '').startsWith('calendar_');
+    if (cameBackFromCalendar) {
+      setTimeout(() => document.getElementById('calendar-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
+    }
     if (params.get('success') === 'calendar_connected') {
       showMessage('Google Calendar connected successfully!');
       setCalendarStatus(prev => prev ? { ...prev, connected: true, token_valid: true } : null);
@@ -369,7 +375,7 @@ export default function ClientAIAgentPage() {
         </section>
 
         {/* Google Calendar Integration */}
-        <div className="fu fu2">
+        <div id="calendar-section" className="fu fu2 scroll-mt-6">
           <SectionCard icon={SectionCalendarIcon} title="Google Calendar" subtitle={isCalendarConnected ? 'Your AI can book appointments to your calendar' : 'Let your AI book appointments to your calendar'} live={!!isCalendarConnected} theme={theme} primaryColor={primaryColor} glass={glass}>
             {calendarLoading ? (
               <div className="flex items-center justify-center py-3"><Loader2 className="w-4 h-4 animate-spin" style={{ color: theme.textMuted4 }} /></div>
