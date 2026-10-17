@@ -136,6 +136,11 @@ export default function BusinessConfig() {
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [savedKey, setSavedKey] = useState<string | null>(null);
   const [errKey, setErrKey] = useState<{ key: string; msg: string } | null>(null);
+  // Desktop layout: 'list' is the normal single-column scroll; 'grid' packs
+  // sections into columns so more fit on screen at once. Persisted per browser.
+  const [view, setView] = useState<'list' | 'grid'>('list');
+  useEffect(() => { try { const v = localStorage.getItem('cc_config_view'); if (v === 'grid' || v === 'list') setView(v); } catch {} }, []);
+  const setViewPersist = (v: 'list' | 'grid') => { setView(v); try { localStorage.setItem('cc_config_view', v); } catch {} };
 
   useEffect(() => {
     if (!agency?.id || !clientId) return;
@@ -233,6 +238,7 @@ export default function BusinessConfig() {
     </div>
   );
   // Per-section save button. Enabled only when that section has unsaved edits.
+  const SK_LABELS: Record<string, string> = { business: 'Business', tone: 'Tone', greeting: 'Greeting', hours: 'Hours', booking: 'Booking', handling: 'Call Handling', escalation: 'Escalation', areas: 'Service Areas', postcall: 'Post-Call Text', compliance: 'Compliance' };
   const SaveBtn = ({ fields, sk }: { fields: (keyof Cfg)[]; sk: string }) => {
     const isDirty = dirty(fields);
     const isSaving = savingKey === sk;
@@ -244,7 +250,7 @@ export default function BusinessConfig() {
           : isSaved ? <span className="text-[12px] mr-auto inline-flex items-center gap-1.5" style={{ color: theme.success }}><Check className="h-3.5 w-3.5" /> Saved</span>
           : isDirty ? <span className="text-[12px] mr-auto" style={{ color: theme.textMuted }}>Unsaved changes</span> : null}
         <button onClick={() => saveFields(fields, sk)} disabled={isSaving || !isDirty} className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
-          {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save
+          {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save {SK_LABELS[sk] || ''}
         </button>
       </div>
     );
@@ -267,12 +273,19 @@ export default function BusinessConfig() {
               : <span className="inline-flex items-center gap-1" style={{ color: theme.warning }}><AlertCircle className="h-3.5 w-3.5" /> Forwarding not confirmed</span>}
           </p>
         </div>
-        <a href={`/live/${clientId}?mode=monitor`} className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold flex-shrink-0" style={{ backgroundColor: theme.primary15, color: theme.primary }}>
-          <PhoneCall className="h-4 w-4" /> Watch live
-        </a>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="hidden lg:inline-flex rounded-xl p-0.5" style={{ backgroundColor: theme.hover }}>
+            {(['list', 'grid'] as const).map((v) => (
+              <button key={v} onClick={() => setViewPersist(v)} className="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition" style={v === view ? { backgroundColor: theme.card, color: theme.text } : { color: theme.textMuted }}>{v === 'list' ? 'Scroll' : 'Compact'}</button>
+            ))}
+          </div>
+          <a href={`/live/${clientId}?mode=monitor`} className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold" style={{ backgroundColor: theme.primary15, color: theme.primary }}>
+            <PhoneCall className="h-4 w-4" /> Watch live
+          </a>
+        </div>
       </div>
 
-      <div className="max-w-2xl space-y-4 sm:space-y-5">
+      <div className={view === 'grid' ? 'max-w-5xl lg:columns-2 lg:gap-5 [&>*]:mb-4 sm:[&>*]:mb-5 [&>*]:break-inside-avoid' : 'max-w-2xl space-y-4 sm:space-y-5'}>
         {/* Basics */}
         <div className="rounded-2xl p-5 sm:p-6" style={card}>
           <SectionHead icon={Building2} title="Business" />
@@ -295,7 +308,7 @@ export default function BusinessConfig() {
 
         {/* Voice & tone */}
         <div className="rounded-2xl p-5 sm:p-6" style={card}>
-          <SectionHead icon={Bot} title="How the AI sounds" sub="The personality the receptionist uses on calls for this business." />
+          <SectionHead icon={Bot} title="How the AI Sounds" sub="The personality the receptionist uses on calls for this business." />
           <Label>Tone</Label>
           <CustomSelect value={cfg.aiTone} onChange={(v) => set('aiTone', v as Cfg['aiTone'])} options={TONES} ui={ddUI} />
           <SaveBtn fields={['aiTone']} sk="tone" />
@@ -322,7 +335,7 @@ export default function BusinessConfig() {
 
         {/* Hours */}
         <div className="rounded-2xl p-5 sm:p-6" style={card}>
-          <SectionHead icon={Clock} title="Business hours" sub="Used for after-hours handling below." />
+          <SectionHead icon={Clock} title="Business Hours" sub="Used for after-hours handling below." />
           <div className="space-y-2">
             {DAYS.map((d) => {
               const h = cfg.businessHours?.[d.key] || { open: '09:00', close: '17:00', closed: true };
@@ -378,7 +391,7 @@ export default function BusinessConfig() {
 
         {/* Call handling */}
         <div className="rounded-2xl p-5 sm:p-6" style={card}>
-          <SectionHead icon={Sparkles} title="Call handling" sub="What the AI does on every call for this business." />
+          <SectionHead icon={Sparkles} title="Call Handling" sub="What the AI does on every call for this business." />
           <div className="divide-y" style={{ borderColor: theme.borderSubtle }}>
             <ToggleRow title="Block spam and robocalls" sub="Detect telemarketers and solicitors and end those calls. They never count against limits." on={cfg.spamDetection} onClick={() => set('spamDetection', !cfg.spamDetection)} />
             <ToggleRow title="Recognize returning callers" sub="Greet a known caller by name and carry their history into the call." on={cfg.callerRecognition} onClick={() => set('callerRecognition', !cfg.callerRecognition)} disabled={cfg.hipaaMode} />
@@ -391,7 +404,7 @@ export default function BusinessConfig() {
 
         {/* Escalation */}
         <div className="rounded-2xl p-5 sm:p-6" style={card}>
-          <SectionHead icon={PhoneForwarded} title="Live escalation" sub="What happens when a caller asks for a person during open hours." />
+          <SectionHead icon={PhoneForwarded} title="Live Escalation" sub="What happens when a caller asks for a person during open hours." />
           <Label>When a caller wants a human</Label>
           <div className="flex gap-2 mb-4">
             {([['transfer', 'Connect them to a person'], ['message', 'Always take a message']] as const).map(([v, lbl]) => (
@@ -453,7 +466,7 @@ export default function BusinessConfig() {
 
         {/* Service areas */}
         <div className="rounded-2xl p-5 sm:p-6" style={card}>
-          <SectionHead icon={MapPin} title="Service areas" sub="Cities or regions this business serves, used by the AI when a caller asks." />
+          <SectionHead icon={MapPin} title="Service Areas" sub="Cities or regions this business serves, used by the AI when a caller asks." />
           <div className="flex items-center gap-2 mb-3">
             <input value={areaDraft} onChange={(e) => setAreaDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addArea(); } }}
               placeholder="Add a city or region, then Enter" className="flex-1 rounded-xl px-3 py-2.5 text-sm outline-none" style={field} />
@@ -475,7 +488,7 @@ export default function BusinessConfig() {
 
         {/* Post-call recap SMS */}
         <div className="rounded-2xl p-5 sm:p-6" style={card}>
-          <SectionHead icon={Bell} title="Post-call text" sub="A recap text to the business owner after each call: who called, what they needed, the summary." />
+          <SectionHead icon={Bell} title="Post-Call Text" sub="A recap text to the business owner after each call: who called, what they needed, the summary." />
           {cfg.optOut?.optedOut && (
             <div className="rounded-xl p-3 mb-3 flex items-start gap-2.5" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
               <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.warning }} />

@@ -13,7 +13,7 @@ import AISettingsSection from '@/components/client/AISettingsSection';
 import ToolConfigSection from '@/components/client/ToolConfigSection';
 
 interface VoiceOption { id: string; name: string; gender: 'male' | 'female'; accent: string; style: string; description: string; previewUrl: string; recommended?: boolean; }
-interface CalendarStatus { connected: boolean; token_valid: boolean; plan_allowed: boolean; plan_message: string | null; email?: string | null; }
+interface CalendarStatus { connected: boolean; token_valid: boolean; calendar_access?: boolean; plan_allowed: boolean; plan_message: string | null; email?: string | null; }
 
 function hexToRgba(hex: string, alpha: number): string {
   const r = parseInt(hex.slice(1, 3), 16);
@@ -156,6 +156,9 @@ export default function ClientAIAgentPage() {
       window.history.replaceState({}, '', window.location.pathname);
     } else if (error === 'calendar_denied') {
       showMessage('Google Calendar access was denied. Please try again and grant calendar permissions.', true);
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (error === 'calendar_scope_missing') {
+      showMessage('The calendar permission box was left unchecked, so bookings will not work. Please reconnect and check "View and edit events on all your calendars".', true);
       window.history.replaceState({}, '', window.location.pathname);
     } else if (error?.startsWith('calendar_')) {
       showMessage('Failed to connect Google Calendar. Please try again.', true);
@@ -369,20 +372,30 @@ export default function ClientAIAgentPage() {
             ) : isCalendarConnected ? (
               <div className="space-y-3">
                 {/* Connected: quiet success banner with a live pulse, no extra logo */}
-                <div className="flex items-center gap-3 rounded-xl p-3 sm:p-3.5" style={{ backgroundColor: theme.successBg, border: `1px solid ${theme.successBorder}` }}>
-                  <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ backgroundColor: theme.success }} />
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5" style={{ backgroundColor: theme.success }} />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold leading-tight" style={{ color: theme.successText }}>Calendar connected</p>
-                    {calendarStatus?.email ? (
-                      <p className="text-[11px] sm:text-xs mt-0.5 truncate" style={{ color: theme.textMuted }} title={calendarStatus.email}>Booking into {calendarStatus.email}</p>
-                    ) : (
-                      <p className="text-[11px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>Your AI books appointments straight into your calendar.</p>
-                    )}
+                {calendarStatus?.calendar_access === false ? (
+                  <div className="flex items-start gap-2.5 rounded-xl p-3 sm:p-3.5" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
+                    <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: theme.warning }} />
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold leading-tight" style={{ color: theme.warningText }}>Connected, but no calendar access</p>
+                      <p className="text-[11px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>The &quot;View and edit events on all your calendars&quot; box was left unchecked, so the AI can&apos;t book yet. Reconnect and check it.</p>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="flex items-center gap-3 rounded-xl p-3 sm:p-3.5" style={{ backgroundColor: theme.successBg, border: `1px solid ${theme.successBorder}` }}>
+                    <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ backgroundColor: theme.success }} />
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5" style={{ backgroundColor: theme.success }} />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold leading-tight" style={{ color: theme.successText }}>Calendar connected</p>
+                      {calendarStatus?.email ? (
+                        <p className="text-[11px] sm:text-xs mt-0.5 truncate" style={{ color: theme.textMuted }} title={calendarStatus.email}>Booking into {calendarStatus.email}</p>
+                      ) : (
+                        <p className="text-[11px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>Your AI books appointments straight into your calendar.</p>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {calendarStatus && !calendarStatus.token_valid && (
                   <div className="p-2.5 sm:p-3 rounded-lg flex items-start gap-2" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>

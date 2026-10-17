@@ -201,7 +201,7 @@ export default function CcVoiceSelection({ clientId, theme, greeting }: { client
               {err ? err : saved ? <span className="inline-flex items-center gap-1.5"><Check className="h-4 w-4" /> Saved. Callers hear it on the next call.</span> : hasChange ? <span style={{ color: theme.textMuted }}>Unsaved voice change.</span> : ''}
             </span>
             <button onClick={save} disabled={saving || !hasChange} className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold disabled:opacity-60" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save voice
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Voice
             </button>
           </div>
         </>
