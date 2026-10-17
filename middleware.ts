@@ -90,13 +90,14 @@ export async function middleware(request: NextRequest) {
   }
 
   // =========================================================================
-  // Skip /client/* routes entirely — client dashboard pages don't need
-  // subdomain context. They get all data from localStorage + backend API.
-  // This prevents middleware from modifying headers/cookies on client page
+  // Skip /client/* and /cc/* routes entirely — these dashboard pages don't
+  // need subdomain context. They get all data from localStorage + backend API.
+  // This prevents middleware from modifying headers/cookies on these page
   // requests (including RSC navigation fetches), which was corrupting
-  // client-side navigation and causing the double-click tab switching bug.
+  // client-side navigation (the double-click tab switching bug) and, for /cc,
+  // flashing Next's 404 on a hard refresh while the host->agency rewrite ran.
   // =========================================================================
-  if (pathname.startsWith('/client')) {
+  if (pathname.startsWith('/client') || pathname.startsWith('/cc')) {
     return NextResponse.next();
   }
 

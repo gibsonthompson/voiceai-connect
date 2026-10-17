@@ -128,11 +128,14 @@ export default function BusinessConfig() {
   const [cfg, setCfg] = useState<Cfg | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
   const [areaDraft, setAreaDraft] = useState('');
   const [bookingDefaults, setBookingDefaults] = useState<{ minNotice: number; maxDays: number }>({ minNotice: 30, maxDays: 60 });
+  // Per-section save: each card saves only its own fields (partial PUT) with its
+  // own saving/saved/dirty state. No settings-wide save button.
+  const [orig, setOrig] = useState<Cfg | null>(null);
+  const [savingKey, setSavingKey] = useState<string | null>(null);
+  const [savedKey, setSavedKey] = useState<string | null>(null);
+  const [errKey, setErrKey] = useState<{ key: string; msg: string } | null>(null);
 
   useEffect(() => {
     if (!agency?.id || !clientId) return;
@@ -144,7 +147,7 @@ export default function BusinessConfig() {
         const r = await fetch(`${base}/api/agency/${agency.id}/cc/businesses/${clientId}/config`, { headers: { Authorization: `Bearer ${token}` } });
         if (!r.ok) { setNotFound(true); return; }
         const d = await r.json();
-        if (d.success) { setCfg({ ...d.config, businessHours: normalizeHours(d.config.businessHours) }); if (d.agencyDefaults) setBookingDefaults(d.agencyDefaults); }
+        if (d.success) { const normalized = { ...d.config, businessHours: normalizeHours(d.config.businessHours) }; setCfg(normalized); setOrig(normalized); if (d.agencyDefaults) setBookingDefaults(d.agencyDefaults); }
         else setNotFound(true);
       } catch { setNotFound(true); }
       finally { setLoading(false); }
@@ -162,35 +165,32 @@ export default function BusinessConfig() {
     setAreaDraft('');
   };
 
-  const save = useCallback(async () => {
+  // Save just one section's fields. The backend PUT whitelists each field
+  // behind `if (b.x !== undefined)` and merges tool_config, so a partial body
+  // never clobbers fields from other sections.
+  const saveFields = useCallback(async (fields: (keyof Cfg)[], sectionKey: string) => {
     if (!cfg || !agency?.id) return;
-    setSaving(true); setErr(null); setSaved(false);
+    setSavingKey(sectionKey); setErrKey(null); setSavedKey(null);
     try {
       const token = localStorage.getItem('auth_token');
       const base = process.env.NEXT_PUBLIC_API_URL || '';
+      const body: Record<string, unknown> = {};
+      fields.forEach((f) => { body[f as string] = (cfg as any)[f]; });
       const r = await fetch(`${base}/api/agency/${agency.id}/cc/businesses/${clientId}/config`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          businessName: cfg.businessName, ownerName: cfg.ownerName, ownerPhone: cfg.ownerPhone,
-          businessCity: cfg.businessCity, businessState: cfg.businessState, businessWebsite: cfg.businessWebsite,
-          transferPhone: cfg.transferPhone, timezone: cfg.timezone, greeting: cfg.greeting,
-          businessHours: cfg.businessHours, forwardingMode: cfg.forwardingMode, humanHandoff: cfg.humanHandoff,
-          overflowAction: cfg.overflowAction, aiDirectRouting: cfg.aiDirectRouting, consultTransfer: cfg.consultTransfer,
-          serviceAreas: cfg.serviceAreas,
-          aiTone: cfg.aiTone, bookingMode: cfg.bookingMode, minBookingNotice: cfg.minBookingNotice, maxBookingDays: cfg.maxBookingDays,
-          spamDetection: cfg.spamDetection, callerRecognition: cfg.callerRecognition, transferCall: cfg.transferCall,
-          afterHoursRouting: cfg.afterHoursRouting, smsToCaller: cfg.smsToCaller,
-          hipaaMode: cfg.hipaaMode, recordingEnabled: cfg.recordingEnabled,
-          postCallSms: cfg.postCallSms, notificationPhone: cfg.notificationPhone,
-        }),
+        body: JSON.stringify(body),
       });
       const d = await r.json().catch(() => ({}));
-      if (r.ok && d.success) { setSaved(true); setTimeout(() => setSaved(false), 2500); }
-      else setErr(d.error || 'Could not save.');
-    } catch { setErr('Could not save.'); }
-    finally { setSaving(false); }
+      if (r.ok && d.success) {
+        setOrig((o) => { if (!o) return o; const next = { ...o } as any; fields.forEach((f) => { next[f] = (cfg as any)[f]; }); return next; });
+        setSavedKey(sectionKey); setTimeout(() => setSavedKey((k) => (k === sectionKey ? null : k)), 2500);
+      } else setErrKey({ key: sectionKey, msg: d.error || 'Could not save.' });
+    } catch { setErrKey({ key: sectionKey, msg: 'Could not save.' }); }
+    finally { setSavingKey((k) => (k === sectionKey ? null : k)); }
   }, [cfg, agency?.id, clientId]);
+
+  const dirty = (fields: (keyof Cfg)[]) => !!orig && !!cfg && fields.some((f) => JSON.stringify((cfg as any)[f]) !== JSON.stringify((orig as any)[f]));
 
   if (agencyLoading || loading) {
     return <div className="flex items-center justify-center min-h-[60vh]" style={{ backgroundColor: theme.bg }}><Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.textMuted }} /></div>;
@@ -232,6 +232,23 @@ export default function BusinessConfig() {
       <Toggle on={on} onClick={onClick} disabled={disabled} />
     </div>
   );
+  // Per-section save button. Enabled only when that section has unsaved edits.
+  const SaveBtn = ({ fields, sk }: { fields: (keyof Cfg)[]; sk: string }) => {
+    const isDirty = dirty(fields);
+    const isSaving = savingKey === sk;
+    const isSaved = savedKey === sk;
+    const e = errKey && errKey.key === sk ? errKey.msg : null;
+    return (
+      <div className="flex items-center justify-end gap-3 mt-4 pt-4" style={{ borderTop: `1px solid ${theme.borderSubtle}` }}>
+        {e ? <span className="text-[12px] mr-auto" style={{ color: theme.error }}>{e}</span>
+          : isSaved ? <span className="text-[12px] mr-auto inline-flex items-center gap-1.5" style={{ color: theme.success }}><Check className="h-3.5 w-3.5" /> Saved</span>
+          : isDirty ? <span className="text-[12px] mr-auto" style={{ color: theme.textMuted }}>Unsaved changes</span> : null}
+        <button onClick={() => saveFields(fields, sk)} disabled={isSaving || !isDirty} className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+          {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save
+        </button>
+      </div>
+    );
+  };
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 min-h-screen" style={{ backgroundColor: theme.bg, color: theme.text }}>
@@ -273,6 +290,7 @@ export default function BusinessConfig() {
             <div><Label>Website</Label><input value={cfg.businessWebsite} onChange={(e) => set('businessWebsite', e.target.value)} placeholder="https://" className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={field} /></div>
           </div>
           {cfg.email && <p className="text-[11.5px] mt-3" style={{ color: theme.textSubtle }}>Owner login: {cfg.email}</p>}
+          <SaveBtn fields={['businessName', 'ownerName', 'ownerPhone', 'businessCity', 'businessState', 'timezone', 'businessWebsite']} sk="business" />
         </div>
 
         {/* Voice & tone */}
@@ -280,6 +298,7 @@ export default function BusinessConfig() {
           <SectionHead icon={Bot} title="How the AI sounds" sub="The personality the receptionist uses on calls for this business." />
           <Label>Tone</Label>
           <CustomSelect value={cfg.aiTone} onChange={(v) => set('aiTone', v as Cfg['aiTone'])} options={TONES} ui={ddUI} />
+          <SaveBtn fields={['aiTone']} sk="tone" />
         </div>
 
         {/* Voice selection */}
@@ -295,6 +314,7 @@ export default function BusinessConfig() {
             <button type="button" onClick={() => set('greeting', `Thanks for calling ${cfg.businessName || 'your business'}. This call may be recorded for quality assurance. How can I help you today?`)} className="text-[12px] font-semibold flex-shrink-0" style={{ color: theme.primary }}>Use suggested greeting</button>
             <span className="text-[11px]" style={{ color: theme.textMuted }}>Includes a call-recording notice, recommended for two-party-consent states.</span>
           </div>
+          <SaveBtn fields={['greeting']} sk="greeting" />
         </div>
 
         {/* Knowledge base */}
@@ -327,6 +347,7 @@ export default function BusinessConfig() {
           <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${theme.borderSubtle}` }}>
             <ToggleRow title="After-hours mode" sub="When closed, take a message or book instead of transferring to a person." on={cfg.afterHoursRouting} onClick={() => set('afterHoursRouting', !cfg.afterHoursRouting)} />
           </div>
+          <SaveBtn fields={['businessHours', 'afterHoursRouting']} sk="hours" />
         </div>
 
         {/* Booking */}
@@ -343,6 +364,7 @@ export default function BusinessConfig() {
               <p className="text-[11.5px] mt-2" style={{ color: theme.textSubtle }}>Leave either blank to use the agency default ({bookingDefaults.minNotice} min notice, {bookingDefaults.maxDays} days ahead), set in agency Settings. A value here overrides it for just this business.</p>
             </>
           )}
+          <SaveBtn fields={['bookingMode', 'minBookingNotice', 'maxBookingDays']} sk="booking" />
         </div>
 
         {/* Google Calendar */}
@@ -364,6 +386,7 @@ export default function BusinessConfig() {
             <ToggleRow title="Let the AI text the caller" sub="Send the caller a text during the call (address, booking link, and so on)." on={cfg.smsToCaller} onClick={() => set('smsToCaller', !cfg.smsToCaller)} />
           </div>
           {cfg.hipaaMode && <p className="text-[11.5px] mt-2" style={{ color: theme.textSubtle }}>Caller recognition is off while HIPAA mode is on.</p>}
+          <SaveBtn fields={['spamDetection', 'callerRecognition', 'transferCall', 'smsToCaller']} sk="handling" />
         </div>
 
         {/* Escalation */}
@@ -425,6 +448,7 @@ export default function BusinessConfig() {
               </div>
             </>
           )}
+          <SaveBtn fields={['humanHandoff', 'transferPhone', 'overflowAction', 'aiDirectRouting', 'consultTransfer']} sk="escalation" />
         </div>
 
         {/* Service areas */}
@@ -446,6 +470,7 @@ export default function BusinessConfig() {
               ))}
             </div>
           )}
+          <SaveBtn fields={['serviceAreas']} sk="areas" />
         </div>
 
         {/* Post-call recap SMS */}
@@ -468,6 +493,7 @@ export default function BusinessConfig() {
               <p className="text-[11.5px] mt-1.5" style={{ color: theme.textSubtle }}>Goes to the business owner. Leave blank to use the owner phone. Set this to the owner&apos;s own cell so the recap never lands on a call-center line.</p>
             </div>
           )}
+          <SaveBtn fields={['postCallSms', 'notificationPhone']} sk="postcall" />
         </div>
 
         {/* Compliance */}
@@ -480,17 +506,9 @@ export default function BusinessConfig() {
           <div className="mt-2 flex items-center gap-1.5 text-[11.5px]" style={{ color: theme.textSubtle }}>
             <Mic className="h-3.5 w-3.5" /> Recording changes take effect on the next call.
           </div>
+          <SaveBtn fields={['hipaaMode', 'recordingEnabled']} sk="compliance" />
         </div>
 
-        {/* Save bar */}
-        <div className="flex items-center justify-between gap-3 sticky bottom-3">
-          <span className="text-[13px]" style={{ color: err ? theme.error : theme.textMuted }}>
-            {err ? err : saved ? <span className="inline-flex items-center gap-1.5" style={{ color: theme.success }}><Check className="h-4 w-4" /> Saved</span> : ''}
-          </span>
-          <button onClick={save} disabled={saving} className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold shadow-lg transition disabled:opacity-60" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save changes
-          </button>
-        </div>
       </div>
     </div>
   );
