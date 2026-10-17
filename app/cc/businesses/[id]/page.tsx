@@ -46,6 +46,8 @@ interface Cfg {
   businessHours: Record<string, { open: string; close: string; closed: boolean }> | null;
   forwardingMode: 'all' | 'missed';
   humanHandoff: 'transfer' | 'message';
+  overflowAction: 'message' | 'callback' | 'ring_business';
+  aiDirectRouting: boolean;
   serviceAreas: string[];
   aiTone: 'professional' | 'friendly' | 'casual' | 'clinical';
   bookingMode: 'auto_book' | 'collect_request' | 'disabled';
@@ -69,6 +71,12 @@ const DAYS: { key: string; label: string }[] = [
   { key: 'monday', label: 'Monday' }, { key: 'tuesday', label: 'Tuesday' },
   { key: 'wednesday', label: 'Wednesday' }, { key: 'thursday', label: 'Thursday' },
   { key: 'friday', label: 'Friday' }, { key: 'saturday', label: 'Saturday' }, { key: 'sunday', label: 'Sunday' },
+];
+
+const OVERFLOW_OPTIONS = [
+  { value: 'message', label: 'Take a message' },
+  { value: 'callback', label: 'Offer a callback' },
+  { value: 'ring_business', label: 'Ring the business line' },
 ];
 const TIMEZONES = [
   'America/New_York', 'America/Chicago', 'America/Denver', 'America/Phoenix',
@@ -167,6 +175,7 @@ export default function BusinessConfig() {
           businessCity: cfg.businessCity, businessState: cfg.businessState, businessWebsite: cfg.businessWebsite,
           transferPhone: cfg.transferPhone, timezone: cfg.timezone, greeting: cfg.greeting,
           businessHours: cfg.businessHours, forwardingMode: cfg.forwardingMode, humanHandoff: cfg.humanHandoff,
+          overflowAction: cfg.overflowAction, aiDirectRouting: cfg.aiDirectRouting,
           serviceAreas: cfg.serviceAreas,
           aiTone: cfg.aiTone, bookingMode: cfg.bookingMode, minBookingNotice: cfg.minBookingNotice, maxBookingDays: cfg.maxBookingDays,
           spamDetection: cfg.spamDetection, callerRecognition: cfg.callerRecognition, transferCall: cfg.transferCall,
@@ -370,6 +379,34 @@ export default function BusinessConfig() {
               <input value={cfg.transferPhone} onChange={(e) => set('transferPhone', e.target.value)} placeholder={fmtPhone(cfg.ownerPhone) || '(555) 555-5555'}
                 className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={field} />
               <p className="text-[11.5px] mt-1.5" style={{ color: theme.textSubtle }}>Leave blank to fall back to the owner phone. Your available agents are always offered the call first.</p>
+
+              <div className="rounded-xl p-3.5 mt-4" style={{ backgroundColor: theme.hover }}>
+                <p className="text-[12px] font-medium mb-1.5" style={{ color: theme.text }}>How a handoff works</p>
+                <p className="text-[11.5px] leading-relaxed" style={{ color: theme.textMuted }}>The AI answers and handles everything it can: questions, bookings, texts. It only reaches for a human when a caller truly needs one. At that point the call is offered to your available agents first. The two settings below decide what happens when no agent is free, and whether the AI may skip your agents for a specific department.</p>
+              </div>
+
+              <div className="mt-4">
+                <Label>When no agent is available</Label>
+                <CustomSelect value={cfg.overflowAction} onChange={(v) => set('overflowAction', v as Cfg['overflowAction'])} options={OVERFLOW_OPTIONS} ui={ddUI} />
+                <p className="text-[11.5px] mt-1.5" style={{ color: theme.textSubtle }}>
+                  {cfg.overflowAction === 'ring_business'
+                    ? 'The AI rings the escalation phone above. Use this only if the business wants calls sent straight to them when your team is unavailable.'
+                    : cfg.overflowAction === 'callback'
+                    ? 'The AI tells the caller a team member will call them back, takes their number and reason, and sends it to your team. The business is never rung.'
+                    : 'The AI takes a message (name, number, reason) and sends it to your team. The business is never rung, so you stay in front of it, the way a call center should.'}
+                </p>
+              </div>
+
+              <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.borderSubtle}` }}>
+                <ToggleRow
+                  title="Let the AI route straight to a department"
+                  sub={cfg.aiDirectRouting
+                    ? 'On: when a caller clearly needs a specific department you set up under Staff (say, billing), the AI connects them straight there and skips your agents. A generic "I need a person" still goes to your agents first.'
+                    : 'Off (recommended): every handoff goes to your agents first, and the agent decides where it goes next. Turn this on only for a larger business that wants certain callers sent straight to a named department.'}
+                  on={cfg.aiDirectRouting}
+                  onClick={() => set('aiDirectRouting', !cfg.aiDirectRouting)}
+                />
+              </div>
             </>
           )}
         </div>
