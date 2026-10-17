@@ -299,7 +299,13 @@ function AgencySettingsContent() {
   const { agency, user, branding, loading: contextLoading, refreshAgency, demoMode, toggleDemoMode, hasPermission } = useAgency();
   const theme = useTheme();
   const searchParams = useSearchParams();
-  const cardAdded = searchParams.get('card_added') === 'true';
+  // Whether a card is on file. Source of truth is the backend card-status check
+  // (reflects Stripe on every load); the ?card_added redirect is just instant
+  // feedback right after the Stripe return. This fixes the bug where refreshing
+  // the page reverted to "Add a payment method" even though a card was saved.
+  const cardAddedParam = searchParams.get('card_added') === 'true';
+  const [cardOnFile, setCardOnFile] = useState<boolean | null>(null);
+  const cardAdded = cardOnFile === true || cardAddedParam;
   const initialTab = (searchParams.get('tab') as SettingsTab) || 'profile';
   const validTabs: SettingsTab[] = ['profile', 'pricing', 'payments', 'billing', 'twilio', 'embed', 'team', 'demo', 'support', 'developer', 'webhooks'];
   const [activeTab, setActiveTab] = useState<SettingsTab>(validTabs.includes(initialTab) ? initialTab : 'profile');
@@ -435,6 +441,22 @@ function AgencySettingsContent() {
   const appIconInputRef = useRef<HTMLInputElement>(null);
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
   const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
+
+  // Load the real card-on-file status so the billing prompt reflects Stripe on
+  // every load (not just the post-checkout redirect). Re-checks when returning
+  // from the Stripe card setup (cardAddedParam flips true).
+  useEffect(() => {
+    if (!agency?.id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        const r = await fetch(`${backendUrl}/api/agency/${agency.id}/card-status`, { headers: { Authorization: `Bearer ${token}` } });
+        if (r.ok) { const d = await r.json(); if (!cancelled) setCardOnFile(!!d.hasPaymentMethod); }
+      } catch { /* non-blocking: fall back to the redirect param */ }
+    })();
+    return () => { cancelled = true; };
+  }, [agency?.id, cardAddedParam, backendUrl]);
   const isOnTrial = isTrialStatus(agency?.subscription_status);
   const trialDaysLeft = agency?.trial_ends_at ? Math.max(0, Math.ceil((new Date(agency.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : null;
   const planPrice = PLAN_PRICING[agency?.plan_type || 'free'] ?? 0;
