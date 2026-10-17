@@ -127,19 +127,18 @@ function CallCenterShell({ children }: { children: ReactNode }) {
   const sidebar = (
     <aside className={`fixed inset-y-0 left-0 z-50 w-72 md:w-60 flex flex-col transform transition-transform duration-300 ease-out ${isMobile ? (sidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0'}`} style={{ backgroundColor: theme.sidebarBg, borderRight: `1px solid ${theme.sidebarBorder}`, paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0 }}>
       <div className="flex items-center justify-between h-16 px-5" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}>
+        {/* White-label brand: when a logo is set, show the logo ONLY (bigger, no
+            name and no "Call Center" text beside it). With no logo, fall back to
+            the mark plus the call-center name so the sidebar is never blank. */}
         <div className="flex items-center gap-2.5 min-w-0">
           {branding.logoUrl ? (
-            <img src={branding.logoUrl} alt={branding.name} style={{ height: '28px', width: 'auto' }} className="object-contain flex-shrink-0" />
+            <img src={branding.logoUrl} alt={branding.name} style={{ height: '44px', width: 'auto', maxWidth: '180px' }} className="object-contain flex-shrink-0" />
           ) : (
-            <div className="flex items-center justify-center rounded-lg flex-shrink-0" style={{ height: '30px', width: '30px', backgroundColor: theme.primary15 }}><WaveformIcon className="h-4 w-4" color={theme.primary} /></div>
+            <>
+              <div className="flex items-center justify-center rounded-lg flex-shrink-0" style={{ height: '38px', width: '38px', backgroundColor: theme.primary15 }}><WaveformIcon className="h-5 w-5" color={theme.primary} /></div>
+              <p className="text-sm font-semibold truncate min-w-0" style={{ color: theme.sidebarText }}>{branding.name}</p>
+            </>
           )}
-          <div className="min-w-0 leading-tight">
-            {/* White-label: when a logo is set it stands in for the name, so we
-                don't print the name text beside it. The name only shows as a
-                fallback when there is no logo. */}
-            {!branding.logoUrl && <p className="text-sm font-semibold truncate" style={{ color: theme.sidebarText }}>{branding.name}</p>}
-            <p className="text-[10px] uppercase tracking-wider" style={{ color: theme.primary }}>Call Center</p>
-          </div>
         </div>
         {isMobile && <button onClick={() => setSidebarOpen(false)} className="w-10 h-10 -mr-2 flex items-center justify-center rounded-lg" style={{ color: theme.sidebarText }}><X className="h-6 w-6" /></button>}
       </div>
@@ -187,8 +186,7 @@ function CallCenterShell({ children }: { children: ReactNode }) {
       <div className="sticky top-0 z-30 md:hidden" style={{ backgroundColor: theme.sidebarBg, paddingTop: 'env(safe-area-inset-top)' }}>
         <header className="flex items-center justify-between h-16 px-4" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}>
           <div className="flex items-center gap-2.5 min-w-0">
-            {branding.logoUrl ? <img src={branding.logoUrl} alt={branding.name} style={{ height: '30px', width: 'auto' }} className="object-contain" /> : <div className="flex items-center justify-center rounded-lg" style={{ height: '34px', width: '34px', backgroundColor: theme.primary15 }}><WaveformIcon className="h-5 w-5" color={theme.primary} /></div>}
-            <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: theme.primary }}>Call Center</span>
+            {branding.logoUrl ? <img src={branding.logoUrl} alt={branding.name} style={{ height: '40px', width: 'auto', maxWidth: '160px' }} className="object-contain" /> : <><div className="flex items-center justify-center rounded-lg" style={{ height: '34px', width: '34px', backgroundColor: theme.primary15 }}><WaveformIcon className="h-5 w-5" color={theme.primary} /></div><span className="text-sm font-semibold truncate" style={{ color: theme.sidebarText }}>{branding.name}</span></>}
           </div>
           <button onClick={() => setSidebarOpen(true)} className="w-11 h-11 -mr-2 flex items-center justify-center rounded-xl" style={{ color: theme.sidebarText }}><Menu className="h-7 w-7" /></button>
         </header>
