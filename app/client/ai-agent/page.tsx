@@ -198,6 +198,20 @@ export default function ClientAIAgentPage() {
     window.location.href = `${getBackendUrl()}/api/auth/google-calendar/connect?clientId=${client?.id}&return=${ret}`;
   };
 
+  // Reconnect fully revokes the existing grant first, so Google re-shows the
+  // complete consent screen (including the calendar permission checkbox). A
+  // plain re-connect can skip the granular checkboxes when a partial grant
+  // already exists on the account.
+  const handleReconnectCalendar = async () => {
+    try {
+      await fetch(`${getBackendUrl()}/api/auth/google-calendar/disconnect`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` },
+        body: JSON.stringify({ clientId: client?.id }),
+      });
+    } catch { /* non-fatal: still start a fresh connect */ }
+    handleConnectCalendar();
+  };
+
   const handleDisconnectCalendar = async () => {
     if (!confirm('Are you sure you want to disconnect Google Calendar? Your AI receptionist will no longer be able to book appointments.')) return;
     setDisconnectingCalendar(true);
@@ -405,7 +419,7 @@ export default function ClientAIAgentPage() {
                 )}
 
                 <div className="flex gap-2">
-                  <button onClick={handleConnectCalendar} className="flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition hover:opacity-90" style={{ backgroundColor: theme.bg, color: theme.textMuted, border: `1px solid ${theme.border}` }}><RotateCcw className="w-3.5 h-3.5" /> Reconnect</button>
+                  <button onClick={handleReconnectCalendar} className="flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition hover:opacity-90" style={{ backgroundColor: theme.bg, color: theme.textMuted, border: `1px solid ${theme.border}` }}><RotateCcw className="w-3.5 h-3.5" /> Reconnect</button>
                   <button onClick={handleDisconnectCalendar} disabled={disconnectingCalendar} className="flex-1 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: theme.errorBg, color: theme.error, border: `1px solid ${theme.errorBorder}` }}>
                     {disconnectingCalendar ? (<span className="flex items-center justify-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Disconnecting...</span>) : 'Disconnect'}
                   </button>

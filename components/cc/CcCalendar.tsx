@@ -72,6 +72,21 @@ export default function CcCalendar({ clientId, theme }: { clientId: string; them
     } catch { /* non-fatal */ } finally { setBusy(false); }
   };
 
+  // Reconnect = fully revoke the existing grant, THEN start a fresh connect, so
+  // Google shows the complete consent screen again (including the calendar
+  // permission checkbox). A plain re-connect can skip the granular checkboxes
+  // when a partial grant already exists on the account.
+  const reconnect = async () => {
+    setBusy(true);
+    try {
+      await fetch(`${API()}/api/auth/google-calendar/disconnect`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` },
+        body: JSON.stringify({ clientId }),
+      });
+    } catch { /* non-fatal: still try a fresh connect */ }
+    connect();
+  };
+
   const card = { backgroundColor: theme.card, border: `1px solid ${theme.border}` } as React.CSSProperties;
   // "connected" but the calendar scope was never granted: tokens exist, booking can't work.
   const needsReconnect = connected && !calendarAccess;
@@ -108,8 +123,8 @@ export default function CcCalendar({ clientId, theme }: { clientId: string; them
             </div>
           </div>
           {needsReconnect ? (
-            <button onClick={connect} className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold flex-shrink-0" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
-              <Link2 className="h-4 w-4" /> Reconnect
+            <button onClick={reconnect} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold flex-shrink-0 disabled:opacity-60" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />} Reconnect
             </button>
           ) : connected ? (
             <button onClick={disconnect} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium flex-shrink-0 disabled:opacity-50" style={{ backgroundColor: theme.hover, color: theme.text }}>
