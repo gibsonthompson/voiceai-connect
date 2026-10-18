@@ -179,165 +179,170 @@ export default function AgencyLoginPage() {
   const isBranded = !!agency;
   const brandName = agency?.name || 'VoiceAI Connect';
   const brandLogo = agency?.logo_url || (isBranded ? null : '/icon-512x512.png');
-  const primaryColor = agency?.primary_color || '#10b981';
+  const initial = (brandName.trim().charAt(0) || 'A').toUpperCase();
+  const primaryColor = agency?.primary_color || '#4f46e5';
   const primaryText = getContrastColor(primaryColor);
   const isDark = isBranded ? agency?.website_theme === 'dark' : (themeHint === 'dark');
 
-  const t = isDark ? {
-    bg: '#09090b', text: '#fafaf9', textMuted: 'rgba(250,250,249,0.56)', textSubtle: 'rgba(250,250,249,0.34)',
+  const c = isDark ? {
+    bg: '#09090b', text: '#fafaf9', muted: 'rgba(250,250,249,0.56)', subtle: 'rgba(250,250,249,0.34)',
     label: 'rgba(250,250,249,0.72)', input: 'rgba(255,255,255,0.04)', inputBorder: 'rgba(255,255,255,0.10)',
     divider: 'rgba(255,255,255,0.08)', autofillBg: '#17171a', autofillText: '#fafaf9',
     errorBg: 'rgba(239,68,68,0.12)', errorBorder: 'rgba(239,68,68,0.28)', errorText: '#fca5a5',
-    googleBg: '#ffffff', googleText: '#1f2937',
+    googleBg: '#ffffff', googleText: '#1f2937', monoFallbackBg: 'rgba(255,255,255,0.06)',
   } : {
-    bg: '#fbfbfa', text: '#111827', textMuted: '#6b7280', textSubtle: '#9ca3af',
+    bg: '#fbfbfa', text: '#111827', muted: '#6b7280', subtle: '#9ca3af',
     label: '#374151', input: '#ffffff', inputBorder: '#e5e7eb',
-    divider: '#e5e7eb', autofillBg: '#ffffff', autofillText: '#111827',
+    divider: '#ececec', autofillBg: '#ffffff', autofillText: '#111827',
     errorBg: '#fef2f2', errorBorder: '#fecaca', errorText: '#dc2626',
-    googleBg: '#ffffff', googleText: '#1f2937',
+    googleBg: '#ffffff', googleText: '#1f2937', monoFallbackBg: '#ffffff',
   };
+
+  // CSS custom properties drive the stylesheet below, so the whole page restyles
+  // from the resolved brand with no per-element inline overrides.
+  const vars = {
+    ['--primary' as any]: primaryColor,
+    ['--primaryText' as any]: primaryText,
+    ['--pGlow' as any]: `${primaryColor}26`,
+    ['--bg' as any]: c.bg, ['--text' as any]: c.text, ['--muted' as any]: c.muted, ['--subtle' as any]: c.subtle,
+    ['--label' as any]: c.label, ['--input' as any]: c.input, ['--inputBorder' as any]: c.inputBorder,
+    ['--divider' as any]: c.divider, ['--afBg' as any]: c.autofillBg, ['--afText' as any]: c.autofillText,
+    ['--errBg' as any]: c.errorBg, ['--errBorder' as any]: c.errorBorder, ['--errText' as any]: c.errorText,
+    ['--gBg' as any]: c.googleBg, ['--gText' as any]: c.googleText, ['--monoBg' as any]: c.monoFallbackBg,
+  } as React.CSSProperties;
 
   if (pageLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: themeHint === 'dark' ? '#09090b' : '#fbfbfa' }}>
+      <div className="al-loader" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: themeHint === 'dark' ? '#09090b' : '#fbfbfa' }}>
         <Loader2 className="h-7 w-7 animate-spin" style={{ color: '#9ca3af' }} />
       </div>
     );
   }
 
-  const styles = `
-    input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus{-webkit-box-shadow:0 0 0 9999px ${t.autofillBg} inset !important;-webkit-text-fill-color:${t.autofillText} !important;border-color:${t.inputBorder} !important;transition:background-color 0s 600000s,color 0s 600000s !important}
-    .ag-login input:focus{outline:none;border-color:${primaryColor} !important;box-shadow:0 0 0 3px ${primaryColor}26 !important}
-    .ag-login input::placeholder{color:${t.textSubtle};opacity:1}
-    .ag-login ::selection{background-color:${primaryColor};color:${primaryText}}
-    @keyframes agRise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-    .ag-rise{animation:agRise .5s cubic-bezier(.16,.84,.44,1) both}
-    @media (prefers-reduced-motion: reduce){.ag-rise{animation:none}}
+  const css = `
+  .al-wrap{min-height:100vh;display:grid;grid-template-columns:1fr;background:var(--bg);color:var(--text);font-family:inherit}
+  .al-stage{display:none}
+  .al-side{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:40px 24px calc(40px + env(safe-area-inset-bottom));padding-top:calc(40px + env(safe-area-inset-top))}
+  .al-zone{max-width:372px;width:100%;margin:0 auto;text-align:center}
+  .al-brand{display:flex;align-items:center;justify-content:center;gap:11px;margin-bottom:34px}
+  .al-mono{height:40px;width:40px;border-radius:12px;background:var(--primary);color:var(--primaryText);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex:0 0 auto}
+  .al-logo-img{height:40px;width:auto;max-width:190px;object-fit:contain}
+  .al-bn{font-size:17px;font-weight:600;letter-spacing:-.01em;color:var(--text)}
+  .al-h1{font-size:25px;line-height:1.2;font-weight:600;letter-spacing:-.02em}
+  .al-sub{margin-top:7px;font-size:15px;color:var(--muted)}
+  .al-form{margin-top:30px;display:flex;flex-direction:column;gap:17px;text-align:left}
+  .al-form label{display:block;font-size:13.5px;font-weight:550;color:var(--label);margin-bottom:7px}
+  .al-field{position:relative}
+  .al-field>svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--subtle)}
+  .al-form input{width:100%;height:52px;border:1px solid var(--inputBorder);background:var(--input);border-radius:12px;padding:0 44px 0 42px;font-size:16px;color:var(--text);transition:border-color .15s,box-shadow .15s}
+  .al-form input::placeholder{color:var(--subtle);opacity:1}
+  .al-form input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--pGlow)}
+  .al-form input:-webkit-autofill,.al-form input:-webkit-autofill:hover,.al-form input:-webkit-autofill:focus{-webkit-box-shadow:0 0 0 9999px var(--afBg) inset !important;-webkit-text-fill-color:var(--afText) !important;border-color:var(--inputBorder) !important;transition:background-color 0s 600000s,color 0s 600000s !important}
+  .al-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:0;color:var(--subtle);cursor:pointer;display:flex;padding:6px}
+  .al-row{display:flex;justify-content:flex-end;margin-top:-5px}
+  .al-link{font-size:13.5px;color:var(--primary);font-weight:550;text-decoration:none}
+  .al-link:hover{text-decoration:underline;text-underline-offset:2px}
+  .al-btn{height:52px;border:0;border-radius:12px;background:var(--primary);color:var(--primaryText);font-size:15.5px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:filter .15s,transform .05s;margin-top:3px}
+  .al-btn:hover{filter:brightness(1.05)} .al-btn:active{transform:scale(.99)} .al-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;filter:none}
+  .al-g{height:52px;border:1px solid var(--inputBorder);background:var(--gBg);color:var(--gText);border-radius:12px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:15px;font-weight:550;cursor:pointer;width:100%}
+  .al-g:disabled{opacity:.5;cursor:not-allowed}
+  .al-div{display:flex;align-items:center;gap:12px;margin:20px 0}
+  .al-div:before,.al-div:after{content:"";flex:1;height:1px;background:var(--divider)}
+  .al-div span{font-size:13px;color:var(--subtle)}
+  .al-err{border-radius:12px;padding:12px;font-size:14px;background:var(--errBg);border:1px solid var(--errBorder);color:var(--errText);text-align:left}
+  .al-foot{margin-top:28px;font-size:14.5px;color:var(--muted)}
+  .al-foot a{color:var(--primary);font-weight:600;text-decoration:none}
+  .al-foot a:hover{text-decoration:underline;text-underline-offset:2px}
+  .al-wrap ::selection{background:var(--primary);color:var(--primaryText)}
+  @keyframes alRise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  .al-rise{animation:alRise .5s cubic-bezier(.16,.84,.44,1) both}
+  @media (prefers-reduced-motion: reduce){.al-rise{animation:none}}
+  @media(min-width:1024px){
+    .al-wrap{grid-template-columns:1.05fr 1fr}
+    .al-stage{display:flex;flex-direction:column;justify-content:center;padding:56px;position:relative;overflow:hidden;color:var(--primaryText);background:var(--primary);
+      background-image:radial-gradient(130% 115% at 8% 0%,rgba(255,255,255,.30),transparent 56%),radial-gradient(120% 120% at 100% 100%,rgba(0,0,0,.38),transparent 58%)}
+    .al-rings{position:absolute;inset:0;width:100%;height:100%}
+    .al-stage-center{position:relative;z-index:1;max-width:460px}
+    .al-stage-logo{height:52px;width:auto;max-width:300px;object-fit:contain;display:block}
+    .al-stage-name{font-size:44px;line-height:1.06;font-weight:600;letter-spacing:-.03em}
+    .al-stage-tag{margin-top:26px;font-size:16px;line-height:1.5;opacity:.82;max-width:34ch}
+    .al-zone{text-align:left;max-width:384px}
+    .al-brand{display:none}
+    .al-h1{font-size:27px}
+  }
   `;
 
-  // Dimensional brand wash: works on ANY brand color (lit top-left, shadowed
-  // bottom-right over the flat primary), so even a single hex reads as crafted.
-  const stageStyle: React.CSSProperties = {
-    backgroundColor: primaryColor,
-    backgroundImage: [
-      'radial-gradient(130% 115% at 8% 0%, rgba(255,255,255,0.30), transparent 56%)',
-      'radial-gradient(120% 120% at 100% 100%, rgba(0,0,0,0.38), transparent 58%)',
-    ].join(','),
-  };
-
-  // Concentric "sound rings" — the voice/calls motif, tinted in the brand's own
-  // contrast color, sitting quietly behind the logo.
-  const rings = (
-    <svg className="absolute inset-0 h-full w-full" viewBox="0 0 600 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-      <g fill="none" stroke={primaryText} strokeOpacity="0.14">
-        {[90, 170, 250, 330, 410, 490].map((r) => (<circle key={r} cx="300" cy="300" r={r} />))}
-      </g>
-    </svg>
-  );
-
   return (
-    <div className="ag-login min-h-screen lg:grid lg:grid-cols-[1.05fr_1fr]" style={{ backgroundColor: t.bg, color: t.text }}>
-      <style dangerouslySetInnerHTML={{ __html: styles }} />
+    <div className="al-wrap" style={vars}>
+      <style dangerouslySetInnerHTML={{ __html: css }} />
       <DynamicFavicon logoUrl={agency?.logo_url} primaryColor={primaryColor} appleIconUrl="/api/agency-app-icon?size=180" />
 
       {/* Brand stage (desktop) */}
-      <aside className="relative hidden lg:flex flex-col justify-between overflow-hidden p-12 xl:p-16" style={{ ...stageStyle, color: primaryText }}>
-        {rings}
-        <div className="relative z-10 flex items-center gap-3">
-          {brandLogo ? (
-            <img src={brandLogo} alt={brandName} className="h-10 w-auto max-w-[220px] object-contain" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.12))' }} />
-          ) : (
-            <span className="text-2xl font-semibold tracking-tight">{brandName}</span>
-          )}
-        </div>
-
-        <div className="relative z-10 max-w-md ag-rise">
-          <h2 className="text-[2.6rem] xl:text-5xl font-semibold leading-[1.05] tracking-tight">
-            {brandName}
-          </h2>
-          <p className="mt-4 text-[15px] leading-relaxed" style={{ color: primaryText, opacity: 0.78 }}>
-            Sign in to pick up live calls, see every booking, and keep each business covered.
-          </p>
-        </div>
-
-        <div className="relative z-10 text-[12px]" style={{ color: primaryText, opacity: 0.6 }}>
-          {brandName}
+      <aside className="al-stage">
+        <svg className="al-rings" viewBox="0 0 600 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <g fill="none" stroke={primaryText} strokeOpacity="0.13">
+            {[90, 170, 250, 330, 410, 490].map((r) => <circle key={r} cx="300" cy="300" r={r} />)}
+          </g>
+        </svg>
+        <div className="al-stage-center al-rise">
+          {brandLogo
+            ? <img src={brandLogo} alt={brandName} className="al-stage-logo" />
+            : <h2 className="al-stage-name">{brandName}</h2>}
+          <p className="al-stage-tag">Sign in to pick up live calls, see every booking, and keep each business covered.</p>
         </div>
       </aside>
 
       {/* Sign-in column */}
-      <main className="relative flex min-h-screen flex-col items-center justify-center px-6 py-16" style={{ paddingTop: 'calc(4rem + env(safe-area-inset-top))' }}>
-        {/* Compact brand header (mobile only) */}
-        <div className="lg:hidden mb-10 flex flex-col items-center gap-3">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl overflow-hidden" style={brandLogo ? { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#ffffff', border: `1px solid ${t.inputBorder}` } : stageStyle}>
-            {brandLogo
-              ? <img src={brandLogo} alt={brandName} className="h-11 w-11 object-contain" />
-              : <span className="text-xl font-bold" style={{ color: primaryText }}>{brandName.charAt(0)}</span>}
+      <main className="al-side">
+        <div className="al-zone al-rise">
+          <div className="al-brand">
+            {brandLogo ? <img src={brandLogo} alt={brandName} className="al-logo-img" />
+              : <><span className="al-mono">{initial}</span><span className="al-bn">{brandName}</span></>}
           </div>
-          <span className="text-lg font-semibold tracking-tight">{brandName}</span>
-        </div>
 
-        <div className="w-full max-w-sm ag-rise">
-          <div className="mb-8">
-            <h1 className="text-[1.75rem] font-semibold tracking-tight">Welcome back</h1>
-            <p className="mt-2 text-[15px]" style={{ color: t.textMuted }}>Sign in to your dashboard</p>
-          </div>
+          <h1 className="al-h1">Welcome back</h1>
+          <p className="al-sub">Sign in to your dashboard</p>
 
           {!isBranded && (
             <>
-              <button onClick={handleGoogleLogin} disabled={googleLoading || loading}
-                className="w-full flex items-center justify-center gap-3 rounded-xl px-5 py-3 text-sm font-medium transition-all hover:opacity-95 active:scale-[0.99] disabled:opacity-50"
-                style={{ backgroundColor: t.googleBg, color: t.googleText, border: `1px solid ${t.inputBorder}` }}>
+              <button type="button" onClick={handleGoogleLogin} disabled={googleLoading || loading} className="al-g" style={{ marginTop: 30 }}>
                 {googleLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon className="h-4 w-4" />}
                 Continue with Google
               </button>
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center"><div className="w-full border-t" style={{ borderColor: t.divider }} /></div>
-                <div className="relative flex justify-center"><span className="px-3 text-xs" style={{ backgroundColor: t.bg, color: t.textSubtle }}>or</span></div>
-              </div>
+              <div className="al-div"><span>or</span></div>
             </>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form className="al-form" onSubmit={handleSubmit} style={!isBranded ? { marginTop: 0 } : undefined}>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium mb-2" style={{ color: t.label }}>Email</label>
-              <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-[18px] w-[18px]" style={{ color: t.textSubtle }} />
-                <input id="email" name="email" type="email" placeholder="you@company.com" value={formData.email} onChange={handleChange} required autoComplete="email"
-                  className="w-full rounded-xl pl-11 pr-4 py-3 text-sm transition-colors" style={{ backgroundColor: t.input, border: `1px solid ${t.inputBorder}`, color: t.text }} />
+              <label htmlFor="email">Email</label>
+              <div className="al-field">
+                <Mail />
+                <input id="email" name="email" type="email" placeholder="you@company.com" value={formData.email} onChange={handleChange} required autoComplete="email" />
               </div>
             </div>
             <div>
-              <label htmlFor="password" className="block text-sm font-medium mb-2" style={{ color: t.label }}>Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-[18px] w-[18px]" style={{ color: t.textSubtle }} />
-                <input id="password" name="password" type={showPassword ? 'text' : 'password'} placeholder="Enter your password" value={formData.password} onChange={handleChange} required autoComplete="current-password"
-                  className="w-full rounded-xl pl-11 pr-12 py-3 text-sm transition-colors" style={{ backgroundColor: t.input, border: `1px solid ${t.inputBorder}`, color: t.text }} />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 transition-colors" style={{ color: t.textSubtle }}>
+              <label htmlFor="password">Password</label>
+              <div className="al-field">
+                <Lock />
+                <input id="password" name="password" type={showPassword ? 'text' : 'password'} placeholder="Enter your password" value={formData.password} onChange={handleChange} required autoComplete="current-password" />
+                <button type="button" className="al-eye" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Hide password' : 'Show password'}>
                   {showPassword ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
                 </button>
               </div>
             </div>
 
-            <div className="flex items-center justify-end">
-              <Link href="/auth/forgot-password" className="text-sm transition-colors hover:underline underline-offset-2" style={{ color: primaryColor }}>Forgot password?</Link>
-            </div>
+            <div className="al-row"><Link href="/auth/forgot-password" className="al-link">Forgot password?</Link></div>
 
-            {error && <div className="rounded-xl p-3 text-sm" style={{ backgroundColor: t.errorBg, border: `1px solid ${t.errorBorder}`, color: t.errorText }}>{error}</div>}
+            {error && <div className="al-err">{error}</div>}
 
-            <button type="submit" disabled={loading || googleLoading}
-              className="group w-full inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-[15px] font-semibold transition-all hover:brightness-[1.05] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: primaryColor, color: primaryText }}>
-              {loading ? <><Loader2 className="h-4 w-4 animate-spin" />Signing in...</> : <>Sign in<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" /></>}
+            <button type="submit" disabled={loading || googleLoading} className="al-btn">
+              {loading ? <><Loader2 className="h-4 w-4 animate-spin" />Signing in...</> : <>Sign in<ArrowRight className="h-[18px] w-[18px]" /></>}
             </button>
           </form>
 
           {!isBranded && (
-            <p className="mt-8 text-center text-sm" style={{ color: t.textMuted }}>
-              Don&apos;t have an account?{' '}
-              <Link href="/signup" className="font-medium transition-colors hover:underline underline-offset-2" style={{ color: primaryColor }}>Sign up</Link>
-            </p>
+            <p className="al-foot">Don&apos;t have an account? <Link href="/signup">Sign up</Link></p>
           )}
         </div>
       </main>
