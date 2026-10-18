@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { 
   Loader2, Shield, PhoneForwarded, UserCheck, Moon,
   ChevronDown, Check, Send, X, MapPin, Globe, Star, DollarSign,
-  MessageSquareText
+  MessageSquareText, CalendarCheck, Bell, Lock
 } from 'lucide-react';
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -23,6 +23,9 @@ interface ToolConfig {
   smsInstructions: string;
   smsSnippets: { label: string; value: string }[];
   smsPresets: Record<string, { enabled: boolean; value: string }>;
+  apptOwnerSmsEnabled: boolean;
+  apptCustomerSmsEnabled: boolean;
+  apptCustomerSmsTemplate: string;
 }
 
 interface Props {
@@ -41,6 +44,9 @@ const DEFAULT_CONFIG: ToolConfig = {
   smsInstructions: '',
   smsSnippets: [],
   smsPresets: {},
+  apptOwnerSmsEnabled: false,
+  apptCustomerSmsEnabled: false,
+  apptCustomerSmsTemplate: '',
 };
 
 // Common, pre-built texts the AI can send. The client toggles one on and adds
@@ -89,6 +95,11 @@ export default function ToolConfigSection({ clientId, theme, compact, industry }
   // pre-fill the texting presets so the client doesn't re-type them.
   const [kbContact, setKbContact] = useState<{ address: string; website: string }>({ address: '', website: '' });
   const [autoFilled, setAutoFilled] = useState<Record<string, boolean>>({});
+  // Whether the agency is entitled to offer the customer booking-confirmation
+  // SMS (Scale plan for resellers, add-on for call centers). Backend-computed.
+  const [apptSmsUnlocked, setApptSmsUnlocked] = useState(false);
+  const [apptTplSnapshot, setApptTplSnapshot] = useState('');
+  const [apptTplSaved, setApptTplSaved] = useState(false);
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -125,6 +136,8 @@ export default function ToolConfigSection({ clientId, theme, compact, industry }
           });
           setConfig({ ...merged, smsPresets: presets });
           setAutoFilled(filled);
+          setApptSmsUnlocked(data.apptCustomerSmsUnlocked === true);
+          setApptTplSnapshot(merged.apptCustomerSmsTemplate || '');
         }
       }
     } catch (e) {
@@ -204,6 +217,26 @@ export default function ToolConfigSection({ clientId, theme, compact, industry }
       }
     } catch (e) {
       console.error('Failed to save SMS config:', e);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const apptTplDirty = (config.apptCustomerSmsTemplate || '') !== apptTplSnapshot;
+  const saveApptTemplate = async () => {
+    setSaving(true);
+    setApptTplSaved(false);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const tpl = (config.apptCustomerSmsTemplate || '').slice(0, 320);
+      const res = await fetch(`${backendUrl}/api/client/${clientId}/tool-config`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ apptCustomerSmsTemplate: tpl }),
+      });
+      if (res.ok) { setApptTplSnapshot(tpl); setApptTplSaved(true); setTimeout(() => setApptTplSaved(false), 5000); }
+    } catch (e) {
+      console.error('Failed to save confirmation message:', e);
     } finally {
       setSaving(false);
     }
@@ -500,6 +533,105 @@ export default function ToolConfigSection({ clientId, theme, compact, industry }
               </div>
             );
           })}
+
+          {/* Appointment booking SMS: owner alert (free) + customer confirmation (upgrade) */}
+          <div className="pt-3 mt-1" style={{ borderTop: `1px solid ${theme.border}` }}>
+            <p className="text-[10px] sm:text-xs font-semibold mb-2 px-1 tracking-wide" style={{ color: theme.textMuted }}>APPOINTMENT BOOKING</p>
+
+            {/* Owner alert (always available) */}
+            <div
+              className="flex items-center justify-between gap-3 p-3 rounded-lg transition"
+              style={{ backgroundColor: config.apptOwnerSmsEnabled ? hexToRgba(theme.primary, theme.isDark ? 0.06 : 0.02) : 'transparent' }}
+            >
+              <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: config.apptOwnerSmsEnabled ? hexToRgba(theme.primary, theme.isDark ? 0.15 : 0.08) : theme.bg }}>
+                  <Bell className="w-4 h-4" style={{ color: config.apptOwnerSmsEnabled ? theme.primary : theme.textMuted4 }} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm font-medium" style={{ color: theme.text }}>Text me when an appointment is booked</p>
+                  <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Get an instant text with the appointment details every time the AI books one.</p>
+                </div>
+              </div>
+              <button
+                onClick={() => updateConfig('apptOwnerSmsEnabled', !config.apptOwnerSmsEnabled)}
+                disabled={saving}
+                className="relative rounded-full transition-colors flex-shrink-0 disabled:cursor-not-allowed"
+                style={{ backgroundColor: config.apptOwnerSmsEnabled ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb'), minWidth: '2.75rem', width: '2.75rem', height: '1.625rem' }}
+              >
+                <span className="absolute rounded-full transition-all duration-200 shadow-sm" style={{ width: '1.375rem', height: '1.375rem', top: '0.125rem', backgroundColor: '#fff', left: config.apptOwnerSmsEnabled ? 'calc(100% - 1.5rem)' : '0.125rem' }} />
+              </button>
+            </div>
+
+            {/* Customer confirmation (gated upgrade) */}
+            {apptSmsUnlocked ? (
+              <>
+                <div
+                  className="flex items-center justify-between gap-3 p-3 rounded-lg transition mt-1"
+                  style={{ backgroundColor: config.apptCustomerSmsEnabled ? hexToRgba(theme.primary, theme.isDark ? 0.06 : 0.02) : 'transparent' }}
+                >
+                  <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: config.apptCustomerSmsEnabled ? hexToRgba(theme.primary, theme.isDark ? 0.15 : 0.08) : theme.bg }}>
+                      <CalendarCheck className="w-4 h-4" style={{ color: config.apptCustomerSmsEnabled ? theme.primary : theme.textMuted4 }} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs sm:text-sm font-medium" style={{ color: theme.text }}>Text the customer a booking confirmation</p>
+                      <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Send the caller a confirmation text from your AI number right after their appointment is booked.</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => updateConfig('apptCustomerSmsEnabled', !config.apptCustomerSmsEnabled)}
+                    disabled={saving}
+                    className="relative rounded-full transition-colors flex-shrink-0 disabled:cursor-not-allowed"
+                    style={{ backgroundColor: config.apptCustomerSmsEnabled ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb'), minWidth: '2.75rem', width: '2.75rem', height: '1.625rem' }}
+                  >
+                    <span className="absolute rounded-full transition-all duration-200 shadow-sm" style={{ width: '1.375rem', height: '1.375rem', top: '0.125rem', backgroundColor: '#fff', left: config.apptCustomerSmsEnabled ? 'calc(100% - 1.5rem)' : '0.125rem' }} />
+                  </button>
+                </div>
+                {config.apptCustomerSmsEnabled && (
+                  <div className="mt-1 p-2.5 sm:p-3 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
+                    <label className="block text-[10px] font-medium mb-1" style={{ color: theme.textMuted }}>Confirmation message</label>
+                    <textarea
+                      value={config.apptCustomerSmsTemplate}
+                      onChange={(e) => setConfig({ ...config, apptCustomerSmsTemplate: e.target.value.slice(0, 320) })}
+                      rows={3}
+                      className="w-full rounded-lg px-2.5 py-2 text-xs resize-none focus:outline-none"
+                      style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
+                      placeholder="Hi {name}, your {service} with {business} is confirmed for {date} at {time}. Reply here if you need to reschedule."
+                    />
+                    <p className="text-[9px] mt-1" style={{ color: theme.textMuted4 }}>Placeholders: {'{name}'} {'{service}'} {'{business}'} {'{date}'} {'{time}'}. Leave blank to use the default message.</p>
+                    <div className="mt-2 pt-2" style={{ borderTop: `1px solid ${theme.border}` }}>
+                      {apptTplDirty ? (
+                        <button type="button" onClick={saveApptTemplate} disabled={saving}
+                          className="w-full flex items-center justify-center gap-2 rounded-lg py-2 text-xs font-semibold transition disabled:opacity-60"
+                          style={{ backgroundColor: theme.primary, color: theme.primaryText || '#ffffff' }}>
+                          {saving ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving...</> : 'Save confirmation message'}
+                        </button>
+                      ) : apptTplSaved ? (
+                        <div className="w-full flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold"
+                          style={{ backgroundColor: theme.successBg || 'rgba(16,185,129,0.12)', color: theme.successText || '#10b981', border: `1px solid ${theme.successBorder || 'rgba(16,185,129,0.3)'}` }}>
+                          <Check className="h-3.5 w-3.5" /> Confirmation message saved
+                        </div>
+                      ) : (
+                        <p className="text-center text-[10px]" style={{ color: theme.textMuted4 }}>Confirmation message saved</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="flex items-center justify-between gap-3 p-3 rounded-lg mt-1" style={{ border: `1px dashed ${theme.border}`, opacity: 0.9 }}>
+                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.bg }}>
+                    <Lock className="w-4 h-4" style={{ color: theme.textMuted4 }} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm font-medium" style={{ color: theme.text }}>Text the customer a booking confirmation</p>
+                    <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>A premium upgrade. Automatically text callers a confirmation after the AI books their appointment. Contact your provider to turn it on.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
 

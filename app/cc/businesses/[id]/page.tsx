@@ -20,7 +20,7 @@ import { useParams } from 'next/navigation';
 import {
   ArrowLeft, Loader2, Save, Phone, Clock, MessageSquare, PhoneForwarded,
   Building2, Check, PhoneCall, CheckCircle2, AlertCircle, Bell, Bot,
-  CalendarCheck, ShieldCheck, Mic, MapPin, Plus, X, Sparkles, Globe,
+  CalendarCheck, ShieldCheck, Mic, MapPin, Plus, X, Sparkles, Globe, Lock,
 } from 'lucide-react';
 import { useAgency } from '../../../agency/context';
 import { useTheme } from '../../../../hooks/useTheme';
@@ -133,6 +133,9 @@ export default function BusinessConfig() {
   const [notFound, setNotFound] = useState(false);
   const [areaDraft, setAreaDraft] = useState('');
   const [areaSuggestions, setAreaSuggestions] = useState<string[]>([]);
+  // Whether this call center may offer the customer booking-confirmation SMS
+  // (a distinct upgrade). Gates the toggle below; owner alert is always available.
+  const [apptSmsUnlocked, setApptSmsUnlocked] = useState(false);
   const [bookingDefaults, setBookingDefaults] = useState<{ minNotice: number; maxDays: number }>({ minNotice: 30, maxDays: 60 });
   // Per-section save: each card saves only its own fields (partial PUT) with its
   // own saving/saved/dirty state. No settings-wide save button.
@@ -156,7 +159,7 @@ export default function BusinessConfig() {
         const r = await fetch(`${base}/api/agency/${agency.id}/cc/businesses/${clientId}/config`, { headers: { Authorization: `Bearer ${token}` } });
         if (!r.ok) { setNotFound(true); return; }
         const d = await r.json();
-        if (d.success) { const normalized = { ...d.config, businessHours: normalizeHours(d.config.businessHours) }; setCfg(normalized); setOrig(normalized); if (d.agencyDefaults) setBookingDefaults(d.agencyDefaults); }
+        if (d.success) { const normalized = { ...d.config, businessHours: normalizeHours(d.config.businessHours) }; setCfg(normalized); setOrig(normalized); if (d.agencyDefaults) setBookingDefaults(d.agencyDefaults); setApptSmsUnlocked(d.apptCustomerSmsUnlocked === true); }
         else setNotFound(true);
       } catch { setNotFound(true); }
       finally { setLoading(false); }
@@ -448,12 +451,24 @@ export default function BusinessConfig() {
           {cfg.bookingMode === 'auto_book' && (
             <div className="mt-4 pt-4 space-y-1" style={{ borderTop: `1px solid ${theme.border}` }}>
               <ToggleRow title="Text me when an appointment is booked" sub="A short alert to the business owner the moment the AI books, separate from the post-call recap." on={cfg.apptOwnerSmsEnabled} onClick={() => set('apptOwnerSmsEnabled', !cfg.apptOwnerSmsEnabled)} />
-              <ToggleRow title="Text the customer a booking confirmation" sub="Premium. Texts the caller a confirmation from this business's number right after they book, which cuts no-shows." on={cfg.apptCustomerSmsEnabled} onClick={() => set('apptCustomerSmsEnabled', !cfg.apptCustomerSmsEnabled)} />
-              {cfg.apptCustomerSmsEnabled && (
-                <div className="pt-2">
-                  <Label>Confirmation message</Label>
-                  <textarea value={cfg.apptCustomerSmsTemplate} onChange={(e) => set('apptCustomerSmsTemplate', e.target.value.slice(0, 320))} rows={3} placeholder="Hi {name}, your {service} with {business} is confirmed for {date} at {time}. Reply here if you need to change anything." className="w-full rounded-xl px-3 py-2.5 text-sm outline-none resize-y" style={field} />
-                  <p className="text-[11px] mt-1.5" style={{ color: theme.textSubtle }}>Placeholders: {'{name}'}, {'{business}'}, {'{service}'}, {'{date}'}, {'{time}'}, {'{staff}'}. Leave blank for the default. Sent from this business&apos;s AI number.</p>
+              {apptSmsUnlocked ? (
+                <>
+                  <ToggleRow title="Text the customer a booking confirmation" sub="Texts the caller a confirmation from this business's number right after they book, which cuts no-shows." on={cfg.apptCustomerSmsEnabled} onClick={() => set('apptCustomerSmsEnabled', !cfg.apptCustomerSmsEnabled)} />
+                  {cfg.apptCustomerSmsEnabled && (
+                    <div className="pt-2">
+                      <Label>Confirmation message</Label>
+                      <textarea value={cfg.apptCustomerSmsTemplate} onChange={(e) => set('apptCustomerSmsTemplate', e.target.value.slice(0, 320))} rows={3} placeholder="Hi {name}, your {service} with {business} is confirmed for {date} at {time}. Reply here if you need to change anything." className="w-full rounded-xl px-3 py-2.5 text-sm outline-none resize-y" style={field} />
+                      <p className="text-[11px] mt-1.5" style={{ color: theme.textSubtle }}>Placeholders: {'{name}'}, {'{business}'}, {'{service}'}, {'{date}'}, {'{time}'}, {'{staff}'}. Leave blank for the default. Sent from this business&apos;s AI number.</p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="flex items-start gap-3 rounded-xl px-3.5 py-3" style={{ backgroundColor: theme.input, border: `1px dashed ${theme.inputBorder}` }}>
+                  <Lock className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.textMuted }} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium" style={{ color: theme.text }}>Text the customer a booking confirmation</p>
+                    <p className="text-[12px] mt-0.5" style={{ color: theme.textMuted }}>A premium upgrade: send callers an automatic booking confirmation from your number. Contact us to turn it on for your call center.</p>
+                  </div>
                 </div>
               )}
             </div>
