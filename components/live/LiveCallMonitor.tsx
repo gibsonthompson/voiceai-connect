@@ -28,7 +28,7 @@ import {
   Phone, PhoneOff, Mic, MicOff, Radio, Loader2, Calendar, CalendarCheck,
   BookOpen, PhoneForwarded, MessageSquare, Sparkles, Building2,
   CircleDot, Headphones, VolumeX, UserPlus, Undo2,
-  UserCheck, ShieldAlert, ArrowLeft,
+  UserCheck, ShieldAlert,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -889,17 +889,6 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
       {/* Header: white-label brand + status */}
       <header className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3" style={{ borderBottom: `1px solid ${t.border}` }}>
         <div className="flex items-center gap-3 min-w-0">
-          {(backHref || mode === 'monitor') && (
-            <a
-              href={backHref || '/cc/live-calls'}
-              title="Back to live calls"
-              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 -ml-1 text-xs font-medium flex-shrink-0 transition-opacity hover:opacity-80"
-              style={{ color: t.textMuted, backgroundColor: t.borderSubtle }}
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span className="hidden sm:inline">Back</span>
-            </a>
-          )}
           {info.branding?.logo_url ? (
             <img src={info.branding.logo_url} alt={agencyName} className="h-8 w-8 rounded-lg object-contain" style={{ backgroundColor: t.logoBg }} />
           ) : (
