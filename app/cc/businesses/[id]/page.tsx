@@ -20,7 +20,7 @@ import { useParams } from 'next/navigation';
 import {
   ArrowLeft, Loader2, Save, Phone, Clock, MessageSquare, PhoneForwarded,
   Building2, Check, PhoneCall, CheckCircle2, AlertCircle, Bell, Bot,
-  CalendarCheck, ShieldCheck, Mic, MapPin, Plus, X, Sparkles, Globe, Lock,
+  CalendarCheck, ShieldCheck, Mic, MapPin, Plus, X, Sparkles, Globe, Lock, Star, DollarSign,
 } from 'lucide-react';
 import { useAgency } from '../../../agency/context';
 import { useTheme } from '../../../../hooks/useTheme';
@@ -48,7 +48,6 @@ interface Cfg {
   humanHandoff: 'transfer' | 'message';
   overflowAction: 'message' | 'callback' | 'ring_business';
   aiDirectRouting: boolean;
-  consultTransfer: boolean;
   serviceAreas: string[];
   aiTone: 'professional' | 'friendly' | 'casual' | 'clinical';
   bookingMode: 'auto_book' | 'collect_request' | 'disabled';
@@ -59,6 +58,9 @@ interface Cfg {
   transferCall: boolean;
   afterHoursRouting: boolean;
   smsToCaller: boolean;
+  smsPresets: Record<string, { enabled: boolean; value: string }>;
+  smsSnippets: { label: string; value: string }[];
+  smsInstructions: string;
   apptOwnerSmsEnabled: boolean;
   apptCustomerSmsEnabled: boolean;
   apptCustomerSmsTemplate: string;
@@ -97,6 +99,14 @@ const BOOKING_MODES = [
   { value: 'auto_book', label: 'Book appointments automatically' },
   { value: 'collect_request', label: 'Collect the request, no auto-booking' },
   { value: 'disabled', label: 'Do not handle booking' },
+];
+// What the AI can text a caller mid-call (same set as the client level). The
+// trigger is fixed server-side; the manager just turns one on and adds the value.
+const SMS_PRESETS: { key: string; label: string; desc: string; placeholder: string; icon: any }[] = [
+  { key: 'address', label: 'Address', desc: 'When a caller asks where the business is', placeholder: '123 Main St, City, ST', icon: MapPin },
+  { key: 'website', label: 'Website', desc: 'When a caller wants more info', placeholder: 'https://business.com', icon: Globe },
+  { key: 'review', label: 'Review link', desc: 'To ask for a review after a good call', placeholder: 'https://g.page/r/...', icon: Star },
+  { key: 'payment', label: 'Payment link', desc: 'When a caller needs to pay', placeholder: 'https://...', icon: DollarSign },
 ];
 
 function normalizeHours(raw: any): NonNullable<Cfg['businessHours']> {
@@ -159,7 +169,7 @@ export default function BusinessConfig() {
         const r = await fetch(`${base}/api/agency/${agency.id}/cc/businesses/${clientId}/config`, { headers: { Authorization: `Bearer ${token}` } });
         if (!r.ok) { setNotFound(true); return; }
         const d = await r.json();
-        if (d.success) { const normalized = { ...d.config, businessHours: normalizeHours(d.config.businessHours) }; setCfg(normalized); setOrig(normalized); if (d.agencyDefaults) setBookingDefaults(d.agencyDefaults); setApptSmsUnlocked(d.apptCustomerSmsUnlocked === true); }
+        if (d.success) { const normalized = { ...d.config, businessHours: normalizeHours(d.config.businessHours), smsPresets: (d.config.smsPresets && typeof d.config.smsPresets === 'object') ? d.config.smsPresets : {}, smsSnippets: Array.isArray(d.config.smsSnippets) ? d.config.smsSnippets : [], smsInstructions: d.config.smsInstructions || '' }; setCfg(normalized); setOrig(normalized); if (d.agencyDefaults) setBookingDefaults(d.agencyDefaults); setApptSmsUnlocked(d.apptCustomerSmsUnlocked === true); }
         else setNotFound(true);
       } catch { setNotFound(true); }
       finally { setLoading(false); }
@@ -181,6 +191,12 @@ export default function BusinessConfig() {
   useEffect(() => { loadAreaSuggestions(); }, [loadAreaSuggestions]);
 
   const set = <K extends keyof Cfg>(k: K, v: Cfg[K]) => setCfg((c) => (c ? { ...c, [k]: v } : c));
+  // Caller-text preset + custom-link handlers (mirror the client level).
+  const togglePreset = (key: string) => setCfg((c) => { if (!c) return c; const cur = (c.smsPresets && c.smsPresets[key]) || { enabled: false, value: '' }; return { ...c, smsPresets: { ...(c.smsPresets || {}), [key]: { ...cur, enabled: !cur.enabled } } }; });
+  const setPresetValue = (key: string, value: string) => setCfg((c) => { if (!c) return c; const cur = (c.smsPresets && c.smsPresets[key]) || { enabled: true, value: '' }; return { ...c, smsPresets: { ...(c.smsPresets || {}), [key]: { ...cur, value } } }; });
+  const addSnippet = () => setCfg((c) => (c ? { ...c, smsSnippets: [ ...(c.smsSnippets || []), { label: '', value: '' } ] } : c));
+  const updateSnippet = (i: number, patch: Partial<{ label: string; value: string }>) => setCfg((c) => { if (!c) return c; const sn = [...(c.smsSnippets || [])]; sn[i] = { ...sn[i], ...patch }; return { ...c, smsSnippets: sn }; });
+  const removeSnippet = (i: number) => setCfg((c) => (c ? { ...c, smsSnippets: (c.smsSnippets || []).filter((_, j) => j !== i) } : c));
   const setDay = (day: string, patch: Partial<{ open: string; close: string; closed: boolean }>) =>
     setCfg((c) => (c && c.businessHours ? { ...c, businessHours: { ...c.businessHours, [day]: { ...c.businessHours[day], ...patch } } } : c));
 
@@ -450,7 +466,7 @@ export default function BusinessConfig() {
           )}
           {cfg.bookingMode === 'auto_book' && (
             <div className="mt-4 pt-4 space-y-1" style={{ borderTop: `1px solid ${theme.border}` }}>
-              <ToggleRow title="Text me when an appointment is booked" sub="A short alert to the business owner the moment the AI books, separate from the post-call recap." on={cfg.apptOwnerSmsEnabled} onClick={() => set('apptOwnerSmsEnabled', !cfg.apptOwnerSmsEnabled)} />
+              <ToggleRow title="Text the business owner when an appointment is booked" sub="Texts the business's own phone (their notification number) the moment the AI books, separate from the post-call recap. This goes to the business, not your call center." on={cfg.apptOwnerSmsEnabled} onClick={() => set('apptOwnerSmsEnabled', !cfg.apptOwnerSmsEnabled)} />
               {apptSmsUnlocked ? (
                 <>
                   <ToggleRow title="Text the customer a booking confirmation" sub="Texts the caller a confirmation from this business's number right after they book, which cuts no-shows." on={cfg.apptCustomerSmsEnabled} onClick={() => set('apptCustomerSmsEnabled', !cfg.apptCustomerSmsEnabled)} />
@@ -494,8 +510,48 @@ export default function BusinessConfig() {
             <ToggleRow title="Allow transfers to a person" sub="Let the AI hand a caller to an agent or the escalation number." on={cfg.transferCall} onClick={() => set('transferCall', !cfg.transferCall)} />
             <ToggleRow title="Let the AI text the caller" sub="Send the caller a text during the call (address, booking link, and so on)." on={cfg.smsToCaller} onClick={() => set('smsToCaller', !cfg.smsToCaller)} />
           </div>
+          {cfg.smsToCaller && (
+            <div className="mt-3 pt-3 space-y-2" style={{ borderTop: `1px solid ${theme.borderSubtle}` }}>
+              <p className="text-[11.5px]" style={{ color: theme.textSubtle }}>Turn on what the AI can text callers during a call, then add the link or info. It only ever texts the person on the call.</p>
+              {SMS_PRESETS.map((preset) => {
+                const pr = (cfg.smsPresets && cfg.smsPresets[preset.key]) || { enabled: false, value: '' };
+                const Icon = preset.icon;
+                return (
+                  <div key={preset.key} className="rounded-xl overflow-hidden" style={{ border: `1px solid ${pr.enabled ? theme.primary : theme.inputBorder}` }}>
+                    <div className="flex items-center justify-between gap-2 px-3 py-2.5">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Icon className="h-4 w-4 flex-shrink-0" style={{ color: pr.enabled ? theme.primary : theme.textMuted }} />
+                        <div className="min-w-0"><p className="text-[13px] font-medium" style={{ color: theme.text }}>{preset.label}</p><p className="text-[11px]" style={{ color: theme.textSubtle }}>{preset.desc}</p></div>
+                      </div>
+                      <Toggle on={pr.enabled} onClick={() => togglePreset(preset.key)} />
+                    </div>
+                    {pr.enabled && (
+                      <div className="px-3 pb-2.5"><input value={pr.value} onChange={(e) => setPresetValue(preset.key, e.target.value)} placeholder={preset.placeholder} className="w-full rounded-lg px-2.5 py-2 text-[13px] outline-none" style={field} /></div>
+                    )}
+                  </div>
+                );
+              })}
+              {(cfg.smsSnippets || []).map((snip, i) => (
+                <div key={`snip-${i}`} className="rounded-xl overflow-hidden" style={{ border: `1px solid ${(snip.label || snip.value) ? theme.primary : theme.inputBorder}` }}>
+                  <div className="flex items-center justify-between gap-2 px-3 py-2.5">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <MessageSquare className="h-4 w-4 flex-shrink-0" style={{ color: (snip.label || snip.value) ? theme.primary : theme.textMuted }} />
+                      <input value={snip.label} onChange={(e) => updateSnippet(i, { label: e.target.value })} placeholder="Label (e.g. Booking link)" className="min-w-0 flex-1 bg-transparent text-[13px] font-medium outline-none" style={{ color: theme.text }} />
+                    </div>
+                    <button type="button" onClick={() => removeSnippet(i)} className="flex h-7 w-7 items-center justify-center rounded-lg hover:opacity-70 flex-shrink-0" style={{ color: theme.textMuted }} title="Remove"><X className="h-3.5 w-3.5" /></button>
+                  </div>
+                  <div className="px-3 pb-2.5"><input value={snip.value} onChange={(e) => updateSnippet(i, { value: e.target.value })} placeholder="Exact text or link, sent word-for-word" className="w-full rounded-lg px-2.5 py-2 text-[13px] outline-none" style={field} /></div>
+                </div>
+              ))}
+              <button type="button" onClick={addSnippet} className="inline-flex items-center gap-1.5 text-[12px] font-medium" style={{ color: theme.primary }}><Plus className="h-3.5 w-3.5" /> Add a custom text</button>
+              <div className="pt-1">
+                <Label>Extra instructions (optional)</Label>
+                <textarea value={cfg.smsInstructions} onChange={(e) => set('smsInstructions', e.target.value)} rows={2} placeholder="Fine-tune when or how the AI texts, e.g. always send the booking link after scheduling." className="w-full rounded-xl px-3 py-2.5 text-[13px] outline-none resize-y" style={field} />
+              </div>
+            </div>
+          )}
           {cfg.hipaaMode && <p className="text-[11.5px] mt-2" style={{ color: theme.textSubtle }}>Caller recognition is off while HIPAA mode is on.</p>}
-          <SaveBtn fields={['spamDetection', 'callerRecognition', 'transferCall', 'smsToCaller']} sk="handling" />
+          <SaveBtn fields={['spamDetection', 'callerRecognition', 'transferCall', 'smsToCaller', 'smsPresets', 'smsSnippets', 'smsInstructions']} sk="handling" />
         </div>
 
         {/* Escalation */}
@@ -512,14 +568,9 @@ export default function BusinessConfig() {
           </div>
           {cfg.humanHandoff === 'transfer' && (
             <>
-              <Label>Escalation phone (where to ring if no call-center agent takes it)</Label>
-              <input value={cfg.transferPhone} onChange={(e) => set('transferPhone', e.target.value)} placeholder={fmtPhone(cfg.ownerPhone) || '(555) 555-5555'}
-                className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={field} />
-              <p className="text-[11.5px] mt-1.5" style={{ color: theme.textSubtle }}>Leave blank to fall back to the owner phone. Your available agents are always offered the call first.</p>
-
-              <div className="rounded-xl p-3.5 mt-4" style={{ backgroundColor: theme.hover }}>
+              <div className="rounded-xl p-3.5" style={{ backgroundColor: theme.hover }}>
                 <p className="text-[12px] font-medium mb-1.5" style={{ color: theme.text }}>How a handoff works</p>
-                <p className="text-[11.5px] leading-relaxed" style={{ color: theme.textMuted }}>The AI answers and handles everything it can: questions, bookings, texts. It only reaches for a human when a caller truly needs one. At that point the call is offered to your available agents first. The two settings below decide what happens when no agent is free, and whether the AI may skip your agents for a specific department.</p>
+                <p className="text-[11.5px] leading-relaxed" style={{ color: theme.textMuted }}>The AI answers and handles everything it can: questions, bookings, texts. It only reaches for a human when a caller truly needs one. At that point the call is offered to your available agents first. The settings below decide what happens when no agent is free, and whether the AI may skip your agents for a specific department.</p>
               </div>
 
               <div className="mt-4">
@@ -527,12 +578,21 @@ export default function BusinessConfig() {
                 <CustomSelect value={cfg.overflowAction} onChange={(v) => set('overflowAction', v as Cfg['overflowAction'])} options={OVERFLOW_OPTIONS} ui={ddUI} />
                 <p className="text-[11.5px] mt-1.5" style={{ color: theme.textSubtle }}>
                   {cfg.overflowAction === 'ring_business'
-                    ? 'The AI rings the escalation phone above. Use this only if the business wants calls sent straight to them when your team is unavailable.'
+                    ? 'The AI rings the escalation phone below. Use this only if the business wants calls sent straight to them when your team is unavailable.'
                     : cfg.overflowAction === 'callback'
                     ? 'The AI tells the caller a team member will call them back, takes their number and reason, and sends it to your team. The business is never rung.'
                     : 'The AI takes a message (name, number, reason) and sends it to your team. The business is never rung, so you stay in front of it, the way a call center should.'}
                 </p>
               </div>
+
+              {cfg.overflowAction === 'ring_business' && (
+                <div className="mt-4">
+                  <Label>Escalation phone (where to ring the business)</Label>
+                  <input value={cfg.transferPhone} onChange={(e) => set('transferPhone', e.target.value)} placeholder={fmtPhone(cfg.ownerPhone) || '(555) 555-5555'}
+                    className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={field} />
+                  <p className="text-[11.5px] mt-1.5" style={{ color: theme.textSubtle }}>Rung only when no agent takes the call. Leave blank to fall back to the business owner&apos;s phone.</p>
+                </div>
+              )}
 
               <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.borderSubtle}` }}>
                 <ToggleRow
@@ -545,19 +605,9 @@ export default function BusinessConfig() {
                 />
               </div>
 
-              <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.borderSubtle}` }}>
-                <ToggleRow
-                  title="Agents brief the recipient before connecting"
-                  sub={cfg.consultTransfer
-                    ? "On (consult transfer): when an agent hands a caller to the owner or a department, they first speak privately with that person, then connect the caller or cancel. The caller waits on hold during the brief."
-                    : "Off (quick transfer): the recipient hears who's calling and why, then the caller is connected. The agent doesn't speak to them first. Faster, but no live hand-off."}
-                  on={cfg.consultTransfer}
-                  onClick={() => set('consultTransfer', !cfg.consultTransfer)}
-                />
-              </div>
             </>
           )}
-          <SaveBtn fields={['humanHandoff', 'transferPhone', 'overflowAction', 'aiDirectRouting', 'consultTransfer']} sk="escalation" />
+          <SaveBtn fields={['humanHandoff', 'transferPhone', 'overflowAction', 'aiDirectRouting']} sk="escalation" />
         </div>
 
         {/* Post-call recap SMS */}
