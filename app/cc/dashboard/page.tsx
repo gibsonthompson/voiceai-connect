@@ -131,7 +131,7 @@ export default function CallCenterDashboard() {
               ) : (
                 <div>
                   {data.busiest.map((b, i) => (
-                    <Link key={b.clientId} href={`/live/${b.clientId}?mode=monitor`} className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3 transition-colors" style={{ borderTop: i === 0 ? 'none' : `1px solid ${theme.borderSubtle}` }}
+                    <Link key={b.clientId} href={`/live/${b.clientId}?mode=monitor&back=/cc/dashboard`} target="_blank" rel="noopener" className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3 transition-colors" style={{ borderTop: i === 0 ? 'none' : `1px solid ${theme.borderSubtle}` }}
                       onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = theme.hover; }} onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}>
                       <span className="text-sm truncate" style={{ color: theme.text }}>{b.businessName}</span>
                       <span className="text-xs font-semibold tabular-nums flex-shrink-0" style={{ color: theme.textMuted }}>{b.count} {b.count === 1 ? 'call' : 'calls'}</span>

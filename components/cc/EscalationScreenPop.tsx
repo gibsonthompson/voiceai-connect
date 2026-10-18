@@ -81,7 +81,7 @@ function OfferCard({
     if (r.delivery === 'phone') { setState({ kind: 'won_phone' }); setTimeout(() => onDone(offer.id), 4000); return; }
     // Browser seat: go to the live monitor for this call and auto-join.
     setState({ kind: 'won_browser' });
-    const q = new URLSearchParams({ mode: 'monitor', autojoin: '1' });
+    const q = new URLSearchParams({ mode: 'monitor', autojoin: '1', back: '/cc/live-calls' });
     if (offer.vapiCallId) q.set('call', offer.vapiCallId);
     setTimeout(() => { window.location.href = `/live/${offer.clientId}?${q.toString()}`; }, 500);
   };

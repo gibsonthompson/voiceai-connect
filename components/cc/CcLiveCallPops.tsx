@@ -93,7 +93,7 @@ export default function CcLiveCallPops({ agencyId }: { agencyId?: string }) {
                   body: `${fmtPhone(c.callerNumber)} is on the line now.`,
                   tag: `cc-live-${c.sessionId}`,
                 });
-                n.onclick = () => { try { window.focus(); } catch {} window.location.href = `/live/${c.clientId}?mode=monitor`; };
+                n.onclick = () => { try { window.focus(); } catch {} window.open(`/live/${c.clientId}?mode=monitor&back=/cc/live-calls`, '_blank', 'noopener'); };
               } catch { /* notifications are best-effort */ }
             }
           }
@@ -179,7 +179,9 @@ export default function CcLiveCallPops({ agencyId }: { agencyId?: string }) {
             <button onClick={() => setDismissed((prev) => new Set(prev).add(c.sessionId))} className="p-1 -mr-1 -mt-1 flex-shrink-0 rounded-lg" style={{ color: theme.textMuted }} title="Dismiss"><X className="h-4 w-4" /></button>
           </div>
           <Link
-            href={`/live/${c.clientId}?mode=monitor`}
+            href={`/live/${c.clientId}?mode=monitor&back=/cc/live-calls`}
+            target="_blank"
+            rel="noopener"
             className="mt-3 flex items-center justify-center gap-1.5 rounded-xl py-2 text-sm font-semibold transition hover:opacity-90"
             style={{ backgroundColor: theme.primary, color: theme.primaryText }}
           >

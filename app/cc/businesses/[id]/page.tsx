@@ -332,7 +332,7 @@ export default function BusinessConfig() {
               <button key={v} onClick={() => setViewPersist(v)} className="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition" style={v === view ? { backgroundColor: theme.card, color: theme.text } : { color: theme.textMuted }}>{v === 'list' ? 'Scroll' : 'Compact'}</button>
             ))}
           </div>
-          <a href={`/live/${clientId}?mode=monitor`} className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold" style={{ backgroundColor: theme.primary15, color: theme.primary }}>
+          <a href={`/live/${clientId}?mode=monitor&back=/cc/live-calls`} target="_blank" rel="noopener" className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold" style={{ backgroundColor: theme.primary15, color: theme.primary }}>
             <PhoneCall className="h-4 w-4" /> Watch live
           </a>
         </div>

@@ -163,7 +163,9 @@ export default function AgencyLiveWallboard() {
               {calls.map((c) => (
                 <a
                   key={c.sessionId}
-                  href={`/live/${c.clientId}?mode=monitor`}
+                  href={`/live/${c.clientId}?mode=monitor&back=/agency/live-calls`}
+                  target="_blank"
+                  rel="noopener"
                   className="group rounded-2xl p-4 sm:p-5 transition"
                   style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
                   onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = theme.primary30; }}
@@ -207,7 +209,9 @@ export default function AgencyLiveWallboard() {
                 {businesses.map((b, i) => (
                   <a
                     key={b.clientId}
-                    href={`/live/${b.clientId}?mode=monitor`}
+                    href={`/live/${b.clientId}?mode=monitor&back=/agency/live-calls`}
+                    target="_blank"
+                    rel="noopener"
                     className="group flex items-center justify-between gap-3 px-4 py-3 transition"
                     style={{ borderTop: i === 0 ? 'none' : `1px solid ${theme.borderSubtle}` }}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = theme.hover; }}

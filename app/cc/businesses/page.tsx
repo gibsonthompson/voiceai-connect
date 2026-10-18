@@ -119,7 +119,7 @@ export default function CallCenterBusinesses() {
                   <p className="text-[11px]" style={{ color: theme.textMuted }}>calls this month{pct !== null ? ` · ${pct}%` : ''}</p>
                 </div>
                 <div className="flex items-center gap-1.5 flex-shrink-0">
-                  <Link href={`/live/${b.id}?mode=monitor`} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold" style={{ backgroundColor: theme.primary15, color: theme.primary }} title="Open live monitor"><PhoneCall className="h-3.5 w-3.5" /><span className="hidden sm:inline">Monitor</span></Link>
+                  <Link href={`/live/${b.id}?mode=monitor&back=/cc/businesses`} target="_blank" rel="noopener" className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold" style={{ backgroundColor: theme.primary15, color: theme.primary }} title="Open live monitor in a new tab"><PhoneCall className="h-3.5 w-3.5" /><span className="hidden sm:inline">Monitor</span></Link>
                   <Link href={`/cc/businesses/${b.id}`} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium" style={{ backgroundColor: theme.hover, color: theme.textMuted }} title="Configure this business"><Settings className="h-3.5 w-3.5" /><span className="hidden sm:inline">Configure</span></Link>
                 </div>
               </div>
