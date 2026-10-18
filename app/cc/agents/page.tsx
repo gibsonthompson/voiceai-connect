@@ -21,7 +21,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Headset, Radio, Loader2, Send, UserPlus, Phone, Monitor, Trash2, ChevronDown,
   Check, Eye, EyeOff, Building2, X, AlertCircle, Users, Copy, RotateCcw,
-  Smartphone, ExternalLink, Clock, Plus,
+  Smartphone, ExternalLink, Clock, Plus, Save,
 } from 'lucide-react';
 import { useAgency } from '../../agency/context';
 import { useTheme } from '../../../hooks/useTheme';
@@ -328,16 +328,17 @@ export default function CallCenterAgents() {
     catch { setMembers((list) => list.map((x) => (x.id === m.id ? { ...x, permissions: cur } : x))); setError('Could not update permissions.'); }
   };
 
-  const updateHours = async (m: Member, next: Member['availability_hours']) => {
-    const prev = m.availability_hours;
-    setMembers((list) => list.map((x) => (x.id === m.id ? { ...x, availability_hours: next } : x)));
-    try { const r = await fetch(`${API()}/api/agency/${agencyId}/team/${m.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` }, body: JSON.stringify({ availability_hours: next }) }); if (!r.ok) throw new Error(); }
-    catch { setMembers((list) => list.map((x) => (x.id === m.id ? { ...x, availability_hours: prev } : x))); setError('Could not update working hours.'); }
-  };
-  const curHours = (m: Member) => ((m.availability_hours && m.availability_hours.enabled) ? m.availability_hours : DEFAULT_HOURS) as any;
+  // Working hours edit as a per-agent DRAFT, committed by an explicit Save.
+  const [hoursDraft, setHoursDraft] = useState<Record<string, any>>({});
+  const [hoursSaving, setHoursSaving] = useState<string | null>(null);
+  const [hoursSaved, setHoursSaved] = useState<string | null>(null);
+  const effHours = (m: Member): any => (hoursDraft[m.id] !== undefined ? hoursDraft[m.id] : (m.availability_hours || null));
+  const hoursDirty = (m: Member) => hoursDraft[m.id] !== undefined && JSON.stringify(hoursDraft[m.id] || null) !== JSON.stringify(m.availability_hours || null);
+  const setDraft = (m: Member, next: any) => setHoursDraft((d) => ({ ...d, [m.id]: next }));
+  const curHours = (m: Member): any => { const e = effHours(m); return (e && e.enabled) ? e : DEFAULT_HOURS; };
   const patchDay = (m: Member, key: string, dayNext: { on: boolean; windows: { start: string; end: string }[] }) => {
     const cur = curHours(m);
-    updateHours(m, { enabled: true, override: cur.override === true, days: { ...cur.days, [key]: dayNext } } as any);
+    setDraft(m, { enabled: true, override: cur.override === true, days: { ...cur.days, [key]: dayNext } });
   };
   const setDayOn = (m: Member, key: string, on: boolean) => {
     const d = curHours(m).days?.[key] || { on: false, windows: [{ start: '09:00', end: '17:00' }] };
@@ -357,9 +358,26 @@ export default function CallCenterAgents() {
     const wins = (d.windows || []).filter((_: any, i: number) => i !== idx);
     patchDay(m, key, { on: true, windows: wins.length ? wins : [{ start: '09:00', end: '17:00' }] });
   };
+  const setMasterHours = (m: Member, on: boolean) => {
+    const e = effHours(m);
+    setDraft(m, on ? (e && e.days ? { ...e, enabled: true } : DEFAULT_HOURS) : { ...(e || DEFAULT_HOURS), enabled: false });
+  };
   const setOverride = (m: Member, val: boolean) => {
-    const cur = (m.availability_hours && m.availability_hours.enabled) ? m.availability_hours : DEFAULT_HOURS;
-    updateHours(m, { ...(cur as any), override: val } as any);
+    const e = effHours(m); const base = (e && e.enabled) ? e : DEFAULT_HOURS;
+    setDraft(m, { ...base, override: val });
+  };
+  const saveHours = async (m: Member) => {
+    const next = hoursDraft[m.id];
+    if (next === undefined) return;
+    setHoursSaving(m.id); setError(null);
+    try {
+      const r = await fetch(`${API()}/api/agency/${agencyId}/team/${m.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` }, body: JSON.stringify({ availability_hours: next }) });
+      if (!r.ok) throw new Error();
+      setMembers((list) => list.map((x) => (x.id === m.id ? { ...x, availability_hours: next } : x)));
+      setHoursDraft((d) => { const c = { ...d }; delete c[m.id]; return c; });
+      setHoursSaved(m.id); setTimeout(() => setHoursSaved((sv) => (sv === m.id ? null : sv)), 3000);
+    } catch { setError('Could not save working hours.'); }
+    finally { setHoursSaving(null); }
   };
 
   const card = { backgroundColor: theme.card, border: `1px solid ${theme.border}` } as React.CSSProperties;
@@ -586,7 +604,8 @@ export default function CallCenterAgents() {
                     <div>
                       <Label>Working hours</Label>
                       {(() => {
-                        const hoursOn = !!(m.availability_hours && m.availability_hours.enabled);
+                        const eff = effHours(m);
+                        const hoursOn = !!(eff && eff.enabled);
                         return (
                           <div className="rounded-xl p-3" style={{ border: `1px solid ${theme.inputBorder}` }}>
                             <div className="flex items-center justify-between gap-3">
@@ -594,15 +613,15 @@ export default function CallCenterAgents() {
                                 <Clock className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: hoursOn ? theme.primary : theme.textMuted }} />
                                 <div><p className="text-[13px] font-medium" style={{ color: theme.text }}>Set specific hours</p><p className="text-[11px]" style={{ color: theme.textMuted }}>{hoursOn ? 'Only offered calls during these hours.' : 'Off: available whenever they are online.'}</p></div>
                               </div>
-                              <Switch on={hoursOn} onClick={() => updateHours(m, hoursOn ? { ...(m.availability_hours || DEFAULT_HOURS), enabled: false } : (m.availability_hours ? { ...m.availability_hours, enabled: true } : DEFAULT_HOURS))} />
+                              <Switch on={hoursOn} onClick={() => setMasterHours(m, !hoursOn)} />
                             </div>
                             {hoursOn && (
                               <div className="mt-3 space-y-2.5">
-                                {m.availability_hours?.override && (
+                                {eff?.override && (
                                   <div className="rounded-lg px-3 py-2 mb-1.5 text-[11.5px]" style={{ backgroundColor: theme.primary15, color: theme.primary }}>Active override is on, this agent is offered calls regardless of the hours below.</div>
                                 )}
                                 {DAY_DEFS.map((dd) => {
-                                  const d: any = (m.availability_hours?.days?.[dd.key]) || { on: false, windows: [{ start: '09:00', end: '17:00' }] };
+                                  const d: any = (eff?.days?.[dd.key]) || { on: false, windows: [{ start: '09:00', end: '17:00' }] };
                                   const wins: { start: string; end: string }[] = (d.windows && d.windows.length) ? d.windows : [{ start: '09:00', end: '17:00' }];
                                   return (
                                     <div key={dd.key}>
@@ -629,8 +648,18 @@ export default function CallCenterAgents() {
                                 <p className="text-[11px] mt-1.5" style={{ color: theme.textSubtle }}>Times are in {tz.replace(/_/g, ' ')} (your agency timezone). A day can have more than one block, the gap between blocks (say 12 to 1) is their break. Outside these hours the agent is skipped, and the call falls to other available agents, then your overflow action.</p>
                                 <div className="flex items-center justify-between gap-3 mt-3 pt-3" style={{ borderTop: `1px solid ${theme.borderSubtle}` }}>
                                   <div className="min-w-0"><p className="text-[13px] font-medium" style={{ color: theme.text }}>Set active now (override hours)</p><p className="text-[11px]" style={{ color: theme.textMuted }}>Offer this agent calls regardless of the hours above, until you turn it off. They still need to be online, or on phone delivery.</p></div>
-                                  <Switch on={!!m.availability_hours?.override} onClick={() => setOverride(m, !m.availability_hours?.override)} />
+                                  <Switch on={!!eff?.override} onClick={() => setOverride(m, !eff?.override)} />
                                 </div>
+                              </div>
+                            )}
+                            {(hoursDirty(m) || hoursSaved === m.id) && (
+                              <div className="flex items-center justify-end gap-3 mt-3 pt-3" style={{ borderTop: `1px solid ${theme.borderSubtle}` }}>
+                                {hoursSaved === m.id
+                                  ? <span className="text-[12px] mr-auto inline-flex items-center gap-1.5" style={{ color: '#22c55e' }}><Check className="h-3.5 w-3.5" /> Saved</span>
+                                  : <span className="text-[12px] mr-auto" style={{ color: theme.textMuted }}>Unsaved changes</span>}
+                                <button onClick={() => saveHours(m)} disabled={hoursSaving === m.id || !hoursDirty(m)} className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-[13px] font-semibold disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+                                  {hoursSaving === m.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save hours
+                                </button>
                               </div>
                             )}
                           </div>
