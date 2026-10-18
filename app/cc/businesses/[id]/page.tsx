@@ -291,7 +291,7 @@ export default function BusinessConfig() {
     </div>
   );
   // Per-section save button. Enabled only when that section has unsaved edits.
-  const SK_LABELS: Record<string, string> = { business: 'Business', tone: 'Tone', greeting: 'Greeting', hours: 'Hours', booking: 'Booking', handling: 'Call Handling', escalation: 'Escalation', areas: 'Service Areas', postcall: 'Post-Call Text', compliance: 'Compliance' };
+  const SK_LABELS: Record<string, string> = { business: 'Business', tone: 'Tone', greeting: 'Greeting', hours: 'Hours', booking: 'Booking', handling: 'Call Handling', escalation: 'Escalation', areas: 'Service Areas', postcall: 'Texts & Notifications', compliance: 'Compliance' };
   const SaveBtn = ({ fields, sk }: { fields: (keyof Cfg)[]; sk: string }) => {
     const isDirty = dirty(fields);
     const isSaving = savingKey === sk;
@@ -464,32 +464,7 @@ export default function BusinessConfig() {
               <p className="text-[11.5px] mt-2" style={{ color: theme.textSubtle }}>Leave either blank to use the agency default ({bookingDefaults.minNotice} min notice, {bookingDefaults.maxDays} days ahead), set in agency Settings. A value here overrides it for just this business.</p>
             </>
           )}
-          {cfg.bookingMode === 'auto_book' && (
-            <div className="mt-4 pt-4 space-y-1" style={{ borderTop: `1px solid ${theme.border}` }}>
-              <ToggleRow title="Text the business owner when an appointment is booked" sub="Texts the business's own phone (their notification number) the moment the AI books, separate from the post-call recap. This goes to the business, not your call center." on={cfg.apptOwnerSmsEnabled} onClick={() => set('apptOwnerSmsEnabled', !cfg.apptOwnerSmsEnabled)} />
-              {apptSmsUnlocked ? (
-                <>
-                  <ToggleRow title="Text the customer a booking confirmation" sub="Texts the caller a confirmation from this business's number right after they book, which cuts no-shows." on={cfg.apptCustomerSmsEnabled} onClick={() => set('apptCustomerSmsEnabled', !cfg.apptCustomerSmsEnabled)} />
-                  {cfg.apptCustomerSmsEnabled && (
-                    <div className="pt-2">
-                      <Label>Confirmation message</Label>
-                      <textarea value={cfg.apptCustomerSmsTemplate} onChange={(e) => set('apptCustomerSmsTemplate', e.target.value.slice(0, 320))} rows={3} placeholder="Hi {name}, your {service} with {business} is confirmed for {date} at {time}. Reply here if you need to change anything." className="w-full rounded-xl px-3 py-2.5 text-sm outline-none resize-y" style={field} />
-                      <p className="text-[11px] mt-1.5" style={{ color: theme.textSubtle }}>Placeholders: {'{name}'}, {'{business}'}, {'{service}'}, {'{date}'}, {'{time}'}, {'{staff}'}. Leave blank for the default. Sent from this business&apos;s AI number.</p>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="flex items-start gap-3 rounded-xl px-3.5 py-3" style={{ backgroundColor: theme.input, border: `1px dashed ${theme.inputBorder}` }}>
-                  <Lock className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.textMuted }} />
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium" style={{ color: theme.text }}>Text the customer a booking confirmation</p>
-                    <p className="text-[12px] mt-0.5" style={{ color: theme.textMuted }}>A premium upgrade: send callers an automatic booking confirmation from your number. Contact us to turn it on for your call center.</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-          <SaveBtn fields={['bookingMode', 'minBookingNotice', 'maxBookingDays', 'apptOwnerSmsEnabled', 'apptCustomerSmsEnabled', 'apptCustomerSmsTemplate']} sk="booking" />
+          <SaveBtn fields={['bookingMode', 'minBookingNotice', 'maxBookingDays']} sk="booking" />
         </div>
 
         {/* Google Calendar */}
@@ -610,27 +585,58 @@ export default function BusinessConfig() {
           <SaveBtn fields={['humanHandoff', 'transferPhone', 'overflowAction', 'aiDirectRouting']} sk="escalation" />
         </div>
 
-        {/* Post-call recap SMS */}
+        {/* Texts & Notifications: recap + booking-owner alert + customer confirmation, one shared owner recipient */}
         <div className="rounded-2xl p-5 sm:p-6" style={card}>
-          <SectionHead icon={Bell} title="Post-Call Text" sub="A recap text to the business owner after each call: who called, what they needed, the summary." />
+          <SectionHead icon={Bell} title="Texts & Notifications" sub="Every text this business sends: the post-call recap, the booking alert to the owner, and the customer's booking confirmation. All owner texts go to the one number set below." />
           {cfg.optOut?.optedOut && (
             <div className="rounded-xl p-3 mb-3 flex items-start gap-2.5" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
               <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.warning }} />
               <div className="text-[12px] leading-relaxed" style={{ color: theme.warning }}>
-                <span className="font-semibold">{fmtPhone(cfg.optOut.phone) || cfg.optOut.phone} replied STOP and has opted out of texts.</span> While opted out they get no texts from the platform at all, including this recap, until they text <span className="font-semibold">START</span> to the same number to opt back in. The toggle below has no effect until then.
+                <span className="font-semibold">{fmtPhone(cfg.optOut.phone) || cfg.optOut.phone} replied STOP and has opted out of texts.</span> While opted out they get no texts from the platform at all, including these, until they text <span className="font-semibold">START</span> to the same number to opt back in. The toggles below have no effect until then.
               </div>
             </div>
           )}
-          <ToggleRow title="Text the owner a recap after every call" sub={cfg.postCallSms ? 'On: this business gets a recap text after each call.' : 'Off: this business gets no recap text. You can still watch calls live.'} on={cfg.postCallSms} onClick={() => set('postCallSms', !cfg.postCallSms)} />
-          {cfg.postCallSms && (
+
+          <p className="text-[11px] font-semibold uppercase tracking-wide mb-2" style={{ color: theme.textSubtle }}>To the business owner</p>
+          <ToggleRow title="Text the owner a recap after every call" sub={cfg.postCallSms ? 'On: a recap after each call (who called, what they needed, the summary).' : 'Off: no recap text. You can still watch calls live.'} on={cfg.postCallSms} onClick={() => set('postCallSms', !cfg.postCallSms)} />
+          {cfg.bookingMode === 'auto_book' && (
+            <ToggleRow title="Text the owner when an appointment is booked" sub="A separate alert the moment the AI books, on top of the post-call recap. Goes to the business, not your call center." on={cfg.apptOwnerSmsEnabled} onClick={() => set('apptOwnerSmsEnabled', !cfg.apptOwnerSmsEnabled)} />
+          )}
+          {(cfg.postCallSms || (cfg.bookingMode === 'auto_book' && cfg.apptOwnerSmsEnabled)) && (
             <div className="mt-2">
-              <Label>Send the recap to (optional)</Label>
+              <Label>Send owner texts to (optional)</Label>
               <input value={cfg.notificationPhone} onChange={(e) => set('notificationPhone', e.target.value)} placeholder={fmtPhone(cfg.ownerPhone) || '(555) 555-5555'}
                 className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={field} />
-              <p className="text-[11.5px] mt-1.5" style={{ color: theme.textSubtle }}>Goes to the business owner. Leave blank to use the owner phone. Set this to the owner&apos;s own cell so the recap never lands on a call-center line.</p>
+              <p className="text-[11.5px] mt-1.5" style={{ color: theme.textSubtle }}>Applies to the recap and the booking alert above. Leave blank to use the owner phone. Set the owner&apos;s own cell so these never land on a call-center line.</p>
             </div>
           )}
-          <SaveBtn fields={['postCallSms', 'notificationPhone']} sk="postcall" />
+
+          {cfg.bookingMode === 'auto_book' && (
+            <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
+              <p className="text-[11px] font-semibold uppercase tracking-wide mb-2" style={{ color: theme.textSubtle }}>To the customer</p>
+              {apptSmsUnlocked ? (
+                <>
+                  <ToggleRow title="Text the customer a booking confirmation" sub="Texts the caller a confirmation from this business's number right after they book, which cuts no-shows." on={cfg.apptCustomerSmsEnabled} onClick={() => set('apptCustomerSmsEnabled', !cfg.apptCustomerSmsEnabled)} />
+                  {cfg.apptCustomerSmsEnabled && (
+                    <div className="pt-2">
+                      <Label>Confirmation message</Label>
+                      <textarea value={cfg.apptCustomerSmsTemplate} onChange={(e) => set('apptCustomerSmsTemplate', e.target.value.slice(0, 320))} rows={3} placeholder="Hi {name}, your {service} with {business} is confirmed for {date} at {time}. Reply here if you need to change anything." className="w-full rounded-xl px-3 py-2.5 text-sm outline-none resize-y" style={field} />
+                      <p className="text-[11px] mt-1.5" style={{ color: theme.textSubtle }}>Placeholders: {'{name}'}, {'{business}'}, {'{service}'}, {'{date}'}, {'{time}'}, {'{staff}'}. Leave blank for the default. Sent from this business&apos;s AI number.</p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="flex items-start gap-3 rounded-xl px-3.5 py-3" style={{ backgroundColor: theme.input, border: `1px dashed ${theme.inputBorder}` }}>
+                  <Lock className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.textMuted }} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium" style={{ color: theme.text }}>Text the customer a booking confirmation</p>
+                    <p className="text-[12px] mt-0.5" style={{ color: theme.textMuted }}>A premium add-on: an automatic booking confirmation sent to the caller. Contact us to enable it for your call center.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          <SaveBtn fields={['postCallSms', 'notificationPhone', 'apptOwnerSmsEnabled', 'apptCustomerSmsEnabled', 'apptCustomerSmsTemplate']} sk="postcall" />
         </div>
 
         {/* Compliance */}
