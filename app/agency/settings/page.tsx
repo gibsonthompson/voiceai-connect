@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
-  Settings, Upload, Check, AlertCircle, ExternalLink, CreditCard, Building, Loader2, DollarSign, AlertTriangle, RefreshCw, Trash2, Receipt, XCircle, Eye, EyeOff, Phone, Users, Globe, Info, MessageSquare, Send, Sparkles, Lock, Code, Search, ChevronDown, LifeBuoy, Plus, Webhook, Smartphone} from 'lucide-react';
+  Settings, Upload, Check, AlertCircle, ExternalLink, CreditCard, Building, Loader2, DollarSign, AlertTriangle, RefreshCw, Trash2, Receipt, XCircle, Eye, EyeOff, Phone, Users, Globe, Info, MessageSquare, Send, Sparkles, Lock, Code, Search, ChevronDown, LifeBuoy, Plus, Webhook, Smartphone, PlayCircle} from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
 import DiscountCodesManager from '@/components/agency/DiscountCodesManager';
@@ -1938,6 +1938,17 @@ function AgencySettingsContent() {
             {activeTab === 'webhooks' && <WebhooksTab agency={agency} theme={theme} />}
             {activeTab === 'support' && (
               <div className="space-y-4 sm:space-y-6">
+                {/* Full dashboard walkthrough: the permanent, always-findable home for the video. */}
+                <a href="https://youtu.be/nHNHPCgaPB4" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 sm:gap-4 rounded-xl p-3 sm:p-4 transition-colors" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: `${theme.primary}22` }}>
+                    <PlayCircle className="h-5 w-5" style={{ color: theme.primary }} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium" style={{ color: theme.text }}>Full dashboard walkthrough</p>
+                    <p className="text-xs" style={{ color: theme.textMuted }}>A complete tour of every part of your dashboard (25 min)</p>
+                  </div>
+                  <ExternalLink className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted }} />
+                </a>
                 <div><h3 className="text-base sm:text-lg font-medium mb-1">Contact Support</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Questions or need a hand? Send us a message and our team will get back to you.</p></div>
                 {feedbackError && (<div className="rounded-xl p-3 sm:p-4 flex items-center gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.errorText }} /><p className="text-sm" style={{ color: theme.errorText }}>{feedbackError}</p></div>)}
                 {feedbackSent && (<div className="rounded-xl p-3 sm:p-4 flex items-center gap-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><Check className="h-4 w-4" style={{ color: theme.primary }} /><p className="text-sm" style={{ color: theme.primary }}>Message sent, we'll get back to you!</p></div>)}

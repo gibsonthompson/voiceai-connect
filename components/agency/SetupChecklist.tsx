@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { 
-  Check, ChevronRight, Upload, DollarSign, 
-  CreditCard, UserPlus, Sparkles, X, ChevronDown, Rocket, Phone, Loader2
+  Check, ChevronRight, Upload, DollarSign,
+  CreditCard, UserPlus, Sparkles, X, ChevronDown, Rocket, Phone, Loader2, PlayCircle
 } from 'lucide-react';
 
 interface SetupStep {
@@ -193,6 +193,17 @@ export default function SetupChecklist({ agency, clientCount, theme, userRole, d
           <div className="h-full rounded-full transition-all duration-700 ease-out" style={{ width: `${Math.max(progressPercent, 3)}%`, background: `linear-gradient(90deg, ${theme.primary}, ${theme.primary}cc)` }} />
         </div>
       </div>
+      {/* Full dashboard walkthrough: the first-run push, shown while setup is
+          unfinished (this whole card hides once the agency is set up). */}
+      <a href="https://youtu.be/nHNHPCgaPB4" target="_blank" rel="noopener noreferrer"
+        className="mx-4 sm:mx-5 mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors"
+        style={{ backgroundColor: `${theme.primary}10`, border: `1px solid ${theme.primary}20` }}
+        onMouseEnter={e => (e.currentTarget.style.backgroundColor = `${theme.primary}18`)}
+        onMouseLeave={e => (e.currentTarget.style.backgroundColor = `${theme.primary}10`)}>
+        <PlayCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.primary }} />
+        <span className="text-sm font-medium flex-1" style={{ color: theme.text }}>Watch the full dashboard walkthrough</span>
+        <span className="text-xs flex-shrink-0" style={{ color: theme.textMuted }}>25 min</span>
+      </a>
       <div className="px-2 sm:px-3 pb-2 sm:pb-3">
         {steps.map((step) => <StepRow key={step.id} step={step} Icon={step.icon} theme={theme} />)}
       </div>
