@@ -160,7 +160,18 @@ export function useAgentPresence(enabled: boolean) {
 
     beat();
     const iv = setInterval(beat, HEARTBEAT_MS);
-    return () => { stopped = true; clearInterval(iv); };
+    // Background tabs get their timers throttled, so refresh presence the instant
+    // the console regains focus/visibility - the agent is back and must not read
+    // as stale while a call is being offered.
+    const onActive = () => { if (typeof document === 'undefined' || !document.hidden) beat(); };
+    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onActive);
+    if (typeof window !== 'undefined') window.addEventListener('focus', onActive);
+    return () => {
+      stopped = true;
+      clearInterval(iv);
+      if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onActive);
+      if (typeof window !== 'undefined') window.removeEventListener('focus', onActive);
+    };
   }, [enabled, addOffer]);
 
   // ---- SSE stream ---------------------------------------------------------

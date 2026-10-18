@@ -21,7 +21,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Headset, Radio, Loader2, Send, UserPlus, Phone, Monitor, Trash2, ChevronDown,
   Check, Eye, EyeOff, Building2, X, AlertCircle, Users, Copy, RotateCcw,
-  Smartphone, ExternalLink, Clock, Plus, Save,
+  Smartphone, ExternalLink, Clock, Plus, Save, Zap,
 } from 'lucide-react';
 import { useAgency } from '../../agency/context';
 import { useTheme } from '../../../hooks/useTheme';
@@ -379,6 +379,23 @@ export default function CallCenterAgents() {
     } catch { setError('Could not save working hours.'); }
     finally { setHoursSaving(null); }
   };
+  // Quick roster control: flip the agent's "active now" override (schedule
+  // bypass) without opening Manage. Saves immediately and clears any open hours
+  // draft for this agent so the Manage editor and the roster never disagree.
+  const quickOverride = async (m: Member) => {
+    const base: any = (m.availability_hours && typeof m.availability_hours === 'object') ? m.availability_hours : DEFAULT_HOURS;
+    const next = { ...base, enabled: base.enabled !== false, override: !(base.override === true) };
+    const prev = m.availability_hours;
+    setMembers((list) => list.map((x) => (x.id === m.id ? { ...x, availability_hours: next } : x)));
+    setHoursDraft((d) => { const c = { ...d }; delete c[m.id]; return c; });
+    try {
+      const r = await fetch(`${API()}/api/agency/${agencyId}/team/${m.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` }, body: JSON.stringify({ availability_hours: next }) });
+      if (!r.ok) throw new Error();
+    } catch {
+      setMembers((list) => list.map((x) => (x.id === m.id ? { ...x, availability_hours: prev } : x)));
+      setError('Could not update active override.');
+    }
+  };
 
   const card = { backgroundColor: theme.card, border: `1px solid ${theme.border}` } as React.CSSProperties;
   const field = { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text } as React.CSSProperties;
@@ -465,6 +482,8 @@ export default function CallCenterAgents() {
             const pv = presenceView(m);
             const assigned = Array.isArray(m.assigned_client_ids) ? m.assigned_client_ids : [];
             const expanded = expandedId === m.id;
+            const schedEnabled = !!(m.availability_hours && m.availability_hours.enabled);
+            const ovOn = !!(m.availability_hours && m.availability_hours.override);
             return (
               <div key={m.id} className="rounded-2xl overflow-hidden" style={card}>
                 <div className="flex items-center gap-3 p-4 sm:p-5">
@@ -481,6 +500,16 @@ export default function CallCenterAgents() {
                     <p className="text-[12px] truncate" style={{ color: theme.textMuted }}>{m.email || 'No email'} · {m.call_delivery === 'phone' ? `rings ${fmtPhone(m.agent_phone) || 'a phone'}` : 'in browser'} · {assigned.length} {assigned.length === 1 ? 'business' : 'businesses'}</p>
                   </div>
                   <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {schedEnabled && (
+                      <button
+                        onClick={() => quickOverride(m)}
+                        title={ovOn ? 'Active override is on: this agent is offered calls regardless of their working hours. Click to turn off.' : 'Force this agent active now, ignoring their working hours.'}
+                        className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors"
+                        style={ovOn ? { backgroundColor: theme.primary, color: theme.primaryText } : { backgroundColor: theme.hover, color: theme.textMuted }}
+                      >
+                        <Zap className="h-3.5 w-3.5" /> {ovOn ? 'Active' : 'Set active'}
+                      </button>
+                    )}
                     <button onClick={() => setExpandedId(expanded ? null : m.id)} className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>Manage <ChevronDown className="h-3.5 w-3.5 transition-transform" style={{ transform: expanded ? 'rotate(180deg)' : 'none' }} /></button>
                     <button onClick={() => removeAgent(m)} className="inline-flex items-center justify-center rounded-lg h-[30px] w-[30px]" style={{ backgroundColor: theme.hover, color: theme.error }} title="Remove agent"><Trash2 className="h-3.5 w-3.5" /></button>
                   </div>
