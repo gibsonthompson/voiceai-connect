@@ -3,8 +3,17 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Loader2, ArrowRight, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import DynamicFavicon from '@/components/DynamicFavicon';
 
-// Google icon
+// Agency brand resolved per host (same shape the client login uses), so an
+// agent signing in on their agency's own domain sees that agency, never VoiceAI.
+interface Agency {
+  id: string; name: string; slug: string; logo_url: string | null;
+  primary_color: string; secondary_color: string; accent_color: string;
+  website_theme?: 'light' | 'dark' | 'auto' | null;
+  app_name?: string | null;
+}
+
 function GoogleIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24">
@@ -16,79 +25,119 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
+function getContrastColor(hex: string): string {
+  try {
+    const c = hex.replace('#', '');
+    const r = parseInt(c.substring(0, 2), 16), g = parseInt(c.substring(2, 4), 16), b = parseInt(c.substring(4, 6), 16);
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6 ? '#0a0a0a' : '#ffffff';
+  } catch { return '#ffffff'; }
+}
+
+const getBackendUrl = () => process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'https://urchin-app-bqb4i.ondigitalocean.app';
+
+// Seed the theme from the last visit so a light-themed agency never flashes dark
+// before the host lookup resolves. Read after mount (not in a useState init) so
+// the server and first client render match.
+function getThemeHint(): 'light' | 'dark' {
+  if (typeof window === 'undefined') return 'dark';
+  try { return localStorage.getItem('voiceai_ui_theme') === 'light' ? 'light' : 'dark'; } catch { return 'dark'; }
+}
+
 export default function AgencyLoginPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  
+  const [agency, setAgency] = useState<Agency | null>(null);
+  const [themeHint, setThemeHint] = useState<'light' | 'dark'>('dark');
   const [formData, setFormData] = useState({ email: '', password: '' });
 
+  useEffect(() => { setThemeHint(getThemeHint()); }, []);
+
   useEffect(() => {
+    // Already signed in: route straight through (call centers to /cc).
     const token = localStorage.getItem('auth_token');
-    const agency = localStorage.getItem('agency');
-    if (token && agency) {
-      // Call-center accounts land in the dedicated /cc dashboard; agents go
-      // straight to their live board. Everyone else keeps the normal dashboard.
+    const agencyStored = localStorage.getItem('agency');
+    if (token && agencyStored) {
       let dest = '/agency/dashboard';
       try {
-        const a = JSON.parse(agency);
+        const a = JSON.parse(agencyStored);
         const u = JSON.parse(localStorage.getItem('user') || '{}');
         if (a && a.is_call_center) dest = u.role === 'agency_staff' ? '/cc/live-calls' : '/cc/dashboard';
       } catch {}
-      window.location.href = dest; return;
+      window.location.href = dest;
+      return;
     }
 
-    const params = new URLSearchParams(window.location.search);
-    const errorParam = params.get('error');
-    if (errorParam) {
-      const errorMessages: Record<string, string> = {
-        'google_auth_failed': 'Google sign in failed. Please try again.',
-        'no_code': 'Google sign in was cancelled.',
-        'no_email': 'Could not get email from Google.',
-        'account_exists': 'An account with this email already exists.',
-      };
-      setError(errorMessages[errorParam] || 'Something went wrong.');
-      const url = new URL(window.location.href);
-      url.searchParams.delete('error');
-      window.history.replaceState({}, '', url.toString());
-    }
-    setPageLoading(false);
+    const resolve = async () => {
+      let resolved = false;
+      try {
+        const host = window.location.host;
+        const pd = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
+        const platformHosts = [pd, `www.${pd}`, 'localhost:3000', 'localhost'];
+        if (!platformHosts.includes(host)) {
+          const r = await fetch(`${getBackendUrl()}/api/agency/by-host?host=${host}`);
+          if (r.ok) {
+            const d = await r.json();
+            if (d.agency) {
+              setAgency(d.agency);
+              resolved = true;
+              try {
+                localStorage.setItem('voiceai_agency_brand', JSON.stringify(d.agency));
+                localStorage.setItem('voiceai_ui_theme', d.agency?.website_theme === 'dark' ? 'dark' : 'light');
+              } catch {}
+            }
+          }
+        }
+      } catch {}
+      // On the platform host, or if the lookup failed, fall back to the brand this
+      // browser cached on a previous visit so a returning agent keeps their look.
+      if (!resolved) {
+        try { const cached = localStorage.getItem('voiceai_agency_brand'); if (cached) setAgency(JSON.parse(cached)); } catch {}
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const errorParam = params.get('error');
+      if (errorParam) {
+        const map: Record<string, string> = {
+          google_auth_failed: 'Google sign-in failed. Please try again.',
+          no_code: 'Google sign-in was cancelled.',
+          no_email: 'Could not read an email from Google.',
+          account_exists: 'An account with this email already exists.',
+        };
+        setError(map[errorParam] || 'Something went wrong.');
+        const url = new URL(window.location.href);
+        url.searchParams.delete('error');
+        window.history.replaceState({}, '', url.toString());
+      }
+      setPageLoading(false);
+    };
+    resolve();
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value }); setError('');
-  };
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => { setFormData({ ...formData, [e.target.name]: e.target.value }); setError(''); };
 
   const handleGoogleLogin = () => {
     setGoogleLoading(true);
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
-    window.location.href = `${backendUrl}/api/auth/google`;
+    window.location.href = `${getBackendUrl()}/api/auth/google`;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setError('');
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const backendUrl = getBackendUrl();
       const response = await fetch(`${backendUrl}/api/auth/agency/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData),
       });
       const data = await response.json();
 
-      // Account was created but a password was never set (the set-password tab
-      // was closed/lost, so the one-time token is gone). agencyLogin returns
-      // "Password not set" here. Instead of showing that dead end, mint a fresh
-      // set-password token via recover-setup and send them straight to
-      // /auth/set-password with returnTo=/agency/dashboard. The dashboard layout
-      // handles a still-pending agency from there.
+      // Account exists but a password was never set: mint a fresh setup token and
+      // send them to set-password instead of a dead end.
       if (!response.ok && data.error === 'Password not set') {
         try {
           const recoverRes = await fetch(`${backendUrl}/api/auth/recover-setup`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: formData.email, scope: 'agency' }),
           });
           const recoverData = await recoverRes.json();
@@ -97,15 +146,8 @@ export default function AgencyLoginPage() {
             window.location.href = `/auth/set-password?token=${encodeURIComponent(recoverData.token)}&returnTo=${returnTo}`;
             return;
           }
-        } catch (recoverErr) {
-          console.error('Setup recovery failed:', recoverErr);
-        }
-        // Recovery did not apply (account already has a password, or no such
-        // account). Fall back to the normal invalid-credentials message rather
-        // than the dead "Password not set" text.
-        setError('Invalid email or password');
-        setLoading(false);
-        return;
+        } catch (recoverErr) { console.error('Setup recovery failed:', recoverErr); }
+        setError('Invalid email or password'); setLoading(false); return;
       }
 
       if (!response.ok) throw new Error(data.error || data.message || 'Invalid credentials');
@@ -115,19 +157,11 @@ export default function AgencyLoginPage() {
       localStorage.setItem('user', JSON.stringify(data.user));
       if (data.agency) localStorage.setItem('agency', JSON.stringify(data.agency));
 
-      // Lapsed billing state (e.g. a suspended agency). The password verified
-      // and the account is now logged in with a normal token, but route straight
-      // to the Billing tab to reactivate instead of the dashboard, which the
-      // agency layout would otherwise wall behind a payment screen. The backend
-      // returns 200 for this case (not the old 403), so the red "suspended"
-      // error above never fires anymore.
-      if (data.requires_upgrade) {
-        window.location.href = data.redirect || '/agency/settings?tab=billing';
-        return;
-      }
+      // Lapsed billing: logged in, but route to Billing to reactivate.
+      if (data.requires_upgrade) { window.location.href = data.redirect || '/agency/settings?tab=billing'; return; }
 
-      // Route call-center accounts to the dedicated /cc dashboard (agents to the
-      // live board); plain reseller agencies keep the normal dashboard.
+      // Call centers land in /cc (agents on the live board); resellers keep the
+      // normal dashboard.
       if (data.agency && data.agency.is_call_center) {
         window.location.href = data.user?.role === 'agency_staff' ? '/cc/live-calls' : '/cc/dashboard';
         return;
@@ -140,114 +174,171 @@ export default function AgencyLoginPage() {
     }
   };
 
+  // Brand resolution. On a branded host we show the agency only; on the platform
+  // host (no agency) we show VoiceAI Connect, Google, and the Sign Up link.
+  const isBranded = !!agency;
+  const brandName = agency?.name || 'VoiceAI Connect';
+  const brandLogo = agency?.logo_url || (isBranded ? null : '/icon-512x512.png');
+  const primaryColor = agency?.primary_color || '#10b981';
+  const primaryText = getContrastColor(primaryColor);
+  const isDark = isBranded ? agency?.website_theme === 'dark' : (themeHint === 'dark');
+
+  const t = isDark ? {
+    bg: '#09090b', text: '#fafaf9', textMuted: 'rgba(250,250,249,0.56)', textSubtle: 'rgba(250,250,249,0.34)',
+    label: 'rgba(250,250,249,0.72)', input: 'rgba(255,255,255,0.04)', inputBorder: 'rgba(255,255,255,0.10)',
+    divider: 'rgba(255,255,255,0.08)', autofillBg: '#17171a', autofillText: '#fafaf9',
+    errorBg: 'rgba(239,68,68,0.12)', errorBorder: 'rgba(239,68,68,0.28)', errorText: '#fca5a5',
+    googleBg: '#ffffff', googleText: '#1f2937',
+  } : {
+    bg: '#fbfbfa', text: '#111827', textMuted: '#6b7280', textSubtle: '#9ca3af',
+    label: '#374151', input: '#ffffff', inputBorder: '#e5e7eb',
+    divider: '#e5e7eb', autofillBg: '#ffffff', autofillText: '#111827',
+    errorBg: '#fef2f2', errorBorder: '#fecaca', errorText: '#dc2626',
+    googleBg: '#ffffff', googleText: '#1f2937',
+  };
+
   if (pageLoading) {
     return (
-      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: themeHint === 'dark' ? '#09090b' : '#fbfbfa' }}>
+        <Loader2 className="h-7 w-7 animate-spin" style={{ color: '#9ca3af' }} />
       </div>
     );
   }
 
+  const styles = `
+    input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus{-webkit-box-shadow:0 0 0 9999px ${t.autofillBg} inset !important;-webkit-text-fill-color:${t.autofillText} !important;border-color:${t.inputBorder} !important;transition:background-color 0s 600000s,color 0s 600000s !important}
+    .ag-login input:focus{outline:none;border-color:${primaryColor} !important;box-shadow:0 0 0 3px ${primaryColor}26 !important}
+    .ag-login input::placeholder{color:${t.textSubtle};opacity:1}
+    .ag-login ::selection{background-color:${primaryColor};color:${primaryText}}
+    @keyframes agRise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    .ag-rise{animation:agRise .5s cubic-bezier(.16,.84,.44,1) both}
+    @media (prefers-reduced-motion: reduce){.ag-rise{animation:none}}
+  `;
+
+  // Dimensional brand wash: works on ANY brand color (lit top-left, shadowed
+  // bottom-right over the flat primary), so even a single hex reads as crafted.
+  const stageStyle: React.CSSProperties = {
+    backgroundColor: primaryColor,
+    backgroundImage: [
+      'radial-gradient(130% 115% at 8% 0%, rgba(255,255,255,0.30), transparent 56%)',
+      'radial-gradient(120% 120% at 100% 100%, rgba(0,0,0,0.38), transparent 58%)',
+    ].join(','),
+  };
+
+  // Concentric "sound rings" — the voice/calls motif, tinted in the brand's own
+  // contrast color, sitting quietly behind the logo.
+  const rings = (
+    <svg className="absolute inset-0 h-full w-full" viewBox="0 0 600 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <g fill="none" stroke={primaryText} strokeOpacity="0.14">
+        {[90, 170, 250, 330, 410, 490].map((r) => (<circle key={r} cx="300" cy="300" r={r} />))}
+      </g>
+    </svg>
+  );
+
   return (
-    <div className="min-h-screen bg-[#050505] text-[#fafaf9]" style={{ zoom: 0.9 }}>
-      {/* Grain overlay */}
-      <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
-        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
+    <div className="ag-login min-h-screen lg:grid lg:grid-cols-[1.05fr_1fr]" style={{ backgroundColor: t.bg, color: t.text }}>
+      <style dangerouslySetInnerHTML={{ __html: styles }} />
+      <DynamicFavicon logoUrl={agency?.logo_url} primaryColor={primaryColor} appleIconUrl="/api/agency-app-icon?size=180" />
 
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-40 border-b border-white/[0.06] bg-[#050505]/80 backdrop-blur-2xl"
-        style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <Link href="/" className="flex items-center gap-2.5">
-              <img src="/icon-512x512.png" alt="VoiceAI Connect" className="h-9 w-9 rounded-xl" />
-              <span className="text-base font-semibold tracking-tight">VoiceAI Connect</span>
-            </Link>
-            <Link href="/signup"
-              className="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-medium transition-all hover:opacity-90"
-              style={{ backgroundColor: '#10b981', color: '#050505' }}>
-              Sign Up
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 py-28">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-emerald-500/[0.03] rounded-full blur-[100px]" />
+      {/* Brand stage (desktop) */}
+      <aside className="relative hidden lg:flex flex-col justify-between overflow-hidden p-12 xl:p-16" style={{ ...stageStyle, color: primaryText }}>
+        {rings}
+        <div className="relative z-10 flex items-center gap-3">
+          {brandLogo ? (
+            <img src={brandLogo} alt={brandName} className="h-10 w-auto max-w-[220px] object-contain" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.12))' }} />
+          ) : (
+            <span className="text-2xl font-semibold tracking-tight">{brandName}</span>
+          )}
         </div>
 
-        <div className="relative w-full max-w-md">
-          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 sm:p-8 backdrop-blur-sm">
-            <div className="text-center mb-6">
-              <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Welcome Back</h1>
-              <p className="mt-1.5 text-sm text-[#fafaf9]/50">Sign in to your agency dashboard</p>
-            </div>
-
-            {/* Google Sign In */}
-            <button onClick={handleGoogleLogin} disabled={googleLoading || loading}
-              className="w-full flex items-center justify-center gap-3 rounded-xl border border-white/[0.08] bg-white px-5 py-3 text-sm font-medium text-gray-800 hover:bg-gray-50 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:hover:scale-100 mb-5">
-              {googleLoading ? <Loader2 className="h-4 w-4 animate-spin text-gray-600" /> : <GoogleIcon className="h-4 w-4" />}
-              Continue with Google
-            </button>
-
-            {/* Divider */}
-            <div className="relative mb-5">
-              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/[0.06]" /></div>
-              <div className="relative flex justify-center text-[10px] uppercase">
-                <span className="bg-[#050505] px-3 text-[#fafaf9]/40">or</span>
-              </div>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-[#fafaf9]/70 mb-1.5">Email Address</label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#fafaf9]/30" />
-                  <input name="email" type="email" placeholder="you@company.com" value={formData.email} onChange={handleChange} required
-                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.05] pl-10 pr-4 py-2.5 text-sm text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:border-emerald-500/50 focus:outline-none focus:ring-1 focus:ring-emerald-500/20 transition-colors" />
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-xs font-medium text-[#fafaf9]/70 mb-1.5">Password</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#fafaf9]/30" />
-                  <input name="password" type={showPassword ? 'text' : 'password'} placeholder="••••••••" value={formData.password} onChange={handleChange} required
-                    className="w-full rounded-xl border border-white/[0.08] bg-white/[0.05] pl-10 pr-11 py-2.5 text-sm text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:border-emerald-500/50 focus:outline-none focus:ring-1 focus:ring-emerald-500/20 transition-colors" />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#fafaf9]/40 hover:text-[#fafaf9]/70">
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 cursor-pointer group">
-                  <input type="checkbox" className="h-3.5 w-3.5 rounded border-white/20 bg-white/5 text-emerald-500 focus:ring-emerald-500/50 focus:ring-offset-0 focus:ring-offset-transparent" />
-                  <span className="text-xs text-[#fafaf9]/50 group-hover:text-[#fafaf9]/70 transition-colors">Remember me</span>
-                </label>
-                <Link href="/auth/forgot-password" className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors">Forgot password?</Link>
-              </div>
-
-              {error && (
-                <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-xs text-red-400">{error}</div>
-              )}
-
-              <button type="submit" disabled={loading || googleLoading}
-                className="group relative w-full inline-flex items-center justify-center gap-2 rounded-full bg-emerald-500 px-5 py-3 text-sm font-medium text-[#050505] transition-all duration-200 hover:bg-emerald-400 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
-                {loading ? (<><Loader2 className="h-4 w-4 animate-spin" />Signing in...</>) : (<>Sign In<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" /></>)}
-              </button>
-            </form>
-          </div>
-
-          <p className="mt-6 text-center text-[10px] text-[#fafaf9]/30">
-            By signing in, you agree to our{' '}
-            <Link href="/terms" className="text-[#fafaf9]/50 hover:text-emerald-400 transition-colors">Terms of Service</Link>
-            {' '}and{' '}
-            <Link href="/privacy" className="text-[#fafaf9]/50 hover:text-emerald-400 transition-colors">Privacy Policy</Link>
+        <div className="relative z-10 max-w-md ag-rise">
+          <h2 className="text-[2.6rem] xl:text-5xl font-semibold leading-[1.05] tracking-tight">
+            {brandName}
+          </h2>
+          <p className="mt-4 text-[15px] leading-relaxed" style={{ color: primaryText, opacity: 0.78 }}>
+            Sign in to pick up live calls, see every booking, and keep each business covered.
           </p>
+        </div>
+
+        <div className="relative z-10 text-[12px]" style={{ color: primaryText, opacity: 0.6 }}>
+          {brandName}
+        </div>
+      </aside>
+
+      {/* Sign-in column */}
+      <main className="relative flex min-h-screen flex-col items-center justify-center px-6 py-16" style={{ paddingTop: 'calc(4rem + env(safe-area-inset-top))' }}>
+        {/* Compact brand header (mobile only) */}
+        <div className="lg:hidden mb-10 flex flex-col items-center gap-3">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl overflow-hidden" style={brandLogo ? { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#ffffff', border: `1px solid ${t.inputBorder}` } : stageStyle}>
+            {brandLogo
+              ? <img src={brandLogo} alt={brandName} className="h-11 w-11 object-contain" />
+              : <span className="text-xl font-bold" style={{ color: primaryText }}>{brandName.charAt(0)}</span>}
+          </div>
+          <span className="text-lg font-semibold tracking-tight">{brandName}</span>
+        </div>
+
+        <div className="w-full max-w-sm ag-rise">
+          <div className="mb-8">
+            <h1 className="text-[1.75rem] font-semibold tracking-tight">Welcome back</h1>
+            <p className="mt-2 text-[15px]" style={{ color: t.textMuted }}>Sign in to your dashboard</p>
+          </div>
+
+          {!isBranded && (
+            <>
+              <button onClick={handleGoogleLogin} disabled={googleLoading || loading}
+                className="w-full flex items-center justify-center gap-3 rounded-xl px-5 py-3 text-sm font-medium transition-all hover:opacity-95 active:scale-[0.99] disabled:opacity-50"
+                style={{ backgroundColor: t.googleBg, color: t.googleText, border: `1px solid ${t.inputBorder}` }}>
+                {googleLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon className="h-4 w-4" />}
+                Continue with Google
+              </button>
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center"><div className="w-full border-t" style={{ borderColor: t.divider }} /></div>
+                <div className="relative flex justify-center"><span className="px-3 text-xs" style={{ backgroundColor: t.bg, color: t.textSubtle }}>or</span></div>
+              </div>
+            </>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium mb-2" style={{ color: t.label }}>Email</label>
+              <div className="relative">
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-[18px] w-[18px]" style={{ color: t.textSubtle }} />
+                <input id="email" name="email" type="email" placeholder="you@company.com" value={formData.email} onChange={handleChange} required autoComplete="email"
+                  className="w-full rounded-xl pl-11 pr-4 py-3 text-sm transition-colors" style={{ backgroundColor: t.input, border: `1px solid ${t.inputBorder}`, color: t.text }} />
+              </div>
+            </div>
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium mb-2" style={{ color: t.label }}>Password</label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-[18px] w-[18px]" style={{ color: t.textSubtle }} />
+                <input id="password" name="password" type={showPassword ? 'text' : 'password'} placeholder="Enter your password" value={formData.password} onChange={handleChange} required autoComplete="current-password"
+                  className="w-full rounded-xl pl-11 pr-12 py-3 text-sm transition-colors" style={{ backgroundColor: t.input, border: `1px solid ${t.inputBorder}`, color: t.text }} />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 transition-colors" style={{ color: t.textSubtle }}>
+                  {showPassword ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end">
+              <Link href="/auth/forgot-password" className="text-sm transition-colors hover:underline underline-offset-2" style={{ color: primaryColor }}>Forgot password?</Link>
+            </div>
+
+            {error && <div className="rounded-xl p-3 text-sm" style={{ backgroundColor: t.errorBg, border: `1px solid ${t.errorBorder}`, color: t.errorText }}>{error}</div>}
+
+            <button type="submit" disabled={loading || googleLoading}
+              className="group w-full inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-[15px] font-semibold transition-all hover:brightness-[1.05] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: primaryColor, color: primaryText }}>
+              {loading ? <><Loader2 className="h-4 w-4 animate-spin" />Signing in...</> : <>Sign in<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" /></>}
+            </button>
+          </form>
+
+          {!isBranded && (
+            <p className="mt-8 text-center text-sm" style={{ color: t.textMuted }}>
+              Don&apos;t have an account?{' '}
+              <Link href="/signup" className="font-medium transition-colors hover:underline underline-offset-2" style={{ color: primaryColor }}>Sign up</Link>
+            </p>
+          )}
         </div>
       </main>
     </div>
