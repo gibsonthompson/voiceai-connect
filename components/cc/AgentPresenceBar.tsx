@@ -22,6 +22,9 @@ interface PresenceAgent {
   status: 'available' | 'away';
   busy: boolean;
   online: boolean;
+  scheduleEnabled?: boolean;
+  onSchedule?: boolean;
+  override?: boolean;
 }
 
 const POLL_MS = 5000;
@@ -63,8 +66,11 @@ export default function AgentPresenceBar({ agencyId }: { agencyId: string | unde
   // Nothing to show until we know there is at least one agent with presence.
   if (!loaded || agents.length === 0) return null;
 
-  const dot = (a: PresenceAgent) => (a.busy ? AMBER : a.status === 'available' ? GREEN : theme.textSubtle);
-  const label = (a: PresenceAgent) => (a.busy ? 'On a call' : a.status === 'available' ? 'Available' : 'Away');
+  // An agent who is online but outside their working hours (and not overridden)
+  // is present but not being offered calls; show that distinctly.
+  const offHours = (a: PresenceAgent) => !!(a.scheduleEnabled && a.onSchedule === false && !a.override);
+  const dot = (a: PresenceAgent) => (a.busy ? AMBER : offHours(a) ? theme.textSubtle : a.status === 'available' ? GREEN : theme.textSubtle);
+  const label = (a: PresenceAgent) => (a.busy ? 'On a call' : offHours(a) ? 'Off hours' : a.status === 'available' ? (a.override ? 'Available (override)' : 'Available') : 'Away');
 
   return (
     <div
