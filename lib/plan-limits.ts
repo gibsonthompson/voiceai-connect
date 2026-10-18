@@ -183,8 +183,9 @@ export function deriveAgencyTeamLimit(opts: {
   maxTeamMembersAgency?: number | null;
   subscriptionStatus?: string | null;
   planType?: string | null;
+  isCallCenter?: boolean;
 }): number {
-  const { maxTeamMembersAgency, subscriptionStatus, planType } = opts;
+  const { maxTeamMembersAgency, subscriptionStatus, planType, isCallCenter } = opts;
   // During an active trial the agency gets unlimited seats (trial unlocks
   // everything). Checked first so it wins even over the plan-derived cap and
   // even when the backend has coerced a NULL override to 0. On conversion to
@@ -192,6 +193,12 @@ export function deriveAgencyTeamLimit(opts: {
   // over-cap members. Keep in sync with checkTeamLimit() in src/routes/team.js.
   const isTrial = subscriptionStatus === 'trial' || subscriptionStatus === 'trialing';
   if (isTrial) return -1;
+  // Call centers are agent-pool businesses: a blank OR zero cap (zero is the
+  // stale signup default, not a real limit) never locks them out. Only a
+  // deliberate positive admin cap is honored. Mirrors checkTeamLimit().
+  if (isCallCenter && (maxTeamMembersAgency === null || maxTeamMembersAgency === undefined || maxTeamMembersAgency <= 0)) {
+    return -1;
+  }
   // Explicit DB value wins next. Strict null/undefined check so an explicit 0
   // (Free cap) or -1 (Scale unlimited) is respected, matching the backend.
   if (maxTeamMembersAgency !== null && maxTeamMembersAgency !== undefined) {
