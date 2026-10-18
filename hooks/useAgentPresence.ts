@@ -55,6 +55,7 @@ export function useAgentPresence(enabled: boolean) {
   const [offers, setOffers] = useState<EscalationOffer[]>([]);
   const [status, setStatusState] = useState<'available' | 'away'>('available');
   const [connected, setConnected] = useState(false);
+  const [schedule, setScheduleState] = useState<{ onSchedule: boolean; enabled: boolean; override: boolean }>({ onSchedule: true, enabled: false, override: false });
   const notifySupported = typeof window !== 'undefined' && 'Notification' in window;
   const [notifyPermission, setNotifyPermission] = useState<NotificationPermission>(
     notifySupported ? Notification.permission : 'denied'
@@ -151,6 +152,7 @@ export function useAgentPresence(enabled: boolean) {
           if (!stopped && d.success) {
             if (d.channel) channelRef.current = d.channel;
             if (Array.isArray(d.offers)) d.offers.forEach((o: EscalationOffer) => addOffer(o));
+            if (typeof d.onSchedule === 'boolean') setScheduleState({ onSchedule: d.onSchedule, enabled: !!d.scheduleEnabled, override: !!d.override });
           }
         }
       } catch { /* best effort; next beat retries */ }
@@ -250,5 +252,5 @@ export function useAgentPresence(enabled: boolean) {
     } catch { /* non-fatal */ }
   }, [dismiss]);
 
-  return { offers, status, setStatus, claim, decline, dismiss, connected, notifySupported, notifyPermission, requestNotify };
+  return { offers, status, setStatus, claim, decline, dismiss, connected, schedule, notifySupported, notifyPermission, requestNotify };
 }

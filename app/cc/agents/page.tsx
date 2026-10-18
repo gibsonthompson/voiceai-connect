@@ -21,7 +21,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Headset, Radio, Loader2, Send, UserPlus, Phone, Monitor, Trash2, ChevronDown,
   Check, Eye, EyeOff, Building2, X, AlertCircle, Users, Copy, RotateCcw,
-  Smartphone, ExternalLink, Clock,
+  Smartphone, ExternalLink, Clock, Plus,
 } from 'lucide-react';
 import { useAgency } from '../../agency/context';
 import { useTheme } from '../../../hooks/useTheme';
@@ -54,7 +54,7 @@ interface Member {
   agent_phone: string | null;
   last_login: string | null;
   permissions?: Record<string, boolean> | null;
-  availability_hours?: { enabled: boolean; days: Record<string, { on: boolean; start: string; end: string }> } | null;
+  availability_hours?: { enabled: boolean; override?: boolean; days: Record<string, { on: boolean; windows: { start: string; end: string }[] }> } | null;
 }
 interface Presence {
   memberUserId: string;
@@ -82,7 +82,7 @@ const DAY_DEFS: { key: string; label: string }[] = [
   { key: 'thu', label: 'Thu' }, { key: 'fri', label: 'Fri' }, { key: 'sat', label: 'Sat' }, { key: 'sun', label: 'Sun' },
 ];
 const DOW_MAP: Record<string, string> = { Sun: 'sun', Mon: 'mon', Tue: 'tue', Wed: 'wed', Thu: 'thu', Fri: 'fri', Sat: 'sat' };
-const DEFAULT_HOURS = { enabled: true, days: Object.fromEntries(['mon','tue','wed','thu','fri','sat','sun'].map((k) => [k, { on: ['mon','tue','wed','thu','fri'].includes(k), start: '09:00', end: '17:00' }])) } as { enabled: boolean; days: Record<string, { on: boolean; start: string; end: string }> };
+const DEFAULT_HOURS = { enabled: true, override: false, days: Object.fromEntries(['mon','tue','wed','thu','fri','sat','sun'].map((k) => [k, { on: ['mon','tue','wed','thu','fri'].includes(k), windows: [{ start: '09:00', end: '17:00' }] }])) } as { enabled: boolean; override: boolean; days: Record<string, { on: boolean; windows: { start: string; end: string }[] }> };
 function nowInTz(tz: string) {
   let parts;
   try { parts = new Intl.DateTimeFormat('en-US', { timeZone: tz || 'America/New_York', weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(new Date()); }
@@ -95,12 +95,16 @@ function nowInTz(tz: string) {
 function hmMin(v: string): number | null { const m = /^(\d{1,2}):(\d{2})$/.exec(v || ''); return m ? (+m[1]) * 60 + (+m[2]) : null; }
 function onSchedule(ah: Member['availability_hours'], tz: string): boolean {
   if (!ah || ah.enabled !== true || !ah.days) return true;
-  const { day, minutes } = nowInTz(tz); const d = ah.days[day];
+  if ((ah as any).override === true) return true; // manager override
+  const { day, minutes } = nowInTz(tz); const d: any = (ah.days as any)[day];
   if (!d || d.on !== true) return false;
-  const st = hmMin(d.start), en = hmMin(d.end);
-  if (st == null || en == null) return false;
-  if (en <= st) return minutes >= st || minutes < en;
-  return minutes >= st && minutes < en;
+  const wins: { start: string; end: string }[] = Array.isArray(d.windows) ? d.windows : ((d.start && d.end) ? [{ start: d.start, end: d.end }] : []);
+  for (const w of wins) {
+    const st = hmMin(w.start), en = hmMin(w.end);
+    if (st == null || en == null) continue;
+    if (en <= st ? (minutes >= st || minutes < en) : (minutes >= st && minutes < en)) return true;
+  }
+  return false;
 }
 
 const API = () => process.env.NEXT_PUBLIC_API_URL || '';
@@ -330,10 +334,32 @@ export default function CallCenterAgents() {
     try { const r = await fetch(`${API()}/api/agency/${agencyId}/team/${m.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` }, body: JSON.stringify({ availability_hours: next }) }); if (!r.ok) throw new Error(); }
     catch { setMembers((list) => list.map((x) => (x.id === m.id ? { ...x, availability_hours: prev } : x))); setError('Could not update working hours.'); }
   };
-  const setDayField = (m: Member, key: string, patch: Partial<{ on: boolean; start: string; end: string }>) => {
+  const curHours = (m: Member) => ((m.availability_hours && m.availability_hours.enabled) ? m.availability_hours : DEFAULT_HOURS) as any;
+  const patchDay = (m: Member, key: string, dayNext: { on: boolean; windows: { start: string; end: string }[] }) => {
+    const cur = curHours(m);
+    updateHours(m, { enabled: true, override: cur.override === true, days: { ...cur.days, [key]: dayNext } } as any);
+  };
+  const setDayOn = (m: Member, key: string, on: boolean) => {
+    const d = curHours(m).days?.[key] || { on: false, windows: [{ start: '09:00', end: '17:00' }] };
+    patchDay(m, key, { on, windows: (d.windows && d.windows.length) ? d.windows : [{ start: '09:00', end: '17:00' }] });
+  };
+  const setWindow = (m: Member, key: string, idx: number, patch: Partial<{ start: string; end: string }>) => {
+    const d = curHours(m).days?.[key] || { on: true, windows: [] as any[] };
+    const wins = [...(d.windows || [])]; wins[idx] = { ...wins[idx], ...patch };
+    patchDay(m, key, { on: true, windows: wins });
+  };
+  const addWindow = (m: Member, key: string) => {
+    const d = curHours(m).days?.[key] || { on: true, windows: [] as any[] };
+    patchDay(m, key, { on: true, windows: [...(d.windows || []), { start: '13:00', end: '17:00' }] });
+  };
+  const removeWindow = (m: Member, key: string, idx: number) => {
+    const d = curHours(m).days?.[key] || { on: true, windows: [] as any[] };
+    const wins = (d.windows || []).filter((_: any, i: number) => i !== idx);
+    patchDay(m, key, { on: true, windows: wins.length ? wins : [{ start: '09:00', end: '17:00' }] });
+  };
+  const setOverride = (m: Member, val: boolean) => {
     const cur = (m.availability_hours && m.availability_hours.enabled) ? m.availability_hours : DEFAULT_HOURS;
-    const curDay = (cur.days && cur.days[key]) || { on: false, start: '09:00', end: '17:00' };
-    updateHours(m, { enabled: true, days: { ...cur.days, [key]: { ...curDay, ...patch } } });
+    updateHours(m, { ...(cur as any), override: val } as any);
   };
 
   const card = { backgroundColor: theme.card, border: `1px solid ${theme.border}` } as React.CSSProperties;
@@ -571,25 +597,40 @@ export default function CallCenterAgents() {
                               <Switch on={hoursOn} onClick={() => updateHours(m, hoursOn ? { ...(m.availability_hours || DEFAULT_HOURS), enabled: false } : (m.availability_hours ? { ...m.availability_hours, enabled: true } : DEFAULT_HOURS))} />
                             </div>
                             {hoursOn && (
-                              <div className="mt-3 space-y-1.5">
+                              <div className="mt-3 space-y-2.5">
+                                {m.availability_hours?.override && (
+                                  <div className="rounded-lg px-3 py-2 mb-1.5 text-[11.5px]" style={{ backgroundColor: theme.primary15, color: theme.primary }}>Active override is on, this agent is offered calls regardless of the hours below.</div>
+                                )}
                                 {DAY_DEFS.map((dd) => {
-                                  const d = (m.availability_hours?.days?.[dd.key]) || { on: false, start: '09:00', end: '17:00' };
+                                  const d: any = (m.availability_hours?.days?.[dd.key]) || { on: false, windows: [{ start: '09:00', end: '17:00' }] };
+                                  const wins: { start: string; end: string }[] = (d.windows && d.windows.length) ? d.windows : [{ start: '09:00', end: '17:00' }];
                                   return (
-                                    <div key={dd.key} className="flex items-center gap-2">
-                                      <button onClick={() => setDayField(m, dd.key, { on: !d.on })} className="w-14 flex-shrink-0 inline-flex items-center justify-center rounded-lg px-2 py-1.5 text-[12px] font-medium" style={d.on ? { backgroundColor: theme.primary15, color: theme.primary } : { backgroundColor: theme.hover, color: theme.textMuted }}>{dd.label}</button>
-                                      {d.on ? (
-                                        <div className="flex items-center gap-1.5 flex-1">
-                                          <input type="time" value={d.start} onChange={(e) => setDayField(m, dd.key, { start: e.target.value })} className="rounded-lg px-2 py-1.5 text-[13px] outline-none" style={field} />
-                                          <span className="text-[13px]" style={{ color: theme.textMuted }}>to</span>
-                                          <input type="time" value={d.end} onChange={(e) => setDayField(m, dd.key, { end: e.target.value })} className="rounded-lg px-2 py-1.5 text-[13px] outline-none" style={field} />
+                                    <div key={dd.key}>
+                                      <div className="flex items-center gap-2">
+                                        <button onClick={() => setDayOn(m, dd.key, !d.on)} className="min-w-[52px] inline-flex items-center justify-center rounded-lg px-2.5 py-1.5 text-[12px] font-medium" style={d.on ? { backgroundColor: theme.primary15, color: theme.primary } : { backgroundColor: theme.hover, color: theme.textMuted }}>{dd.label}</button>
+                                        {!d.on && <span className="text-[12px]" style={{ color: theme.textSubtle }}>Off</span>}
+                                      </div>
+                                      {d.on && (
+                                        <div className="mt-1.5 ml-2 space-y-1.5">
+                                          {wins.map((w, idx) => (
+                                            <div key={idx} className="flex items-center gap-2">
+                                              <input type="time" value={w.start} onChange={(e) => setWindow(m, dd.key, idx, { start: e.target.value })} className="flex-1 min-w-0 rounded-lg px-2 py-1.5 text-[13px] outline-none" style={field} />
+                                              <span className="text-[13px] flex-shrink-0" style={{ color: theme.textMuted }}>to</span>
+                                              <input type="time" value={w.end} onChange={(e) => setWindow(m, dd.key, idx, { end: e.target.value })} className="flex-1 min-w-0 rounded-lg px-2 py-1.5 text-[13px] outline-none" style={field} />
+                                              {wins.length > 1 && <button onClick={() => removeWindow(m, dd.key, idx)} className="inline-flex items-center justify-center rounded-lg h-[30px] w-[30px] flex-shrink-0" style={{ color: theme.textMuted }} title="Remove block"><X className="h-3.5 w-3.5" /></button>}
+                                            </div>
+                                          ))}
+                                          <button onClick={() => addWindow(m, dd.key)} className="inline-flex items-center gap-1 text-[11px] font-medium" style={{ color: theme.primary }}><Plus className="h-3 w-3" /> Add a break / second block</button>
                                         </div>
-                                      ) : (
-                                        <span className="text-[12px]" style={{ color: theme.textSubtle }}>Off</span>
                                       )}
                                     </div>
                                   );
                                 })}
-                                <p className="text-[11px] mt-1.5" style={{ color: theme.textSubtle }}>Times are in {tz.replace(/_/g, ' ')} (your agency timezone). Outside these hours the agent is skipped, and the call falls to other available agents, then your overflow action.</p>
+                                <p className="text-[11px] mt-1.5" style={{ color: theme.textSubtle }}>Times are in {tz.replace(/_/g, ' ')} (your agency timezone). A day can have more than one block, the gap between blocks (say 12 to 1) is their break. Outside these hours the agent is skipped, and the call falls to other available agents, then your overflow action.</p>
+                                <div className="flex items-center justify-between gap-3 mt-3 pt-3" style={{ borderTop: `1px solid ${theme.borderSubtle}` }}>
+                                  <div className="min-w-0"><p className="text-[13px] font-medium" style={{ color: theme.text }}>Set active now (override hours)</p><p className="text-[11px]" style={{ color: theme.textMuted }}>Offer this agent calls regardless of the hours above, until you turn it off. They still need to be online, or on phone delivery.</p></div>
+                                  <Switch on={!!m.availability_hours?.override} onClick={() => setOverride(m, !m.availability_hours?.override)} />
+                                </div>
                               </div>
                             )}
                           </div>
