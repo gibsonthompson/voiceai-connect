@@ -43,6 +43,7 @@ interface Msg {
   status: string;
   error: string | null;
   at: string;
+  sentBy?: string | null;
 }
 interface ActiveConv {
   id: string;
@@ -371,19 +372,27 @@ export default function CallCenterTexts() {
             return (
               <button key={r.id} onClick={() => openConversation(r.id)}
                 className="w-full text-left rounded-xl p-3 transition"
-                style={on ? { backgroundColor: theme.primary15, border: `1px solid ${theme.primary}55` } : { backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+                style={on
+                  ? { backgroundColor: theme.primary15, border: `1px solid ${theme.primary}55` }
+                  : unread
+                    ? { backgroundColor: theme.primary15, border: `1px solid ${theme.primary}33` }
+                    : { backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-[13.5px] font-semibold truncate" style={{ color: theme.text }}>{titleOf(r)}</p>
-                  <span className="text-[11px] flex-shrink-0 flex items-center gap-1.5" style={{ color: unread ? theme.primary : theme.textSubtle }}>
-                    {unread && <CircleDot className="h-3 w-3" />}{fmtWhen(r.lastAt)}
-                  </span>
+                  <div className="flex items-center gap-2 min-w-0">
+                    {unread && <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: theme.primary }} />}
+                    <p className="text-[13.5px] truncate" style={{ color: theme.text, fontWeight: unread ? 700 : 600 }}>{titleOf(r)}</p>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {unread && <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{r.unread > 99 ? '99+' : r.unread}</span>}
+                    <span className="text-[11px]" style={{ color: unread ? theme.primary : theme.textSubtle }}>{fmtWhen(r.lastAt)}</span>
+                  </div>
                 </div>
                 <p className="text-[11.5px] truncate flex items-center gap-1 mt-0.5" style={{ color: theme.textMuted }}>
                   <Building2 className="h-3 w-3 flex-shrink-0" /> {r.businessName}
                 </p>
                 {r.lastPreview && (
                   <p className="text-[12.5px] truncate mt-1" style={{ color: unread ? theme.text : theme.textMuted, fontWeight: unread ? 600 : 400 }}>
-                    {r.lastDirection === 'outbound' ? 'You: ' : ''}{r.lastPreview}
+                    {r.lastPreview}
                   </p>
                 )}
               </button>
@@ -440,18 +449,16 @@ export default function CallCenterTexts() {
                 const out = m.direction === 'outbound';
                 const failed = m.status === 'failed';
                 return (
-                  <div key={m.id} className={`flex ${out ? 'justify-end' : 'justify-start'}`}>
-                    <div className="max-w-[78%]">
-                      <div className="rounded-2xl px-3.5 py-2 text-[13.5px] leading-snug whitespace-pre-wrap break-words"
-                        style={out
-                          ? { backgroundColor: failed ? theme.error : theme.primary, color: failed ? '#fff' : theme.primaryText, borderBottomRightRadius: 4 }
-                          : { backgroundColor: theme.hover, color: theme.text, borderBottomLeftRadius: 4 }}>
-                        {m.content}
-                      </div>
-                      <p className="text-[10.5px] mt-1 px-1" style={{ color: theme.textSubtle, textAlign: out ? 'right' : 'left' }}>
-                        {fmtMsgTime(m.at)}{out && failed ? ' · Failed to send' : out && m.status === 'delivered' ? ' · Delivered' : ''}
-                      </p>
+                  <div key={m.id} className={`flex flex-col ${out ? 'items-end' : 'items-start'}`}>
+                    <div className="rounded-2xl px-3.5 py-2 text-[13.5px] leading-snug whitespace-pre-wrap break-words max-w-[78%] w-fit"
+                      style={out
+                        ? { backgroundColor: failed ? theme.error : theme.primary, color: failed ? '#fff' : theme.primaryText, borderBottomRightRadius: 4 }
+                        : { backgroundColor: theme.hover, color: theme.text, borderBottomLeftRadius: 4 }}>
+                      {m.content}
                     </div>
+                    <p className="text-[10.5px] mt-1 px-1 max-w-[78%] truncate" style={{ color: theme.textSubtle }}>
+                      {out && m.sentBy ? `${m.sentBy} · ` : ''}{fmtMsgTime(m.at)}{out && failed ? ' · Failed to send' : out && m.status === 'delivered' ? ' · Delivered' : ''}
+                    </p>
                   </div>
                 );
               })
