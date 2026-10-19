@@ -14,6 +14,7 @@ import { useTheme } from '../../../hooks/useTheme';
 import ApiKeysTab from '@/components/agency/ApiKeysTab';
 import WebhooksTab from '@/components/agency/WebhooksTab';
 import CcManagersSection from '@/components/cc/CcManagersSection';
+import CcAgentSettings from '@/components/cc/CcAgentSettings';
 
 const HELP = [
   { q: 'How do calls reach the AI? Do businesses keep their number?', a: 'Yes. Each business keeps its existing public number and forwards it to the AI number we provision. It is call forwarding, not porting, so their number never changes, including during a trial. Caller-ID recovery is built in, so you and the AI still see the real caller even on a forwarded call.' },
@@ -23,7 +24,15 @@ const HELP = [
   { q: 'Something is wrong with a live call. What do I do?', a: 'Use the support link below or contact us directly. For a call in progress, you can always jump in from Live Calls and take it over while we look into it.' },
 ];
 
-export default function CallCenterSettings() {
+// Managers/owners get the call-center account settings below; a call-center
+// agent gets their own settings (account + password, availability + override,
+// notifications, call delivery). One route, split by role.
+export default function CallCenterSettingsPage() {
+  const { isAgent } = useAgency();
+  return isAgent ? <CcAgentSettings /> : <ManagerSettings />;
+}
+
+function ManagerSettings() {
   const { agency, refreshAgency } = useAgency();
   const theme = useTheme();
 

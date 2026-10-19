@@ -54,6 +54,7 @@ type CallState = 'idle' | 'connecting' | 'live' | 'ended';
 interface Branding {
   agency_name: string | null;
   logo_url: string | null;
+  app_icon_url: string | null;
   primary_color: string | null;
   accent_color: string | null;
 }
@@ -967,7 +968,12 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
     <div className="h-[100dvh] overflow-hidden flex flex-col" style={{ backgroundColor: t.bg, color: t.text }}>
       {/* White-label the browser-tab icon from the agency's own branding, so the
           live monitor (opened outside the /cc shell) never shows the platform logo. */}
-      <DynamicFavicon logoUrl={info.branding?.logo_url} primaryColor={info.branding?.primary_color || undefined} />
+      <DynamicFavicon
+        logoUrl={info.branding?.logo_url}
+        faviconUrl={info.branding?.app_icon_url || info.branding?.logo_url}
+        appleIconUrl={info.branding?.app_icon_url || undefined}
+        primaryColor={info.branding?.primary_color || undefined}
+      />
       {/* Header: white-label brand + status */}
       <header className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3" style={{ borderBottom: `1px solid ${t.border}` }}>
         <div className="flex items-center gap-3 min-w-0">
