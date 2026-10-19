@@ -337,9 +337,11 @@ function CallCenterShell({ children }: { children: ReactNode }) {
       {/* Escalation screen-pop + presence heartbeat (self-gates to agents). */}
       <CcEscalationLayer />
 
-      {/* Live-call pop-ups for managers: a card for every call in progress on
-          any /cc page, plus desktop alerts for new calls (even on another tab). */}
-      {!isAgent && <CcLiveCallPops agencyId={agency?.id} />}
+      {/* Live-call pop-ups for managers AND agents: a card for every call in
+          progress (scoped server-side, so an agent only sees their assigned
+          businesses) on any /cc page, always visible no matter the tab, plus
+          desktop alerts for new calls even on another tab. */}
+      <CcLiveCallPops agencyId={agency?.id} />
 
       {/* New-text toast. A call center works every inbound text in here, so a new
           one is surfaced to whoever is on the dashboard (manager or agent), with

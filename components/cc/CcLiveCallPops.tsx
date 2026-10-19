@@ -3,11 +3,14 @@
 // ============================================================================
 // components/cc/CcLiveCallPops.tsx
 //
-// Real-time live-call pop-ups for a call-center MANAGER. Mounted once in the /cc
-// shell, so it rides along on every /cc page: whatever the manager is doing, a
-// card pops for each call in progress, with the business, caller, a running
-// elapsed timer, and a jump straight to the live monitor (listen in + take
-// over). Managers only, agents already get the escalation screen-pop.
+// Real-time live-call pop-ups for a call-center MANAGER or AGENT. Mounted once in
+// the /cc shell, so it rides along on every /cc page: whatever the person is
+// doing, a card pops for each call in progress, with the business, caller, a
+// running elapsed timer, and a jump straight to the live monitor (listen in +
+// take over). The live-calls endpoint is scoped server-side, so a manager sees
+// every business while an assigned agent sees only their own, no leak. This is
+// separate from the escalation screen-pop (offered calls to claim); this shows
+// every call already in progress.
 //
 // Real-time + cross-tab:
 //  - In the app: it polls the same live-calls endpoint the wallboard uses (4s)
