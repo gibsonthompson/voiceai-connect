@@ -171,7 +171,7 @@ function CallCenterShell({ children }: { children: ReactNode }) {
     { href: '/cc/dashboard', label: 'Dashboard', icon: LayoutDashboard, perm: 'dashboard' },
     { href: '/cc/live-calls', label: 'Live Calls', icon: Headphones },
     { href: '/cc/calls', label: 'Calls', icon: ClipboardList },
-    { href: '/cc/messages', label: 'Messages', icon: Inbox, badge: openFollowups },
+    { href: '/cc/messages', label: 'Callbacks', icon: Inbox, badge: openFollowups },
     { href: '/cc/sms', label: 'Texts', icon: MessageSquare, badge: unreadTexts },
     { href: '/cc/contacts', label: 'Contacts', icon: Contact },
     { href: '/cc/businesses', label: 'Businesses', icon: Building2, perm: 'clients' },
@@ -184,7 +184,7 @@ function CallCenterShell({ children }: { children: ReactNode }) {
   const AGENT_NAV: NavItem[] = [
     { href: '/cc/live-calls', label: 'Live Calls', icon: Headphones },
     { href: '/cc/calls', label: 'Calls', icon: ClipboardList },
-    { href: '/cc/messages', label: 'Messages', icon: Inbox, badge: openFollowups },
+    { href: '/cc/messages', label: 'Callbacks', icon: Inbox, badge: openFollowups },
     { href: '/cc/sms', label: 'Texts', icon: MessageSquare, badge: unreadTexts },
     { href: '/cc/contacts', label: 'Contacts', icon: Contact },
   ];

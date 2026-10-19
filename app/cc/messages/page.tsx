@@ -32,6 +32,8 @@ interface Row {
   service: string | null;
   urgency: string | null;
   sentiment: string | null;
+  outcome: string | null;
+  callerSpoke: boolean;
   durationSeconds: number;
   at: string;
   status: 'open' | 'done';
@@ -40,6 +42,15 @@ interface Row {
   resolvedAt: string | null;
 }
 interface Biz { clientId: string; businessName: string; }
+
+// Why this call needs a human, shown as a labelled badge on each row.
+const OUTCOME_LABELS: Record<string, string> = {
+  message: 'Left a message',
+  callback_requested: 'Callback requested',
+  unanswered: 'Question unanswered',
+  complaint: 'Complaint',
+  abandoned: 'Hung up before finishing',
+};
 
 const TABS = [
   { v: 'open', label: 'Open' },
@@ -147,7 +158,7 @@ export default function CallCenterMessages() {
             <Inbox className="h-5 w-5" style={{ color: theme.primary }} />
           </div>
           <div className="min-w-0">
-            <h1 className="text-lg sm:text-xl lg:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Messages</h1>
+            <h1 className="text-lg sm:text-xl lg:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Callbacks</h1>
             <p className="text-xs sm:text-[13px]" style={{ color: theme.textMuted }}>
               Calls that need a callback across {isAgent ? 'your assigned businesses' : 'your businesses'}. Work them, note them, mark them done.
             </p>
@@ -214,6 +225,9 @@ export default function CallCenterMessages() {
                       <p className="text-sm font-semibold truncate" style={{ color: theme.text }}>
                         {c.caller && c.caller === c.callerPhone ? fmtPhone(c.caller) : (c.caller || 'Unknown caller')}
                       </p>
+                      {c.outcome && OUTCOME_LABELS[c.outcome] && (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md" style={{ backgroundColor: theme.primary15, color: theme.primary }}>{OUTCOME_LABELS[c.outcome]}</span>
+                      )}
                       {c.urgency && (c.urgency === 'high' || c.urgency === 'emergency' || c.urgency === 'medium') && (
                         <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md capitalize" style={{ backgroundColor: us.bg, color: us.fg }}>{c.urgency}</span>
                       )}
