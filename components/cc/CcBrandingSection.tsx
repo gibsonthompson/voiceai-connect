@@ -14,11 +14,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Upload, Trash2, Check, Loader2, Sparkles, Info, Building2, Smartphone, Palette, Type, RefreshCw } from 'lucide-react';
-import { House as PhHouse, ChatCircle as PhChat, ChartBar as PhChart } from '@phosphor-icons/react';
 import { type DropdownUI } from '@/components/ui/custom-select';
 import FontSelect from '@/components/cc/FontSelect';
+import { ICON_SETS, previewIcons } from '@/components/cc/navIcons';
 import { extractPalette } from '@/lib/colorExtraction';
-import { fontStack, googleFontsHref, ICON_STYLES, ICON_STYLE_WEIGHT, ICON_STYLE_LABEL } from '@/lib/brandFonts';
+import { fontStack, googleFontsHref } from '@/lib/brandFonts';
 
 const API = () => process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
 const TOKEN = () => (typeof window !== 'undefined' ? localStorage.getItem('auth_token') : '');
@@ -73,7 +73,7 @@ export default function CcBrandingSection({ agency, refreshAgency, theme }: { ag
   // AI brand kit
   const [displayFont, setDisplayFont] = useState<string | null>(null);
   const [bodyFont, setBodyFont] = useState<string | null>(null);
-  const [iconStyle, setIconStyle] = useState<string>('outline');
+  const [iconStyle, setIconStyle] = useState<string>('lucide');
   const [brandKit, setBrandKit] = useState<any>(null);
   const [analyzing, setAnalyzing] = useState(false);
 
@@ -94,7 +94,7 @@ export default function CcBrandingSection({ agency, refreshAgency, theme }: { ag
     setColors({ primary: agency.primary_color || '#10b981', secondary: agency.secondary_color || '#059669', accent: agency.accent_color || '#34d399' });
     setDisplayFont(agency.display_font || null);
     setBodyFont(agency.body_font || null);
-    setIconStyle(agency.icon_style || 'outline');
+    setIconStyle(agency.icon_style || 'lucide');
     setBrandKit(agency.brand_kit || null);
   }, [agency?.id]);
 
@@ -318,29 +318,25 @@ export default function CcBrandingSection({ agency, refreshAgency, theme }: { ag
           </div>
 
           <div className="mt-3">
-            <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Nav icon style</label>
+            <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Nav icon set</label>
             <div className="grid grid-cols-3 gap-2">
-              {ICON_STYLES.map((s) => {
-                const on = iconStyle === s;
-                const w = ICON_STYLE_WEIGHT[s];
+              {ICON_SETS.filter((s) => s.key !== 'none').map((s) => {
+                const on = iconStyle === s.key;
                 return (
-                  <button key={s} onClick={() => setIconStyle(s)} className="flex flex-col items-center gap-1.5 rounded-xl px-3 py-3 transition-colors" style={on ? { backgroundColor: theme.primary15, border: `1px solid ${theme.primary}55` } : { ...input }}>
-                    <span className="flex items-center justify-center gap-2 h-5" style={{ color: on ? theme.primary : theme.textMuted }}>
-                      {w ? (
-                        <>
-                          <PhHouse size={20} weight={w} />
-                          <PhChat size={20} weight={w} />
-                          <PhChart size={20} weight={w} />
-                        </>
-                      ) : (
-                        <span className="text-[13px] font-semibold tracking-wide">Aa</span>
-                      )}
+                  <button key={s.key} onClick={() => setIconStyle(s.key)} title={s.note} className="flex flex-col items-center gap-1.5 rounded-xl px-2 py-3 transition-colors" style={on ? { backgroundColor: theme.primary15, border: `1px solid ${theme.primary}55` } : { ...input }}>
+                    <span className="flex items-center justify-center gap-1.5 h-5" style={{ color: on ? theme.primary : theme.textMuted }}>
+                      {previewIcons(s.key).map((Ic, i) => <Ic key={i} size={18} />)}
                     </span>
-                    <span className="text-[11px] font-medium" style={{ color: on ? theme.primary : theme.textMuted }}>{ICON_STYLE_LABEL[s]}</span>
+                    <span className="text-[11px] font-medium" style={{ color: on ? theme.primary : theme.textMuted }}>{s.label}</span>
                   </button>
                 );
               })}
             </div>
+            {/* Text-only as a deliberate full-width row so no tile sits alone. */}
+            <button onClick={() => setIconStyle('none')} className="mt-2 w-full flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 transition-colors" style={iconStyle === 'none' ? { backgroundColor: theme.primary15, border: `1px solid ${theme.primary}55` } : { ...input }}>
+              <span className="text-[13px] font-semibold tracking-wide" style={{ color: iconStyle === 'none' ? theme.primary : theme.textMuted }}>Aa</span>
+              <span className="text-[12px] font-medium" style={{ color: iconStyle === 'none' ? theme.primary : theme.textMuted }}>Text only (no icons)</span>
+            </button>
           </div>
         </div>
 

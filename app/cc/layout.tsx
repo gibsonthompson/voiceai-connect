@@ -22,8 +22,8 @@ import { LayoutDashboard, Headphones, Headset, Building2, BarChart3, Settings, M
 import { AgencyProvider, useAgency } from '../agency/context';
 import { useTheme } from '../../hooks/useTheme';
 import DynamicFavicon from '@/components/DynamicFavicon';
-import { googleFontsHref, fontStack, iconWeightFor, iconsHidden } from '@/lib/brandFonts';
-import { House as PhHouse, Phone as PhPhone, ClipboardText as PhClipboard, Tray as PhTray, Buildings as PhBuildings, Headset as PhHeadset, ChartBar as PhChart, Gear as PhGear, SignOut as PhSignOut } from '@phosphor-icons/react';
+import { googleFontsHref, fontStack } from '@/lib/brandFonts';
+import { navIcon, iconsHidden, type NavRoute } from '@/components/cc/navIcons';
 import CcEscalationLayer from '@/components/cc/CcEscalationLayer';
 import AgentPresenceBar from '@/components/cc/AgentPresenceBar';
 import CcLiveCallPops from '@/components/cc/CcLiveCallPops';
@@ -34,18 +34,19 @@ function WaveformIcon({ className, color }: { className?: string; color?: string
 
 interface NavItem { href: string; label: string; icon: LucideIcon; badge?: number; }
 
-// Phosphor icon per nav route. Rendering these (at the brand's weight) is what
-// lets the icon STYLE change, not just the thickness, and dropping them gives a
-// text-only nav. Keyed by href so the nav arrays don't need to carry a component.
-const NAV_PH: Record<string, React.ComponentType<{ size?: number; weight?: any; className?: string }>> = {
-  '/cc/dashboard': PhHouse,
-  '/cc/live-calls': PhPhone,
-  '/cc/calls': PhClipboard,
-  '/cc/messages': PhTray,
-  '/cc/businesses': PhBuildings,
-  '/cc/agents': PhHeadset,
-  '/cc/analytics': PhChart,
-  '/cc/settings': PhGear,
+// Maps each nav route to the key navIcon() uses to look up the icon in the
+// chosen set (components/cc/navIcons.tsx). The icon package itself (Lucide,
+// Phosphor, Heroicons, Tabler, Feather, Classic, or none) comes from the
+// agency's brand kit, so switching it swaps the whole icon family.
+const HREF_ROUTE: Record<string, NavRoute> = {
+  '/cc/dashboard': 'dashboard',
+  '/cc/live-calls': 'live',
+  '/cc/calls': 'calls',
+  '/cc/messages': 'messages',
+  '/cc/businesses': 'businesses',
+  '/cc/agents': 'agents',
+  '/cc/analytics': 'analytics',
+  '/cc/settings': 'settings',
 };
 
 function isSuspended(status: string | null | undefined): boolean {
@@ -120,8 +121,8 @@ function CallCenterShell({ children }: { children: ReactNode }) {
   // Nav icon weight from the brand kit (fine / regular / bold).
   // Nav icon style: a Phosphor weight (outline / thin / bold / solid / duotone)
   // or no icons at all (text-only nav).
-  const iconWeight = iconWeightFor(agency?.icon_style);
   const noIcons = iconsHidden(agency?.icon_style);
+  const LogoutIcon = navIcon(agency?.icon_style, 'signout');
 
   const MANAGER_NAV: NavItem[] = [
     { href: '/cc/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -195,13 +196,13 @@ function CallCenterShell({ children }: { children: ReactNode }) {
       <nav className="flex-1 min-h-0 overflow-y-auto p-3 space-y-1">
         {navItems.map(item => {
           const active = isActive(item.href);
-          const NavIcon = NAV_PH[item.href];
+          const NavIcon = navIcon(agency?.icon_style, HREF_ROUTE[item.href]);
           return (
             <Link key={item.href} href={item.href} onClick={() => setSidebarOpen(false)} className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-all"
               style={active ? { backgroundColor: theme.sidebarActiveItemBg, color: theme.sidebarActiveItemColor } : { color: theme.sidebarText }}
               onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover; }}
               onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}>
-              <span className="flex items-center gap-3">{!noIcons && NavIcon && <NavIcon size={20} weight={iconWeight} />}{item.label}</span>
+              <span className="flex items-center gap-3">{!noIcons && NavIcon && <NavIcon size={20} />}{item.label}</span>
               {item.badge ? (
                 <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
                   {item.badge > 99 ? '99+' : item.badge}
@@ -222,7 +223,7 @@ function CallCenterShell({ children }: { children: ReactNode }) {
         <button onClick={handleSignOut} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all" style={{ color: theme.sidebarTextMuted }}
           onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover; }}
           onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}>
-          {!noIcons && <PhSignOut size={20} weight={iconWeight} />} Sign Out
+          {!noIcons && LogoutIcon && <LogoutIcon size={20} />} Sign Out
         </button>
       </div>
     </aside>

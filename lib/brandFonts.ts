@@ -102,43 +102,8 @@ export const BRAND_FONTS: BrandFont[] = [
 export const DISPLAY_FALLBACK = "'Geist', system-ui, -apple-system, sans-serif";
 export const BODY_FALLBACK = "'Geist', 'Inter', system-ui, -apple-system, sans-serif";
 
-// Icon styles. Each is a genuinely different icon treatment (a Phosphor weight),
-// plus a text-only mode that drops icons entirely. The names are shared with the
-// backend (brand-fonts.js) and the vision model. The nav renders Phosphor icons
-// at the mapped weight, so switching style actually changes the icon look
-// (outline vs filled vs two-tone), not just the thickness.
-export const ICON_STYLES = ['outline', 'thin', 'bold', 'solid', 'duotone', 'none'] as const;
-export type IconStyle = typeof ICON_STYLES[number];
-export const DEFAULT_ICON_STYLE: IconStyle = 'outline';
-
-export type PhosphorWeight = 'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone';
-
-// Phosphor weight per style ('none' => render no icon at all).
-export const ICON_STYLE_WEIGHT: Record<string, PhosphorWeight | null> = {
-  outline: 'regular',
-  thin: 'light',
-  bold: 'bold',
-  solid: 'fill',
-  duotone: 'duotone',
-  none: null,
-};
-export const ICON_STYLE_LABEL: Record<string, string> = {
-  outline: 'Outline', thin: 'Thin', bold: 'Bold', solid: 'Solid', duotone: 'Duotone', none: 'Text only',
-};
-
-// The Phosphor weight to render for a style. Unknown/legacy values fall back to
-// a sensible default so an old saved value (e.g. 'regular', 'fine') still works.
-export function iconWeightFor(style?: string | null): PhosphorWeight {
-  const w = style ? ICON_STYLE_WEIGHT[style] : undefined;
-  if (w) return w;
-  if (style === 'fine') return 'light';
-  if (style === 'regular') return 'regular';
-  return 'regular';
-}
-// True when the brand uses no nav icons (text-only nav).
-export function iconsHidden(style?: string | null): boolean {
-  return style === 'none';
-}
+// Nav icon sets live in components/cc/navIcons.tsx (they pull real icon packages
+// via react-icons). This file is fonts-only.
 
 export function findFont(family?: string | null): BrandFont | undefined {
   if (!family) return undefined;
