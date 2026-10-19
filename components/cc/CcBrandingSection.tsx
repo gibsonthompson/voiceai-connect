@@ -13,7 +13,10 @@
 // (manager can still fine-tune with the pickers).
 
 import { useState, useEffect, useRef } from 'react';
-import { Upload, Trash2, Check, Loader2, Sparkles, Info, Building2, Smartphone, Palette } from 'lucide-react';
+import { Upload, Trash2, Check, Loader2, Sparkles, Info, Building2, Smartphone, Palette, Type, RefreshCw, LayoutDashboard, BarChart3 } from 'lucide-react';
+import { CustomSelect, type DropdownUI } from '@/components/ui/custom-select';
+import { extractPalette } from '@/lib/colorExtraction';
+import { fontOptions, fontStack, googleFontsHref, ICON_STROKE } from '@/lib/brandFonts';
 
 const API = () => process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
 const TOKEN = () => (typeof window !== 'undefined' ? localStorage.getItem('auth_token') : '');
@@ -65,6 +68,13 @@ export default function CcBrandingSection({ agency, refreshAgency, theme }: { ag
   const [appIconUrl, setAppIconUrl] = useState('');
   const [appIconPreview, setAppIconPreview] = useState<string | null>(null);
 
+  // AI brand kit
+  const [displayFont, setDisplayFont] = useState<string | null>(null);
+  const [bodyFont, setBodyFont] = useState<string | null>(null);
+  const [iconStyle, setIconStyle] = useState<string>('regular');
+  const [brandKit, setBrandKit] = useState<any>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -80,7 +90,52 @@ export default function CcBrandingSection({ agency, refreshAgency, theme }: { ag
     setAppIconUrl(agency.app_icon_url || '');
     setAppIconPreview(agency.app_icon_url || null);
     setColors({ primary: agency.primary_color || '#10b981', secondary: agency.secondary_color || '#059669', accent: agency.accent_color || '#34d399' });
+    setDisplayFont(agency.display_font || null);
+    setBodyFont(agency.body_font || null);
+    setIconStyle(agency.icon_style || 'regular');
+    setBrandKit(agency.brand_kit || null);
   }, [agency?.id]);
+
+  // Load the chosen fonts so the preview below renders in them.
+  useEffect(() => {
+    const href = googleFontsHref([displayFont, bodyFont]);
+    if (!href) return;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet'; link.href = href;
+    document.head.appendChild(link);
+    return () => { if (link.parentNode) link.parentNode.removeChild(link); };
+  }, [displayFont, bodyFont]);
+
+  // Run the AI brand analyzer on a logo (data URL or saved URL): pull the pixel
+  // palette here, send logo + palette to the backend Claude call, apply the kit.
+  const analyzeBrand = async (logoSrc: string) => {
+    if (!logoSrc || !agency?.id) return;
+    setAnalyzing(true); setErr(null);
+    const HEX6 = /^#([0-9a-fA-F]{6})$/;
+    try {
+      const palette = await extractPalette(logoSrc).catch(() => null);
+      const r = await fetch(`${API()}/api/agency/${agency.id}/branding/analyze-logo`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` },
+        body: JSON.stringify({ logo: logoSrc, palette, name: agency?.name || undefined }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok && d.success && d.kit) {
+        const k = d.kit;
+        if (k.colors) {
+          setColors((prev) => ({
+            primary: HEX6.test(k.colors.primary || '') ? k.colors.primary : prev.primary,
+            secondary: HEX6.test(k.colors.secondary || '') ? k.colors.secondary : prev.secondary,
+            accent: HEX6.test(k.colors.accent || '') ? k.colors.accent : prev.accent,
+          }));
+        }
+        if (k.fonts?.display) setDisplayFont(k.fonts.display);
+        if (k.fonts?.body) setBodyFont(k.fonts.body);
+        if (k.icon_style) setIconStyle(k.icon_style);
+        setBrandKit(k);
+      }
+    } catch { /* best-effort; the instant pixel colors already applied stand */ }
+    finally { setAnalyzing(false); }
+  };
 
   const onLogo = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
@@ -89,6 +144,7 @@ export default function CcBrandingSection({ agency, refreshAgency, theme }: { ag
       const dataUrl = reader.result as string;
       setLogoPreview(dataUrl); setLogoUrl(dataUrl); setExtracting(true);
       try { const c = await extractColorsFromImage(dataUrl); if (c) setColors(c); } finally { setExtracting(false); }
+      analyzeBrand(dataUrl);
     };
     reader.readAsDataURL(file);
   };
@@ -142,6 +198,10 @@ export default function CcBrandingSection({ agency, refreshAgency, theme }: { ag
           primary_color: colors.primary,
           secondary_color: colors.secondary,
           accent_color: colors.accent,
+          display_font: displayFont || null,
+          body_font: bodyFont || null,
+          icon_style: iconStyle || null,
+          brand_kit: brandKit || null,
         }),
       });
       if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.message || d.error || 'Failed to save branding'); }
@@ -152,6 +212,9 @@ export default function CcBrandingSection({ agency, refreshAgency, theme }: { ag
 
   const card = { backgroundColor: theme.card, border: `1px solid ${theme.border}` } as React.CSSProperties;
   const input = { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text } as React.CSSProperties;
+  const ddUI: DropdownUI = { inputStyle: input, text: theme.text, muted: theme.textMuted, panelBg: theme.card, panelBorder: theme.border, hover: theme.hover, accent: theme.primary, isDark: theme.isDark };
+  const dispVal = displayFont || 'Sora';
+  const bodyVal = bodyFont || 'Inter';
 
   const swatch = (label: string, key: 'primary' | 'secondary' | 'accent') => (
     <div>
@@ -200,6 +263,76 @@ export default function CcBrandingSection({ agency, refreshAgency, theme }: { ag
             {swatch('Primary', 'primary')}
             {swatch('Secondary', 'secondary')}
             {swatch('Accent', 'accent')}
+          </div>
+        </div>
+
+        {/* AI brand kit: fonts + nav icon style + vibe */}
+        <div className="rounded-xl p-4" style={{ border: `1px solid ${theme.border}` }}>
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div className="min-w-0 flex items-start gap-2">
+              <Sparkles className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.primary }} />
+              <div>
+                <p className="text-[13px] font-semibold" style={{ color: theme.text }}>Brand kit</p>
+                <p className="text-[11.5px]" style={{ color: theme.textMuted }}>Fonts and nav-icon style matched to your logo. Upload a logo and we analyze it; tweak anything below.</p>
+              </div>
+            </div>
+            <button onClick={() => logoUrl && analyzeBrand(logoUrl)} disabled={!logoUrl || analyzing} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium flex-shrink-0 disabled:opacity-50" style={input}>
+              {analyzing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} Regenerate
+            </button>
+          </div>
+
+          {analyzing && (
+            <div className="flex items-center gap-2 text-[12.5px] mb-3" style={{ color: theme.textMuted }}>
+              <Loader2 className="h-4 w-4 animate-spin" /> Reading your logo and matching fonts, colors, and icons...
+            </div>
+          )}
+
+          {brandKit?.vibe && ((brandKit.vibe.words && brandKit.vibe.words.length) || brandKit.vibe.description) && (
+            <div className="mb-3">
+              <div className="flex flex-wrap gap-1.5 mb-1.5">
+                {(brandKit.vibe.words || []).map((w: string) => (
+                  <span key={w} className="inline-flex items-center rounded-full px-2.5 py-1 text-[11.5px] font-medium capitalize" style={{ backgroundColor: theme.primary15, color: theme.primary }}>{w}</span>
+                ))}
+              </div>
+              {brandKit.vibe.description && <p className="text-[12px]" style={{ color: theme.textMuted }}>{brandKit.vibe.description}</p>}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Display font (headlines + nav)</label>
+              <CustomSelect value={dispVal} onChange={setDisplayFont} options={fontOptions('display')} ui={ddUI} />
+            </div>
+            <div>
+              <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Body font</label>
+              <CustomSelect value={bodyVal} onChange={setBodyFont} options={fontOptions('body')} ui={ddUI} />
+            </div>
+          </div>
+          {brandKit?.fonts?.rationale && <p className="text-[11px] mt-2 flex items-start gap-1.5" style={{ color: theme.textMuted }}><Type className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" /> {brandKit.fonts.rationale}</p>}
+
+          <div className="mt-3 rounded-xl p-4" style={input}>
+            <p style={{ fontFamily: fontStack(dispVal, 'display'), fontWeight: 700, fontSize: '1.35rem', color: theme.text, lineHeight: 1.1 }}>{agency?.name || appName || 'Your Brand'}</p>
+            <p className="mt-1" style={{ fontFamily: fontStack(bodyVal, 'body'), fontSize: '0.88rem', color: theme.textMuted }}>Clear headlines and readable body text, matched to your logo across the whole dashboard.</p>
+          </div>
+
+          <div className="mt-3">
+            <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Nav icon style</label>
+            <div className="grid grid-cols-3 gap-2">
+              {(['fine', 'regular', 'bold'] as const).map((s) => {
+                const on = iconStyle === s;
+                const sw = ICON_STROKE[s];
+                return (
+                  <button key={s} onClick={() => setIconStyle(s)} className="flex flex-col items-center gap-1.5 rounded-xl px-3 py-3 transition-colors" style={on ? { backgroundColor: theme.primary15, border: `1px solid ${theme.primary}55` } : { ...input }}>
+                    <span className="flex items-center gap-2" style={{ color: on ? theme.primary : theme.textMuted }}>
+                      <LayoutDashboard className="h-5 w-5" strokeWidth={sw} />
+                      <Building2 className="h-5 w-5" strokeWidth={sw} />
+                      <BarChart3 className="h-5 w-5" strokeWidth={sw} />
+                    </span>
+                    <span className="text-[11px] font-medium capitalize" style={{ color: on ? theme.primary : theme.textMuted }}>{s}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
