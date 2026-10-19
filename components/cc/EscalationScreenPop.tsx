@@ -81,16 +81,27 @@ function OfferCard({
 
   const take = async () => {
     setState({ kind: 'claiming' });
+    // Open the destination tab synchronously (inside the click gesture) so the
+    // popup blocker allows it; we point it at the call once we win, or close it
+    // if we lost / it is not a browser seat. This keeps the agent's console tab
+    // open and puts the live call in its own tab.
+    let win: Window | null = null;
+    try { win = window.open('', '_blank'); } catch { win = null; }
+    const closeWin = () => { try { win?.close(); } catch {} };
     const r = await claim(offer.id);
     // Lost the race: the offer_taken event will fill in who took it.
-    if (!r.won) { setState({ kind: 'lost' }); setTimeout(() => onDone(offer.id), 2600); return; }
-    if (offer.test) { setState({ kind: 'won_test' }); setTimeout(() => onDone(offer.id), 2600); return; }
-    if (r.delivery === 'phone') { setState({ kind: 'won_phone' }); setTimeout(() => onDone(offer.id), 4000); return; }
-    // Browser seat: go to the live monitor for this call and auto-join.
+    if (!r.won) { closeWin(); setState({ kind: 'lost' }); setTimeout(() => onDone(offer.id), 2600); return; }
+    if (offer.test) { closeWin(); setState({ kind: 'won_test' }); setTimeout(() => onDone(offer.id), 2600); return; }
+    if (r.delivery === 'phone') { closeWin(); setState({ kind: 'won_phone' }); setTimeout(() => onDone(offer.id), 4000); return; }
+    // Browser seat: open the live monitor for this call in the new tab and auto-join.
     setState({ kind: 'won_browser' });
     const q = new URLSearchParams({ mode: 'monitor', autojoin: '1', back: '/cc/live-calls' });
     if (offer.vapiCallId) q.set('call', offer.vapiCallId);
-    setTimeout(() => { window.location.href = `/live/${offer.clientId}?${q.toString()}`; }, 500);
+    const url = `/live/${offer.clientId}?${q.toString()}`;
+    if (win) { try { win.location.href = url; } catch { window.open(url, '_blank'); } }
+    else { const w2 = window.open(url, '_blank'); if (!w2) window.location.href = url; }
+    // Clear our card; the call now lives in its own tab.
+    setTimeout(() => onDone(offer.id), 1200);
   };
 
   const collected = offer.collected && typeof offer.collected === 'object'
@@ -177,7 +188,7 @@ function OfferCard({
           )}
           {state.kind === 'won_browser' && (
             <div className="inline-flex items-center gap-2 text-sm font-semibold" style={{ color: theme.primary }}>
-              <CheckCircle2 className="h-4 w-4" /> Opening the call...
+              <CheckCircle2 className="h-4 w-4" /> Opening the call in a new tab...
             </div>
           )}
           {state.kind === 'won_phone' && (
