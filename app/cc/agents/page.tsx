@@ -21,7 +21,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Headset, Radio, Loader2, Send, UserPlus, Phone, Monitor, Trash2, ChevronDown,
   Check, Eye, EyeOff, Building2, X, AlertCircle, Users, Copy, RotateCcw,
-  Smartphone, ExternalLink, Clock, Plus, Save, Zap,
+  Smartphone, ExternalLink, Clock, Plus, Save, Zap, HelpCircle,
 } from 'lucide-react';
 import { useAgency } from '../../agency/context';
 import { useTheme } from '../../../hooks/useTheme';
@@ -177,6 +177,7 @@ export default function CallCenterAgents() {
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [revealPw, setRevealPw] = useState<Record<string, boolean>>({});
+  const [helpOpen, setHelpOpen] = useState(false);
 
   const bizName = useMemo(() => Object.fromEntries(clients.map((c) => [c.id, c.business_name])), [clients]);
 
@@ -362,10 +363,6 @@ export default function CallCenterAgents() {
     const e = effHours(m);
     setDraft(m, on ? (e && e.days ? { ...e, enabled: true } : DEFAULT_HOURS) : { ...(e || DEFAULT_HOURS), enabled: false });
   };
-  const setOverride = (m: Member, val: boolean) => {
-    const e = effHours(m); const base = (e && e.enabled) ? e : DEFAULT_HOURS;
-    setDraft(m, { ...base, override: val });
-  };
   const saveHours = async (m: Member) => {
     const next = hoursDraft[m.id];
     if (next === undefined) return;
@@ -379,15 +376,18 @@ export default function CallCenterAgents() {
     } catch { setError('Could not save working hours.'); }
     finally { setHoursSaving(null); }
   };
-  // Quick roster control: flip the agent's "active now" override (schedule
-  // bypass) without opening Manage. Saves immediately and clears any open hours
-  // draft for this agent so the Manage editor and the roster never disagree.
-  const quickOverride = async (m: Member) => {
-    const base: any = (m.availability_hours && typeof m.availability_hours === 'object') ? m.availability_hours : DEFAULT_HOURS;
-    const next = { ...base, enabled: base.enabled !== false, override: !(base.override === true) };
+  // "Make active now": flip the agent's schedule-override so they are offered
+  // calls regardless of their working hours. Saves immediately (no draft/Save
+  // step, so it works as a quick control), and if the hours editor is open with
+  // unsaved day edits, syncs ONLY the override flag onto that draft so the two
+  // never disagree, without persisting the unsaved day edits.
+  const toggleActiveNow = async (m: Member) => {
+    const saved: any = (m.availability_hours && (m.availability_hours as any).days) ? m.availability_hours : DEFAULT_HOURS;
+    const nextOverride = !(saved.override === true);
+    const next = { ...saved, enabled: saved.enabled !== false, override: nextOverride };
     const prev = m.availability_hours;
     setMembers((list) => list.map((x) => (x.id === m.id ? { ...x, availability_hours: next } : x)));
-    setHoursDraft((d) => { const c = { ...d }; delete c[m.id]; return c; });
+    setHoursDraft((d) => (d[m.id] !== undefined ? { ...d, [m.id]: { ...d[m.id], override: nextOverride } } : d));
     try {
       const r = await fetch(`${API()}/api/agency/${agencyId}/team/${m.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` }, body: JSON.stringify({ availability_hours: next }) });
       if (!r.ok) throw new Error();
@@ -419,10 +419,31 @@ export default function CallCenterAgents() {
             </p>
           </div>
         </div>
-        <button onClick={() => { setShowAdd((s) => !s); setError(null); }} className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold flex-shrink-0" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
-          <UserPlus className="h-4 w-4" /> <span className="hidden sm:inline">Add agent</span><span className="sm:hidden">Add</span>
-        </button>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button onClick={() => setHelpOpen((s) => !s)} aria-label="How agent availability works" title="How agent availability works" className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium" style={{ backgroundColor: helpOpen ? theme.primary15 : theme.hover, color: helpOpen ? theme.primary : theme.textMuted }}>
+            <HelpCircle className="h-4 w-4" /> <span className="hidden sm:inline">How this works</span>
+          </button>
+          <button onClick={() => { setShowAdd((s) => !s); setError(null); }} className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+            <UserPlus className="h-4 w-4" /> <span className="hidden sm:inline">Add agent</span><span className="sm:hidden">Add</span>
+          </button>
+        </div>
       </div>
+
+      {/* Help: what actually decides whether an agent gets a call. */}
+      {helpOpen && (
+        <div className="mb-5 rounded-2xl p-4 sm:p-5" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary}40` }}>
+          <div className="flex items-start justify-between gap-3 mb-2.5">
+            <h2 className="text-sm font-semibold inline-flex items-center gap-2" style={{ color: theme.text }}><HelpCircle className="h-4 w-4" style={{ color: theme.primary }} /> How an agent gets a call</h2>
+            <button onClick={() => setHelpOpen(false)} style={{ color: theme.textMuted }} aria-label="Close help"><X className="h-4 w-4" /></button>
+          </div>
+          <div className="space-y-2.5 text-[12.5px] leading-relaxed" style={{ color: theme.textMuted }}>
+            <p><span className="font-semibold" style={{ color: theme.text }}>Online + Available</span> is what makes an agent reachable. An agent is only offered an escalated call when their console is open (online) and they have set themselves Available. Closing their tabs makes them go Offline on their own.</p>
+            <p><span className="font-semibold" style={{ color: theme.text }}>Working hours</span> sit on top of that: when set, an online, Available agent is offered calls only during those hours. Outside them they are skipped, and the call goes to other available agents, then your overflow action. Hours do not make anyone active on their own, and they apply the same whether calls ring in-browser or on a phone.</p>
+            <p><span className="font-semibold" style={{ color: theme.text }}>Make active now</span> (in Manage) overrides the hours, so the agent is offered calls regardless of schedule, until you turn it off. They still need to be online and Available.</p>
+            <p><span className="font-semibold" style={{ color: theme.text }}>Call routing</span> (in-browser or ring a phone) only decides how a chosen agent is reached, a screen-pop in their browser, or a call to their number. It does not change when they are offered calls.</p>
+          </div>
+        </div>
+      )}
 
       {success && <div className="mb-4 rounded-xl px-4 py-3 text-[13px]" style={{ backgroundColor: `${theme.primary}12`, border: `1px solid ${theme.primary}40`, color: theme.primary }}>{success}</div>}
       {error && <div className="mb-4 rounded-xl px-4 py-3 text-[13px] flex items-center gap-2" style={{ backgroundColor: `${theme.error}12`, border: `1px solid ${theme.error}40`, color: theme.error }}><AlertCircle className="h-4 w-4" /> {error}</div>}
@@ -497,18 +518,11 @@ export default function CallCenterAgents() {
                         <span style={{ color: pv.color }}>{pv.label}</span>
                       </span>
                     </div>
-                    <p className="text-[12px] truncate" style={{ color: theme.textMuted }}>{m.email || 'No email'} · {m.call_delivery === 'phone' ? `rings ${fmtPhone(m.agent_phone) || 'a phone'}` : 'in browser'} · {assigned.length} {assigned.length === 1 ? 'business' : 'businesses'}</p>
+                    <p className="text-[12px] truncate" style={{ color: theme.textMuted }}>{m.email || 'No email'} · {m.call_delivery === 'phone' ? `calls ring ${fmtPhone(m.agent_phone) || 'their phone'}` : 'calls ring in-browser'} · {assigned.length} {assigned.length === 1 ? 'business' : 'businesses'}</p>
                   </div>
                   <div className="flex items-center gap-1.5 flex-shrink-0">
-                    {schedEnabled && (
-                      <button
-                        onClick={() => quickOverride(m)}
-                        title={ovOn ? 'Active override is on: this agent is offered calls regardless of their working hours. Click to turn off.' : 'Force this agent active now, ignoring their working hours.'}
-                        className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors"
-                        style={ovOn ? { backgroundColor: theme.primary, color: theme.primaryText } : { backgroundColor: theme.hover, color: theme.textMuted }}
-                      >
-                        <Zap className="h-3.5 w-3.5" /> {ovOn ? 'Active' : 'Set active'}
-                      </button>
+                    {ovOn && (
+                      <span title="Active override is on: this agent is offered calls regardless of their working hours. Change it under Manage." className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold" style={{ backgroundColor: theme.primary15, color: theme.primary }}><Zap className="h-3 w-3" /> Active</span>
                     )}
                     <button onClick={() => setExpandedId(expanded ? null : m.id)} className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>Manage <ChevronDown className="h-3.5 w-3.5 transition-transform" style={{ transform: expanded ? 'rotate(180deg)' : 'none' }} /></button>
                     <button onClick={() => removeAgent(m)} className="inline-flex items-center justify-center rounded-lg h-[30px] w-[30px]" style={{ backgroundColor: theme.hover, color: theme.error }} title="Remove agent"><Trash2 className="h-3.5 w-3.5" /></button>
@@ -619,14 +633,33 @@ export default function CallCenterAgents() {
                       <p className="text-[11px] mt-1.5" style={{ color: theme.textSubtle }}>An agent only handles calls for the businesses you assign here.</p>
                     </div>
 
-                    {/* Availability (live) */}
+                    {/* Availability (live) + "make active now" override */}
                     <div>
                       <Label>Availability</Label>
                       <div className="flex items-center gap-2 rounded-xl px-3 py-2.5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                         {pv.dot && <span className="h-2 w-2 rounded-full" style={{ backgroundColor: pv.color }} />}
                         <span className="text-[13px] font-medium" style={{ color: pv.color }}>{pv.label}</span>
                       </div>
-                      <p className="text-[11px] mt-1.5" style={{ color: theme.textSubtle }}>Live status. Agents set themselves Available or Away in their console; outside their working hours below they are not offered calls.</p>
+                      <p className="text-[11px] mt-1.5" style={{ color: theme.textSubtle }}>Live status, set by the agent in their own console. They are only offered a call when online and Available{schedEnabled ? ', and inside their working hours below, unless you make them active now' : ''}.</p>
+
+                      {schedEnabled ? (
+                        <div className="mt-2.5 rounded-xl p-3" style={{ border: `1px solid ${ovOn ? theme.primary + '55' : theme.inputBorder}`, backgroundColor: ovOn ? theme.primary15 : 'transparent' }}>
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="min-w-0 flex items-start gap-2">
+                              <Zap className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: ovOn ? theme.primary : theme.textMuted }} />
+                              <div>
+                                <p className="text-[13px] font-medium" style={{ color: theme.text }}>Make active now</p>
+                                <p className="text-[11px]" style={{ color: theme.textMuted }}>{ovOn ? 'On: offered calls regardless of the working hours below. They still need to be online (console open) and Available.' : 'Off: offered calls only inside their working hours below.'}</p>
+                              </div>
+                            </div>
+                            <button onClick={() => toggleActiveNow(m)} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold flex-shrink-0 transition-colors" style={ovOn ? { backgroundColor: theme.primary, color: theme.primaryText } : { backgroundColor: theme.hover, color: theme.text }}>
+                              <Zap className="h-3.5 w-3.5" /> {ovOn ? 'Active now' : 'Make active'}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-[11px] mt-2" style={{ color: theme.textSubtle }}>No working hours set, so this agent is offered calls whenever they are online and Available. Turn on working hours below to limit that to a schedule.</p>
+                      )}
                     </div>
 
                     {/* Working hours */}
@@ -674,11 +707,7 @@ export default function CallCenterAgents() {
                                     </div>
                                   );
                                 })}
-                                <p className="text-[11px] mt-1.5" style={{ color: theme.textSubtle }}>Times are in {tz.replace(/_/g, ' ')} (your agency timezone). A day can have more than one block, the gap between blocks (say 12 to 1) is their break. Outside these hours the agent is skipped, and the call falls to other available agents, then your overflow action.</p>
-                                <div className="flex items-center justify-between gap-3 mt-3 pt-3" style={{ borderTop: `1px solid ${theme.borderSubtle}` }}>
-                                  <div className="min-w-0"><p className="text-[13px] font-medium" style={{ color: theme.text }}>Set active now (override hours)</p><p className="text-[11px]" style={{ color: theme.textMuted }}>Offer this agent calls regardless of the hours above, until you turn it off. They still need to be online, or on phone delivery.</p></div>
-                                  <Switch on={!!eff?.override} onClick={() => setOverride(m, !eff?.override)} />
-                                </div>
+                                <p className="text-[11px] mt-1.5" style={{ color: theme.textSubtle }}>Times are in {tz.replace(/_/g, ' ')} (your agency timezone). A day can have more than one block, the gap between blocks (say 12 to 1) is their break. Outside these hours the agent is skipped, and the call falls to other available agents, then your overflow action. To offer them calls regardless of these hours, use <span className="font-medium" style={{ color: theme.textMuted }}>Make active now</span> under Availability above.</p>
                               </div>
                             )}
                             {(hoursDirty(m) || hoursSaved === m.id) && (

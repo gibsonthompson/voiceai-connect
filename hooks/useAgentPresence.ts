@@ -159,16 +159,36 @@ export function useAgentPresence(enabled: boolean) {
     };
 
     beat();
-    const iv = setInterval(beat, HEARTBEAT_MS);
-    // Background tabs get their timers throttled, so refresh presence the instant
-    // the console regains focus/visibility - the agent is back and must not read
-    // as stale while a call is being offered.
+
+    // Drive the heartbeat from a Web Worker. A backgrounded or throttled tab
+    // freezes main-thread setInterval, which silently drops the agent out of
+    // presence (so an escalation finds zero available agents and never pops). A
+    // dedicated worker keeps ticking in the background, so the agent stays online
+    // the whole time their console is open. Falls back to setInterval where
+    // Workers are unavailable.
+    let worker: Worker | null = null;
+    let iv: any = null;
+    let blobUrl: string | null = null;
+    try {
+      if (typeof Worker !== 'undefined') {
+        const src = `let id=setInterval(function(){postMessage(0)},${HEARTBEAT_MS});onmessage=function(e){if(e.data==='stop'){clearInterval(id);close();}}`;
+        blobUrl = URL.createObjectURL(new Blob([src], { type: 'application/javascript' }));
+        worker = new Worker(blobUrl);
+        worker.onmessage = () => { if (!stopped) beat(); };
+      }
+    } catch { worker = null; }
+    if (!worker) iv = setInterval(beat, HEARTBEAT_MS);
+
+    // Also beat the instant the console regains focus/visibility, so the agent
+    // never reads as stale right as a call is being offered.
     const onActive = () => { if (typeof document === 'undefined' || !document.hidden) beat(); };
     if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onActive);
     if (typeof window !== 'undefined') window.addEventListener('focus', onActive);
     return () => {
       stopped = true;
-      clearInterval(iv);
+      if (worker) { try { worker.postMessage('stop'); worker.terminate(); } catch {} }
+      if (iv) clearInterval(iv);
+      if (blobUrl) { try { URL.revokeObjectURL(blobUrl); } catch {} }
       if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onActive);
       if (typeof window !== 'undefined') window.removeEventListener('focus', onActive);
     };

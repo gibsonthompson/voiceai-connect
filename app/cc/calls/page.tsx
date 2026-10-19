@@ -214,16 +214,28 @@ export default function CallCenterCalls() {
                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = theme.hover; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
               >
-                {/* Caller + business */}
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium truncate" style={{ color: theme.text }}>
-                    {c.caller ? (typeof c.caller === 'string' && /\d/.test(c.caller) && c.caller === c.callerPhone ? fmtPhone(c.caller) : c.caller) : 'Unknown caller'}
-                  </p>
-                  <p className="text-[12.5px] truncate flex items-center gap-1.5" style={{ color: theme.textMuted }}>
-                    <Building2 className="h-3 w-3 flex-shrink-0" /> {c.businessName}
-                    {c.handledBy && <span style={{ color: theme.textSubtle }}>· {c.handledBy}</span>}
-                  </p>
-                </div>
+                {/* Caller (name + number) + business */}
+                {(() => {
+                  const named = !!c.caller && c.caller !== c.callerPhone;
+                  const phone = c.callerPhone
+                    ? fmtPhone(c.callerPhone)
+                    : (!named && c.caller && /\d/.test(c.caller) ? fmtPhone(c.caller) : '');
+                  const primary = named ? (c.caller as string) : (phone || 'Unknown caller');
+                  return (
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate flex items-center gap-2" style={{ color: theme.text }}>
+                        <span className="truncate">{primary}</span>
+                        {named && phone && (
+                          <span className="text-[12px] font-normal tabular-nums flex-shrink-0" style={{ color: theme.textMuted }}>{phone}</span>
+                        )}
+                      </p>
+                      <p className="text-[12.5px] truncate flex items-center gap-1.5" style={{ color: theme.textMuted }}>
+                        <Building2 className="h-3 w-3 flex-shrink-0" /> {c.businessName}
+                        {c.handledBy && <span style={{ color: theme.textSubtle }}>· {c.handledBy}</span>}
+                      </p>
+                    </div>
+                  );
+                })()}
 
                 {/* Outcome */}
                 <span className="hidden sm:inline-flex items-center gap-1.5 text-[11.5px] font-semibold px-2.5 py-1 rounded-lg flex-shrink-0" style={{ backgroundColor: os.bg, color: os.fg }}>

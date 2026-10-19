@@ -28,7 +28,7 @@ import {
   Phone, PhoneOff, Mic, MicOff, Radio, Loader2, Calendar, CalendarCheck,
   BookOpen, PhoneForwarded, MessageSquare, Sparkles, Building2,
   CircleDot, Headphones, VolumeX, UserPlus, Undo2,
-  UserCheck, ShieldAlert,
+  UserCheck, ShieldAlert, PhoneIncoming, Clock, Repeat,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -36,6 +36,16 @@ const API = process.env.NEXT_PUBLIC_API_URL || '';
 const VAPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY || '';
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+// US-style phone formatting for display ((470) 444-4859). Falls back to the raw
+// value for anything that is not a 10/11-digit number.
+function fmtPhoneNum(p?: string | null): string {
+  if (!p) return '';
+  const d = String(p).replace(/\D/g, '');
+  const ten = d.length === 11 && d.startsWith('1') ? d.slice(1) : d;
+  if (ten.length === 10) return `(${ten.slice(0, 3)}) ${ten.slice(3, 6)}-${ten.slice(6)}`;
+  return p;
+}
 
 type Mode = 'demo' | 'monitor';
 type CallState = 'idle' | 'connecting' | 'live' | 'ended';
@@ -47,7 +57,7 @@ interface Branding {
   accent_color: string | null;
 }
 interface Info {
-  client: { id: string; business_name: string; assistant_id: string | null; industry: string | null };
+  client: { id: string; business_name: string; assistant_id: string | null; industry: string | null; phone_number?: string | null };
   branding: Branding;
   web_demo_available: boolean;
   realtime_channel?: string;
@@ -198,6 +208,12 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
   // events (true on agent_connected, false on every other status) so the pill
   // can never claim someone is on the call when no one is.
   const [humanOnCall, setHumanOnCall] = useState(false);
+  // The caller currently on the line (populated at call start by the backend
+  // 'call_started' event), plus a live elapsed timer so an agent sees how long
+  // the call has been running.
+  const [callerInfo, setCallerInfo] = useState<{ number: string | null; name: string | null; priorCalls: number; recognized: boolean } | null>(null);
+  const [callStartedAt, setCallStartedAt] = useState<number | null>(null);
+  const [nowMs, setNowMs] = useState<number>(() => Date.now());
   const [isMuted, setIsMuted] = useState(false);
   const [speaking, setSpeaking] = useState<'assistant' | 'caller' | null>(null);
 
@@ -295,6 +311,29 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
   const accentText = useMemo(() => contrastOn(accent), [accent]);
   const agencyName = info?.branding?.agency_name || 'Live Receptionist';
   const businessName = info?.client?.business_name || 'your business';
+  const businessPhone = info?.client?.phone_number || null;
+
+  // Live elapsed time for the call-context bar (m:ss).
+  const elapsedSecs = callStartedAt ? Math.max(0, Math.floor((nowMs - callStartedAt) / 1000)) : 0;
+  const elapsedLabel = `${Math.floor(elapsedSecs / 60)}:${String(elapsedSecs % 60).padStart(2, '0')}`;
+
+  // Start the timer when a call becomes active; clear caller + timer when it is
+  // not (so the bar resets between calls). call_started also sets callerInfo.
+  useEffect(() => {
+    if (callState === 'connecting' || callState === 'live') {
+      setCallStartedAt((prev) => prev || Date.now());
+    } else {
+      setCallStartedAt(null);
+      setCallerInfo(null);
+    }
+  }, [callState]);
+
+  // Tick once a second only while a call is active.
+  useEffect(() => {
+    if (callState !== 'connecting' && callState !== 'live') return;
+    const iv = setInterval(() => setNowMs(Date.now()), 1000);
+    return () => clearInterval(iv);
+  }, [callState]);
 
   // ---- load the small boot payload ----------------------------------------
   useEffect(() => {
@@ -440,6 +479,16 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
       else setPartial({ role: ev.role === 'caller' ? 'caller' : 'assistant', text: ev.text || '' });
     } else if (ev.type === 'activity') {
       addActivity(ev.tool || 'tool', ev.detail, ev.label);
+    } else if (ev.type === 'call_started') {
+      // A new caller is on the line. Surface them immediately (even before VAPI's
+      // own in-progress status), so the agent sees who is calling right away.
+      setCallerInfo({
+        number: ev.caller_number || null,
+        name: ev.caller_name || null,
+        priorCalls: ev.prior_calls || 0,
+        recognized: !!ev.recognized,
+      });
+      setCallState((cs) => (cs === 'idle' ? 'connecting' : cs));
     } else if (ev.type === 'status') {
       const s = String(ev.status || '').toLowerCase();
       const lbl = ev.label ? String(ev.label) : null;
@@ -890,21 +939,68 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
       <header className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3" style={{ borderBottom: `1px solid ${t.border}` }}>
         <div className="flex items-center gap-3 min-w-0">
           {info.branding?.logo_url ? (
-            <img src={info.branding.logo_url} alt={agencyName} className="h-8 w-8 rounded-lg object-contain" style={{ backgroundColor: t.logoBg }} />
+            <img src={info.branding.logo_url} alt={agencyName} className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl object-contain flex-shrink-0" style={{ backgroundColor: t.logoBg }} />
           ) : (
-            <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: accent }}>
-              <Phone className="h-4 w-4" style={{ color: accentText }} />
+            <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: accent }}>
+              <Phone className="h-5 w-5" style={{ color: accentText }} />
             </div>
           )}
           <div className="min-w-0">
-            <p className="text-sm font-semibold truncate">{agencyName}</p>
-            <p className="text-xs truncate" style={{ color: t.textMuted }}>{businessName}</p>
+            {/* Business first and boldest: the agent is answering for THIS
+                business. Agency + the business's own line sit underneath. */}
+            <p className="text-base sm:text-lg font-bold truncate leading-tight" style={{ color: t.text }}>{businessName}</p>
+            <p className="text-[11px] sm:text-xs truncate flex items-center gap-1.5" style={{ color: t.textMuted }}>
+              <span className="truncate">{agencyName}</span>
+              {businessPhone && (
+                <>
+                  <span style={{ color: t.textFaint }}>·</span>
+                  <span className="inline-flex items-center gap-1 tabular-nums flex-shrink-0">
+                    <Phone className="h-3 w-3" /> {fmtPhoneNum(businessPhone)}
+                  </span>
+                </>
+              )}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <StatusPill state={callState} label={pillLabel} t={t} />
         </div>
       </header>
+
+      {/* Live call context bar: who is on the line and for how long. Appears the
+          moment a call starts so the agent has the caller in front of them. */}
+      {(callState === 'connecting' || callState === 'live') && (
+        <div
+          className="flex items-center justify-between gap-3 px-4 sm:px-6 py-2.5"
+          style={{ borderBottom: `1px solid ${t.border}`, backgroundColor: t.pillBg }}
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: humanOnCall ? 'rgba(245,158,11,0.16)' : t.logoBg }}>
+              <PhoneIncoming className="h-4 w-4" style={{ color: humanOnCall ? '#f59e0b' : accent }} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: t.textMuted }}>Incoming call</p>
+              <div className="flex items-center gap-2 min-w-0">
+                <p className="text-sm sm:text-base font-semibold truncate tabular-nums" style={{ color: t.text }}>
+                  {callerInfo?.number ? fmtPhoneNum(callerInfo.number) : 'Unknown number'}
+                </p>
+                {callerInfo?.name && (
+                  <span className="text-xs truncate flex-shrink" style={{ color: t.textMuted }}>· {callerInfo.name}</span>
+                )}
+                {callerInfo?.recognized && (
+                  <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: 'rgba(99,102,241,0.14)', color: accent }}>
+                    <Repeat className="h-3 w-3" /> Returning{callerInfo.priorCalls ? ` · ${callerInfo.priorCalls} prior` : ''}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 flex-shrink-0 tabular-nums" style={{ color: t.textMuted }}>
+            <Clock className="h-3.5 w-3.5" />
+            <span className="text-sm font-semibold" style={{ color: t.text }}>{elapsedLabel}</span>
+          </div>
+        </div>
+      )}
 
       {/* Body */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-0 min-h-0">
