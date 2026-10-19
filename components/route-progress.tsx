@@ -13,9 +13,11 @@ import { usePathname } from 'next/navigation';
  * dead hang followed by a jump.
  *
  * Scoped OUT of the authenticated app shell (/agency, /client, /admin,
- * /platform), which does intentional instant, no-transition navigation.
+ * /platform, /cc), which does intentional instant, no-transition navigation.
+ * /cc is a white-labeled call-center dashboard, so the platform-green bar must
+ * never show there.
  */
-const APP_SHELL = /^\/(agency|client|admin|platform)(\/|$)/;
+const APP_SHELL = /^\/(agency|client|admin|platform|cc)(\/|$)/;
 
 export default function RouteProgress() {
   const pathname = usePathname();

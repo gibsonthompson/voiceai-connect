@@ -83,6 +83,9 @@ interface User {
   // Call-center agent scoping: the businesses a manager assigned to this agent.
   // null/absent = unrestricted. Only meaningful for agency_staff in a call center.
   assigned_client_ids?: string[] | null;
+  // Call-center manager flag: an agency_staff member who runs the dashboard (not
+  // an agent who takes calls). The owner is always a manager via role.
+  is_manager?: boolean;
 }
 
 interface Branding {
@@ -111,6 +114,11 @@ interface AgencyContextType {
   // assignedClientIds is the agent's scoped businesses (null = all).
   isAgent: boolean;
   assignedClientIds: string[] | null;
+  // isManager = the owner, or a call-center agency_staff flagged as a manager.
+  // canManageTeam = may create/edit managers & agents (owner always; a manager
+  // only with the manage_team permission).
+  isManager: boolean;
+  canManageTeam: boolean;
 }
 
 const defaultBranding: Branding = {
@@ -136,6 +144,8 @@ const AgencyContext = createContext<AgencyContextType>({
   hasPermission: () => true,
   isAgent: false,
   assignedClientIds: null,
+  isManager: false,
+  canManageTeam: false,
 });
 
 export function useAgency() {
@@ -426,10 +436,18 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
     return user.permissions[key] !== false;
   };
 
-  // A call-center agent is agency staff inside an agency that signed up as a call
-  // center. Managers are agency_owner. Used to give agents a focused nav (their
-  // wallboard + assigned businesses) instead of the full agency surface.
-  const isAgent = !!(agency?.is_call_center && user?.role === 'agency_staff');
+  // Call-center roles:
+  //  - isManager: the owner, OR an agency_staff member flagged is_manager. Runs
+  //    the dashboard (full nav, gated by permissions), does not take calls.
+  //  - isAgent: agency_staff in a call center who is NOT a manager. Gets the
+  //    focused agent nav (wallboard + assigned businesses) only.
+  //  - canManageTeam: may create/edit managers & agents. Owner always; a manager
+  //    only with the manage_team permission.
+  const isManager = !!(user && (user.role === 'agency_owner' || user.role === 'super_admin'
+    || (agency?.is_call_center && user.role === 'agency_staff' && user.is_manager === true)));
+  const isAgent = !!(agency?.is_call_center && user?.role === 'agency_staff' && user?.is_manager !== true);
+  const canManageTeam = !!(user && (user.role === 'agency_owner' || user.role === 'super_admin'
+    || (isManager && user.permissions?.manage_team === true)));
   const assignedClientIds = Array.isArray(user?.assigned_client_ids) ? user!.assigned_client_ids! : null;
 
   return (
@@ -448,6 +466,8 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
       hasPermission,
       isAgent,
       assignedClientIds,
+      isManager,
+      canManageTeam,
     }}>
       {children}
     </AgencyContext.Provider>

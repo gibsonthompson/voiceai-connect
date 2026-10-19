@@ -15,10 +15,11 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import {
   ClipboardList, Search, Loader2, ChevronLeft, ChevronRight, Building2,
-  PhoneForwarded, UserCheck, CalendarCheck, ShieldX, Bot, Clock, ChevronDown,
+  PhoneForwarded, UserCheck, CalendarCheck, ShieldX, Bot,
 } from 'lucide-react';
 import { useAgency } from '../../agency/context';
 import { useTheme } from '../../../hooks/useTheme';
+import { CustomSelect, type DropdownUI } from '@/components/ui/custom-select';
 
 interface Row {
   id: string;
@@ -140,6 +141,7 @@ export default function CallCenterCalls() {
   const selectStyle = {
     backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text,
   } as React.CSSProperties;
+  const ddUI: DropdownUI = { inputStyle: selectStyle, text: theme.text, muted: theme.textMuted, panelBg: theme.card, panelBorder: theme.border, hover: theme.hover, accent: theme.primary, isDark: theme.isDark };
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 min-h-screen" style={{ backgroundColor: theme.bg, color: theme.text }}>
@@ -169,16 +171,12 @@ export default function CallCenterCalls() {
           />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <SelectBox value={business} onChange={setBusiness} theme={theme} icon={Building2}>
-            <option value="">All businesses</option>
-            {businesses.map((b) => <option key={b.clientId} value={b.clientId}>{b.businessName}</option>)}
-          </SelectBox>
-          <SelectBox value={outcome} onChange={setOutcome} theme={theme} icon={UserCheck}>
-            {OUTCOMES.map((o) => <option key={o.v} value={o.v}>{o.label}</option>)}
-          </SelectBox>
-          <SelectBox value={range} onChange={setRange} theme={theme} icon={Clock}>
-            {RANGES.map((o) => <option key={o.v} value={o.v}>{o.label}</option>)}
-          </SelectBox>
+          <CustomSelect value={business} onChange={setBusiness} ui={ddUI}
+            options={[{ value: '', label: 'All businesses' }, ...businesses.map((b) => ({ value: b.clientId, label: b.businessName }))]} />
+          <CustomSelect value={outcome} onChange={setOutcome} ui={ddUI}
+            options={OUTCOMES.map((o) => ({ value: o.v, label: o.label }))} />
+          <CustomSelect value={range} onChange={setRange} ui={ddUI}
+            options={RANGES.map((o) => ({ value: o.v, label: o.label }))} />
         </div>
       </div>
 
@@ -280,22 +278,3 @@ export default function CallCenterCalls() {
   );
 }
 
-// A theme-styled select with a leading icon and a chevron.
-function SelectBox({ value, onChange, theme, icon: Icon, children }: {
-  value: string; onChange: (v: string) => void; theme: ReturnType<typeof useTheme>; icon: any; children: React.ReactNode;
-}) {
-  return (
-    <div className="relative">
-      <Icon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" style={{ color: theme.textSubtle }} />
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full appearance-none rounded-xl pl-10 pr-9 py-2.5 text-sm outline-none cursor-pointer"
-        style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
-      >
-        {children}
-      </select>
-      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" style={{ color: theme.textSubtle }} />
-    </div>
-  );
-}

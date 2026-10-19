@@ -32,7 +32,7 @@ function WaveformIcon({ className, color }: { className?: string; color?: string
   return (<svg viewBox="0 0 24 24" fill="none" className={className}><rect x="2" y="9" width="2" height="6" rx="1" fill={color || 'currentColor'} opacity="0.6" /><rect x="5" y="7" width="2" height="10" rx="1" fill={color || 'currentColor'} opacity="0.8" /><rect x="8" y="4" width="2" height="16" rx="1" fill={color || 'currentColor'} /><rect x="11" y="6" width="2" height="12" rx="1" fill={color || 'currentColor'} /><rect x="14" y="3" width="2" height="18" rx="1" fill={color || 'currentColor'} /><rect x="17" y="7" width="2" height="10" rx="1" fill={color || 'currentColor'} opacity="0.8" /><rect x="20" y="9" width="2" height="6" rx="1" fill={color || 'currentColor'} opacity="0.6" /></svg>);
 }
 
-interface NavItem { href: string; label: string; icon: LucideIcon; badge?: number; }
+interface NavItem { href: string; label: string; icon: LucideIcon; badge?: number; perm?: string; manageTeam?: boolean; }
 
 // Maps each nav route to the key navIcon() uses to look up the icon in the
 // chosen set (components/cc/navIcons.tsx). The icon package itself (Lucide,
@@ -55,7 +55,7 @@ function isSuspended(status: string | null | undefined): boolean {
 
 function CallCenterShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { agency, branding, loading, user, isAgent } = useAgency();
+  const { agency, branding, loading, user, isAgent, hasPermission, canManageTeam } = useAgency();
   const theme = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -124,15 +124,19 @@ function CallCenterShell({ children }: { children: ReactNode }) {
   const noIcons = iconsHidden(agency?.icon_style);
   const LogoutIcon = navIcon(agency?.icon_style, 'signout');
 
+  // Manager/owner nav. Each item declares what grants it: `perm` is a Page Access
+  // key, `manageTeam` means it needs the manage-team right (the owner always has
+  // it). Core live-ops tabs (live calls, calls, messages) are always shown. The
+  // owner sees everything; a manager sees only what their permissions allow.
   const MANAGER_NAV: NavItem[] = [
-    { href: '/cc/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/cc/dashboard', label: 'Dashboard', icon: LayoutDashboard, perm: 'dashboard' },
     { href: '/cc/live-calls', label: 'Live Calls', icon: Headphones },
     { href: '/cc/calls', label: 'Calls', icon: ClipboardList },
     { href: '/cc/messages', label: 'Messages', icon: Inbox, badge: openFollowups },
-    { href: '/cc/businesses', label: 'Businesses', icon: Building2 },
-    { href: '/cc/agents', label: 'Agents', icon: Headset },
-    { href: '/cc/analytics', label: 'Analytics', icon: BarChart3 },
-    { href: '/cc/settings', label: 'Settings', icon: Settings },
+    { href: '/cc/businesses', label: 'Businesses', icon: Building2, perm: 'clients' },
+    { href: '/cc/agents', label: 'Team', icon: Headset, manageTeam: true },
+    { href: '/cc/analytics', label: 'Analytics', icon: BarChart3, perm: 'analytics' },
+    { href: '/cc/settings', label: 'Settings', icon: Settings, perm: 'settings' },
   ];
   // Agents get their wallboard, the call history, and the follow-up inbox - all
   // scoped to the businesses assigned to them.
@@ -141,17 +145,41 @@ function CallCenterShell({ children }: { children: ReactNode }) {
     { href: '/cc/calls', label: 'Calls', icon: ClipboardList },
     { href: '/cc/messages', label: 'Messages', icon: Inbox, badge: openFollowups },
   ];
-  const navItems = isAgent ? AGENT_NAV : MANAGER_NAV;
+  const canSeeNav = (item: NavItem) => {
+    if (item.manageTeam) return canManageTeam;
+    if (item.perm) return hasPermission(item.perm);
+    return true;
+  };
+  const navItems = isAgent ? AGENT_NAV : MANAGER_NAV.filter(canSeeNav);
 
-  // Confine agents to the pages meant for them; a direct URL elsewhere bounces
-  // back to the wallboard. The per-call monitor lives at /live/* outside here.
+  // Sub-pages that live under a nav item but have their own route keep that nav
+  // item highlighted, and inherit that item's access. Branding deep-links from
+  // Settings, so it both lights Settings and requires the settings permission.
+  const NAV_SUBPAGES: Record<string, string[]> = { '/cc/settings': ['/cc/branding'] };
+
+  // Confinement. Agents are limited to their live-ops pages. Managers are limited
+  // to the tabs their permissions grant (the owner's grants cover everything, so
+  // the owner is never redirected). A direct URL to a forbidden tab bounces to
+  // the first page the user can actually see.
   useEffect(() => {
-    if (loading || !pathname) return;
-    const agentAllowed = pathname.startsWith('/cc/live-calls') || pathname.startsWith('/cc/calls') || pathname.startsWith('/cc/messages');
-    if (isAgent && !agentAllowed) { window.location.href = '/cc/live-calls'; }
-  }, [loading, pathname, isAgent]);
-
-  const isActive = (href: string) => pathname === href || pathname?.startsWith(href + '/');
+    if (loading || !pathname || !user) return;
+    if (isAgent) {
+      const agentAllowed = pathname.startsWith('/cc/live-calls') || pathname.startsWith('/cc/calls') || pathname.startsWith('/cc/messages');
+      if (!agentAllowed) window.location.href = '/cc/live-calls';
+      return;
+    }
+    // Manager/owner: build the set of allowed path roots from the visible nav
+    // (plus each item's declared subpages) and bounce anything outside it.
+    const allowed = navItems.flatMap((i) => [i.href, ...(NAV_SUBPAGES[i.href] || [])]);
+    const ok = allowed.some((h) => pathname === h || pathname.startsWith(h + '/'));
+    if (!ok && navItems.length) window.location.href = navItems[0].href;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, pathname, isAgent, canManageTeam, user?.id, JSON.stringify(user?.permissions || {})]);
+  const isActive = (href: string) => {
+    if (pathname === href || pathname?.startsWith(href + '/')) return true;
+    const subs = NAV_SUBPAGES[href];
+    return !!(subs && subs.some((s) => pathname === s || pathname?.startsWith(s + '/')));
+  };
   const handleSignOut = () => { try { localStorage.clear(); } catch {} window.location.href = '/agency/login'; };
 
   if (loading) {
