@@ -18,7 +18,7 @@
 import { ReactNode, useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, Headphones, Headset, Building2, BarChart3, Settings, Menu, X, ChevronRight, Radio, ClipboardList, Inbox, MessageSquare, Contact, type LucideIcon } from 'lucide-react';
+import { LayoutDashboard, Headphones, Headset, Building2, BarChart3, Settings, Menu, X, ChevronRight, Radio, ClipboardList, Inbox, MessageSquare, Contact, Clock, type LucideIcon } from 'lucide-react';
 import { AgencyProvider, useAgency } from '../agency/context';
 import { useTheme } from '../../hooks/useTheme';
 import DynamicFavicon from '@/components/DynamicFavicon';
@@ -49,6 +49,7 @@ const HREF_ROUTE: Record<string, NavRoute> = {
   '/cc/agents': 'agents',
   '/cc/analytics': 'analytics',
   '/cc/settings': 'settings',
+  '/cc/availability': 'availability',
 };
 
 function isSuspended(status: string | null | undefined): boolean {
@@ -187,6 +188,7 @@ function CallCenterShell({ children }: { children: ReactNode }) {
     { href: '/cc/messages', label: 'Callbacks', icon: Inbox, badge: openFollowups },
     { href: '/cc/sms', label: 'Texts', icon: MessageSquare, badge: unreadTexts },
     { href: '/cc/contacts', label: 'Contacts', icon: Contact },
+    { href: '/cc/availability', label: 'Availability', icon: Clock },
   ];
   const canSeeNav = (item: NavItem) => {
     if (item.manageTeam) return canManageTeam;
@@ -207,7 +209,7 @@ function CallCenterShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (loading || !pathname || !user) return;
     if (isAgent) {
-      const agentAllowed = pathname.startsWith('/cc/live-calls') || pathname.startsWith('/cc/calls') || pathname.startsWith('/cc/messages') || pathname.startsWith('/cc/sms') || pathname.startsWith('/cc/contacts');
+      const agentAllowed = pathname.startsWith('/cc/live-calls') || pathname.startsWith('/cc/calls') || pathname.startsWith('/cc/messages') || pathname.startsWith('/cc/sms') || pathname.startsWith('/cc/contacts') || pathname.startsWith('/cc/availability');
       if (!agentAllowed) window.location.href = '/cc/live-calls';
       return;
     }
