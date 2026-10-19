@@ -38,6 +38,9 @@ export interface EscalationOffer {
   createdAt: string | null;
   expiresAt: string | null;
   test?: boolean;
+  // Set when another agent claimed this offer first: the winner's name, shown on
+  // the card for a beat ("Call taken by X") before it clears.
+  takenBy?: string | null;
 }
 
 export interface ClaimResult {
@@ -83,7 +86,7 @@ export function useAgentPresence(enabled: boolean) {
       const title = offer.test ? 'Test escalation' : 'A caller needs a human';
       const bodyBits = [offer.businessName, offer.reason || offer.summary].filter(Boolean);
       const n = new Notification(title, {
-        body: bodyBits.join(' — ') || 'Open the console to take the call.',
+        body: bodyBits.join(' · ') || 'Open the console to take the call.',
         tag: `esc-${offer.id}`,
         requireInteraction: !offer.test,
       });
@@ -103,6 +106,16 @@ export function useAgentPresence(enabled: boolean) {
     if (t) { clearTimeout(t); delete expiryTimers.current[offerId]; }
     closeNotif(offerId);
   }, []);
+
+  // Another agent won this offer first. Instead of yanking the card, mark it with
+  // the winner's name so it reads "Call taken by X" for a beat, then clear it.
+  const markTaken = useCallback((offerId: string, by: string | null) => {
+    setOffers((cur) => cur.map((o) => (o.id === offerId ? { ...o, takenBy: by || 'a teammate' } : o)));
+    closeNotif(offerId);
+    const prev = expiryTimers.current[offerId];
+    if (prev) clearTimeout(prev);
+    expiryTimers.current[offerId] = setTimeout(() => dismiss(offerId), 2600);
+  }, [dismiss]);
 
   const addOffer = useCallback((offer: EscalationOffer) => {
     if (!offer || !offer.id) return;
@@ -129,9 +142,9 @@ export function useAgentPresence(enabled: boolean) {
     if (!ev || typeof ev !== 'object') return;
     if (ev.id) { if (seenRef.current.has(ev.id)) return; seenRef.current.add(ev.id); }
     if (ev.type === 'offer' && ev.offer) addOffer(ev.offer as EscalationOffer);
-    else if (ev.type === 'offer_taken' && ev.offerId) dismiss(ev.offerId);
+    else if (ev.type === 'offer_taken' && ev.offerId) markTaken(ev.offerId, ev.by || null);
     else if (ev.type === 'offer_cancelled' && ev.offerId) dismiss(ev.offerId);
-  }, [addOffer, dismiss]);
+  }, [addOffer, dismiss, markTaken]);
 
   // ---- heartbeat loop -----------------------------------------------------
   useEffect(() => {

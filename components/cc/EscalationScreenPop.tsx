@@ -73,10 +73,17 @@ function OfferCard({
   const theme = useTheme();
   const [state, setState] = useState<CardState>({ kind: 'offer' });
 
+  // A teammate claimed it first. The winner's name arrives on the offer as
+  // takenBy (from the offer_taken event); show "Call taken by X" over the buttons.
+  useEffect(() => {
+    if (offer.takenBy) setState((s) => (s.kind === 'lost' && s.by === offer.takenBy) ? s : { kind: 'lost', by: offer.takenBy as string });
+  }, [offer.takenBy]);
+
   const take = async () => {
     setState({ kind: 'claiming' });
     const r = await claim(offer.id);
-    if (!r.won) { setState({ kind: 'lost', by: r.reason === 'taken' ? undefined : r.reason }); setTimeout(() => onDone(offer.id), 2200); return; }
+    // Lost the race: the offer_taken event will fill in who took it.
+    if (!r.won) { setState({ kind: 'lost' }); setTimeout(() => onDone(offer.id), 2600); return; }
     if (offer.test) { setState({ kind: 'won_test' }); setTimeout(() => onDone(offer.id), 2600); return; }
     if (r.delivery === 'phone') { setState({ kind: 'won_phone' }); setTimeout(() => onDone(offer.id), 4000); return; }
     // Browser seat: go to the live monitor for this call and auto-join.
@@ -127,14 +134,14 @@ function OfferCard({
 
         {/* Reason + what the AI collected */}
         {(offer.reason || offer.summary) && (
-          <div className="mt-3 rounded-xl p-3" style={{ backgroundColor: theme.hover }}>
-            {offer.reason && <p className="text-[13px] font-medium" style={{ color: theme.text }}>{offer.reason}</p>}
-            {offer.summary && <p className="text-[13px] mt-0.5 leading-snug" style={{ color: theme.textMuted }}>{offer.summary}</p>}
+          <div className="mt-3 rounded-xl p-3.5" style={{ backgroundColor: theme.hover }}>
+            {offer.reason && <p className="text-sm font-semibold" style={{ color: theme.text }}>{offer.reason}</p>}
+            {offer.summary && <p className="text-[13.5px] mt-1 leading-relaxed" style={{ color: theme.textMuted }}>{offer.summary}</p>}
           </div>
         )}
         {collected.length > 0 && (
-          <div className="mt-2.5 space-y-1">
-            {collected.slice(0, 5).map(([k, v]) => (
+          <div className="mt-3 space-y-1.5">
+            {collected.slice(0, 8).map(([k, v]) => (
               <div key={k} className="flex items-start gap-2 text-[12.5px]">
                 <User className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" style={{ color: theme.textSubtle }} />
                 <span style={{ color: theme.textMuted }}><span style={{ color: theme.textSubtle }}>{k}:</span> {String(v)}</span>
@@ -185,7 +192,7 @@ function OfferCard({
           )}
           {state.kind === 'lost' && (
             <div className="inline-flex items-center gap-2 text-sm" style={{ color: theme.textMuted }}>
-              <CheckCircle2 className="h-4 w-4" /> A teammate took this one.
+              <CheckCircle2 className="h-4 w-4" /> {state.by ? `Call taken by ${state.by}` : 'A teammate took this one.'}
             </div>
           )}
         </div>
@@ -221,10 +228,16 @@ export default function EscalationScreenPop({
   if (!offers.length) return null;
 
   return (
-    <div className="fixed z-[100] flex flex-col gap-3 w-[min(92vw,380px)]" style={{ right: '1rem', bottom: '1rem' }}>
-      {offers.map((o) => (
-        <OfferCard key={o.id} offer={o} claim={claim} decline={decline} onDone={dismiss} />
-      ))}
+    // Centered, prominent, over a dimmed backdrop so an incoming caller is
+    // impossible to miss. Dismiss is explicit (the X or Dismiss button), never a
+    // backdrop click, so a call offer is never lost by a stray tap.
+    <div className="fixed inset-0 z-[100] flex items-start sm:items-center justify-center p-4 overflow-y-auto"
+      style={{ backgroundColor: 'rgba(0,0,0,0.55)' }}>
+      <div className="w-full max-w-lg space-y-3 my-auto">
+        {offers.map((o) => (
+          <OfferCard key={o.id} offer={o} claim={claim} decline={decline} onDone={dismiss} />
+        ))}
+      </div>
     </div>
   );
 }

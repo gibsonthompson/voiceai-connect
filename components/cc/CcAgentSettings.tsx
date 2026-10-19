@@ -259,22 +259,22 @@ export default function CcAgentSettings() {
                     aria-label="Available now, outside my hours"
                     className="relative inline-flex h-7 w-12 flex-shrink-0 items-center rounded-full transition disabled:opacity-50"
                     style={{ backgroundColor: override ? theme.primary : theme.hover }}>
-                    <span className="inline-block h-5 w-5 rounded-full bg-white transition"
-                      style={{ transform: override ? 'translateX(22px)' : 'translateX(3px)', boxShadow: '0 1px 2px rgba(0,0,0,0.2)' }} />
+                    {savingOverride
+                      ? <Loader2 className="h-4 w-4 animate-spin mx-auto" style={{ color: override ? theme.primaryText : theme.textMuted }} />
+                      : <span className="inline-block h-5 w-5 rounded-full bg-white transition"
+                          style={{ transform: override ? 'translateX(22px)' : 'translateX(3px)', boxShadow: '0 1px 2px rgba(0,0,0,0.2)' }} />}
                   </button>
                 </div>
-                {!override && !onSchedule && (
-                  <button onClick={() => setOverride(true)} disabled={savingOverride}
-                    className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:opacity-50"
-                    style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
-                    {savingOverride ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />} Make me available now
-                  </button>
-                )}
                 {overrideErr && <p className="text-[12px] mt-3" style={{ color: theme.error }}>{overrideErr}</p>}
               </div>
             )}
 
-            {/* Working hours (read-only) */}
+            {/* Working hours (read-only).
+                FUTURE (noted, not built): these hours could drive real
+                scheduling - e.g. an agent-editable schedule with a "last updated"
+                stamp, shift swaps, or auto-clearing the override at the end of a
+                shift. For now hours are manager-set and display-only, and the
+                override is a manual on/off. */}
             <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.borderSubtle}` }}>
               <div className="flex items-center gap-2 mb-1">
                 <CalendarClock className="h-4 w-4" style={{ color: theme.textMuted }} />

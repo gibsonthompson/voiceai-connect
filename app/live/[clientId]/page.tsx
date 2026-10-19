@@ -25,6 +25,9 @@ function LiveInner() {
   // Arriving from an escalation screen-pop "take the call": seat + jump in
   // automatically so the agent is on the caller in one click.
   const autoJoin = mode === 'monitor' && search.get('autojoin') === '1';
+  // The screen-pop passes the call id so an auto-join can start immediately,
+  // without waiting to rediscover the call from the event stream.
+  const initialCallId = search.get('call') || '';
   // Where the in-stage Back control returns to (the wallboard/page it was
   // opened from). Only internal paths are honored, never an external redirect.
   const rawBack = search.get('back') || '';
@@ -37,7 +40,7 @@ function LiveInner() {
       </div>
     );
   }
-  return <LiveCallMonitor clientId={clientId} mode={mode} autoJoin={autoJoin} backHref={backHref} />;
+  return <LiveCallMonitor clientId={clientId} mode={mode} autoJoin={autoJoin} backHref={backHref} initialCallId={initialCallId} />;
 }
 
 export default function LiveCallPage() {

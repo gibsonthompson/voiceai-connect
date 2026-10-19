@@ -200,7 +200,7 @@ function palette(dark: boolean) {
       };
 }
 
-export default function LiveCallMonitor({ clientId, mode, autoJoin = false, backHref = '' }: { clientId: string; mode: Mode; autoJoin?: boolean; backHref?: string }) {
+export default function LiveCallMonitor({ clientId, mode, autoJoin = false, backHref = '', initialCallId = '' }: { clientId: string; mode: Mode; autoJoin?: boolean; backHref?: string; initialCallId?: string }) {
   const [info, setInfo] = useState<Info | null>(null);
   const [loadErr, setLoadErr] = useState<string | null>(null);
 
@@ -291,7 +291,13 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
 
   const vapiRef = useRef<any>(null);
   const esRef = useRef<EventSource | null>(null);
-  const callIdRef = useRef<string | null>(null);
+  // Seed the call id from the ?call the screen-pop passed, so an escalation
+  // auto-join knows which call to join immediately instead of waiting to discover
+  // it from the replayed event stream (where the promoting status can be missing).
+  const callIdRef = useRef<string | null>(initialCallId || null);
+  // Flips true the moment we know which call to join (seeded ?call, or the first
+  // stream event carrying a callId). Drives the auto-join trigger below.
+  const [hasCallId, setHasCallId] = useState<boolean>(!!initialCallId);
   const seenIdsRef = useRef<Set<string>>(new Set());
   const transcriptEndRef = useRef<HTMLDivElement | null>(null);
   const transcriptScrollRef = useRef<HTMLDivElement | null>(null);
@@ -479,7 +485,7 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
       seenIdsRef.current.add(ev.id);
       if (seenIdsRef.current.size > 1000) seenIdsRef.current.clear();
     }
-    if (ev.callId) callIdRef.current = ev.callId;
+    if (ev.callId) { callIdRef.current = ev.callId; setHasCallId(true); }
     if (ev.type === 'transcript' && typeof ev.ts === 'number') {
       const ms = Date.now() - ev.ts;
       if (ms >= 0 && ms < 120000) setFeedStat({ via, ms });
@@ -731,7 +737,17 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
         body: JSON.stringify({ callId }),
       });
       const d = await r.json();
-      if (!r.ok || !d.success) throw new Error(d.error || 'Could not jump in.');
+      if (!r.ok || !d.success) {
+        // On an escalation auto-join the backend may have already bridged this
+        // seat the instant it answered, so a follow-up jump-in comes back "can't
+        // be joined right now" / already bridged. That is success, not an error:
+        // we are on the call, so reflect barged and stay quiet.
+        const msg = String(d.error || '').toLowerCase();
+        if (r.status === 409 || msg.includes('joined') || msg.includes('bridged')) {
+          setBargeState('barged'); setAgentMuted(false); return;
+        }
+        throw new Error(d.error || 'Could not jump in.');
+      }
       setBargeState('barged');
       setAgentMuted(false);
     } catch (e: any) {
@@ -747,11 +763,15 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
   useEffect(() => {
     if (!autoJoin || mode !== 'monitor' || !info?.barge_supported) return;
     if (autoJoinStartedRef.current) return;
-    if (callState !== 'live' || humanOnCall) return;
+    // Fire as soon as we know which call to join; do NOT wait on a 'live' status
+    // (the promoting event is often evicted from the replayed snapshot on a busy
+    // call, which left the agent pressing Listen manually). Only skip if the call
+    // has actually ended or a human is already on it.
+    if (!callIdRef.current || callState === 'ended' || humanOnCall) return;
     if (bargeStateRef.current !== 'idle') return;
     autoJoinStartedRef.current = true;
     startListen();
-  }, [autoJoin, mode, info?.barge_supported, callState, humanOnCall, startListen]);
+  }, [autoJoin, mode, info?.barge_supported, hasCallId, callState, humanOnCall, startListen]);
 
   useEffect(() => {
     if (!autoJoin || autoJoinJumpedRef.current) return;
