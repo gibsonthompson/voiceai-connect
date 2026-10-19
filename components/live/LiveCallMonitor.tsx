@@ -506,9 +506,19 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
       else if (s === 'agent_connected') { setCallState('live'); setStatusLabel(lbl || 'A teammate is on the call'); setBridged(null); setPartial(null); setHumanOnCall(true); }
       else if (s === 'ended') { setCallState('ended'); setStatusLabel('Call ended'); setSpeaking(null); setPartial(null); setBridged(null); setHumanOnCall(false); if (bargeStateRef.current !== 'idle') { cleanupBarge(); setBargeState('idle'); } }
     } else if (ev.type === 'takeover') {
-      if (ev.action === 'jump_in') addActivity('barge_connected', null, 'A teammate joined the call');
-      else if (ev.action === 'jump_out') addActivity('barge_ended', null, ev.mode === 'end_call' ? 'Teammate ended the call' : 'Teammate handed back to the AI');
-      else addActivity('request_human_transfer', ev.text || null, `You stepped in (${ev.action})`);
+      // jump_in and an end_call jump_out already arrive as named activity events
+      // from the backend ("<name> took over the call" / "<name> ended the call"),
+      // so we do not add a second, generic "A teammate ..." line here. When a
+      // teammate ends the call, mark it ended locally too so the timer stops even
+      // if the server 'ended' event is delayed or missed for this viewer.
+      if (ev.action === 'jump_out' && ev.mode === 'end_call') {
+        setCallState('ended'); setStatusLabel('Call ended'); setSpeaking(null); setPartial(null); setBridged(null); setHumanOnCall(false);
+        if (bargeStateRef.current !== 'idle') { cleanupBarge(); setBargeState('idle'); }
+      } else if (ev.action === 'jump_out') {
+        addActivity('barge_ended', null, 'Teammate handed back to the AI');
+      } else if (ev.action !== 'jump_in') {
+        addActivity('request_human_transfer', ev.text || null, `You stepped in (${ev.action})`);
+      }
     }
   }, [addLine, addActivity, cleanupBarge]);
 
@@ -634,7 +644,7 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
           const lsRes = await fetch(`${API}/api/client/${clientId}/live/listen-start`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ callId, agentName }),
+            body: JSON.stringify({ callId, agentName, autoJoin }),
           });
           const ls = await lsRes.json();
           if (!lsRes.ok || !ls.success) throw new Error(ls.error || 'Could not open live audio.');
@@ -690,7 +700,7 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
       cleanupBarge();
       setBargeState('idle');
     }
-  }, [clientId, token, cleanupBarge, agentName]);
+  }, [clientId, token, cleanupBarge, agentName, autoJoin]);
 
   // Jump in: flip the seat from listening to talking (the backend drops the AI
   // and unmutes us in the conference). The WebRTC leg stays up throughout.
@@ -759,6 +769,10 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
     } catch {}
     cleanupBarge();
     setBargeState('idle');
+    // The caller was hung up, so end the call locally right away; the timer and
+    // context bar stop without waiting on the server 'ended' event (which can lag
+    // or be missed on a bridged call).
+    setCallState('ended'); setStatusLabel('Call ended'); setSpeaking(null); setPartial(null); setBridged(null); setHumanOnCall(false);
   }, [clientId, token, cleanupBarge]);
 
   // Stop listening: leave the seat. The call continues with the AI.

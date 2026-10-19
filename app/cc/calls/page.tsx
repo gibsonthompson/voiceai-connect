@@ -72,6 +72,14 @@ function fmtWhen(iso: string): string {
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   } catch { return ''; }
 }
+// The handler value stored on a call can be a display name or, for older calls,
+// an email. Show a clean first name either way (e.g. "gibson@..." -> "Gibson").
+function agentFirstName(s: string | null): string {
+  if (!s) return '';
+  const base = s.includes('@') ? s.split('@')[0] : s;
+  const first = base.trim().split(/\s+/)[0] || '';
+  return first ? first.charAt(0).toUpperCase() + first.slice(1) : '';
+}
 
 export default function CallCenterCalls() {
   const { agency, isAgent } = useAgency();
@@ -229,7 +237,6 @@ export default function CallCenterCalls() {
                       </p>
                       <p className="text-[12.5px] truncate flex items-center gap-1.5" style={{ color: theme.textMuted }}>
                         <Building2 className="h-3 w-3 flex-shrink-0" /> {c.businessName}
-                        {c.handledBy && <span style={{ color: theme.textSubtle }}>· {c.handledBy}</span>}
                       </p>
                     </div>
                   );
@@ -237,7 +244,7 @@ export default function CallCenterCalls() {
 
                 {/* Outcome */}
                 <span className="hidden sm:inline-flex items-center gap-1.5 text-[11.5px] font-semibold px-2.5 py-1 rounded-lg flex-shrink-0" style={{ backgroundColor: os.bg, color: os.fg }}>
-                  <OIcon className="h-3.5 w-3.5" /> {c.outcome}
+                  <OIcon className="h-3.5 w-3.5" /> {c.outcome === 'Agent took over' ? `${agentFirstName(c.handledBy) || 'Agent'} took over` : c.outcome}
                 </span>
 
                 {/* Duration + time */}
