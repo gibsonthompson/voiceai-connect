@@ -1,3 +1,4 @@
+'use client';
 
 // ============================================================================
 // /cc/businesses/[id] - configure a business from inside the call-center console.
