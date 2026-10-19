@@ -185,3 +185,68 @@ export async function extractColorsFromImage(imageUrl: string): Promise<Extracte
     img.src = imageUrl;
   });
 }
+
+// ---- Richer palette for the AI brand analyzer --------------------------------
+// Returns a ranked list of the logo's dominant brand colors with coverage %, the
+// detected background, and a light/dark suggestion. This is the ACCURATE-COLOR
+// anchor we hand to the vision model (the model assigns roles + picks fonts; the
+// exact hex values come from here, not from the model). Best-effort; resolves an
+// empty palette rather than throwing.
+export interface BrandPalette {
+  dominant: { hex: string; pct: number }[];
+  bgColor: string;
+  bgTransparent: boolean;
+  suggestedTheme: 'light' | 'dark';
+}
+
+export async function extractPalette(imageUrl: string): Promise<BrandPalette> {
+  const empty: BrandPalette = { dominant: [], bgColor: '#000000', bgTransparent: true, suggestedTheme: 'dark' };
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) { resolve(empty); return; }
+      const size = 160;
+      canvas.width = size; canvas.height = size;
+      ctx.drawImage(img, 0, 0, size, size);
+
+      const bg = detectLogoBackground(canvas, ctx);
+      const bgHex = bg.isTransparent ? '#000000' : rgbToHex(bg.r, bg.g, bg.b);
+      let suggestedTheme: 'light' | 'dark' = 'dark';
+      if (!bg.isTransparent) {
+        const lum = (0.299 * bg.r + 0.587 * bg.g + 0.114 * bg.b) / 255;
+        suggestedTheme = lum > 0.5 ? 'light' : 'dark';
+      }
+
+      const pixels = ctx.getImageData(0, 0, size, size).data;
+      const buckets: Record<string, { count: number; r: number; g: number; b: number }> = {};
+      let considered = 0;
+      for (let i = 0; i < pixels.length; i += 4) {
+        const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2], a = pixels[i + 3];
+        if (a < 128) continue;
+        const bgDist = Math.sqrt((r - bg.r) ** 2 + (g - bg.g) ** 2 + (b - bg.b) ** 2);
+        if (!bg.isTransparent && bgDist < 45) continue;
+        const br = Math.round(r / 24) * 24, bg2 = Math.round(g / 24) * 24, bb = Math.round(b / 24) * 24;
+        const key = `${br},${bg2},${bb}`;
+        if (!buckets[key]) buckets[key] = { count: 0, r: br, g: bg2, b: bb };
+        buckets[key].count++;
+        considered++;
+      }
+      if (!considered) { resolve({ ...empty, bgColor: bgHex, bgTransparent: bg.isTransparent, suggestedTheme }); return; }
+
+      // Keep the top buckets by frequency (includes neutrals, which the model
+      // may legitimately use for text/bg), ranked, with coverage percentages.
+      const dominant = Object.values(buckets)
+        .filter((c) => c.count >= Math.max(3, considered * 0.01))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 8)
+        .map((c) => ({ hex: rgbToHex(c.r, c.g, c.b), pct: Math.round((c.count / considered) * 100) }));
+
+      resolve({ dominant, bgColor: bgHex, bgTransparent: bg.isTransparent, suggestedTheme });
+    };
+    img.onerror = () => resolve(empty);
+    img.src = imageUrl;
+  });
+}

@@ -53,6 +53,11 @@ interface Agency {
     text_primary?: string;
     text_muted?: string;
   } | null;
+  // AI brand kit: per-agency fonts, nav icon weight, and the full analyzed kit.
+  display_font?: string | null;
+  body_font?: string | null;
+  icon_style?: string | null;
+  brand_kit?: Record<string, unknown> | null;
   demo_phone_number: string | null;
   demo_assistant_id: string | null;
   demo_vapi_phone_id: string | null;

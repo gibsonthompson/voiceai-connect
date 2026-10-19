@@ -22,6 +22,7 @@ import { LayoutDashboard, Headphones, Headset, Building2, BarChart3, Settings, L
 import { AgencyProvider, useAgency } from '../agency/context';
 import { useTheme } from '../../hooks/useTheme';
 import DynamicFavicon from '@/components/DynamicFavicon';
+import { googleFontsHref, fontStack, iconStrokeFor } from '@/lib/brandFonts';
 import CcEscalationLayer from '@/components/cc/CcEscalationLayer';
 import AgentPresenceBar from '@/components/cc/AgentPresenceBar';
 import CcLiveCallPops from '@/components/cc/CcLiveCallPops';
@@ -75,6 +76,35 @@ function CallCenterShell({ children }: { children: ReactNode }) {
   useEffect(() => { document.title = `Call Center | ${agency?.name || branding?.name || 'VoiceAI Connect'}`; }, [agency?.name]);
   useEffect(() => { document.documentElement.style.setProperty('background', theme.bg, 'important'); document.body.style.setProperty('background', theme.bg, 'important'); return () => { document.documentElement.style.removeProperty('background'); document.body.style.removeProperty('background'); }; }, [theme.bg]);
 
+  // AI brand fonts: load the agency's chosen display + body fonts from Google
+  // Fonts and expose them as CSS vars the .cc-shell rules (globals.css) apply.
+  // Scoped to the cc dashboard, cleaned up on unmount, and all best-effort so a
+  // missing/unknown font just falls back to Geist.
+  const displayFont = agency?.display_font || null;
+  const bodyFont = agency?.body_font || null;
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--brand-display', fontStack(displayFont, 'display'));
+    root.style.setProperty('--brand-body', fontStack(bodyFont, 'body'));
+    const href = googleFontsHref([displayFont, bodyFont]);
+    let link: HTMLLinkElement | null = null;
+    if (href) {
+      link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.id = 'cc-brand-fonts';
+      link.href = href;
+      document.head.appendChild(link);
+    }
+    return () => {
+      root.style.removeProperty('--brand-display');
+      root.style.removeProperty('--brand-body');
+      if (link && link.parentNode) link.parentNode.removeChild(link);
+    };
+  }, [displayFont, bodyFont]);
+
+  // Nav icon weight from the brand kit (fine / regular / bold).
+  const iconStroke = iconStrokeFor(agency?.icon_style);
+
   const MANAGER_NAV: NavItem[] = [
     { href: '/cc/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/cc/live-calls', label: 'Live Calls', icon: Headphones },
@@ -126,7 +156,7 @@ function CallCenterShell({ children }: { children: ReactNode }) {
   }
 
   const sidebar = (
-    <aside className={`fixed inset-y-0 left-0 z-50 w-72 md:w-60 flex flex-col transform transition-transform duration-300 ease-out ${isMobile ? (sidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0'}`} style={{ backgroundColor: theme.sidebarBg, borderRight: `1px solid ${theme.sidebarBorder}`, paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0 }}>
+    <aside className={`cc-shell cc-brand-display fixed inset-y-0 left-0 z-50 w-72 md:w-60 flex flex-col transform transition-transform duration-300 ease-out ${isMobile ? (sidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0'}`} style={{ backgroundColor: theme.sidebarBg, borderRight: `1px solid ${theme.sidebarBorder}`, paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0 }}>
       <div className="flex items-center justify-between h-16 px-5" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}>
         {/* White-label brand: when a logo is set, show the logo ONLY (bigger, no
             name and no "Call Center" text beside it). With no logo, fall back to
@@ -153,7 +183,7 @@ function CallCenterShell({ children }: { children: ReactNode }) {
               style={active ? { backgroundColor: theme.sidebarActiveItemBg, color: theme.sidebarActiveItemColor } : { color: theme.sidebarText }}
               onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover; }}
               onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}>
-              <span className="flex items-center gap-3"><Icon className="h-5 w-5" />{item.label}</span>
+              <span className="flex items-center gap-3"><Icon className="h-5 w-5" strokeWidth={iconStroke} />{item.label}</span>
               {item.badge ? (
                 <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full text-[10px] font-bold" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
                   {item.badge > 99 ? '99+' : item.badge}
@@ -174,7 +204,7 @@ function CallCenterShell({ children }: { children: ReactNode }) {
         <button onClick={handleSignOut} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all" style={{ color: theme.sidebarTextMuted }}
           onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover; }}
           onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}>
-          <LogOut className="h-5 w-5" /> Sign Out
+          <LogOut className="h-5 w-5" strokeWidth={iconStroke} /> Sign Out
         </button>
       </div>
     </aside>
@@ -196,7 +226,7 @@ function CallCenterShell({ children }: { children: ReactNode }) {
       {sidebarOpen && isMobile && <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden" onClick={() => setSidebarOpen(false)} />}
       {sidebar}
 
-      <main className="md:pl-60 min-h-screen" style={{ backgroundColor: theme.bg }}>
+      <main className="cc-shell md:pl-60 min-h-screen" style={{ backgroundColor: theme.bg }}>
         {/* Managers see the floor at a glance; agents get their own pop + toggle. */}
         {!isAgent && <AgentPresenceBar agencyId={agency?.id} />}
         {children}
