@@ -15,10 +15,10 @@
 //   - Suspended/cancelled agencies are bounced to the shared reactivation page.
 // ============================================================================
 
-import { ReactNode, useState, useEffect } from 'react';
+import { ReactNode, useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, Headphones, Headset, Building2, BarChart3, Settings, Menu, X, ChevronRight, Radio, ClipboardList, Inbox, type LucideIcon } from 'lucide-react';
+import { LayoutDashboard, Headphones, Headset, Building2, BarChart3, Settings, Menu, X, ChevronRight, Radio, ClipboardList, Inbox, MessageSquare, type LucideIcon } from 'lucide-react';
 import { AgencyProvider, useAgency } from '../agency/context';
 import { useTheme } from '../../hooks/useTheme';
 import DynamicFavicon from '@/components/DynamicFavicon';
@@ -43,6 +43,7 @@ const HREF_ROUTE: Record<string, NavRoute> = {
   '/cc/live-calls': 'live',
   '/cc/calls': 'calls',
   '/cc/messages': 'messages',
+  '/cc/sms': 'texts',
   '/cc/businesses': 'businesses',
   '/cc/agents': 'agents',
   '/cc/analytics': 'analytics',
@@ -60,23 +61,60 @@ function CallCenterShell({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [openFollowups, setOpenFollowups] = useState(0);
+  const [unreadTexts, setUnreadTexts] = useState(0);
+  // New-text toast: a call center works every inbound text in this dashboard
+  // (the business owner is not texted), so a new text has to be visible here.
+  const [textToast, setTextToast] = useState<{ caller: string | null; businessName: string; preview: string | null; conversationId: string } | null>(null);
+  const lastTextAtRef = useRef<string | null>(null);
+  const firstTextLoadRef = useRef(true);
 
-  // Poll the open follow-up count so the Messages nav shows a live backlog badge.
+  // Poll the open follow-up count + unread text count so the Messages and Texts
+  // nav items show live backlog badges, and raise a toast when a new text lands.
+  // All best-effort. Texts are async, so a short poll is the right, reliable
+  // signal (no fragile stream), and it reaches managers and agents the same way.
   useEffect(() => {
     if (loading || !agency?.id || !agency.is_call_center) return;
     let stop = false;
+    const token = () => localStorage.getItem('auth_token');
+    const base = process.env.NEXT_PUBLIC_API_URL || '';
     const load = async () => {
       try {
-        const token = localStorage.getItem('auth_token');
-        const base = process.env.NEXT_PUBLIC_API_URL || '';
-        const r = await fetch(`${base}/api/agency/${agency.id}/cc/messages/count`, { headers: { Authorization: `Bearer ${token}` } });
+        const r = await fetch(`${base}/api/agency/${agency.id}/cc/messages/count`, { headers: { Authorization: `Bearer ${token()}` } });
         if (r.ok) { const d = await r.json(); if (!stop && d.success) setOpenFollowups(d.open || 0); }
+      } catch { /* badge is best-effort */ }
+      try {
+        const r = await fetch(`${base}/api/agency/${agency.id}/cc/sms/unread`, { headers: { Authorization: `Bearer ${token()}` } });
+        if (r.ok) {
+          const d = await r.json();
+          if (!stop && d.success) {
+            setUnreadTexts(d.unread || 0);
+            const at: string | null = d.latest?.at || null;
+            if (firstTextLoadRef.current) {
+              // Don't toast the backlog already waiting when the dashboard opens.
+              firstTextLoadRef.current = false;
+              lastTextAtRef.current = at;
+            } else if (at && at !== lastTextAtRef.current && (!lastTextAtRef.current || new Date(at) > new Date(lastTextAtRef.current))) {
+              lastTextAtRef.current = at;
+              // Don't interrupt someone already working the Texts inbox.
+              if (d.latest && !(pathname || '').startsWith('/cc/sms')) {
+                setTextToast({ caller: d.latest.caller || null, businessName: d.latest.businessName || 'A business', preview: d.latest.preview || null, conversationId: d.latest.conversationId });
+              }
+            }
+          }
+        }
       } catch { /* badge is best-effort */ }
     };
     load();
-    const iv = setInterval(load, 30000);
+    const iv = setInterval(load, 15000);
     return () => { stop = true; clearInterval(iv); };
   }, [loading, agency?.id, agency?.is_call_center]);
+
+  // Auto-dismiss the new-text toast after a few seconds.
+  useEffect(() => {
+    if (!textToast) return;
+    const t = setTimeout(() => setTextToast(null), 9000);
+    return () => clearTimeout(t);
+  }, [textToast]);
 
   const agencyIsSuspended = isSuspended(agency?.status);
   // Once loaded, send non-call-center agencies to the normal dashboard, and
@@ -133,6 +171,7 @@ function CallCenterShell({ children }: { children: ReactNode }) {
     { href: '/cc/live-calls', label: 'Live Calls', icon: Headphones },
     { href: '/cc/calls', label: 'Calls', icon: ClipboardList },
     { href: '/cc/messages', label: 'Messages', icon: Inbox, badge: openFollowups },
+    { href: '/cc/sms', label: 'Texts', icon: MessageSquare, badge: unreadTexts },
     { href: '/cc/businesses', label: 'Businesses', icon: Building2, perm: 'clients' },
     { href: '/cc/agents', label: 'Team', icon: Headset, manageTeam: true },
     { href: '/cc/analytics', label: 'Analytics', icon: BarChart3, perm: 'analytics' },
@@ -144,6 +183,7 @@ function CallCenterShell({ children }: { children: ReactNode }) {
     { href: '/cc/live-calls', label: 'Live Calls', icon: Headphones },
     { href: '/cc/calls', label: 'Calls', icon: ClipboardList },
     { href: '/cc/messages', label: 'Messages', icon: Inbox, badge: openFollowups },
+    { href: '/cc/sms', label: 'Texts', icon: MessageSquare, badge: unreadTexts },
   ];
   const canSeeNav = (item: NavItem) => {
     if (item.manageTeam) return canManageTeam;
@@ -164,7 +204,7 @@ function CallCenterShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (loading || !pathname || !user) return;
     if (isAgent) {
-      const agentAllowed = pathname.startsWith('/cc/live-calls') || pathname.startsWith('/cc/calls') || pathname.startsWith('/cc/messages');
+      const agentAllowed = pathname.startsWith('/cc/live-calls') || pathname.startsWith('/cc/calls') || pathname.startsWith('/cc/messages') || pathname.startsWith('/cc/sms');
       if (!agentAllowed) window.location.href = '/cc/live-calls';
       return;
     }
@@ -297,6 +337,42 @@ function CallCenterShell({ children }: { children: ReactNode }) {
       {/* Live-call pop-ups for managers: a card for every call in progress on
           any /cc page, plus desktop alerts for new calls (even on another tab). */}
       {!isAgent && <CcLiveCallPops agencyId={agency?.id} />}
+
+      {/* New-text toast. A call center works every inbound text in here, so a new
+          one is surfaced to whoever is on the dashboard (manager or agent), with
+          a tap straight into that thread. */}
+      {textToast && (
+        <div className="fixed z-[95] right-4 bottom-4 w-[320px] max-w-[calc(100vw-2rem)]">
+          <Link
+            href={`/cc/sms?c=${encodeURIComponent(textToast.conversationId)}`}
+            onClick={() => setTextToast(null)}
+            className="block rounded-2xl p-3.5 shadow-xl transition"
+            style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
+          >
+            <div className="flex items-start gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>
+                <MessageSquare className="h-5 w-5" style={{ color: theme.primary }} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-semibold truncate" style={{ color: theme.text }}>
+                  New text{textToast.caller ? ` from ${textToast.caller}` : ''}
+                </p>
+                <p className="text-[11.5px] truncate" style={{ color: theme.textMuted }}>{textToast.businessName}</p>
+                {textToast.preview && <p className="text-[12.5px] mt-1 truncate" style={{ color: theme.textMuted }}>{textToast.preview}</p>}
+                <p className="text-[11px] mt-1.5 font-medium" style={{ color: theme.primary }}>Tap to reply</p>
+              </div>
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTextToast(null); }}
+                className="flex-shrink-0 -mt-1 -mr-1 p-1 rounded-lg"
+                style={{ color: theme.textSubtle }}
+                aria-label="Dismiss"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

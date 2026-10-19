@@ -16,23 +16,23 @@
 // ============================================================================
 
 import type { IconType } from 'react-icons';
-import { LuLayoutDashboard, LuPhone, LuClipboardList, LuInbox, LuBuilding2, LuHeadset, LuChartBar, LuSettings, LuLogOut } from 'react-icons/lu';
-import { PiHouse, PiPhone, PiClipboardText, PiTray, PiBuildings, PiHeadset, PiChartBar, PiGear, PiSignOut } from 'react-icons/pi';
-import { HiHome, HiPhone, HiClipboardDocumentList, HiInbox, HiBuildingOffice2, HiUserGroup, HiChartBar, HiCog6Tooth, HiArrowRightOnRectangle } from 'react-icons/hi2';
-import { TbLayoutDashboard, TbPhone, TbClipboardList, TbInbox, TbBuilding, TbHeadset, TbChartBar, TbSettings, TbLogout } from 'react-icons/tb';
-import { FiGrid, FiPhone, FiClipboard, FiInbox, FiBriefcase, FiHeadphones, FiBarChart2, FiSettings, FiLogOut } from 'react-icons/fi';
-import { FaHouse, FaPhone, FaClipboardList, FaInbox, FaBuilding, FaHeadset, FaChartColumn, FaGear, FaRightFromBracket } from 'react-icons/fa6';
+import { LuLayoutDashboard, LuPhone, LuClipboardList, LuInbox, LuMessageSquare, LuBuilding2, LuHeadset, LuChartBar, LuSettings, LuLogOut } from 'react-icons/lu';
+import { PiHouse, PiPhone, PiClipboardText, PiTray, PiChatCircle, PiBuildings, PiHeadset, PiChartBar, PiGear, PiSignOut } from 'react-icons/pi';
+import { HiHome, HiPhone, HiClipboardDocumentList, HiInbox, HiChatBubbleLeftRight, HiBuildingOffice2, HiUserGroup, HiChartBar, HiCog6Tooth, HiArrowRightOnRectangle } from 'react-icons/hi2';
+import { TbLayoutDashboard, TbPhone, TbClipboardList, TbInbox, TbMessageCircle, TbBuilding, TbHeadset, TbChartBar, TbSettings, TbLogout } from 'react-icons/tb';
+import { FiGrid, FiPhone, FiClipboard, FiInbox, FiMessageSquare, FiBriefcase, FiHeadphones, FiBarChart2, FiSettings, FiLogOut } from 'react-icons/fi';
+import { FaHouse, FaPhone, FaClipboardList, FaInbox, FaCommentSms, FaBuilding, FaHeadset, FaChartColumn, FaGear, FaRightFromBracket } from 'react-icons/fa6';
 
-export type NavRoute = 'dashboard' | 'live' | 'calls' | 'messages' | 'businesses' | 'agents' | 'analytics' | 'settings' | 'signout';
+export type NavRoute = 'dashboard' | 'live' | 'calls' | 'messages' | 'texts' | 'businesses' | 'agents' | 'analytics' | 'settings' | 'signout';
 
 // setKey -> (route -> icon component). Each row is a different icon package.
 export const NAV_ICON: Record<string, Record<NavRoute, IconType>> = {
-  lucide:      { dashboard: LuLayoutDashboard, live: LuPhone, calls: LuClipboardList, messages: LuInbox, businesses: LuBuilding2, agents: LuHeadset, analytics: LuChartBar, settings: LuSettings, signout: LuLogOut },
-  phosphor:    { dashboard: PiHouse, live: PiPhone, calls: PiClipboardText, messages: PiTray, businesses: PiBuildings, agents: PiHeadset, analytics: PiChartBar, settings: PiGear, signout: PiSignOut },
-  heroicons:   { dashboard: HiHome, live: HiPhone, calls: HiClipboardDocumentList, messages: HiInbox, businesses: HiBuildingOffice2, agents: HiUserGroup, analytics: HiChartBar, settings: HiCog6Tooth, signout: HiArrowRightOnRectangle },
-  tabler:      { dashboard: TbLayoutDashboard, live: TbPhone, calls: TbClipboardList, messages: TbInbox, businesses: TbBuilding, agents: TbHeadset, analytics: TbChartBar, settings: TbSettings, signout: TbLogout },
-  feather:     { dashboard: FiGrid, live: FiPhone, calls: FiClipboard, messages: FiInbox, businesses: FiBriefcase, agents: FiHeadphones, analytics: FiBarChart2, settings: FiSettings, signout: FiLogOut },
-  fontawesome: { dashboard: FaHouse, live: FaPhone, calls: FaClipboardList, messages: FaInbox, businesses: FaBuilding, agents: FaHeadset, analytics: FaChartColumn, settings: FaGear, signout: FaRightFromBracket },
+  lucide:      { dashboard: LuLayoutDashboard, live: LuPhone, calls: LuClipboardList, messages: LuInbox, texts: LuMessageSquare, businesses: LuBuilding2, agents: LuHeadset, analytics: LuChartBar, settings: LuSettings, signout: LuLogOut },
+  phosphor:    { dashboard: PiHouse, live: PiPhone, calls: PiClipboardText, messages: PiTray, texts: PiChatCircle, businesses: PiBuildings, agents: PiHeadset, analytics: PiChartBar, settings: PiGear, signout: PiSignOut },
+  heroicons:   { dashboard: HiHome, live: HiPhone, calls: HiClipboardDocumentList, messages: HiInbox, texts: HiChatBubbleLeftRight, businesses: HiBuildingOffice2, agents: HiUserGroup, analytics: HiChartBar, settings: HiCog6Tooth, signout: HiArrowRightOnRectangle },
+  tabler:      { dashboard: TbLayoutDashboard, live: TbPhone, calls: TbClipboardList, messages: TbInbox, texts: TbMessageCircle, businesses: TbBuilding, agents: TbHeadset, analytics: TbChartBar, settings: TbSettings, signout: TbLogout },
+  feather:     { dashboard: FiGrid, live: FiPhone, calls: FiClipboard, messages: FiInbox, texts: FiMessageSquare, businesses: FiBriefcase, agents: FiHeadphones, analytics: FiBarChart2, settings: FiSettings, signout: FiLogOut },
+  fontawesome: { dashboard: FaHouse, live: FaPhone, calls: FaClipboardList, messages: FaInbox, texts: FaCommentSms, businesses: FaBuilding, agents: FaHeadset, analytics: FaChartColumn, settings: FaGear, signout: FaRightFromBracket },
 };
 
 // Ordered for the branding UI + validation. 'none' = text-only nav (no icons).
