@@ -231,7 +231,19 @@ function CallCenterShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: theme.bg, color: theme.text }}>
-      {branding.logoUrl && <DynamicFavicon logoUrl={branding.logoUrl} faviconUrl="/api/agency-app-icon?size=96" appleIconUrl="/api/agency-app-icon?size=180" />}
+      {/* Favicon + home-screen icon from the agency's OWN branding in context.
+          The square app icon (a data URL composited at upload) is the ideal tab
+          favicon; fall back to the logo. We use context, not the host-resolving
+          /api/agency-app-icon endpoint, because the dashboard is served on hosts
+          that don't match the agency's subdomain, where that endpoint falls back
+          to a generic initial tile. */}
+      {(agency?.app_icon_url || branding.logoUrl) && (
+        <DynamicFavicon
+          logoUrl={branding.logoUrl}
+          faviconUrl={agency?.app_icon_url || branding.logoUrl}
+          appleIconUrl={agency?.app_icon_url || branding.logoUrl}
+        />
+      )}
       {/* Mobile header */}
       <div className="sticky top-0 z-30 md:hidden" style={{ backgroundColor: theme.sidebarBg, paddingTop: 'env(safe-area-inset-top)' }}>
         <header className="flex items-center justify-between h-16 px-4" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}>

@@ -9,6 +9,7 @@ interface Agency {
   email: string;
   phone: string | null;
   logo_url: string | null;
+  app_icon_url: string | null;
   primary_color: string;
   secondary_color: string;
   accent_color: string;
