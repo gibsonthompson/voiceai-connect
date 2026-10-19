@@ -60,7 +60,7 @@ function extractColorsFromImage(dataUrl: string): Promise<{ primary: string; sec
   });
 }
 
-export default function CcBrandingSection({ agency, refreshAgency, theme }: { agency: any; refreshAgency: () => Promise<void> | void; theme: any }) {
+export default function CcBrandingSection({ agency, refreshAgency, theme, hideHeader }: { agency: any; refreshAgency: () => Promise<void> | void; theme: any; hideHeader?: boolean }) {
   const [logoUrl, setLogoUrl] = useState('');
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [removingLogo, setRemovingLogo] = useState(false);
@@ -232,13 +232,15 @@ export default function CcBrandingSection({ agency, refreshAgency, theme }: { ag
 
   return (
     <div className="rounded-2xl p-5 sm:p-6" style={card}>
-      <div className="flex items-center gap-3 mb-4">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Palette className="h-4 w-4" style={{ color: theme.primary }} /></div>
-        <div className="min-w-0">
-          <h2 className="font-semibold text-sm sm:text-[15px]" style={{ color: theme.text }}>Branding</h2>
-          <p className="text-[12px]" style={{ color: theme.textMuted }}>Your logo and colors across the whole call center. Upload a logo and we pull your colors from it.</p>
+      {!hideHeader && (
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Palette className="h-4 w-4" style={{ color: theme.primary }} /></div>
+          <div className="min-w-0">
+            <h2 className="font-semibold text-sm sm:text-[15px]" style={{ color: theme.text }}>Branding</h2>
+            <p className="text-[12px]" style={{ color: theme.textMuted }}>Your logo and colors across the whole call center. Upload a logo and we pull your colors from it.</p>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="space-y-5">
         {/* Logo */}
