@@ -18,7 +18,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   MessageSquare, Search, Loader2, Building2, Send, ChevronLeft, Archive,
-  ArchiveRestore, CircleDot, Inbox as InboxIcon, AlertCircle, Phone,
+  ArchiveRestore, CircleDot, Inbox as InboxIcon, AlertCircle, Phone, Plus, X,
 } from 'lucide-react';
 import { useAgency } from '../../agency/context';
 import { useTheme } from '../../../hooks/useTheme';
@@ -111,6 +111,18 @@ export default function CallCenterTexts() {
   const [archiving, setArchiving] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
+  // Compose (outbound): pick a business, then a saved contact or a new number.
+  const [showCompose, setShowCompose] = useState(false);
+  const [cBusiness, setCBusiness] = useState('');
+  const [cMode, setCMode] = useState<'contact' | 'new'>('contact');
+  const [cContactId, setCContactId] = useState('');
+  const [cNumber, setCNumber] = useState('');
+  const [cMessage, setCMessage] = useState('');
+  const [cContacts, setCContacts] = useState<{ id: string; name: string; phone: string | null }[]>([]);
+  const [cLoadingContacts, setCLoadingContacts] = useState(false);
+  const [cSending, setCSending] = useState(false);
+  const [cErr, setCErr] = useState<string | null>(null);
+
   const threadEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => { const chk = () => setIsMobile(window.innerWidth < 768); chk(); window.addEventListener('resize', chk); return () => window.removeEventListener('resize', chk); }, []);
@@ -191,16 +203,65 @@ export default function CallCenterTexts() {
     markRead(id);
   }, [loadThread, markRead]);
 
-  // Deep-link: /cc/sms?c=<conversationId> opens that thread (from the new-text
-  // toast in the shell). Runs once the agency is ready.
+  // Deep-link, read once the agency is ready:
+  //   ?c=<conversationId>                 -> open that thread (new-text toast)
+  //   ?client=<id>&to=<phone>&name=<name> -> open the composer prefilled (from
+  //                                          a contact's "Text" button)
   useEffect(() => {
     if (!agencyId) return;
     try {
-      const c = new URLSearchParams(window.location.search).get('c');
-      if (c) openConversation(c);
+      const sp = new URLSearchParams(window.location.search);
+      const c = sp.get('c');
+      if (c) { openConversation(c); return; }
+      const client = sp.get('client');
+      const to = sp.get('to');
+      if (client && to) {
+        setCBusiness(client);
+        setCMode('new');
+        setCNumber(to);
+        const nm = sp.get('name');
+        setCMessage(nm ? '' : '');
+        setShowCompose(true);
+      }
     } catch { /* no-op */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agencyId]);
+
+  // Load the chosen business's contacts for the composer's contact picker.
+  useEffect(() => {
+    if (!showCompose || !agencyId || !cBusiness) { setCContacts([]); return; }
+    let stop = false;
+    setCLoadingContacts(true);
+    (async () => {
+      try {
+        const r = await fetch(`${API()}/api/agency/${agencyId}/cc/contacts?business=${encodeURIComponent(cBusiness)}&limit=100&sort=name`, { headers: { Authorization: `Bearer ${TOKEN()}` } });
+        if (r.ok) { const d = await r.json(); if (!stop && d.success) setCContacts((d.rows || []).filter((x: any) => x.phone).map((x: any) => ({ id: x.id, name: x.name, phone: x.phone }))); }
+      } catch { /* non-fatal */ } finally { if (!stop) setCLoadingContacts(false); }
+    })();
+    return () => { stop = true; };
+  }, [showCompose, agencyId, cBusiness]);
+
+  const resetCompose = () => { setShowCompose(false); setCBusiness(''); setCMode('contact'); setCContactId(''); setCNumber(''); setCMessage(''); setCContacts([]); setCErr(null); };
+
+  const sendCompose = async () => {
+    if (!cBusiness) { setCErr('Pick a business to text from.'); return; }
+    const to = cMode === 'contact' ? (cContacts.find((x) => x.id === cContactId)?.phone || '') : cNumber.trim();
+    if (!to) { setCErr(cMode === 'contact' ? 'Pick a contact.' : 'Enter a phone number.'); return; }
+    if (!cMessage.trim()) { setCErr('Write a message.'); return; }
+    setCSending(true); setCErr(null);
+    try {
+      const r = await fetch(`${API()}/api/agency/${agencyId}/cc/sms/start`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` },
+        body: JSON.stringify({ clientId: cBusiness, to, message: cMessage.trim() }),
+      });
+      const d = await r.json();
+      if (!r.ok || !d.success) { setCErr(d.error || 'Could not send the text.'); return; }
+      const convId = d.conversationId;
+      resetCompose();
+      await loadList(true);
+      if (convId) openConversation(convId);
+    } catch { setCErr('Could not send the text.'); } finally { setCSending(false); }
+  };
 
   // Poll the open thread so a customer's reply appears while it's on screen.
   useEffect(() => {
@@ -432,11 +493,16 @@ export default function CallCenterTexts() {
             <p className="text-xs sm:text-[13px]" style={{ color: theme.textMuted }}>Two-way texts across your businesses, sent from each business's own line.</p>
           </div>
         </div>
-        {unreadTotal > 0 && (
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: theme.primary15, color: theme.primary }}>
-            <CircleDot className="h-3.5 w-3.5" /> {unreadTotal} unread
-          </span>
-        )}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {unreadTotal > 0 && (
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full" style={{ backgroundColor: theme.primary15, color: theme.primary }}>
+              <CircleDot className="h-3.5 w-3.5" /> {unreadTotal} unread
+            </span>
+          )}
+          <button onClick={() => { resetCompose(); setShowCompose(true); }} className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+            <Plus className="h-4 w-4" /> <span className="hidden sm:inline">New text</span><span className="sm:hidden">New</span>
+          </button>
+        </div>
       </div>
 
       {/* Two-pane on desktop; one pane at a time on mobile. */}
@@ -450,6 +516,57 @@ export default function CallCenterTexts() {
           </div>
         )}
       </div>
+
+      {/* Compose: start an outbound text to a contact or a new number. */}
+      {showCompose && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={resetCompose}>
+          <div className="w-full max-w-md rounded-2xl p-5 sm:p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-semibold" style={{ color: theme.text }}>New text</h2>
+              <button onClick={resetCompose} style={{ color: theme.textMuted }}><X className="h-4 w-4" /></button>
+            </div>
+            {cErr && <div className="mb-3 rounded-xl px-3 py-2 text-[12.5px] flex items-center gap-2" style={{ backgroundColor: `${theme.error}12`, border: `1px solid ${theme.error}40`, color: theme.error }}><AlertCircle className="h-3.5 w-3.5" /> {cErr}</div>}
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[12px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Text from which business</label>
+                <CustomSelect value={cBusiness} onChange={(v) => { setCBusiness(v); setCContactId(''); }} options={[{ value: '', label: 'Pick a business' }, ...businesses.map((b) => ({ value: b.clientId, label: b.businessName }))]} ui={ddUI} />
+                <p className="text-[11px] mt-1" style={{ color: theme.textSubtle }}>The text sends from this business's number.</p>
+              </div>
+
+              {/* Recipient: a saved contact, or a new number. */}
+              <div>
+                <div className="flex items-center gap-1 p-1 rounded-xl mb-2" style={{ backgroundColor: theme.hover }}>
+                  {([['contact', 'A contact'], ['new', 'New number']] as const).map(([v, lbl]) => (
+                    <button key={v} onClick={() => setCMode(v)} className="flex-1 px-3 py-1.5 rounded-lg text-[13px] font-medium transition" style={cMode === v ? { backgroundColor: theme.card, color: theme.text, boxShadow: '0 1px 2px rgba(0,0,0,0.08)' } : { color: theme.textMuted }}>{lbl}</button>
+                  ))}
+                </div>
+                {cMode === 'contact' ? (
+                  !cBusiness ? (
+                    <p className="text-[12.5px] px-1 py-2" style={{ color: theme.textSubtle }}>Pick a business first.</p>
+                  ) : cLoadingContacts ? (
+                    <div className="flex items-center gap-2 text-[12.5px] px-1 py-2" style={{ color: theme.textMuted }}><Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading contacts...</div>
+                  ) : cContacts.length === 0 ? (
+                    <p className="text-[12.5px] px-1 py-2" style={{ color: theme.textSubtle }}>No contacts for this business yet. Use "New number" instead.</p>
+                  ) : (
+                    <CustomSelect value={cContactId} onChange={setCContactId} options={[{ value: '', label: 'Pick a contact' }, ...cContacts.map((c) => ({ value: c.id, label: `${c.name || 'Unknown'} · ${fmtPhone(c.phone)}` }))]} ui={ddUI} />
+                  )
+                ) : (
+                  <input value={cNumber} onChange={(e) => setCNumber(e.target.value)} placeholder="(555) 555-5555" className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={selStyle} />
+                )}
+              </div>
+
+              <div>
+                <label className="block text-[12px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Message</label>
+                <textarea value={cMessage} onChange={(e) => setCMessage(e.target.value)} rows={3} maxLength={1600} placeholder="Write your text..." className="w-full rounded-xl px-3 py-2.5 text-sm outline-none resize-none" style={selStyle} />
+              </div>
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button onClick={resetCompose} className="rounded-xl px-4 py-2 text-sm font-medium" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>Cancel</button>
+              <button onClick={sendCompose} disabled={cSending} className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold disabled:opacity-60" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{cSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Send</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

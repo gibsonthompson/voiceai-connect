@@ -18,7 +18,7 @@
 import { ReactNode, useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, Headphones, Headset, Building2, BarChart3, Settings, Menu, X, ChevronRight, Radio, ClipboardList, Inbox, MessageSquare, type LucideIcon } from 'lucide-react';
+import { LayoutDashboard, Headphones, Headset, Building2, BarChart3, Settings, Menu, X, ChevronRight, Radio, ClipboardList, Inbox, MessageSquare, Contact, type LucideIcon } from 'lucide-react';
 import { AgencyProvider, useAgency } from '../agency/context';
 import { useTheme } from '../../hooks/useTheme';
 import DynamicFavicon from '@/components/DynamicFavicon';
@@ -44,6 +44,7 @@ const HREF_ROUTE: Record<string, NavRoute> = {
   '/cc/calls': 'calls',
   '/cc/messages': 'messages',
   '/cc/sms': 'texts',
+  '/cc/contacts': 'contacts',
   '/cc/businesses': 'businesses',
   '/cc/agents': 'agents',
   '/cc/analytics': 'analytics',
@@ -172,6 +173,7 @@ function CallCenterShell({ children }: { children: ReactNode }) {
     { href: '/cc/calls', label: 'Calls', icon: ClipboardList },
     { href: '/cc/messages', label: 'Messages', icon: Inbox, badge: openFollowups },
     { href: '/cc/sms', label: 'Texts', icon: MessageSquare, badge: unreadTexts },
+    { href: '/cc/contacts', label: 'Contacts', icon: Contact },
     { href: '/cc/businesses', label: 'Businesses', icon: Building2, perm: 'clients' },
     { href: '/cc/agents', label: 'Agents', icon: Headset, manageTeam: true },
     { href: '/cc/analytics', label: 'Analytics', icon: BarChart3, perm: 'analytics' },
@@ -184,6 +186,7 @@ function CallCenterShell({ children }: { children: ReactNode }) {
     { href: '/cc/calls', label: 'Calls', icon: ClipboardList },
     { href: '/cc/messages', label: 'Messages', icon: Inbox, badge: openFollowups },
     { href: '/cc/sms', label: 'Texts', icon: MessageSquare, badge: unreadTexts },
+    { href: '/cc/contacts', label: 'Contacts', icon: Contact },
   ];
   const canSeeNav = (item: NavItem) => {
     if (item.manageTeam) return canManageTeam;
@@ -204,7 +207,7 @@ function CallCenterShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (loading || !pathname || !user) return;
     if (isAgent) {
-      const agentAllowed = pathname.startsWith('/cc/live-calls') || pathname.startsWith('/cc/calls') || pathname.startsWith('/cc/messages') || pathname.startsWith('/cc/sms');
+      const agentAllowed = pathname.startsWith('/cc/live-calls') || pathname.startsWith('/cc/calls') || pathname.startsWith('/cc/messages') || pathname.startsWith('/cc/sms') || pathname.startsWith('/cc/contacts');
       if (!agentAllowed) window.location.href = '/cc/live-calls';
       return;
     }
@@ -250,7 +253,7 @@ function CallCenterShell({ children }: { children: ReactNode }) {
             the mark plus the call-center name so the sidebar is never blank. */}
         <div className="flex items-center gap-2.5 min-w-0">
           {branding.logoUrl ? (
-            <img src={branding.logoUrl} alt={branding.name} style={{ height: '44px', width: 'auto', maxWidth: '180px' }} className="object-contain flex-shrink-0" />
+            <img src={branding.logoUrl} alt={branding.name} style={{ height: '52px', width: 'auto', maxWidth: '196px' }} className="object-contain flex-shrink-0" />
           ) : (
             <>
               <div className="flex items-center justify-center rounded-lg flex-shrink-0" style={{ height: '38px', width: '38px', backgroundColor: theme.primary15 }}><WaveformIcon className="h-5 w-5" color={theme.primary} /></div>
@@ -316,7 +319,7 @@ function CallCenterShell({ children }: { children: ReactNode }) {
       <div className="sticky top-0 z-30 md:hidden" style={{ backgroundColor: theme.sidebarBg, paddingTop: 'env(safe-area-inset-top)' }}>
         <header className="flex items-center justify-between h-16 px-4" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}>
           <div className="flex items-center gap-2.5 min-w-0">
-            {branding.logoUrl ? <img src={branding.logoUrl} alt={branding.name} style={{ height: '40px', width: 'auto', maxWidth: '160px' }} className="object-contain" /> : <><div className="flex items-center justify-center rounded-lg" style={{ height: '34px', width: '34px', backgroundColor: theme.primary15 }}><WaveformIcon className="h-5 w-5" color={theme.primary} /></div><span className="text-sm font-semibold truncate" style={{ color: theme.sidebarText }}>{branding.name}</span></>}
+            {branding.logoUrl ? <img src={branding.logoUrl} alt={branding.name} style={{ height: '48px', width: 'auto', maxWidth: '190px' }} className="object-contain" /> : <><div className="flex items-center justify-center rounded-lg" style={{ height: '34px', width: '34px', backgroundColor: theme.primary15 }}><WaveformIcon className="h-5 w-5" color={theme.primary} /></div><span className="text-sm font-semibold truncate" style={{ color: theme.sidebarText }}>{branding.name}</span></>}
           </div>
           <button onClick={() => setSidebarOpen(true)} className="w-11 h-11 -mr-2 flex items-center justify-center rounded-xl" style={{ color: theme.sidebarText }}><Menu className="h-7 w-7" /></button>
         </header>

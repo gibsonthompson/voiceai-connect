@@ -102,7 +102,8 @@ export default function CallCenterAnalytics() {
             {(!data || data.byDay.length === 0) ? <p className="text-[13px]" style={{ color: theme.textMuted }}>No data yet.</p> : (
               <div className="flex items-end gap-[2px] sm:gap-1" style={{ height: 140 }}>
                 {data.byDay.map((d) => (
-                  <div key={d.date} className="flex-1 min-w-0 flex flex-col items-center justify-end h-full group" title={`${d.date}: ${d.count} calls`}>
+                  <div key={d.date} className="relative flex-1 min-w-0 flex flex-col items-center justify-end h-full group">
+                    <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-0 z-20 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg px-2 py-1 text-[11px] font-medium whitespace-nowrap shadow-lg" style={{ backgroundColor: theme.text, color: theme.bg }}>{dayLabel(d.date)}: {d.count} {d.count === 1 ? 'call' : 'calls'}</div>
                     <div className="w-full rounded-t transition-all" style={{ height: `${Math.max(2, (d.count / maxDay) * 100)}%`, backgroundColor: d.count ? theme.primary : theme.border, opacity: d.count ? 1 : 0.5 }} />
                   </div>
                 ))}
@@ -122,7 +123,8 @@ export default function CallCenterAnalytics() {
             <h2 className="text-sm font-semibold mb-4" style={{ color: theme.text }}>Busiest hours (ET)</h2>
             <div className="flex items-end gap-[2px] sm:gap-1" style={{ height: 110 }}>
               {(data?.byHour || []).map((h) => (
-                <div key={h.hour} className="flex-1 min-w-0 flex flex-col items-center justify-end h-full" title={`${hourLabel(h.hour)}: ${h.count} calls`}>
+                <div key={h.hour} className="relative flex-1 min-w-0 flex flex-col items-center justify-end h-full group">
+                  <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-0 z-20 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg px-2 py-1 text-[11px] font-medium whitespace-nowrap shadow-lg" style={{ backgroundColor: theme.text, color: theme.bg }}>{hourLabel(h.hour)}: {h.count} {h.count === 1 ? 'call' : 'calls'}</div>
                   <div className="w-full rounded-t" style={{ height: `${Math.max(2, (h.count / maxHour) * 100)}%`, backgroundColor: h.count ? theme.primary : theme.border, opacity: h.count ? 0.9 : 0.4 }} />
                 </div>
               ))}
