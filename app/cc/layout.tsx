@@ -173,7 +173,7 @@ function CallCenterShell({ children }: { children: ReactNode }) {
     { href: '/cc/messages', label: 'Messages', icon: Inbox, badge: openFollowups },
     { href: '/cc/sms', label: 'Texts', icon: MessageSquare, badge: unreadTexts },
     { href: '/cc/businesses', label: 'Businesses', icon: Building2, perm: 'clients' },
-    { href: '/cc/agents', label: 'Team', icon: Headset, manageTeam: true },
+    { href: '/cc/agents', label: 'Agents', icon: Headset, manageTeam: true },
     { href: '/cc/analytics', label: 'Analytics', icon: BarChart3, perm: 'analytics' },
     { href: '/cc/settings', label: 'Settings', icon: Settings, perm: 'settings' },
   ];

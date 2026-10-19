@@ -32,21 +32,6 @@ const AGENT_PERMISSION_PRESET: Record<string, boolean> = {
   analytics: false, marketing: false, settings: false, billing: false,
 };
 
-// A MANAGER runs the dashboard (not an agent who takes calls). Default: full
-// dashboard access, but NOT the ability to manage the team (the owner grants
-// that per manager with the toggle below).
-const MANAGER_PERMISSION_PRESET: Record<string, boolean> = {
-  dashboard: true, clients: true, analytics: true, settings: true, manage_team: false,
-};
-// The tabs + rights a manager's access is built from (shown as toggles).
-const MANAGER_PERMISSION_ROWS: { key: string; label: string; desc: string }[] = [
-  { key: 'dashboard', label: 'Dashboard', desc: 'The call-center overview' },
-  { key: 'clients', label: 'Businesses', desc: 'View and edit the businesses you answer for' },
-  { key: 'analytics', label: 'Analytics', desc: 'Call stats and reports' },
-  { key: 'settings', label: 'Settings & branding', desc: 'Account settings, branding, API keys, webhooks' },
-  { key: 'manage_team', label: 'Create & manage team', desc: 'Add, edit, and remove managers and agents' },
-];
-
 // The permission keys that actually gate a call-center agent's /cc access
 // (requireAgencyAccess reads these). Shown as toggles in Manage.
 const PERMISSION_ROWS: { key: string; label: string; desc: string }[] = [
@@ -190,8 +175,6 @@ export default function CallCenterAgents() {
   const [aDelivery, setADelivery] = useState<'browser' | 'phone'>('browser');
   const [aAgentPhone, setAAgentPhone] = useState('');
   const [aAssigned, setAAssigned] = useState<string[]>([]);
-  const [aRole, setARole] = useState<'agent' | 'manager'>('agent');
-  const [aManagerPerms, setAManagerPerms] = useState<Record<string, boolean>>({ ...MANAGER_PERMISSION_PRESET });
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [revealPw, setRevealPw] = useState<Record<string, boolean>>({});
@@ -203,7 +186,7 @@ export default function CallCenterAgents() {
     if (!agencyId) return;
     try {
       const r = await fetch(`${API()}/api/agency/${agencyId}/team`, { headers: { Authorization: `Bearer ${TOKEN()}` } });
-      if (r.ok) { const d = await r.json(); if (d.success) setMembers((d.members || []).filter((m: Member) => m.is_manager === true || Array.isArray(m.assigned_client_ids))); }
+      if (r.ok) { const d = await r.json(); if (d.success) setMembers((d.members || []).filter((m: Member) => m.is_manager !== true && Array.isArray(m.assigned_client_ids))); }
     } catch { /* keep last good */ } finally { setLoading(false); }
   }, [agencyId]);
 
@@ -228,9 +211,7 @@ export default function CallCenterAgents() {
 
   // Agents only: a call-center agent always has an assigned_client_ids array
   // (managers/owner have no team row). Note we already filtered in loadTeam.
-  const isMgrRow = (m: Member) => m.is_manager === true;
-  const agents = members.filter((m) => !isMgrRow(m));
-  const managers = members.filter(isMgrRow);
+  const agents = members;
   const onlineCount = agents.filter((m) => m.user_id && presence[m.user_id]?.online).length;
   const availableCount = agents.filter((m) => { const p = m.user_id ? presence[m.user_id] : null; return !!(p?.online && p.status === 'available' && !p.busy && onSchedule(m.availability_hours, tz)); }).length;
 
@@ -248,32 +229,26 @@ export default function CallCenterAgents() {
 
   const addAgent = async () => {
     if (!aName.trim() || !aEmail.trim()) { setError('Name and email are required.'); return; }
-    const asManager = aRole === 'manager';
     setAdding(true); setError(null); setSuccess(null);
     try {
-      const body: any = {
-        name: aName.trim(), email: aEmail.trim(), phone: aPhone.trim() || null,
-        is_manager: asManager,
-        permissions: asManager ? aManagerPerms : AGENT_PERMISSION_PRESET,
-      };
-      if (!asManager) {
-        // Agent-only fields: which businesses they handle and how calls reach them.
-        body.assigned_client_ids = aAssigned;
-        body.call_delivery = aDelivery;
-        body.agent_phone = aDelivery === 'phone' ? (aAgentPhone.trim() || null) : null;
-      }
       const r = await fetch(`${API()}/api/agency/${agencyId}/team`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          name: aName.trim(), email: aEmail.trim(), phone: aPhone.trim() || null,
+          permissions: AGENT_PERMISSION_PRESET,
+          assigned_client_ids: aAssigned,
+          call_delivery: aDelivery,
+          agent_phone: aDelivery === 'phone' ? (aAgentPhone.trim() || null) : null,
+        }),
       });
       const d = await r.json();
-      if (!r.ok) throw new Error(d.error || `Failed to add ${asManager ? 'manager' : 'agent'}`);
+      if (!r.ok) throw new Error(d.error || 'Failed to add agent');
       setMembers((prev) => [...prev, { ...d.member, user_id: d.member.user_id || null, assigned_client_ids: d.member.assigned_client_ids || [] }]);
-      setSuccess(`${d.member.display_name} added as ${asManager ? 'a manager' : 'an agent'}.${aPhone ? ' Credentials sent by SMS.' : ' Reveal the temp password on their card to share it.'}`);
+      setSuccess(`${d.member.display_name} added.${aPhone ? ' Credentials sent by SMS.' : ' Reveal the temp password on their card to share it.'}`);
       setExpandedId(d.member.id); setRevealPw((p) => ({ ...p, [d.member.id]: true }));
-      setAName(''); setAEmail(''); setAPhone(''); setADelivery('browser'); setAAgentPhone(''); setAAssigned([]); setARole('agent'); setAManagerPerms({ ...MANAGER_PERMISSION_PRESET }); setShowAdd(false);
+      setAName(''); setAEmail(''); setAPhone(''); setADelivery('browser'); setAAgentPhone(''); setAAssigned([]); setShowAdd(false);
       setTimeout(() => setSuccess(null), 6000);
-    } catch (e: any) { setError(e.message || 'Failed to add team member'); }
+    } catch (e: any) { setError(e.message || 'Failed to add agent'); }
     finally { setAdding(false); }
   };
 
@@ -432,16 +407,17 @@ export default function CallCenterAgents() {
     </button>
   );
 
-  // Belt-and-suspenders: the /cc layout already confines anyone without the
-  // manage-team right away from here, but guard the surface itself too so the
-  // roster never flashes for a manager who lacks the permission.
+  // Managing agents is a manage-team action. The /cc layout already confines
+  // anyone without that right away from here; this guards the surface itself so
+  // the roster never flashes for a manager who lacks the permission. (Managers
+  // themselves are added in Settings, not here.)
   if (agency && !canManageTeam) {
     return (
       <div className="p-4 sm:p-6 lg:p-8 min-h-screen flex items-center justify-center" style={{ backgroundColor: theme.bg }}>
         <div className="rounded-2xl p-8 max-w-sm text-center" style={{ border: `1px solid ${theme.border}` }}>
           <Users className="h-8 w-8 mx-auto mb-3" style={{ color: theme.textSubtle }} />
-          <p className="text-sm font-semibold" style={{ color: theme.text }}>Team management is restricted</p>
-          <p className="text-[13px] mt-1.5" style={{ color: theme.textMuted }}>You don&apos;t have permission to add or manage the team. Ask the account owner if you need access.</p>
+          <p className="text-sm font-semibold" style={{ color: theme.text }}>Agent management is restricted</p>
+          <p className="text-[13px] mt-1.5" style={{ color: theme.textMuted }}>You don&apos;t have permission to add or manage agents. Ask the account owner if you need access.</p>
         </div>
       </div>
     );
@@ -454,9 +430,9 @@ export default function CallCenterAgents() {
         <div className="flex items-center gap-3 min-w-0">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Headset className="h-5 w-5" style={{ color: theme.primary }} /></div>
           <div className="min-w-0">
-            <h1 className="text-lg sm:text-xl lg:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Team</h1>
+            <h1 className="text-lg sm:text-xl lg:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Agents</h1>
             <p className="text-xs sm:text-[13px]" style={{ color: theme.textMuted }}>
-              {managers.length > 0 && <>{managers.length} {managers.length === 1 ? 'manager' : 'managers'} · </>}{agents.length} {agents.length === 1 ? 'agent' : 'agents'} · <span style={{ color: '#22c55e' }}>{availableCount} available</span> · {onlineCount} online
+              {agents.length} {agents.length === 1 ? 'agent' : 'agents'} · <span style={{ color: '#22c55e' }}>{availableCount} available</span> · {onlineCount} online
             </p>
           </div>
         </div>
@@ -465,7 +441,7 @@ export default function CallCenterAgents() {
             <HelpCircle className="h-4 w-4" /> <span className="hidden sm:inline">How this works</span>
           </button>
           <button onClick={() => { setShowAdd((s) => !s); setError(null); }} className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
-            <UserPlus className="h-4 w-4" /> <span className="hidden sm:inline">Add teammate</span><span className="sm:hidden">Add</span>
+            <UserPlus className="h-4 w-4" /> <span className="hidden sm:inline">Add agent</span><span className="sm:hidden">Add</span>
           </button>
         </div>
       </div>
@@ -493,93 +469,54 @@ export default function CallCenterAgents() {
       {showAdd && (
         <div className="mb-5 rounded-2xl p-5 sm:p-6" style={card}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold" style={{ color: theme.text }}>New {aRole === 'manager' ? 'manager' : 'agent'}</h2>
+            <h2 className="text-sm font-semibold" style={{ color: theme.text }}>New agent</h2>
             <button onClick={() => setShowAdd(false)} style={{ color: theme.textMuted }}><X className="h-4 w-4" /></button>
           </div>
-
-          {/* Role: agent (takes calls) vs manager (runs the dashboard). */}
-          <div className="mb-4">
-            <Label>Role</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {([['agent', 'Agent', 'Takes escalated calls, scoped to assigned businesses', Headset], ['manager', 'Manager', 'Runs the dashboard, no live calls', Users]] as const).map(([v, lbl, sub, Icon]) => (
-                <button key={v} onClick={() => setARole(v)} className="flex items-start gap-2 rounded-xl px-3 py-2.5 text-left transition-colors" style={aRole === v ? { backgroundColor: theme.primary15, border: `1px solid ${theme.primary}55` } : { backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
-                  <Icon className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: aRole === v ? theme.primary : theme.textMuted }} />
-                  <span className="min-w-0"><span className="block text-[13px] font-medium" style={{ color: aRole === v ? theme.primary : theme.text }}>{lbl}</span><span className="block text-[11px]" style={{ color: theme.textMuted }}>{sub}</span></span>
-                </button>
-              ))}
-            </div>
-          </div>
-
           <div className="grid sm:grid-cols-2 gap-3">
             <div><Label>Name</Label><input value={aName} onChange={(e) => setAName(e.target.value)} placeholder="Jordan Diaz" className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={field} /></div>
             <div><Label>Email (their login)</Label><input type="email" value={aEmail} onChange={(e) => setAEmail(e.target.value)} placeholder="jordan@callcenter.com" className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={field} /></div>
-            <div className="sm:col-span-2"><Label>Mobile (optional)</Label><input type="tel" value={aPhone} onChange={(e) => setAPhone(e.target.value)} placeholder="(555) 555-5555" className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={field} /><p className="mt-1 text-[11px] leading-snug" style={{ color: theme.textMuted }}>If you add a number, we text them their login details. Otherwise reveal the temp password on their card to share it.</p></div>
+            <div><Label>Mobile (optional)</Label><input type="tel" value={aPhone} onChange={(e) => setAPhone(e.target.value)} placeholder="(555) 555-5555" className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={field} /><p className="mt-1 text-[11px] leading-snug" style={{ color: theme.textMuted }}>If you add a number, we text them their login details. Otherwise reveal the temp password on their card to share it.</p></div>
+            <div><Label>How escalated calls reach them</Label>
+              <div className="flex gap-2">
+                {([['browser', 'In browser', Monitor], ['phone', 'Ring a phone', Phone]] as const).map(([v, lbl, Icon]) => (
+                  <button key={v} onClick={() => setADelivery(v)} className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-[13px] font-medium" style={aDelivery === v ? { backgroundColor: theme.primary, color: theme.primaryText } : { backgroundColor: theme.hover, color: theme.textMuted }}><Icon className="h-3.5 w-3.5" /> {lbl}</button>
+                ))}
+              </div>
+            </div>
+            {aDelivery === 'phone' && <div className="sm:col-span-2"><Label>Agent phone (where escalations ring)</Label><input type="tel" value={aAgentPhone} onChange={(e) => setAAgentPhone(e.target.value)} placeholder="(555) 555-5555" className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={field} /></div>}
           </div>
-
-          {aRole === 'agent' ? (
-            <>
-              <div className="mt-4">
-                <Label>How escalated calls reach them</Label>
-                <div className="flex gap-2">
-                  {([['browser', 'In browser', Monitor], ['phone', 'Ring a phone', Phone]] as const).map(([v, lbl, Icon]) => (
-                    <button key={v} onClick={() => setADelivery(v)} className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-[13px] font-medium" style={aDelivery === v ? { backgroundColor: theme.primary, color: theme.primaryText } : { backgroundColor: theme.hover, color: theme.textMuted }}><Icon className="h-3.5 w-3.5" /> {lbl}</button>
-                  ))}
-                </div>
-                {aDelivery === 'phone' && <div className="mt-3"><Label>Agent phone (where escalations ring)</Label><input type="tel" value={aAgentPhone} onChange={(e) => setAAgentPhone(e.target.value)} placeholder="(555) 555-5555" className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={field} /></div>}
-              </div>
-              <div className="mt-4">
-                <Label>Assigned businesses ({aAssigned.length} selected)</Label>
-                {clients.length === 0 ? (
-                  <p className="text-[12px]" style={{ color: theme.textSubtle }}>No businesses yet. Add one first, then assign it here.</p>
-                ) : (
-                  <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
-                    {clients.map((c) => {
-                      const on = aAssigned.includes(c.id);
-                      return <button key={c.id} onClick={() => setAAssigned((p) => on ? p.filter((x) => x !== c.id) : [...p, c.id])} className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12px] font-medium" style={on ? { backgroundColor: theme.primary15, color: theme.primary, border: `1px solid ${theme.primary}55` } : { backgroundColor: theme.hover, color: theme.textMuted, border: `1px solid ${theme.border}` }}>{on && <Check className="h-3 w-3" />}{c.business_name}</button>;
-                    })}
-                  </div>
-                )}
-                <p className="text-[11.5px] mt-1.5" style={{ color: theme.textSubtle }}>An agent only sees and handles calls for the businesses you assign. Change anytime.</p>
-              </div>
-            </>
-          ) : (
-            <div className="mt-4">
-              <Label>What this manager can access</Label>
-              <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${theme.inputBorder}` }}>
-                {MANAGER_PERMISSION_ROWS.map((pr, i) => {
-                  const on = aManagerPerms[pr.key] !== false;
-                  const critical = pr.key === 'manage_team';
-                  return (
-                    <div key={pr.key} className="flex items-center justify-between gap-3 px-3 py-2.5" style={{ ...(i > 0 ? { borderTop: `1px solid ${theme.borderSubtle}` } : {}), ...(critical ? { backgroundColor: theme.primary15 } : {}) }}>
-                      <div className="min-w-0"><p className="text-[13px] font-medium" style={{ color: theme.text }}>{pr.label}</p><p className="text-[11px]" style={{ color: theme.textMuted }}>{pr.desc}</p></div>
-                      <Switch on={on} onClick={() => setAManagerPerms((p) => ({ ...p, [pr.key]: !on }))} />
-                    </div>
-                  );
+          <div className="mt-4">
+            <Label>Assigned businesses ({aAssigned.length} selected)</Label>
+            {clients.length === 0 ? (
+              <p className="text-[12px]" style={{ color: theme.textSubtle }}>No businesses yet. Add one first, then assign it here.</p>
+            ) : (
+              <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
+                {clients.map((c) => {
+                  const on = aAssigned.includes(c.id);
+                  return <button key={c.id} onClick={() => setAAssigned((p) => on ? p.filter((x) => x !== c.id) : [...p, c.id])} className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12px] font-medium" style={on ? { backgroundColor: theme.primary15, color: theme.primary, border: `1px solid ${theme.primary}55` } : { backgroundColor: theme.hover, color: theme.textMuted, border: `1px solid ${theme.border}` }}>{on && <Check className="h-3 w-3" />}{c.business_name}</button>;
                 })}
               </div>
-              <p className="text-[11.5px] mt-1.5" style={{ color: theme.textSubtle }}>A manager runs the dashboard and never takes calls. Turn on "Create & manage team" to let them add and manage other managers and agents.</p>
-            </div>
-          )}
-
+            )}
+            <p className="text-[11.5px] mt-1.5" style={{ color: theme.textSubtle }}>An agent only sees and handles calls for the businesses you assign. Change anytime.</p>
+          </div>
           <div className="mt-4 flex justify-end">
-            <button onClick={addAgent} disabled={adding} className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold disabled:opacity-60" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{adding ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />} Add {aRole === 'manager' ? 'manager' : 'agent'}</button>
+            <button onClick={addAgent} disabled={adding} className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold disabled:opacity-60" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{adding ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />} Add agent</button>
           </div>
         </div>
       )}
 
       {/* Roster */}
       {loading ? (
-        <div className="flex items-center gap-2 text-sm" style={{ color: theme.textMuted }}><Loader2 className="h-4 w-4 animate-spin" /> Loading team...</div>
-      ) : members.length === 0 ? (
+        <div className="flex items-center gap-2 text-sm" style={{ color: theme.textMuted }}><Loader2 className="h-4 w-4 animate-spin" /> Loading agents...</div>
+      ) : agents.length === 0 ? (
         <div className="rounded-2xl py-14 flex flex-col items-center justify-center text-center" style={{ border: `1px dashed ${theme.border}` }}>
           <Users className="h-8 w-8 mb-2.5" style={{ color: theme.textSubtle }} />
-          <p className="text-sm font-medium" style={{ color: theme.text }}>No team members yet</p>
-          <p className="text-[13px] mt-1" style={{ color: theme.textMuted }}>Add a manager to help run the dashboard, or an agent to take escalated calls.</p>
+          <p className="text-sm font-medium" style={{ color: theme.text }}>No agents yet</p>
+          <p className="text-[13px] mt-1" style={{ color: theme.textMuted }}>Add your first agent to start taking escalated calls.</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {[...managers, ...agents].map((m) => {
-            const isMgr = m.is_manager === true;
+          {agents.map((m) => {
             const pv = presenceView(m);
             const assigned = Array.isArray(m.assigned_client_ids) ? m.assigned_client_ids : [];
             const expanded = expandedId === m.id;
@@ -592,24 +529,20 @@ export default function CallCenterAgents() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-semibold truncate" style={{ color: theme.text }}>{m.display_name}</p>
-                      {isMgr
-                        ? <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-md" style={{ backgroundColor: theme.primary15, color: theme.primary }}><Users className="h-2.5 w-2.5" /> Manager{m.permissions?.manage_team ? ' · can manage team' : ''}</span>
-                        : <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>Agent</span>}
-                      {!isMgr && (
-                        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold">
-                          {pv.dot && <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: pv.color }} />}
-                          <span style={{ color: pv.color }}>{pv.label}</span>
-                        </span>
-                      )}
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>Agent</span>
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold">
+                        {pv.dot && <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: pv.color }} />}
+                        <span style={{ color: pv.color }}>{pv.label}</span>
+                      </span>
                     </div>
-                    <p className="text-[12px] truncate" style={{ color: theme.textMuted }}>{isMgr ? (m.email || 'No email') + ' · runs the dashboard' : `${m.email || 'No email'} · ${m.call_delivery === 'phone' ? `calls ring ${fmtPhone(m.agent_phone) || 'their phone'}` : 'calls ring in-browser'} · ${assigned.length} ${assigned.length === 1 ? 'business' : 'businesses'}`}</p>
+                    <p className="text-[12px] truncate" style={{ color: theme.textMuted }}>{m.email || 'No email'} · {m.call_delivery === 'phone' ? `calls ring ${fmtPhone(m.agent_phone) || 'their phone'}` : 'calls ring in-browser'} · {assigned.length} {assigned.length === 1 ? 'business' : 'businesses'}</p>
                   </div>
                   <div className="flex items-center gap-1.5 flex-shrink-0">
-                    {!isMgr && ovOn && (
+                    {ovOn && (
                       <span title="Active override is on: this agent is offered calls regardless of their working hours. Change it under Manage." className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold" style={{ backgroundColor: theme.primary15, color: theme.primary }}><Zap className="h-3 w-3" /> Active</span>
                     )}
                     <button onClick={() => setExpandedId(expanded ? null : m.id)} className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>Manage <ChevronDown className="h-3.5 w-3.5 transition-transform" style={{ transform: expanded ? 'rotate(180deg)' : 'none' }} /></button>
-                    <button onClick={() => removeAgent(m)} className="inline-flex items-center justify-center rounded-lg h-[30px] w-[30px]" style={{ backgroundColor: theme.hover, color: theme.error }} title={isMgr ? 'Remove manager' : 'Remove agent'}><Trash2 className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => removeAgent(m)} className="inline-flex items-center justify-center rounded-lg h-[30px] w-[30px]" style={{ backgroundColor: theme.hover, color: theme.error }} title="Remove agent"><Trash2 className="h-3.5 w-3.5" /></button>
                   </div>
                 </div>
 
@@ -672,28 +605,6 @@ export default function CallCenterAgents() {
                       <p className="text-[11px] mt-1.5" style={{ color: theme.textSubtle }}>Where we text their login details. This is not where calls ring, set that under Call routing.</p>
                     </div>
 
-                    {/* Manager access (managers run the dashboard, no call routing). */}
-                    {isMgr && (
-                      <div>
-                        <Label>What this manager can access</Label>
-                        <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${theme.inputBorder}` }}>
-                          {MANAGER_PERMISSION_ROWS.map((pr, i) => {
-                            const on = !!(m.permissions && m.permissions[pr.key]);
-                            const critical = pr.key === 'manage_team';
-                            return (
-                              <div key={pr.key} className="flex items-center justify-between gap-3 px-3 py-2.5" style={{ ...(i > 0 ? { borderTop: `1px solid ${theme.borderSubtle}` } : {}), ...(critical ? { backgroundColor: theme.primary15 } : {}) }}>
-                                <div className="min-w-0"><p className="text-[13px] font-medium" style={{ color: theme.text }}>{pr.label}</p><p className="text-[11px]" style={{ color: theme.textMuted }}>{pr.desc}</p></div>
-                                <Switch on={on} onClick={() => togglePermission(m, pr.key)} />
-                              </div>
-                            );
-                          })}
-                        </div>
-                        <p className="text-[11px] mt-1.5" style={{ color: theme.textSubtle }}>"Create & manage team" lets this manager add and manage other managers and agents. Turn tabs off to hide them from this manager's dashboard.</p>
-                      </div>
-                    )}
-
-                    {/* Agent-only controls: call routing, call permissions, assignments, hours. */}
-                    {!isMgr && (<>
                     {/* Call routing */}
                     <div>
                       <Label>Call routing</Label>
@@ -830,7 +741,6 @@ export default function CallCenterAgents() {
                         );
                       })()}
                     </div>
-                    </>)}
                   </div>
                 )}
               </div>
