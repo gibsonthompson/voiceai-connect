@@ -48,6 +48,7 @@ interface Cfg {
   humanHandoff: 'transfer' | 'message';
   overflowAction: 'message' | 'callback' | 'ring_business';
   aiDirectRouting: boolean;
+  autoEscalate: boolean;
   serviceAreas: string[];
   aiTone: 'professional' | 'friendly' | 'casual' | 'clinical';
   bookingMode: 'auto_book' | 'collect_request' | 'disabled';
@@ -580,9 +581,20 @@ export default function BusinessConfig() {
                 />
               </div>
 
+              <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.borderSubtle}` }}>
+                <ToggleRow
+                  title="Escalate on its own when the AI can't help"
+                  sub={cfg.autoEscalate
+                    ? "On: the AI connects the caller to an agent on its own, not just when asked, if it can't understand them, they're confused or frustrated, it genuinely can't help, or they go silent. It re-prompts once on silence and offers to connect."
+                    : "Off: the AI only connects a caller to an agent when they explicitly ask. Turn this on so confused or unresponsive callers still reach a person instead of getting stuck or timing out."}
+                  on={cfg.autoEscalate}
+                  onClick={() => set('autoEscalate', !cfg.autoEscalate)}
+                />
+              </div>
+
             </>
           )}
-          <SaveBtn fields={['humanHandoff', 'transferPhone', 'overflowAction', 'aiDirectRouting']} sk="escalation" />
+          <SaveBtn fields={['humanHandoff', 'transferPhone', 'overflowAction', 'aiDirectRouting', 'autoEscalate']} sk="escalation" />
         </div>
 
         {/* Texts & Notifications: recap + booking-owner alert + customer confirmation, one shared owner recipient */}
