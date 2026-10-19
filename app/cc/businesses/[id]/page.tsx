@@ -1,4 +1,3 @@
-'use client';
 
 // ============================================================================
 // /cc/businesses/[id] - configure a business from inside the call-center console.
@@ -48,6 +47,7 @@ interface Cfg {
   humanHandoff: 'transfer' | 'message';
   overflowAction: 'message' | 'callback' | 'ring_business';
   aiDirectRouting: boolean;
+  autoEscalate: boolean;
   serviceAreas: string[];
   aiTone: 'professional' | 'friendly' | 'casual' | 'clinical';
   bookingMode: 'auto_book' | 'collect_request' | 'disabled';
@@ -545,6 +545,17 @@ export default function BusinessConfig() {
                 <p className="text-[11.5px] leading-relaxed" style={{ color: theme.textMuted }}>The AI answers and handles everything it can: questions, bookings, texts. It only reaches for a human when a caller truly needs one. At that point the call is offered to your available agents first. The settings below decide what happens when no agent is free, and whether the AI may skip your agents for a specific department.</p>
               </div>
 
+              <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.borderSubtle}` }}>
+                <ToggleRow
+                  title="Let the AI connect callers on its own"
+                  sub={cfg.autoEscalate
+                    ? 'On (recommended for a call center): the AI connects a caller to your agents on its own when they are confused, frustrated, going in circles, or need something it cannot handle, not only when they ask for a person outright. It still screens first (gets a name and reason) unless it is a clear emergency.'
+                    : 'Off: the AI only reaches for a person when the caller explicitly asks for one or there is an emergency. A frustrated caller who never asks for a human is offered a message instead of being connected.'}
+                  on={!!cfg.autoEscalate}
+                  onClick={() => set('autoEscalate', !cfg.autoEscalate)}
+                />
+              </div>
+
               <div className="mt-4">
                 <Label>When no agent is available</Label>
                 <CustomSelect value={cfg.overflowAction} onChange={(v) => set('overflowAction', v as Cfg['overflowAction'])} options={OVERFLOW_OPTIONS} ui={ddUI} />
@@ -579,7 +590,7 @@ export default function BusinessConfig() {
 
             </>
           )}
-          <SaveBtn fields={['humanHandoff', 'transferPhone', 'overflowAction', 'aiDirectRouting']} sk="escalation" />
+          <SaveBtn fields={['humanHandoff', 'transferPhone', 'overflowAction', 'aiDirectRouting', 'autoEscalate']} sk="escalation" />
         </div>
 
         {/* Texts & Notifications: recap + booking-owner alert + customer confirmation, one shared owner recipient */}
