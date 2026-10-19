@@ -48,7 +48,6 @@ interface Cfg {
   humanHandoff: 'transfer' | 'message';
   overflowAction: 'message' | 'callback' | 'ring_business';
   aiDirectRouting: boolean;
-  autoEscalate: boolean;
   serviceAreas: string[];
   aiTone: 'professional' | 'friendly' | 'casual' | 'clinical';
   bookingMode: 'auto_book' | 'collect_request' | 'disabled';
@@ -423,7 +422,7 @@ export default function BusinessConfig() {
 
         {/* Hours */}
         <div className="rounded-2xl p-5 sm:p-6" style={card}>
-          <SectionHead icon={Clock} title="Business Hours" sub="Used for after-hours handling below." />
+          <SectionHead icon={Clock} title="Business Hours" sub="The business's own open hours. The AI books appointments into these times and can tell callers when the office is open. This does NOT affect reaching your agents, callers can be connected to a person around the clock (see Live Escalation)." />
           <div className="space-y-2">
             {DAYS.map((d) => {
               const h = cfg.businessHours?.[d.key] || { open: '09:00', close: '17:00', closed: true };
@@ -445,10 +444,7 @@ export default function BusinessConfig() {
               );
             })}
           </div>
-          <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${theme.borderSubtle}` }}>
-            <ToggleRow title="After-hours mode" sub="When closed, take a message or book instead of transferring to a person." on={cfg.afterHoursRouting} onClick={() => set('afterHoursRouting', !cfg.afterHoursRouting)} />
-          </div>
-          <SaveBtn fields={['businessHours', 'afterHoursRouting']} sk="hours" />
+          <SaveBtn fields={['businessHours']} sk="hours" />
         </div>
 
         {/* Booking */}
@@ -532,7 +528,7 @@ export default function BusinessConfig() {
 
         {/* Escalation */}
         <div className="rounded-2xl p-5 sm:p-6" style={card}>
-          <SectionHead icon={PhoneForwarded} title="Live Escalation" sub="What happens when a caller asks for a person during open hours." />
+          <SectionHead icon={PhoneForwarded} title="Live Escalation" sub="How a caller reaches a person. This runs around the clock, not just during the business's open hours. Who is actually available is decided by your agents' own working hours and online status (set under Agents), and what happens when none are free is the overflow below, that is your call center's real after-hours." />
           <Label>When a caller wants a human</Label>
           <div className="flex gap-2 mb-4">
             {([['transfer', 'Connect them to a person'], ['message', 'Always take a message']] as const).map(([v, lbl]) => (
@@ -581,20 +577,9 @@ export default function BusinessConfig() {
                 />
               </div>
 
-              <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.borderSubtle}` }}>
-                <ToggleRow
-                  title="Escalate on its own when the AI can't help"
-                  sub={cfg.autoEscalate
-                    ? "On: the AI connects the caller to an agent on its own, not just when asked, if it can't understand them, they're confused or frustrated, it genuinely can't help, or they go silent. It re-prompts once on silence and offers to connect."
-                    : "Off: the AI only connects a caller to an agent when they explicitly ask. Turn this on so confused or unresponsive callers still reach a person instead of getting stuck or timing out."}
-                  on={cfg.autoEscalate}
-                  onClick={() => set('autoEscalate', !cfg.autoEscalate)}
-                />
-              </div>
-
             </>
           )}
-          <SaveBtn fields={['humanHandoff', 'transferPhone', 'overflowAction', 'aiDirectRouting', 'autoEscalate']} sk="escalation" />
+          <SaveBtn fields={['humanHandoff', 'transferPhone', 'overflowAction', 'aiDirectRouting']} sk="escalation" />
         </div>
 
         {/* Texts & Notifications: recap + booking-owner alert + customer confirmation, one shared owner recipient */}
