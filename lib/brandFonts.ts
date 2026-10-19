@@ -102,18 +102,42 @@ export const BRAND_FONTS: BrandFont[] = [
 export const DISPLAY_FALLBACK = "'Geist', system-ui, -apple-system, sans-serif";
 export const BODY_FALLBACK = "'Geist', 'Inter', system-ui, -apple-system, sans-serif";
 
-// Icon style -> lucide strokeWidth. The nav icons render at this weight so the
-// chrome matches the brand's weight (fine for elegant/luxury, bold for strong).
-export const ICON_STROKE: Record<string, number> = {
-  fine: 1.25,
-  regular: 1.75,
-  bold: 2.25,
-};
-export const DEFAULT_ICON_STYLE = 'regular';
+// Icon styles. Each is a genuinely different icon treatment (a Phosphor weight),
+// plus a text-only mode that drops icons entirely. The names are shared with the
+// backend (brand-fonts.js) and the vision model. The nav renders Phosphor icons
+// at the mapped weight, so switching style actually changes the icon look
+// (outline vs filled vs two-tone), not just the thickness.
+export const ICON_STYLES = ['outline', 'thin', 'bold', 'solid', 'duotone', 'none'] as const;
+export type IconStyle = typeof ICON_STYLES[number];
+export const DEFAULT_ICON_STYLE: IconStyle = 'outline';
 
-export function iconStrokeFor(style?: string | null): number {
-  if (!style) return ICON_STROKE[DEFAULT_ICON_STYLE];
-  return ICON_STROKE[style] ?? ICON_STROKE[DEFAULT_ICON_STYLE];
+export type PhosphorWeight = 'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone';
+
+// Phosphor weight per style ('none' => render no icon at all).
+export const ICON_STYLE_WEIGHT: Record<string, PhosphorWeight | null> = {
+  outline: 'regular',
+  thin: 'light',
+  bold: 'bold',
+  solid: 'fill',
+  duotone: 'duotone',
+  none: null,
+};
+export const ICON_STYLE_LABEL: Record<string, string> = {
+  outline: 'Outline', thin: 'Thin', bold: 'Bold', solid: 'Solid', duotone: 'Duotone', none: 'Text only',
+};
+
+// The Phosphor weight to render for a style. Unknown/legacy values fall back to
+// a sensible default so an old saved value (e.g. 'regular', 'fine') still works.
+export function iconWeightFor(style?: string | null): PhosphorWeight {
+  const w = style ? ICON_STYLE_WEIGHT[style] : undefined;
+  if (w) return w;
+  if (style === 'fine') return 'light';
+  if (style === 'regular') return 'regular';
+  return 'regular';
+}
+// True when the brand uses no nav icons (text-only nav).
+export function iconsHidden(style?: string | null): boolean {
+  return style === 'none';
 }
 
 export function findFont(family?: string | null): BrandFont | undefined {
@@ -143,6 +167,13 @@ export function googleFontsHref(families: Array<string | null | undefined>): str
     specs.push(`family=${encodeURIComponent(f.family).replace(/%20/g, '+')}:wght@${wght}`);
   }
   if (!specs.length) return '';
+  return `https://fonts.googleapis.com/css2?${specs.join('&')}&display=swap`;
+}
+
+// Load every catalog font at a light weight so the font picker can render each
+// option in its own typeface. One request, kept small (one weight per family).
+export function allFontsHref(): string {
+  const specs = BRAND_FONTS.map((f) => `family=${encodeURIComponent(f.family).replace(/%20/g, '+')}:wght@400;600`);
   return `https://fonts.googleapis.com/css2?${specs.join('&')}&display=swap`;
 }
 

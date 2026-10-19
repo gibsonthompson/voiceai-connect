@@ -13,10 +13,12 @@
 // (manager can still fine-tune with the pickers).
 
 import { useState, useEffect, useRef } from 'react';
-import { Upload, Trash2, Check, Loader2, Sparkles, Info, Building2, Smartphone, Palette, Type, RefreshCw, LayoutDashboard, BarChart3 } from 'lucide-react';
-import { CustomSelect, type DropdownUI } from '@/components/ui/custom-select';
+import { Upload, Trash2, Check, Loader2, Sparkles, Info, Building2, Smartphone, Palette, Type, RefreshCw } from 'lucide-react';
+import { House as PhHouse, ChatCircle as PhChat, ChartBar as PhChart } from '@phosphor-icons/react';
+import { type DropdownUI } from '@/components/ui/custom-select';
+import FontSelect from '@/components/cc/FontSelect';
 import { extractPalette } from '@/lib/colorExtraction';
-import { fontOptions, fontStack, googleFontsHref, ICON_STROKE } from '@/lib/brandFonts';
+import { fontStack, googleFontsHref, ICON_STYLES, ICON_STYLE_WEIGHT, ICON_STYLE_LABEL } from '@/lib/brandFonts';
 
 const API = () => process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
 const TOKEN = () => (typeof window !== 'undefined' ? localStorage.getItem('auth_token') : '');
@@ -71,7 +73,7 @@ export default function CcBrandingSection({ agency, refreshAgency, theme }: { ag
   // AI brand kit
   const [displayFont, setDisplayFont] = useState<string | null>(null);
   const [bodyFont, setBodyFont] = useState<string | null>(null);
-  const [iconStyle, setIconStyle] = useState<string>('regular');
+  const [iconStyle, setIconStyle] = useState<string>('outline');
   const [brandKit, setBrandKit] = useState<any>(null);
   const [analyzing, setAnalyzing] = useState(false);
 
@@ -92,7 +94,7 @@ export default function CcBrandingSection({ agency, refreshAgency, theme }: { ag
     setColors({ primary: agency.primary_color || '#10b981', secondary: agency.secondary_color || '#059669', accent: agency.accent_color || '#34d399' });
     setDisplayFont(agency.display_font || null);
     setBodyFont(agency.body_font || null);
-    setIconStyle(agency.icon_style || 'regular');
+    setIconStyle(agency.icon_style || 'outline');
     setBrandKit(agency.brand_kit || null);
   }, [agency?.id]);
 
@@ -301,11 +303,11 @@ export default function CcBrandingSection({ agency, refreshAgency, theme }: { ag
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <div>
               <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Display font (headlines + nav)</label>
-              <CustomSelect value={dispVal} onChange={setDisplayFont} options={fontOptions('display')} ui={ddUI} />
+              <FontSelect value={dispVal} onChange={setDisplayFont} slot="display" ui={ddUI} />
             </div>
             <div>
               <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Body font</label>
-              <CustomSelect value={bodyVal} onChange={setBodyFont} options={fontOptions('body')} ui={ddUI} />
+              <FontSelect value={bodyVal} onChange={setBodyFont} slot="body" ui={ddUI} />
             </div>
           </div>
           {brandKit?.fonts?.rationale && <p className="text-[11px] mt-2 flex items-start gap-1.5" style={{ color: theme.textMuted }}><Type className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" /> {brandKit.fonts.rationale}</p>}
@@ -318,17 +320,23 @@ export default function CcBrandingSection({ agency, refreshAgency, theme }: { ag
           <div className="mt-3">
             <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Nav icon style</label>
             <div className="grid grid-cols-3 gap-2">
-              {(['fine', 'regular', 'bold'] as const).map((s) => {
+              {ICON_STYLES.map((s) => {
                 const on = iconStyle === s;
-                const sw = ICON_STROKE[s];
+                const w = ICON_STYLE_WEIGHT[s];
                 return (
                   <button key={s} onClick={() => setIconStyle(s)} className="flex flex-col items-center gap-1.5 rounded-xl px-3 py-3 transition-colors" style={on ? { backgroundColor: theme.primary15, border: `1px solid ${theme.primary}55` } : { ...input }}>
-                    <span className="flex items-center gap-2" style={{ color: on ? theme.primary : theme.textMuted }}>
-                      <LayoutDashboard className="h-5 w-5" strokeWidth={sw} />
-                      <Building2 className="h-5 w-5" strokeWidth={sw} />
-                      <BarChart3 className="h-5 w-5" strokeWidth={sw} />
+                    <span className="flex items-center justify-center gap-2 h-5" style={{ color: on ? theme.primary : theme.textMuted }}>
+                      {w ? (
+                        <>
+                          <PhHouse size={20} weight={w} />
+                          <PhChat size={20} weight={w} />
+                          <PhChart size={20} weight={w} />
+                        </>
+                      ) : (
+                        <span className="text-[13px] font-semibold tracking-wide">Aa</span>
+                      )}
                     </span>
-                    <span className="text-[11px] font-medium capitalize" style={{ color: on ? theme.primary : theme.textMuted }}>{s}</span>
+                    <span className="text-[11px] font-medium" style={{ color: on ? theme.primary : theme.textMuted }}>{ICON_STYLE_LABEL[s]}</span>
                   </button>
                 );
               })}
