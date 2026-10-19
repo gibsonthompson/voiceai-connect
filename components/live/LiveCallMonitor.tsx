@@ -31,6 +31,7 @@ import {
   UserCheck, ShieldAlert, PhoneIncoming, Clock, Repeat,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
+import DynamicFavicon from '@/components/DynamicFavicon';
 
 const API = process.env.NEXT_PUBLIC_API_URL || '';
 const VAPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY || '';
@@ -269,6 +270,11 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
   const localStreamRef = useRef<MediaStream | null>(null);
   const bargeStateRef = useRef<typeof bargeState>('idle');
   useEffect(() => { bargeStateRef.current = bargeState; }, [bargeState]);
+  // True for a short beat while we are tearing a seat down. The TelnyxRTC SDK
+  // emits errors during a normal teardown (e.g. "telnyx_rtc.bye failed" when the
+  // call already ended on the other side); we swallow those so a benign
+  // disconnect never flashes a "Browser audio error" toast.
+  const tearingDownRef = useRef(false);
   // One-shot guards for the escalation "take the call" auto-join (seat + jump in).
   const autoJoinStartedRef = useRef(false);
   const autoJoinJumpedRef = useRef(false);
@@ -379,12 +385,15 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
 
   // Tear down the browser WebRTC leg + mic. Safe to call repeatedly.
   const cleanupBarge = useCallback(() => {
+    tearingDownRef.current = true;
     try { telnyxCallRef.current?.hangup(); } catch {}
     try { telnyxRtcRef.current?.disconnect(); } catch {}
     try { localStreamRef.current?.getTracks().forEach((tr) => tr.stop()); } catch {}
     telnyxCallRef.current = null; telnyxRtcRef.current = null; localStreamRef.current = null;
     bargeAnsweredRef.current = null; notifyBusyRef.current = false;
     setAgentMuted(false);
+    // Swallow the SDK's teardown errors (bye/disconnect) that land just after.
+    setTimeout(() => { tearingDownRef.current = false; }, 1500);
   }, []);
 
   useEffect(() => {
@@ -693,7 +702,14 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
         finally { notifyBusyRef.current = false; }
       });
 
-      rtc.on('telnyx.error', () => { setBargeErr('Browser audio error. Try again.'); });
+      rtc.on('telnyx.error', () => {
+        // The SDK also emits errors during a normal teardown (the call already
+        // ended on the other side, "telnyx_rtc.bye failed", etc.). Only surface a
+        // real, actionable audio error while we are actively setting up or on the
+        // call, never while tearing down, idle, or leaving.
+        if (tearingDownRef.current || bargeStateRef.current === 'idle' || bargeStateRef.current === 'leaving') return;
+        setBargeErr('Browser audio error. Try again.');
+      });
       rtc.connect();
     } catch (e: any) {
       setBargeErr(e?.message || 'Could not join the call.');
@@ -949,6 +965,9 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
 
   return (
     <div className="h-[100dvh] overflow-hidden flex flex-col" style={{ backgroundColor: t.bg, color: t.text }}>
+      {/* White-label the browser-tab icon from the agency's own branding, so the
+          live monitor (opened outside the /cc shell) never shows the platform logo. */}
+      <DynamicFavicon logoUrl={info.branding?.logo_url} primaryColor={info.branding?.primary_color || undefined} />
       {/* Header: white-label brand + status */}
       <header className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3" style={{ borderBottom: `1px solid ${t.border}` }}>
         <div className="flex items-center gap-3 min-w-0">
