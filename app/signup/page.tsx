@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { 
   Phone, ArrowRight, Loader2, Building, Mail, User, MapPin,
-  ArrowLeft, Sparkles, Shield, Clock, Zap, Globe
+  ArrowLeft, Sparkles, Shield, Clock, Zap, Globe,
+  Headphones, LayoutDashboard, Users
 } from 'lucide-react';
 import { countries as supportedCountries } from '@/lib/currency';
 import { getCountryFromCookie } from '@/lib/geo';
@@ -789,6 +790,103 @@ function AgencySignupForm({ isEmbed }: { isEmbed: boolean }) {
     ? 'relative min-h-0 py-2 px-2 sm:px-4'
     : 'relative min-h-screen pt-28 sm:pt-32 pb-16 px-4 sm:px-6';
 
+  // Premium value panel copy, tailored to the call-center flow vs the standard
+  // agency flow. Shown beside the form on desktop; the headline collapses in on
+  // mobile. The form logic (and the is_call_center POST) is unchanged.
+  const heroBadge = isCallCenter ? 'AI Call Center' : 'AI Voice Agency';
+  const heroTitle = isCallCenter
+    ? 'Answer every call, for every business you run.'
+    : 'Launch your own AI voice agency.';
+  const heroSub = isCallCenter
+    ? 'One console answers, books, and escalates for all the businesses you serve. Your team steps in live the moment a call needs a human.'
+    : 'Brand it as your own, onboard local businesses in minutes, and let AI answer their phones around the clock.';
+  const heroFeatures = isCallCenter
+    ? [
+        { Icon: LayoutDashboard, title: 'Live wallboard', body: 'Watch every active call across all your businesses update in real time.' },
+        { Icon: Phone, title: 'A voice agent per business', body: 'Each business gets its own AI, answering and booking around the clock.' },
+        { Icon: Users, title: 'One-click human takeover', body: 'Your agents jump into any live call and take it over instantly.' },
+        { Icon: Building, title: 'Every business, one place', body: 'Add, brand, and bill each business you answer for from a single console.' },
+      ]
+    : [
+        { Icon: Sparkles, title: 'Your brand, start to finish', body: 'White-label everything. Your clients never see us.' },
+        { Icon: Phone, title: 'AI answers 24/7', body: 'A dedicated voice agent for every client you onboard.' },
+        { Icon: Zap, title: 'Live in 60 seconds', body: 'Onboard a client and their number is answering the same minute.' },
+        { Icon: Building, title: 'One dashboard', body: 'Every client, call, and invoice in a single place.' },
+      ];
+  const heroStats = isCallCenter
+    ? [{ k: '60 sec', v: 'to add a business' }, { k: '24/7', v: 'call coverage' }, { k: '1 click', v: 'to take over' }]
+    : [{ k: '60 sec', v: 'client onboarding' }, { k: '24/7', v: 'AI coverage' }, { k: '100%', v: 'your brand' }];
+
+  const referralBadge = referralCode ? (
+    <div className="mb-6 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.08] p-4 flex items-center gap-3">
+      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/20 flex-shrink-0">
+        <Sparkles className="h-5 w-5 text-emerald-400" />
+      </div>
+      <div>
+        <p className="font-medium text-emerald-300 text-sm">You were referred!</p>
+        <p className="text-xs text-emerald-300/60">Your referral has been applied</p>
+      </div>
+    </div>
+  ) : null;
+
+  const formCard = (
+    <div className="rounded-2xl sm:rounded-3xl border border-white/[0.08] bg-[#0a0a0a]/60 backdrop-blur-xl p-6 sm:p-8 shadow-2xl shadow-black/30">
+      <div className="mb-8">
+        <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-1.5 text-sm mb-4">
+          <Sparkles className="h-4 w-4 text-emerald-400" />
+          <span className="text-emerald-300/90">14-day free trial</span>
+        </div>
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">{isCallCenter ? 'Create your call center' : 'Create your account'}</h1>
+        <p className="mt-2 text-[#fafaf9]/50">{isCallCenter ? 'Free for 14 days. No credit card required.' : 'Launch your AI voice agency in minutes'}</p>
+      </div>
+
+      <button onClick={handleGoogleSignup} disabled={googleLoading || loading}
+        className="w-full flex items-center justify-center gap-3 rounded-xl border border-white/[0.08] bg-white px-6 py-3.5 text-base font-medium text-gray-800 hover:bg-gray-50 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:hover:scale-100 mb-6">
+        {googleLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <GoogleIcon className="h-5 w-5" />}
+        Continue with Google
+      </button>
+
+      <div className="relative mb-6">
+        <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/[0.06]" /></div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-[#0a0a0a] px-3 text-[#fafaf9]/40">or sign up with email</span>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} noValidate className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <ThemedFormInput label="First Name" name="firstName" placeholder="John" value={formData.firstName} onChange={handleChange} required isDark={true} />
+          <ThemedFormInput label="Last Name" name="lastName" placeholder="Smith" value={formData.lastName} onChange={handleChange} required isDark={true} />
+        </div>
+
+        <ThemedFormInput label="Email Address" name="email" type="email" placeholder="you@company.com" value={formData.email} onChange={handleChange} required icon={Mail} isDark={true} />
+
+        <HowDidYouHear />
+
+        {error && (
+          <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400">
+            {error}
+            {existingAccount && (
+              <>{' '}<a href="/agency/login" className="underline underline-offset-2 hover:text-red-300">Sign in instead</a></>
+            )}
+          </div>
+        )}
+
+        <button type="submit" disabled={loading || googleLoading}
+          className="group w-full inline-flex items-center justify-center gap-2 rounded-full border border-white/[0.15] bg-white/[0.05] px-6 py-4 text-base font-medium text-[#fafaf9] transition-all hover:bg-white/[0.10] hover:border-white/[0.25] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50">
+          {loading ? (<><Loader2 className="h-5 w-5 animate-spin" />Creating account...</>) : (<><Mail className="h-5 w-5 text-[#fafaf9]/60" />Continue with Email<ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" /></>)}
+        </button>
+      </form>
+
+      <p className="mt-6 text-center text-sm text-[#fafaf9]/40">
+        No credit card required · By signing up, you agree to our{' '}
+        <a href="/terms" className="text-[#fafaf9]/60 hover:text-[#fafaf9] underline underline-offset-2">Terms</a>
+        {' '}and{' '}
+        <a href="/privacy" className="text-[#fafaf9]/60 hover:text-[#fafaf9] underline underline-offset-2">Privacy Policy</a>
+      </p>
+    </div>
+  );
+
   return (
     <div className={isEmbed ? 'text-[#fafaf9]' : 'min-h-screen bg-[#050505] text-[#fafaf9] signup-mobile-zoom'} style={wrapperStyle}>
       <SignupMobileZoomStyle />
@@ -820,75 +918,52 @@ function AgencySignupForm({ isEmbed }: { isEmbed: boolean }) {
       )}
 
       <main className={mainPaddingClass}>
-        <div className="relative mx-auto max-w-md">
-          {referralCode && (
-            <div className="mb-6 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.08] p-4 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/20 flex-shrink-0">
-                <Sparkles className="h-5 w-5 text-emerald-400" />
-              </div>
-              <div>
-                <p className="font-medium text-emerald-300 text-sm">You were referred!</p>
-                <p className="text-xs text-emerald-300/60">Your referral has been applied</p>
-              </div>
-            </div>
-          )}
-
-          <div className="rounded-2xl sm:rounded-3xl border border-white/[0.08] bg-[#0a0a0a]/50 backdrop-blur-xl p-6 sm:p-8 shadow-2xl shadow-black/20">
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-1.5 text-sm mb-4">
-                <Sparkles className="h-4 w-4 text-emerald-400" />
-                <span className="text-emerald-300/90">14-day free trial</span>
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">{isCallCenter ? 'Start Your AI Call Center' : 'Get Started Free'}</h1>
-              <p className="mt-2 text-[#fafaf9]/50">{isCallCenter ? 'Answer calls for every business you serve, from one console' : 'Launch your AI voice agency in minutes'}</p>
-            </div>
-
-            <button onClick={handleGoogleSignup} disabled={googleLoading || loading}
-              className="w-full flex items-center justify-center gap-3 rounded-xl border border-white/[0.08] bg-white px-6 py-3.5 text-base font-medium text-gray-800 hover:bg-gray-50 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:hover:scale-100 mb-6">
-              {googleLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <GoogleIcon className="h-5 w-5" />}
-              Continue with Google
-            </button>
-
-            <div className="relative mb-6">
-              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/[0.06]" /></div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-[#0a0a0a] px-3 text-[#fafaf9]/40">or sign up with email</span>
-              </div>
-            </div>
-
-            <form onSubmit={handleSubmit} noValidate className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <ThemedFormInput label="First Name" name="firstName" placeholder="John" value={formData.firstName} onChange={handleChange} required isDark={true} />
-                <ThemedFormInput label="Last Name" name="lastName" placeholder="Smith" value={formData.lastName} onChange={handleChange} required isDark={true} />
-              </div>
-              
-              <ThemedFormInput label="Email Address" name="email" type="email" placeholder="you@company.com" value={formData.email} onChange={handleChange} required icon={Mail} isDark={true} />
-
-              <HowDidYouHear />
-
-              {error && (
-                <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400">
-                  {error}
-                  {existingAccount && (
-                    <>{' '}<a href="/agency/login" className="underline underline-offset-2 hover:text-red-300">Sign in instead</a></>
-                  )}
-                </div>
-              )}
-
-              <button type="submit" disabled={loading || googleLoading}
-                className="group w-full inline-flex items-center justify-center gap-2 rounded-full border border-white/[0.15] bg-white/[0.05] px-6 py-4 text-base font-medium text-[#fafaf9] transition-all hover:bg-white/[0.10] hover:border-white/[0.25] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50">
-                {loading ? (<><Loader2 className="h-5 w-5 animate-spin" />Creating account...</>) : (<><Mail className="h-5 w-5 text-[#fafaf9]/60" />Continue with Email<ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" /></>)}
-              </button>
-            </form>
-
-            <p className="mt-6 text-center text-sm text-[#fafaf9]/40">
-              No credit card required · By signing up, you agree to our{' '}
-              <a href="/terms" className="text-[#fafaf9]/60 hover:text-[#fafaf9] underline underline-offset-2">Terms</a>
-              {' '}and{' '}
-              <a href="/privacy" className="text-[#fafaf9]/60 hover:text-[#fafaf9] underline underline-offset-2">Privacy Policy</a>
-            </p>
+        {isEmbed ? (
+          <div className="relative mx-auto max-w-md">
+            {referralBadge}
+            {formCard}
           </div>
-        </div>
+        ) : (
+          <div className="relative mx-auto max-w-6xl grid lg:grid-cols-2 gap-10 lg:gap-16 lg:items-center">
+            {/* Value panel: the pitch, tailored to call center vs agency. */}
+            <div className="order-1">
+              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide text-emerald-300/90">
+                <Headphones className="h-3.5 w-3.5 text-emerald-400" />{heroBadge}
+              </div>
+              <h2 className="mt-5 text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-[1.05]">{heroTitle}</h2>
+              <p className="mt-4 max-w-md text-base sm:text-lg leading-relaxed text-[#fafaf9]/55">{heroSub}</p>
+
+              <ul className="hidden lg:block mt-10 space-y-5">
+                {heroFeatures.map((f) => (
+                  <li key={f.title} className="flex items-start gap-4">
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-emerald-500/15 bg-emerald-500/[0.08]">
+                      <f.Icon className="h-5 w-5 text-emerald-400" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-[#fafaf9]">{f.title}</p>
+                      <p className="text-sm leading-relaxed text-[#fafaf9]/50">{f.body}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="hidden lg:grid grid-cols-3 gap-4 mt-10 pt-8 border-t border-white/[0.06]">
+                {heroStats.map((s) => (
+                  <div key={s.v}>
+                    <p className="text-xl font-semibold text-[#fafaf9]">{s.k}</p>
+                    <p className="mt-0.5 text-xs text-[#fafaf9]/45">{s.v}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Form */}
+            <div className="order-2 w-full max-w-md mx-auto lg:mx-0 lg:justify-self-end">
+              {referralBadge}
+              {formCard}
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

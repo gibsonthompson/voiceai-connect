@@ -52,14 +52,22 @@ export default function AgencyLoginPage() {
   const [agency, setAgency] = useState<Agency | null>(null);
   const [themeHint, setThemeHint] = useState<'light' | 'dark'>('dark');
   const [formData, setFormData] = useState({ email: '', password: '' });
+  // Set when the page is opened with ?switch=1 while a session already exists, so
+  // we show the form (to sign in as a different agent) instead of auto-redirecting.
+  const [switchingFrom, setSwitchingFrom] = useState<string | null>(null);
 
   useEffect(() => { setThemeHint(getThemeHint()); }, []);
 
   useEffect(() => {
-    // Already signed in: route straight through (call centers to /cc).
+    // Already signed in: route straight through (call centers to /cc) UNLESS the
+    // link explicitly asks to switch accounts (?switch=1 or ?login=1). That lets a
+    // manager open a second agent in another browser profile and reach this form
+    // instead of being bounced back into the first session.
+    const params0 = new URLSearchParams(window.location.search);
+    const forceLogin = params0.get('switch') === '1' || params0.get('login') === '1';
     const token = localStorage.getItem('auth_token');
     const agencyStored = localStorage.getItem('agency');
-    if (token && agencyStored) {
+    if (token && agencyStored && !forceLogin) {
       let dest = '/agency/dashboard';
       try {
         const a = JSON.parse(agencyStored);
@@ -68,6 +76,9 @@ export default function AgencyLoginPage() {
       } catch {}
       window.location.href = dest;
       return;
+    }
+    if (token && forceLogin) {
+      try { const u = JSON.parse(localStorage.getItem('user') || '{}'); if (u && u.email) setSwitchingFrom(u.email); } catch {}
     }
 
     const resolve = async () => {
@@ -253,6 +264,8 @@ export default function AgencyLoginPage() {
   .al-foot{margin-top:28px;font-size:14.5px;color:var(--muted)}
   .al-foot a{color:var(--primary);font-weight:600;text-decoration:none}
   .al-foot a:hover{text-decoration:underline;text-underline-offset:2px}
+  .al-switch{margin-top:16px;padding:11px 13px;border-radius:12px;font-size:13px;line-height:1.45;background:var(--monoBg);border:1px solid var(--inputBorder);color:var(--muted);text-align:left}
+  .al-switch strong{color:var(--text);font-weight:600}
   .al-wrap ::selection{background:var(--primary);color:var(--primaryText)}
   @keyframes alRise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
   .al-rise{animation:alRise .5s cubic-bezier(.16,.84,.44,1) both}
@@ -302,6 +315,12 @@ export default function AgencyLoginPage() {
 
           <h1 className="al-h1">Welcome back</h1>
           <p className="al-sub">Sign in to your dashboard</p>
+
+          {switchingFrom && (
+            <div className="al-switch">
+              Signed in as <strong>{switchingFrom}</strong>. Sign in below to use a different agent. On this device it replaces that session, so to run two agents at once open this in a separate browser or a private window.
+            </div>
+          )}
 
           {!isBranded && (
             <>
