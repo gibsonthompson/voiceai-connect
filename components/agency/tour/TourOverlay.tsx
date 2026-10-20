@@ -139,11 +139,18 @@ export default function TourOverlay() {
     ['--tcg2' as any]: hexToRgba(theme.primary, 0.16),
   } as React.CSSProperties;
 
+  // The tour card is a floating modal, so it must be OPAQUE. theme.card is a
+  // translucent overlay in dark mode (rgba white 0.02), which let the dashboard
+  // read straight through the card. Use a solid surface: the brand's card color
+  // when it is a solid hex, otherwise a solid elevated dark/light surface.
+  const cardSolid = typeof theme.card === 'string' && theme.card.trim().startsWith('#');
+  const modalBg = cardSolid ? theme.card : (theme.isDark ? '#141418' : '#ffffff');
+
   return (
     <div className="fixed inset-0 z-[100000]" onClick={(e) => { if (e.target === e.currentTarget) tour.skip(); }}>
       <style dangerouslySetInnerHTML={{ __html: TOUR_CSS }} />
       {/* Dimmed backdrop with a cutout over the target */}
-      <div className="fixed inset-0" style={{ backgroundColor: 'rgba(0,0,0,0.58)', clipPath: ready ? getClip() : 'none', backdropFilter: isCentered ? 'blur(3px)' : undefined }} />
+      <div className="fixed inset-0" style={{ backgroundColor: 'rgba(0,0,0,0.68)', clipPath: ready ? getClip() : 'none', backdropFilter: isCentered ? 'blur(3px)' : undefined }} />
 
       {ready && rect && !isCentered && (() => {
         const vw = window.innerWidth, vh = window.innerHeight;
@@ -163,7 +170,7 @@ export default function TourOverlay() {
           onPointerMove={isCentered ? undefined : onMove}
           onPointerUp={isCentered ? undefined : onUp}
         >
-          <div className={`rounded-2xl ${isCentered ? 'p-6 w-[92vw] max-w-md text-center' : 'p-4'}`} style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, boxShadow: '0 24px 60px rgba(0,0,0,0.35)' }}>
+          <div className={`rounded-2xl ${isCentered ? 'p-6 w-[92vw] max-w-md text-center' : 'p-4'}`} style={{ backgroundColor: modalBg, border: `1px solid ${theme.border}`, boxShadow: '0 24px 70px rgba(0,0,0,0.6)' }}>
             {isCentered ? (
               <div className="flex justify-center mb-3">
                 <div className="h-12 w-12 rounded-2xl flex items-center justify-center" style={{ backgroundColor: theme.primary15 }}>
