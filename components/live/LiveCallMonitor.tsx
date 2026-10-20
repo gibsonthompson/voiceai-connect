@@ -29,9 +29,11 @@ import {
   BookOpen, PhoneForwarded, MessageSquare, Sparkles, Building2,
   CircleDot, Headphones, VolumeX, UserPlus, Undo2,
   UserCheck, ShieldAlert, PhoneIncoming, Clock, Repeat,
+  CalendarSearch, CalendarX,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import DynamicFavicon from '@/components/DynamicFavicon';
+import CallerContextPanel, { type CallerContext } from './CallerContextPanel';
 
 const API = process.env.NEXT_PUBLIC_API_URL || '';
 const VAPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY || '';
@@ -151,6 +153,11 @@ const TOOL_META: Record<string, { label: string; Icon: any }> = {
   barge_returned: { label: 'Handed the call back to the AI', Icon: Undo2 },
   caller_recognized: { label: 'Recognized returning caller', Icon: UserCheck },
   spam_flagged: { label: 'Flagged as spam', Icon: ShieldAlert },
+  calendar_scanning: { label: 'Scanning the calendar', Icon: CalendarSearch },
+  slot_taken: { label: 'Checking a time', Icon: CalendarX },
+  slot_found: { label: 'Found an opening', Icon: CalendarCheck },
+  calendar_full: { label: 'No openings that day', Icon: CalendarX },
+  appointment_booked: { label: 'Appointment booked', Icon: CalendarCheck },
 };
 // The server's broadcast label is authoritative when present (it carries the
 // real detail, e.g. WHO took over or WHICH link was texted); TOOL_META only
@@ -213,7 +220,7 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
   // The caller currently on the line (populated at call start by the backend
   // 'call_started' event), plus a live elapsed timer so an agent sees how long
   // the call has been running.
-  const [callerInfo, setCallerInfo] = useState<{ number: string | null; name: string | null; priorCalls: number; recognized: boolean } | null>(null);
+  const [callerInfo, setCallerInfo] = useState<CallerContext | null>(null);
   const [callStartedAt, setCallStartedAt] = useState<number | null>(null);
   const [nowMs, setNowMs] = useState<number>(() => Date.now());
   const [isMuted, setIsMuted] = useState(false);
@@ -227,11 +234,6 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
   // of looking frozen. Cleared when the caller returns to the AI or the call ends.
   const [bridged, setBridged] = useState<string | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
-  // Live delivery readout: which transport delivered the most recent transcript
-  // line first (ws / sse / supabase) and how long it took from the backend
-  // stamping it to arriving here. Proves the WebSocket fast path is actually
-  // winning in production instead of silently falling back to buffered SSE.
-  const [feedStat, setFeedStat] = useState<{ via: string; ms: number } | null>(null);
   // Smoothly revealed version of the in-progress partial, so live words stream
   // in instead of snapping in word-bursts. No added latency: it catches up to
   // whatever VAPI last sent (see useSmoothReveal).
@@ -486,10 +488,6 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
       if (seenIdsRef.current.size > 1000) seenIdsRef.current.clear();
     }
     if (ev.callId) { callIdRef.current = ev.callId; setHasCallId(true); }
-    if (ev.type === 'transcript' && typeof ev.ts === 'number') {
-      const ms = Date.now() - ev.ts;
-      if (ms >= 0 && ms < 120000) setFeedStat({ via, ms });
-    }
     if (ev.type === 'transcript') {
       if (ev.final) { setPartial(null); addLine(ev.role === 'caller' ? 'caller' : 'assistant', ev.text || ''); }
       else setPartial({ role: ev.role === 'caller' ? 'caller' : 'assistant', text: ev.text || '' });
@@ -503,6 +501,11 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
         name: ev.caller_name || null,
         priorCalls: ev.prior_calls || 0,
         recognized: !!ev.recognized,
+        email: ev.caller_email || null,
+        summary: ev.caller_summary || null,
+        lastCallAt: ev.caller_last_call_at || null,
+        tags: Array.isArray(ev.caller_tags) ? ev.caller_tags : null,
+        status: ev.caller_status || null,
       });
       setCallState((cs) => (cs === 'idle' ? 'connecting' : cs));
     } else if (ev.type === 'status') {
@@ -997,28 +1000,25 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
       {/* Header: white-label brand + status */}
       <header className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3" style={{ borderBottom: `1px solid ${t.border}` }}>
         <div className="flex items-center gap-3 min-w-0">
+          {/* The agency's own brand mark (bigger, cleaner). The business the AI is
+              answering for is the hero text, labeled so it is never confused with
+              the agency name. */}
           {info.branding?.logo_url ? (
-            <img src={info.branding.logo_url} alt={agencyName} className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl object-contain flex-shrink-0" style={{ backgroundColor: t.logoBg }} />
+            <img src={info.branding.logo_url} alt={agencyName} className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl object-contain flex-shrink-0 p-1" style={{ backgroundColor: t.logoBg }} />
           ) : (
-            <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: accent }}>
-              <Phone className="h-5 w-5" style={{ color: accentText }} />
+            <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: accent }}>
+              <Phone className="h-6 w-6" style={{ color: accentText }} />
             </div>
           )}
           <div className="min-w-0">
-            {/* Business first and boldest: the agent is answering for THIS
-                business. Agency + the business's own line sit underneath. */}
-            <p className="text-base sm:text-lg font-bold truncate leading-tight" style={{ color: t.text }}>{businessName}</p>
-            <p className="text-[11px] sm:text-xs truncate flex items-center gap-1.5" style={{ color: t.textMuted }}>
-              <span className="truncate">{agencyName}</span>
-              {businessPhone && (
-                <>
-                  <span style={{ color: t.textFaint }}>·</span>
-                  <span className="inline-flex items-center gap-1 tabular-nums flex-shrink-0">
-                    <Phone className="h-3 w-3" /> {fmtPhoneNum(businessPhone)}
-                  </span>
-                </>
-              )}
-            </p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider leading-none mb-1" style={{ color: t.textFaint }}>Answering for</p>
+            <p className="text-lg sm:text-xl font-bold truncate leading-tight" style={{ color: t.text }}>{businessName}</p>
+            {businessPhone && (
+              <p className="text-[11px] sm:text-xs truncate flex items-center gap-1 tabular-nums mt-0.5" style={{ color: t.textMuted }}>
+                <Phone className="h-3 w-3 flex-shrink-0" /> {fmtPhoneNum(businessPhone)}
+                <span style={{ color: t.textFaint }}>· AI line</span>
+              </p>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -1062,21 +1062,12 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
       )}
 
       {/* Body */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-0 min-h-0">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-0 min-h-0">
         {/* Transcript */}
         <section className="flex flex-col min-h-0 border-b lg:border-b-0 lg:border-r" style={{ borderColor: t.border }}>
           <div className="px-4 sm:px-6 py-3 flex items-center gap-2" style={{ borderBottom: `1px solid ${t.borderSubtle}` }}>
             <Radio className="h-4 w-4" style={{ color: accent }} />
             <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: t.textMuted }}>Live transcript</span>
-            {feedStat && (
-              <span
-                className="ml-auto text-[10px] font-semibold uppercase tracking-wider tabular-nums"
-                title="Transport that delivered the latest line first, and its delay from the server. ws = real-time WebSocket; sse means the fast path isn't winning."
-                style={{ color: feedStat.via === 'ws' && feedStat.ms < 800 ? '#16a34a' : t.textFaint }}
-              >
-                {feedStat.via} · {feedStat.ms}ms
-              </span>
-            )}
           </div>
           <div
             ref={transcriptScrollRef}
@@ -1150,7 +1141,14 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
 
         {/* Activity rail */}
         <aside className="flex flex-col min-h-0">
-          <div className="px-4 sm:px-6 py-3 flex items-center gap-2" style={{ borderBottom: `1px solid ${t.borderSubtle}` }}>
+          {/* About this caller - who is on the line and what we know about them.
+              Only while a call is active; reused elsewhere via CallerContextPanel. */}
+          {(callState === 'connecting' || callState === 'live') && callerInfo && (
+            <div className="flex-shrink-0 max-h-[46%] flex flex-col" style={{ borderBottom: `1px solid ${t.border}` }}>
+              <CallerContextPanel caller={callerInfo} t={t} accent={accent} />
+            </div>
+          )}
+          <div className="px-4 sm:px-6 py-3 flex items-center gap-2 flex-shrink-0" style={{ borderBottom: `1px solid ${t.borderSubtle}` }}>
             <Sparkles className="h-4 w-4" style={{ color: accent }} />
             <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: t.textMuted }}>What the AI is doing</span>
           </div>
@@ -1167,10 +1165,13 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
                   <div className="h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${accent}22` }}>
                     <meta.Icon className="h-4 w-4" style={{ color: accent }} />
                   </div>
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium leading-tight">{a.label}</p>
                     {a.detail && <p className="text-xs mt-0.5 truncate" style={{ color: t.textMuted }}>{a.detail}</p>}
                   </div>
+                  <span className="text-[10.5px] tabular-nums flex-shrink-0 mt-0.5" style={{ color: t.textFaint }}>
+                    {new Date(a.ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' })}
+                  </span>
                 </div>
               );
             })}
