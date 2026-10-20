@@ -6,10 +6,15 @@ import { useTheme, buildTheme, BrandingOverrides, isValidHex } from '../../../ho
 import {
   Save, RotateCcw, Loader2, Check, AlertCircle, Paintbrush, Eye,
   PanelLeft, LayoutDashboard, Type, Square, MousePointer, Shuffle, Sparkles,
-  Sun, Moon,
+  Sun, Moon, RefreshCw,
 } from 'lucide-react';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import LockedFeature from '@/components/LockedFeature';
+import FontSelect from '@/components/cc/FontSelect';
+import { fontStack, googleFontsHref } from '@/lib/brandFonts';
+import { type DropdownUI } from '@/components/ui/custom-select';
+import { ICON_SETS, previewIcons } from '@/components/cc/navIcons';
+import { extractPalette } from '@/lib/colorExtraction';
 
 interface ColorField { key: keyof BrandingOverrides; label: string; description: string; group: 'sidebar' | 'page' | 'cards' | 'text' | 'buttons'; icon: typeof PanelLeft; }
 
@@ -103,8 +108,39 @@ export default function BrandingPage() {
   const [error, setError] = useState<string | null>(null);
   const [lastShuffleIndex, setLastShuffleIndex] = useState(-1);
   const [switchingTheme, setSwitchingTheme] = useState(false);
+  const [displayFont, setDisplayFont] = useState<string | null>(null);
+  const [bodyFont, setBodyFont] = useState<string | null>(null);
+  const [iconStyle, setIconStyle] = useState<string>('lucide');
+  const [brandKit, setBrandKit] = useState<any>(null);
+  const [analyzing, setAnalyzing] = useState(false);
 
   useEffect(() => { if (agency?.branding_overrides) { setOverrides({ ...agency.branding_overrides }); } else { setOverrides({}); } }, [agency?.branding_overrides]);
+  useEffect(() => { setDisplayFont(agency?.display_font || null); setBodyFont(agency?.body_font || null); }, [agency?.display_font, agency?.body_font]);
+  useEffect(() => { setIconStyle(agency?.icon_style || 'lucide'); setBrandKit(agency?.brand_kit || null); }, [agency?.icon_style, agency?.brand_kit]);
+
+  // Regenerate the brand kit from the agency's logo (fonts + nav icon set + vibe).
+  // Colors stay managed in the agency's own color settings, so we don't touch them.
+  const analyzeBrand = async () => {
+    const logoSrc = agency?.logo_url;
+    if (!logoSrc || !agency?.id) return;
+    setAnalyzing(true); setError(null);
+    try {
+      const palette = await extractPalette(logoSrc).catch(() => null);
+      const token = localStorage.getItem('auth_token');
+      const r = await fetch(`${backendUrl}/api/agency/${agency.id}/branding/analyze-logo`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ logo: logoSrc, palette, name: agency?.name || undefined }) });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok && d.success && d.kit) {
+        const k = d.kit;
+        if (k.fonts?.display) setDisplayFont(k.fonts.display);
+        if (k.fonts?.body) setBodyFont(k.fonts.body);
+        if (k.icon_style) setIconStyle(k.icon_style);
+        setBrandKit(k); setSaved(false);
+      }
+    } catch { /* best effort; nothing changes on failure */ }
+    finally { setAnalyzing(false); }
+  };
+  // Load the chosen fonts so the preview + picker render in them.
+  useEffect(() => { const href = googleFontsHref([displayFont, bodyFont]); if (!href) return; const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = href; document.head.appendChild(link); return () => { if (link.parentNode) link.parentNode.removeChild(link); }; }, [displayFont, bodyFont]);
 
   const mode = agency?.website_theme !== 'light' ? 'dark' : 'light';
   const primaryColor = branding.primaryColor || '#10b981';
@@ -116,12 +152,20 @@ export default function BrandingPage() {
   const hasChanges = useMemo(() => { const savedOverrides = agency?.branding_overrides || {}; for (const field of COLOR_FIELDS) { const savedVal = (savedOverrides as any)[field.key]; const currentVal = overrides[field.key]; if ((savedVal || '') !== (currentVal || '')) return true; } return false; }, [overrides, agency?.branding_overrides]);
   const activeCount = COLOR_FIELDS.filter(f => isValidHex(overrides[f.key])).length;
 
+  const ddInput = { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text } as React.CSSProperties;
+  const ddUI: DropdownUI = { inputStyle: ddInput, text: theme.text, muted: theme.textMuted, panelBg: theme.card, panelBorder: theme.border, hover: theme.hover, accent: theme.primary, isDark: theme.isDark };
+  const dispVal = displayFont || 'Sora';
+  const bodyVal = bodyFont || 'Inter';
+  const fontsChanged = (agency?.display_font || null) !== displayFont || (agency?.body_font || null) !== bodyFont;
+  const kitChanged = (agency?.icon_style || 'lucide') !== iconStyle || JSON.stringify(agency?.brand_kit || null) !== JSON.stringify(brandKit || null);
+  const dirty = hasChanges || fontsChanged || kitChanged;
+
   const handleShuffle = () => { const isDark = mode === 'dark'; let idx = Math.floor(Math.random() * PALETTE_RECIPES.length); if (PALETTE_RECIPES.length > 1) { while (idx === lastShuffleIndex) { idx = Math.floor(Math.random() * PALETTE_RECIPES.length); } } setLastShuffleIndex(idx); const recipe = PALETTE_RECIPES[idx]; const result = recipe.build(primaryColor, secondaryColor, accentColor, isDark); setOverrides(result); setSaved(false); setError(null); };
   const handleThemeSwitch = async (newMode: 'light' | 'dark') => { if (mode === newMode || !agency) return; setSwitchingTheme(true); setError(null); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ website_theme: newMode }) }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to update theme'); } await refreshAgency(); } catch (err) { setError(err instanceof Error ? err.message : 'Failed to update theme mode'); } finally { setSwitchingTheme(false); } };
   const handleChange = (key: keyof BrandingOverrides, value: string) => { setOverrides(prev => ({ ...prev, [key]: value })); setSaved(false); setError(null); };
   const handleClear = (key: keyof BrandingOverrides) => { setOverrides(prev => { const next = { ...prev }; delete next[key]; return next; }); setSaved(false); setError(null); };
   const handleResetAll = () => { setOverrides({}); setSaved(false); setError(null); };
-  const handleSave = async () => { if (!agency) return; setSaving(true); setError(null); setSaved(false); try { const token = localStorage.getItem('auth_token'); const cleanOverrides: BrandingOverrides = {}; for (const field of COLOR_FIELDS) { const val = overrides[field.key]; if (isValidHex(val)) { cleanOverrides[field.key] = val; } } const payload = { branding_overrides: Object.keys(cleanOverrides).length > 0 ? cleanOverrides : null }; const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload) }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to save branding'); } await refreshAgency(); setSaved(true); setTimeout(() => setSaved(false), 3000); } catch (err) { setError(err instanceof Error ? err.message : 'Failed to save'); } finally { setSaving(false); } };
+  const handleSave = async () => { if (!agency) return; setSaving(true); setError(null); setSaved(false); try { const token = localStorage.getItem('auth_token'); const cleanOverrides: BrandingOverrides = {}; for (const field of COLOR_FIELDS) { const val = overrides[field.key]; if (isValidHex(val)) { cleanOverrides[field.key] = val; } } const payload = { branding_overrides: Object.keys(cleanOverrides).length > 0 ? cleanOverrides : null, display_font: displayFont || null, body_font: bodyFont || null, icon_style: iconStyle || null, brand_kit: brandKit || null }; const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload) }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to save branding'); } await refreshAgency(); setSaved(true); setTimeout(() => setSaved(false), 3000); } catch (err) { setError(err instanceof Error ? err.message : 'Failed to save'); } finally { setSaving(false); } };
 
   // ── LOCKED FOR FREE PLAN ────────────────────────────────────────────
   if (!hasWhiteLabel) {
@@ -140,7 +184,7 @@ export default function BrandingPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-5xl">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6"><div><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: theme.primary15 }}><Paintbrush className="h-5 w-5" style={{ color: theme.primary }} /></div><div><h1 className="text-xl sm:text-2xl font-bold" style={{ color: theme.text }}>Dashboard Branding</h1><p className="text-sm mt-0.5" style={{ color: theme.textMuted }}>Customize colors for your agency and client dashboards</p></div></div></div><div className="flex items-center gap-2 flex-wrap">{activeCount > 0 && (<button onClick={handleResetAll} disabled={saving} className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, color: theme.textMuted }}><RotateCcw className="h-4 w-4" />Reset All</button>)}<button onClick={handleSave} disabled={saving || !hasChanges} className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}{saving ? 'Saving...' : saved ? 'Saved!' : 'Save Changes'}</button></div></div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6"><div><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: theme.primary15 }}><Paintbrush className="h-5 w-5" style={{ color: theme.primary }} /></div><div><h1 className="text-xl sm:text-2xl font-bold" style={{ color: theme.text }}>Dashboard Branding</h1><p className="text-sm mt-0.5" style={{ color: theme.textMuted }}>Customize colors for your agency and client dashboards</p></div></div></div><div className="flex items-center gap-2 flex-wrap">{activeCount > 0 && (<button onClick={handleResetAll} disabled={saving} className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, color: theme.textMuted }}><RotateCcw className="h-4 w-4" />Reset All</button>)}<button onClick={handleSave} disabled={saving || !dirty} className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}{saving ? 'Saving...' : saved ? 'Saved!' : 'Save Changes'}</button></div></div>
 
       {error && (<div className="rounded-xl p-4 mb-6 flex items-center gap-3" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-5 w-5 flex-shrink-0" style={{ color: theme.error }} /><p className="text-sm" style={{ color: theme.errorText }}>{error}</p></div>)}
 
@@ -150,10 +194,63 @@ export default function BrandingPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <div className="lg:col-span-3 space-y-5">
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+            <div className="px-4 py-3 flex items-center justify-between gap-3" style={{ borderBottom: `1px solid ${theme.border}` }}>
+              <div className="flex items-center gap-2 min-w-0"><Sparkles className="h-4 w-4 flex-shrink-0" style={{ color: theme.primary }} /><div><span className="text-sm font-semibold" style={{ color: theme.text }}>Brand kit</span><p className="text-[11.5px]" style={{ color: theme.textMuted }}>Fonts and nav-icon style for your agency and client dashboards. Match them to your logo, or tweak below.</p></div></div>
+              <button onClick={analyzeBrand} disabled={!agency?.logo_url || analyzing} title={agency?.logo_url ? 'Match fonts and icons to your logo' : 'Upload a logo first'} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium flex-shrink-0 disabled:opacity-50" style={ddInput}>
+                {analyzing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} Regenerate
+              </button>
+            </div>
+            <div className="p-4">
+              {analyzing && (<div className="flex items-center gap-2 text-[12.5px] mb-3" style={{ color: theme.textMuted }}><Loader2 className="h-4 w-4 animate-spin" /> Reading your logo and matching fonts and icons...</div>)}
+
+              {brandKit?.vibe && ((brandKit.vibe.words && brandKit.vibe.words.length) || brandKit.vibe.description) && (
+                <div className="mb-3">
+                  <div className="flex flex-wrap gap-1.5 mb-1.5">{(brandKit.vibe.words || []).map((w: string) => (<span key={w} className="inline-flex items-center rounded-full px-2.5 py-1 text-[11.5px] font-medium capitalize" style={{ backgroundColor: theme.primary15, color: theme.primary }}>{w}</span>))}</div>
+                  {brandKit.vibe.description && <p className="text-[12px]" style={{ color: theme.textMuted }}>{brandKit.vibe.description}</p>}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Display font (headlines + nav)</label>
+                  <FontSelect value={dispVal} onChange={(v) => { setDisplayFont(v); setSaved(false); setError(null); }} slot="display" ui={ddUI} />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Body font</label>
+                  <FontSelect value={bodyVal} onChange={(v) => { setBodyFont(v); setSaved(false); setError(null); }} slot="body" ui={ddUI} />
+                </div>
+              </div>
+
+              <div className="mt-3 rounded-xl p-4" style={ddInput}>
+                <p style={{ fontFamily: fontStack(dispVal, 'display'), fontWeight: 700, fontSize: '1.35rem', color: theme.text, lineHeight: 1.1 }}>{agency?.name || 'Your Brand'}</p>
+                <p className="mt-1" style={{ fontFamily: fontStack(bodyVal, 'body'), fontSize: '0.88rem', color: theme.textMuted }}>Clear headlines and readable body text, applied across your agency dashboard and all your client dashboards.</p>
+              </div>
+
+              <div className="mt-4">
+                <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Nav icon set</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {ICON_SETS.filter((s) => s.key !== 'none').map((s) => {
+                    const on = iconStyle === s.key;
+                    return (
+                      <button key={s.key} onClick={() => { setIconStyle(s.key); setSaved(false); setError(null); }} title={s.note} className="flex flex-col items-center gap-1.5 rounded-xl px-2 py-3 transition-colors" style={on ? { backgroundColor: theme.primary15, border: `1px solid ${theme.primary}55` } : { ...ddInput }}>
+                        <span className="flex items-center justify-center gap-1.5 h-5" style={{ color: on ? theme.primary : theme.textMuted }}>{previewIcons(s.key).map((Ic, i) => <Ic key={i} size={18} />)}</span>
+                        <span className="text-[11px] font-medium" style={{ color: on ? theme.primary : theme.textMuted }}>{s.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <button onClick={() => { setIconStyle('none'); setSaved(false); setError(null); }} className="mt-2 w-full flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 transition-colors" style={iconStyle === 'none' ? { backgroundColor: theme.primary15, border: `1px solid ${theme.primary}55` } : { ...ddInput }}>
+                  <span className="text-[13px] font-semibold tracking-wide" style={{ color: iconStyle === 'none' ? theme.primary : theme.textMuted }}>Aa</span>
+                  <span className="text-[12px] font-medium" style={{ color: iconStyle === 'none' ? theme.primary : theme.textMuted }}>Text only (no icons)</span>
+                </button>
+              </div>
+            </div>
+          </div>
           <div className="rounded-xl px-4 py-3 flex items-center justify-between" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="flex items-center gap-2"><Paintbrush className="h-4 w-4" style={{ color: theme.textMuted }} /><span className="text-sm" style={{ color: theme.textMuted }}>{activeCount === 0 ? 'Using default theme colors' : `${activeCount} custom color${activeCount !== 1 ? 's' : ''} active`}</span></div><span className="text-xs px-2 py-1 rounded-full font-medium capitalize" style={{ backgroundColor: theme.primary10, color: theme.primary }}>{mode} mode</span></div>
           {GROUPS.map((group) => { const fields = COLOR_FIELDS.filter(f => f.group === group.key); const GroupIcon = group.icon; return (<div key={group.key} className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: `1px solid ${theme.border}` }}><GroupIcon className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-sm font-semibold" style={{ color: theme.text }}>{group.label}</span></div><div className="p-3 space-y-2">{fields.map((field) => (<ColorInput key={field.key} field={field} value={overrides[field.key]} defaultValue={getDefaultForField(field.key)} onChange={handleChange} onClear={handleClear} theme={theme} />))}</div></div>); })}
         </div>
-        <div className="lg:col-span-2"><div className="sticky top-6 space-y-4"><div className="flex items-center gap-2"><Eye className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-sm font-semibold" style={{ color: theme.text }}>Live Preview</span>{hasChanges && (<span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: theme.warningBg, color: theme.warningText, border: `1px solid ${theme.warningBorder}` }}>Unsaved</span>)}</div><LivePreview previewTheme={previewTheme} primaryColor={primaryColor} /><div className="rounded-xl p-3" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><p className="text-xs font-medium mb-2" style={{ color: theme.textMuted }}>Your brand colors</p><div className="flex gap-2">{[{ label: 'Primary', color: primaryColor }, { label: 'Secondary', color: secondaryColor }, { label: 'Accent', color: accentColor }].map(({ label, color }) => (<div key={label} className="flex items-center gap-1.5 flex-1"><div className="w-5 h-5 rounded-md flex-shrink-0 border" style={{ backgroundColor: color, borderColor: theme.border }} /><div><p className="text-[10px] font-medium" style={{ color: theme.text }}>{label}</p><p className="text-[9px] font-mono" style={{ color: theme.textMuted }}>{color}</p></div></div>))}</div></div><div className="rounded-xl p-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><p className="text-xs leading-relaxed" style={{ color: theme.infoText }}>Changes apply to both your agency dashboard and all your client dashboards. Use Shuffle to auto-arrange your brand colors, then fine-tune individual fields.</p></div></div></div>
+        <div className="lg:col-span-2"><div className="sticky top-6 space-y-4"><div className="flex items-center gap-2"><Eye className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-sm font-semibold" style={{ color: theme.text }}>Live Preview</span>{dirty && (<span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: theme.warningBg, color: theme.warningText, border: `1px solid ${theme.warningBorder}` }}>Unsaved</span>)}</div><LivePreview previewTheme={previewTheme} primaryColor={primaryColor} /><div className="rounded-xl p-3" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><p className="text-xs font-medium mb-2" style={{ color: theme.textMuted }}>Your brand colors</p><div className="flex gap-2">{[{ label: 'Primary', color: primaryColor }, { label: 'Secondary', color: secondaryColor }, { label: 'Accent', color: accentColor }].map(({ label, color }) => (<div key={label} className="flex items-center gap-1.5 flex-1"><div className="w-5 h-5 rounded-md flex-shrink-0 border" style={{ backgroundColor: color, borderColor: theme.border }} /><div><p className="text-[10px] font-medium" style={{ color: theme.text }}>{label}</p><p className="text-[9px] font-mono" style={{ color: theme.textMuted }}>{color}</p></div></div>))}</div></div><div className="rounded-xl p-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><p className="text-xs leading-relaxed" style={{ color: theme.infoText }}>Changes apply to both your agency dashboard and all your client dashboards. Use Shuffle to auto-arrange your brand colors, then fine-tune individual fields.</p></div></div></div>
       </div>
     </div>
   );

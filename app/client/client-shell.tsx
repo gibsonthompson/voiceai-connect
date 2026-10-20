@@ -12,6 +12,7 @@ import { useClientTheme } from '@/hooks/useClientTheme';
 import AddToHomeScreenModal from '@/components/client/AddToHomeScreenModal';
 import SupportWidget from '@/components/SupportWidget';
 import OnboardingWizard from '@/components/client/OnboardingWizard';
+import { fontStack, googleFontsHref } from '@/lib/brandFonts';
 
 // Favicon is handled by DynamicFavicon in ClientProvider, no need to set it here
 
@@ -46,6 +47,22 @@ function ClientDashboardLayout({ children, initialDark = true }: { children: Rea
   const pathname = usePathname();
   const { client, branding, loading, hasPermission, user } = useClient();
   const theme = useClientTheme();
+
+  // Brand fonts cascade from the agency: load the agency's display + body fonts
+  // and expose them as CSS vars the .brand-shell / .brand-display rules apply, so
+  // the client dashboard matches the agency's typography. Best effort.
+  const clientDisplayFont = branding.displayFont || null;
+  const clientBodyFont = branding.bodyFont || null;
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--brand-display', fontStack(clientDisplayFont, 'display'));
+    root.style.setProperty('--brand-body', fontStack(clientBodyFont, 'body'));
+    const href = googleFontsHref([clientDisplayFont, clientBodyFont]);
+    let link: HTMLLinkElement | null = null;
+    if (href) { link = document.createElement('link'); link.rel = 'stylesheet'; link.id = 'client-brand-fonts'; link.href = href; document.head.appendChild(link); }
+    return () => { root.style.removeProperty('--brand-display'); root.style.removeProperty('--brand-body'); if (link && link.parentNode) link.parentNode.removeChild(link); };
+  }, [clientDisplayFont, clientBodyFont]);
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
@@ -257,7 +274,7 @@ function ClientDashboardLayout({ children, initialDark = true }: { children: Rea
   const hasBanner = isPreviewMode || clientPaymentFailed || (clientOnTrial && trialDaysLeft !== null && trialDaysLeft <= 3 && !clientPaymentFailed);
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: theme.bg }}>
+    <div className="brand-shell min-h-screen" style={{ backgroundColor: theme.bg }}>
       <style dangerouslySetInnerHTML={{ __html: `::selection { background: #3b82f640; } ::-moz-selection { background: #3b82f640; } .va-rotate-lock{display:none} @media (orientation: landscape) and (max-height: 600px){ .va-rotate-lock{display:flex} }` }} />
 
       {/* Portrait lock for mobile browser tabs. Installed PWAs are locked via
@@ -310,7 +327,7 @@ function ClientDashboardLayout({ children, initialDark = true }: { children: Rea
       {sidebarOpen && (isMobile || isTablet) && (<div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden" onClick={() => setSidebarOpen(false)} />)}
 
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-72 lg:w-64 transform transition-transform duration-300 ease-out ${(isMobile || isTablet) ? (sidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0'}`}
+      <aside className={`brand-display fixed inset-y-0 left-0 z-50 w-72 lg:w-64 transform transition-transform duration-300 ease-out ${(isMobile || isTablet) ? (sidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0'}`}
         style={{ backgroundColor: nav.bg, borderRight: `1px solid ${nav.border}`, paddingTop: (isMobile || isTablet) ? 'env(safe-area-inset-top)' : 0, top: (!isMobile && !isTablet) ? (hasBanner ? `${PREVIEW_BANNER_HEIGHT}px` : '0') : '0' }}>
 
         <div className="flex lg:hidden items-center justify-between h-14 px-4 border-b" style={{ borderColor: nav.border }}>

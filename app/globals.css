@@ -80,19 +80,25 @@ body {
 .font-display { font-family: 'Geist', system-ui, sans-serif; }
 .font-mono { font-family: 'Geist Mono', ui-monospace, "SF Mono", Menlo, monospace; }
 
-/* ----- AI brand fonts (call-center white-label) -----
-   app/cc/layout.tsx sets --brand-display / --brand-body on :root at runtime from
-   the agency's chosen fonts and loads them from Google Fonts. These rules apply
-   those vars ONLY inside the cc shell, so the marketing site and other areas are
-   untouched. The fallbacks keep text rendering if no brand font is set or the
-   webfont is slow. */
-.cc-shell {
+/* ----- AI brand fonts (white-label) -----
+   app/cc/layout.tsx (call center), app/agency/layout.tsx (agency dashboard), and
+   app/client/client-shell.tsx (client dashboard) set --brand-display / --brand-body
+   on :root at runtime from the agency's chosen fonts and load them from Google
+   Fonts. These rules apply those vars ONLY inside a branded shell, so the
+   marketing site and other areas are untouched. The fallbacks keep text rendering
+   if no brand font is set or the webfont is slow. */
+.cc-shell,
+.brand-shell {
   font-family: var(--brand-body, 'Geist', 'Inter', system-ui, -apple-system, sans-serif);
 }
 .cc-shell h1,
 .cc-shell h2,
 .cc-shell h3,
-.cc-brand-display {
+.cc-brand-display,
+.brand-shell h1,
+.brand-shell h2,
+.brand-shell h3,
+.brand-display {
   font-family: var(--brand-display, 'Geist', system-ui, sans-serif);
 }
 

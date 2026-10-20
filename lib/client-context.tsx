@@ -110,6 +110,9 @@ interface Branding {
   // domain, else its platform subdomain, else the bare platform domain. Used by
   // the Add-to-Home-Screen walkthrough so it never shows the platform host.
   appDomain: string;
+  // Brand fonts cascade from the agency (end clients have no font of their own).
+  displayFont: string | null;
+  bodyFont: string | null;
 }
 
 // ============================================================================
@@ -203,6 +206,8 @@ function buildBranding(c: any): Branding {
       if (agency?.slug) return `${agency.slug}.${platformDomain}`;
       return platformDomain;
     })(),
+    displayFont: agency?.display_font || null,
+    bodyFont: agency?.body_font || null,
   };
 }
 
@@ -229,6 +234,7 @@ const defaultBranding: Branding = {
   agencyName: '', businessName: '', logoUrl: null,
   supportEmail: null, supportPhone: null, websiteTheme: 'dark', clientHeaderMode: 'agency_name',
   appDomain: '',
+  displayFont: null, bodyFont: null,
 };
 
 // The login page caches the resolved agency (colors + theme) under

@@ -10,6 +10,8 @@ import { useTheme } from '../../hooks/useTheme';
 import { PLAN_PRICES, PLAN_NAMES, PLAN_RATES } from '../../lib/plan-limits';
 import { AGENCY_PLAN_TIER_LIST } from '../../lib/plan-features';
 import DynamicFavicon from '@/components/DynamicFavicon';
+import { fontStack, googleFontsHref } from '@/lib/brandFonts';
+import { navIcon, iconsHidden, type NavRoute } from '@/components/cc/navIcons';
 import SupportWidget from '@/components/SupportWidget';
 import { TourProvider, useTour } from '@/components/agency/tour/TourProvider';
 import TourOverlay from '@/components/agency/tour/TourOverlay';
@@ -54,6 +56,27 @@ const PATH_PERMISSIONS: Record<string, string> = {
 
 interface NavItem { href: string; label: string; icon: LucideIcon; locked?: boolean; upgradeRequired?: string; permissionKey?: string; }
 
+// Maps each agency nav href to the route key navIcon() uses to look up the icon
+// in the agency's chosen set (components/cc/navIcons.tsx). The set itself (Lucide,
+// Phosphor, Heroicons, ...) is picked on the Branding page as icon_style.
+const AGENCY_HREF_ROUTE: Record<string, NavRoute> = {
+  '/agency/dashboard': 'dashboard',
+  '/agency/live-calls': 'live',
+  '/agency/clients': 'businesses',
+  '/agency/agents': 'agents',
+  '/agency/inbox': 'messages',
+  '/agency/leads': 'leads',
+  '/agency/outreach': 'outreach',
+  '/agency/analytics': 'analytics',
+  '/agency/payments': 'payments',
+  '/agency/marketing': 'website',
+  '/agency/demo-phone': 'live',
+  '/agency/templates': 'ailab',
+  '/agency/branding': 'branding',
+  '/agency/referrals': 'referrals',
+  '/agency/settings': 'settings',
+};
+
 /**
  * Renders DynamicFavicon using agency context.
  * Lives in the layout wrapper (outside AgencyDashboardLayout) so it renders
@@ -84,6 +107,25 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { agency, branding, loading, effectivePlan, hasPermission, isAgent } = useAgency();
   const { canUseMarketingSite, canUseDemoPhoneNumber, canUseAiLab, canUseLeadFinder, hasWhiteLabel, planName } = usePlanFeatures();
+
+  // Brand fonts: load the agency's chosen display + body fonts and expose them as
+  // CSS vars the .brand-shell / .brand-display rules (globals.css) apply. Best
+  // effort; a missing/unknown font falls back to Geist.
+  const brandDisplayFont = agency?.display_font || null;
+  const brandBodyFont = agency?.body_font || null;
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--brand-display', fontStack(brandDisplayFont, 'display'));
+    root.style.setProperty('--brand-body', fontStack(brandBodyFont, 'body'));
+    const href = googleFontsHref([brandDisplayFont, brandBodyFont]);
+    let link: HTMLLinkElement | null = null;
+    if (href) { link = document.createElement('link'); link.rel = 'stylesheet'; link.id = 'agency-brand-fonts'; link.href = href; document.head.appendChild(link); }
+    return () => { root.style.removeProperty('--brand-display'); root.style.removeProperty('--brand-body'); if (link && link.parentNode) link.parentNode.removeChild(link); };
+  }, [brandDisplayFont, brandBodyFont]);
+
+  // Nav icon set (lucide / phosphor / ... / text-only) from the agency's brand kit.
+  const noNavIcons = iconsHidden(agency?.icon_style);
+  const SignOutIcon = navIcon(agency?.icon_style, 'signout');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [subscribeLoading, setSubscribeLoading] = useState(false);
@@ -441,14 +483,14 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       {sidebarOpen && isMobile && (<div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden" onClick={() => setSidebarOpen(false)} />)}
 
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-72 md:w-64 flex flex-col transform transition-transform duration-300 ease-out ${isMobile ? `${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}` : 'translate-x-0'}`} style={{ backgroundColor: theme.sidebarBg, borderRight: `1px solid ${theme.sidebarBorder}`, paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0, top: !isMobile ? (hasPaymentIssue && isAccessibleRoute ? '60px' : 0) : 0 }}>
+      <aside className={`brand-shell brand-display fixed inset-y-0 left-0 z-50 w-72 md:w-64 flex flex-col transform transition-transform duration-300 ease-out ${isMobile ? `${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}` : 'translate-x-0'}`} style={{ backgroundColor: theme.sidebarBg, borderRight: `1px solid ${theme.sidebarBorder}`, paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0, top: !isMobile ? (hasPaymentIssue && isAccessibleRoute ? '60px' : 0) : 0 }}>
         <div className="flex md:hidden items-center justify-between h-16 px-4" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}><span className="font-semibold text-lg" style={{ color: theme.sidebarText }}>Menu</span><button onClick={() => setSidebarOpen(false)} className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors" style={{ color: theme.sidebarText }}><X className="h-7 w-7" /></button></div>
         <div className="hidden md:flex h-16 items-center gap-3 px-6" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}>{branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} style={{ height: '32px', width: 'auto' }} className="object-contain flex-shrink-0" />) : (<><div className="flex items-center justify-center rounded-lg" style={{ height: '32px', width: '32px', backgroundColor: theme.primary15, border: `1px solid ${theme.sidebarBorder}` }}><WaveformIcon className="h-5 w-5" color={theme.primary} /></div><span className="font-semibold truncate" style={{ color: theme.sidebarText }}>{branding.name}</span></>)}</div>
 
         <nav className="flex-1 min-h-0 overflow-y-auto p-4 space-y-1">
-          {filteredNavItems.map((item) => { const active = isActive(item.href); const isLocked = item.locked === true; const IconComponent = item.icon; return (
+          {filteredNavItems.map((item) => { const active = isActive(item.href); const isLocked = item.locked === true; const route = AGENCY_HREF_ROUTE[item.href]; const IconComponent: any = (route && navIcon(agency?.icon_style, route)) || item.icon; return (
             <Link key={item.href} data-tour={'nav-' + item.href.replace('/agency/', '')} href={item.href} onClick={() => setSidebarOpen(false)} className="flex items-center justify-between rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-all" style={isLocked ? { color: theme.sidebarTextMuted, opacity: 0.6, cursor: 'pointer' } : active ? { backgroundColor: theme.sidebarActiveItemBg, color: theme.sidebarActiveItemColor } : { color: theme.sidebarText }} onMouseEnter={(e) => { if (!isLocked && !active) { (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover; } }} onMouseLeave={(e) => { if (!isLocked && !active) { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; } }} title={isLocked ? `Upgrade to ${item.upgradeRequired} to unlock` : undefined}>
-              <div className="flex items-center gap-3"><IconComponent className="h-5 w-5" /><span>{item.label}</span>{isLocked && <Lock className="h-3.5 w-3.5 ml-1" />}</div>
+              <div className="flex items-center gap-3">{!noNavIcons && <IconComponent className="h-5 w-5" />}<span>{item.label}</span>{isLocked && <Lock className="h-3.5 w-3.5 ml-1" />}</div>
               {active && !isLocked && <ChevronRight className="h-4 w-4 md:hidden" />}
               {isLocked && (<span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: theme.sidebarHover, color: theme.sidebarTextMuted }}>{item.upgradeRequired}</span>)}
             </Link>); })}
@@ -460,14 +502,14 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
           {hasPaymentIssue && (<Link href="/agency/settings" className="block rounded-xl p-3 transition-opacity hover:opacity-90" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><p className="text-xs" style={{ color: theme.errorText, opacity: 0.8 }}>Payment Issue</p><p className="text-sm font-medium" style={{ color: theme.errorText }}>Update payment method</p></Link>)}
           {agency?.subscription_status === 'active' && (<div className="rounded-xl p-3" style={{ backgroundColor: theme.primary10, border: `1px solid ${theme.primary30}` }}><p className="text-xs" style={{ color: theme.primary, opacity: 0.6 }}>Current Plan</p><p className="text-sm font-medium capitalize" style={{ color: theme.primary }}>{planName || 'Free'}</p></div>)}
           <TourLauncher theme={theme} />
-          <button onClick={handleSignOut} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-all pt-4" style={{ color: theme.sidebarTextMuted, borderTop: `1px solid ${theme.sidebarBorder}` }} onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover; }} onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}><LogOut className="h-5 w-5" />Sign Out</button>
+          <button onClick={handleSignOut} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 md:py-2.5 text-sm font-medium transition-all pt-4" style={{ color: theme.sidebarTextMuted, borderTop: `1px solid ${theme.sidebarBorder}` }} onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover; }} onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}>{!noNavIcons && (SignOutIcon ? <SignOutIcon className="h-5 w-5" /> : <LogOut className="h-5 w-5" />)}Sign Out</button>
         </div>
       </aside>
 
       {/* Content. <main> stays mounted and painted with theme.bg the whole time,
           so no base color is ever exposed during a tab switch. Only the keyed
           inner wrapper remounts per route and fades in via .agency-page-enter. */}
-      <main className="md:pl-64 min-h-screen" style={{ backgroundColor: theme.bg }}>
+      <main className="brand-shell md:pl-64 min-h-screen" style={{ backgroundColor: theme.bg }}>
         <div key={pathname} className="agency-page-enter">{children}</div>
       </main>
       <SupportWidget theme={theme} userType="agency" agencyId={agency?.id} hideLauncher={pathname?.startsWith('/agency/inbox')} />
