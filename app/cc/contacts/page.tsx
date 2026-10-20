@@ -134,6 +134,16 @@ export default function CallCenterContacts() {
     } catch { /* non-fatal */ } finally { setDetailLoading(false); }
   }, [agencyId]);
 
+  // Deep-link from the command bar: ?contact=<id> opens that caller's detail.
+  const contactDeepLinked = useRef(false);
+  useEffect(() => {
+    if (contactDeepLinked.current || !agencyId) return;
+    try {
+      const id = new URLSearchParams(window.location.search).get('contact');
+      if (id) { contactDeepLinked.current = true; openContact(id); }
+    } catch { /* no-op */ }
+  }, [agencyId, openContact]);
+
   const startEdit = () => { if (!active) return; setEdit({ name: active.name === 'Unknown' ? '' : active.name, phone: active.phone || '', email: active.email || '', address: active.address || '' }); setEditing(true); };
   const saveEdit = async () => {
     if (!active) return;
@@ -298,7 +308,7 @@ export default function CallCenterContacts() {
                 </div>
                 <div className="rounded-xl p-3" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                   <p className="text-[11px]" style={{ color: theme.textMuted }}>Last call</p>
-                  <p className="text-[15px] font-semibold" style={{ color: theme.text }}>{active.lastCallAt ? fmtWhen(active.lastCallAt) : '—'}</p>
+                  <p className="text-[15px] font-semibold" style={{ color: theme.text }}>{active.lastCallAt ? fmtWhen(active.lastCallAt) : '-'}</p>
                 </div>
               </div>
             )}

@@ -17,7 +17,7 @@
 // Managers only (the /cc layout confines agents away from here).
 // ============================================================================
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Headset, Loader2, UserPlus, Phone, Monitor, Trash2, ChevronDown,
   Check, Eye, EyeOff, Building2, X, AlertCircle, Users, Copy, RotateCcw,
@@ -164,6 +164,17 @@ export default function CallCenterAgents() {
 
   useEffect(() => { loadTeam(); loadClients(); }, [loadTeam, loadClients]);
   useEffect(() => { loadPresence(); const iv = setInterval(loadPresence, 15000); return () => clearInterval(iv); }, [loadPresence]);
+
+  // Deep-link from the command bar: ?agent=<team_members.id> opens that agent's
+  // Manage panel once the roster has loaded.
+  const agentDeepLinked = useRef(false);
+  useEffect(() => {
+    if (agentDeepLinked.current || members.length === 0) return;
+    try {
+      const id = new URLSearchParams(window.location.search).get('agent');
+      if (id && members.some((m) => m.id === id)) { setExpandedId(id); agentDeepLinked.current = true; }
+    } catch { /* no-op */ }
+  }, [members]);
 
   // Agents only: a call-center agent always has an assigned_client_ids array
   // (managers/owner have no team row). Note we already filtered in loadTeam.

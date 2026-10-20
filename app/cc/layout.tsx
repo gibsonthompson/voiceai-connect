@@ -27,6 +27,7 @@ import { navIcon, iconsHidden, type NavRoute } from '@/components/cc/navIcons';
 import CcEscalationLayer from '@/components/cc/CcEscalationLayer';
 import AgentPresenceBar from '@/components/cc/AgentPresenceBar';
 import CcLiveCallPops from '@/components/cc/CcLiveCallPops';
+import CcCommandBar from '@/components/cc/CcCommandBar';
 
 function WaveformIcon({ className, color }: { className?: string; color?: string }) {
   return (<svg viewBox="0 0 24 24" fill="none" className={className}><rect x="2" y="9" width="2" height="6" rx="1" fill={color || 'currentColor'} opacity="0.6" /><rect x="5" y="7" width="2" height="10" rx="1" fill={color || 'currentColor'} opacity="0.8" /><rect x="8" y="4" width="2" height="16" rx="1" fill={color || 'currentColor'} /><rect x="11" y="6" width="2" height="12" rx="1" fill={color || 'currentColor'} /><rect x="14" y="3" width="2" height="18" rx="1" fill={color || 'currentColor'} /><rect x="17" y="7" width="2" height="10" rx="1" fill={color || 'currentColor'} opacity="0.8" /><rect x="20" y="9" width="2" height="6" rx="1" fill={color || 'currentColor'} opacity="0.6" /></svg>);
@@ -326,6 +327,8 @@ function CallCenterShell({ children }: { children: ReactNode }) {
       <main className="cc-shell md:pl-60 min-h-screen" style={{ backgroundColor: theme.bg }}>
         {/* Managers see the floor at a glance; agents get their own pop + toggle. */}
         {!isAgent && <AgentPresenceBar agencyId={agency?.id} />}
+        {/* Omni-search / command palette: managers only (self-gates internally). */}
+        {!isAgent && <CcCommandBar />}
         {children}
       </main>
 
