@@ -160,8 +160,14 @@ export default function CcCommandBar() {
   // Build the ranked result list.
   const results = useMemo<Result[]>(() => {
     const p = parse(q);
-    const sTokens = p.salient.split(/\s+/).filter(Boolean);
-    const matches = (hay: string) => { const h = hay.toLowerCase(); return !sTokens.length || sTokens.every((t) => h.includes(t)); };
+    // Match only on the MEANINGFUL part of the query. Filler and intent words
+    // ("i", "need", "to", "the", "change", "phone"...) are already stripped into
+    // p.salient, and we drop single characters so a stray letter never matches
+    // everything. With no meaningful token, entity lists stay empty instead of
+    // dumping the whole catalog.
+    const hasQuery = p.lower.trim().length > 0;
+    const qTokens = p.salient.split(/\s+/).filter((t) => t.length >= 2);
+    const matches = (hay: string) => { if (!qTokens.length) return false; const h = hay.toLowerCase(); return qTokens.every((t) => h.includes(t)); };
 
     // --- Actions (nav + create), filtered by permission + query ---
     const NAV: { label: string; href: string; icon: any; kw: string; perm?: string; manageTeam?: boolean }[] = [
@@ -180,15 +186,23 @@ export default function CcCommandBar() {
       { label: 'Create a new business', href: '/cc/businesses/new', icon: Plus, kw: 'create new add business client onboard', perm: 'clients' },
       { label: 'Add an agent', href: '/cc/agents', icon: UserPlus, kw: 'add new agent team member staff rep hire', manageTeam: true },
     ];
-    const qWords = p.lower.split(/\s+/).filter(Boolean);
-    const cmdMatch = (c: { label: string; kw: string }) => !qWords.length || qWords.some((w) => (c.kw + ' ' + c.label.toLowerCase()).includes(w));
+    // Nav/create actions match ONLY on meaningful tokens, never filler. Empty
+    // query shows the default palette; a query that is all filler/intent words
+    // (e.g. "i need to change the ...") shows no nav until a real term is typed.
+    const cmdMatch = (c: { label: string; kw: string }) => {
+      if (!hasQuery) return true;
+      if (!qTokens.length) return false;
+      const hay = c.kw + ' ' + c.label.toLowerCase();
+      return qTokens.some((t) => hay.includes(t));
+    };
     const actions: Result[] = [];
-    for (const c of CREATE) if (can(c.perm, c.manageTeam) && (p.wantsCreate ? cmdMatch(c) : cmdMatch(c) && qWords.length > 0)) actions.push({ key: 'c:' + c.href + c.label, group: 'Actions', icon: c.icon, label: c.label, href: c.href });
+    // Create/add: show on explicit create intent, or a direct keyword match.
+    for (const c of CREATE) if (can(c.perm, c.manageTeam) && (p.wantsCreate || cmdMatch(c))) actions.push({ key: 'c:' + c.href + c.label, group: 'Actions', icon: c.icon, label: c.label, href: c.href });
     for (const c of NAV) if (can(c.perm, c.manageTeam) && cmdMatch(c)) actions.push({ key: 'n:' + c.href, group: 'Actions', icon: c.icon, label: c.label, href: c.href });
 
     // --- Businesses ---
     const bizRes: Result[] = can('clients')
-      ? biz.filter((b) => matches(b.name) || (b.phone || '').includes(p.salient)).slice(0, 6).map((b) => ({
+      ? biz.filter((b) => matches(b.name) || (/\d/.test(p.salient) && (b.phone || '').replace(/\D/g, '').includes(p.salient.replace(/\D/g, '')))).slice(0, 6).map((b) => ({
           key: 'b:' + b.id,
           group: 'Businesses' as Group,
           icon: Building2,
@@ -284,6 +298,18 @@ export default function CcCommandBar() {
   const selectStyle = { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text } as React.CSSProperties;
   const showPanel = open;
 
+  // When the intent is clear but no target is typed yet (e.g. "change the phone
+  // number for ..."), guide the manager instead of showing a bare "no matches".
+  const intentHint = (() => {
+    if (!q.trim()) return null;
+    const p = parse(q);
+    if (p.wantsEdit && p.attr === 'phone') return 'Keep typing a business name to change its phone number.';
+    if (p.wantsEdit && p.attr === 'hours') return "Keep typing an agent's name to change their working hours.";
+    if (p.wantsEdit && p.attr === 'greeting') return 'Keep typing a business name to change its greeting.';
+    if (p.wantsCall || p.dateHint) return 'Add a caller or business name to find the call.';
+    return null;
+  })();
+
   // Flat render with group headers inserted.
   let lastGroup: Group | null = null;
 
@@ -310,6 +336,7 @@ export default function CcCommandBar() {
             {results.length === 0 ? (
               <div className="px-4 py-6 text-center text-[13px]" style={{ color: theme.textMuted }}>
                 {searching ? <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Searching...</span>
+                  : intentHint ? intentHint
                   : q.trim() ? 'No matches. Try a name, a business, or "create a new business".'
                   : 'Type to search calls, businesses, and agents - or jump to any page.'}
               </div>
