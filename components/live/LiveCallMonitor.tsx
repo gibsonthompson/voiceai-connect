@@ -1405,21 +1405,23 @@ function StatusPill({ state, label, t }: { state: CallState; label: string; t: T
 }
 
 function Bubble({ role, text, t, accent, accentText, faded, speaker }: { role: 'caller' | 'assistant'; text: string; t: Theme; accent: string; accentText: string; faded?: boolean; speaker?: string | null }) {
-  const isAI = role === 'assistant';
-  const labelColor = isAI
+  // Caller sits on the LEFT (neutral bubble); the AI and a human agent share the
+  // RIGHT (accent bubble), since both are "our" side of the conversation.
+  const isCaller = role === 'caller';
+  const labelColor = isCaller
     ? t.textFaint
     : (accentText === '#ffffff' ? 'rgba(255,255,255,0.75)' : 'rgba(15,23,42,0.6)');
   return (
-    <div className={`flex ${isAI ? 'justify-start' : 'justify-end'}`}>
+    <div className={`flex ${isCaller ? 'justify-start' : 'justify-end'}`}>
       <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm leading-snug ${faded ? 'opacity-60' : ''}`}
            style={{
-             backgroundColor: isAI ? t.aiBubbleBg : accent,
-             color: isAI ? t.aiBubbleText : accentText,
-             borderBottomLeftRadius: isAI ? 4 : 16,
-             borderBottomRightRadius: isAI ? 16 : 4,
+             backgroundColor: isCaller ? t.aiBubbleBg : accent,
+             color: isCaller ? t.aiBubbleText : accentText,
+             borderBottomLeftRadius: isCaller ? 4 : 16,
+             borderBottomRightRadius: isCaller ? 16 : 4,
            }}>
         <p className="text-[10px] uppercase tracking-wide mb-0.5" style={{ color: labelColor }}>
-          {speaker || (isAI ? 'AI' : 'Caller')}
+          {speaker || (isCaller ? 'Caller' : 'AI')}
         </p>
         {text}
       </div>
