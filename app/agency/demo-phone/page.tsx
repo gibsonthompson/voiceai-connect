@@ -445,6 +445,9 @@ export default function DemoPhonePage() {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  // Free-tier demo: when the line expires (30 days) and the card/upgrade prompt.
+  const [demoExpiresAt, setDemoExpiresAt] = useState<string | null>(null);
+  const [reactivation, setReactivation] = useState<{ title?: string; message?: string; cta_card?: string; cta_upgrade?: string } | null>(null);
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.myvoiceaiconnect.com';
 
@@ -529,6 +532,7 @@ export default function DemoPhonePage() {
       }
 
       if (statusData?.status === 'done') {
+        setDemoExpiresAt(statusData.demo_expires_at || null);
         await refreshAgency();
         setCreating(false);
         return;
@@ -581,6 +585,25 @@ export default function DemoPhonePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agency?.id, hasDemo]);
 
+  // When a demo already exists, pull its expiry (free-tier lines carry one) so
+  // the countdown banner can show how long is left before it auto-expires.
+  useEffect(() => {
+    if (demoMode || !agency?.id || !hasDemo) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        const res = await fetch(`${backendUrl}/api/agency/${agency.id}/demo-phone/status`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (!cancelled && data?.status === 'done') setDemoExpiresAt(data.demo_expires_at || null);
+      } catch { /* non-blocking */ }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agency?.id, hasDemo]);
+
   const handleCreate = async () => {
     if (demoMode) {
       await refreshAgency();
@@ -609,6 +632,13 @@ export default function DemoPhonePage() {
       const data = await response.json();
 
       if (!response.ok) {
+        // Free agency that already used its one free demo and has no card:
+        // show the add-card / upgrade prompt instead of a raw error.
+        if (data.error === 'demo_reactivation_required' || data.reactivation) {
+          setReactivation({ title: data.title, message: data.message, cta_card: data.cta_card, cta_upgrade: data.cta_upgrade });
+          setCreating(false);
+          return;
+        }
         setError(data.message || data.error || 'Failed to create demo phone');
         setCreating(false);
         return;
@@ -680,10 +710,11 @@ export default function DemoPhonePage() {
 
   // ============================================================================
   // LOCKED STATE
-  // Free-plan agencies are locked regardless of subscription_status; everyone
-  // else is locked only if they are neither paid nor trialing.
+  // Free-plan agencies are NOT locked: they get one free demo line (handled by
+  // the create flow + reactivation prompt below). Everyone else is locked only
+  // if they are neither paid nor trialing.
   // ============================================================================
-  if ((isFreePlanAgency || (!isPaid && !isTrialing)) && !demoMode) {
+  if (!isFreePlanAgency && (!isPaid && !isTrialing) && !demoMode) {
     return (
       <LockedFeature
         title="Demo Phone Number"
@@ -876,6 +907,23 @@ export default function DemoPhonePage() {
             </button>
           </div>
 
+          {/* Free-tier expiry countdown. Only free demos carry demo_expires_at. */}
+          {demoExpiresAt && (() => {
+            const ms = new Date(demoExpiresAt).getTime() - Date.now();
+            const days = Math.max(0, Math.ceil(ms / 86400000));
+            const dateLabel = new Date(demoExpiresAt).toLocaleDateString();
+            return (
+              <div className="rounded-xl p-3.5 mb-4 flex items-start gap-3" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
+                <Clock className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.warningText }} />
+                <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>
+                  <span className="font-medium" style={{ color: theme.warningText }}>Free demo line, {days} day{days === 1 ? '' : 's'} left.</span>{' '}
+                  It expires on {dateLabel} and the number is released automatically.{' '}
+                  <a href="/agency/settings?tab=billing" className="underline font-medium" style={{ color: theme.primary }}>Upgrade to Pro</a> to keep a demo line that never expires.
+                </p>
+              </div>
+            );
+          })()}
+
           {/* What the demo is for + using your own number */}
           <div className="rounded-xl p-3.5 mb-4" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
             <button onClick={() => setShowHowTo((v) => !v)} className="w-full flex items-center justify-between gap-2 text-left">
@@ -983,6 +1031,43 @@ export default function DemoPhonePage() {
   // ============================================================================
   // CREATE STATE
   // ============================================================================
+  // ============================================================================
+  // REACTIVATION PROMPT (free agency that already used its one free demo)
+  // The backend returns demo_reactivation_required: offer a card (to bill the
+  // new line's minutes) or an upgrade to Pro. Shown in place of the create form.
+  // ============================================================================
+  if (reactivation && !demoMode) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8">
+        <div className="flex items-center gap-3 mb-6 sm:mb-8">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Phone className="h-5 w-5" style={{ color: theme.primary }} /></div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-semibold">Demo Phone</h1>
+            <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>A dedicated line prospects call to hear your AI receptionist</p>
+          </div>
+        </div>
+        <div className="rounded-xl p-5 sm:p-6 max-w-xl" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ backgroundColor: theme.primary15, color: theme.primary }}><Clock className="h-5 w-5" /></div>
+            <h3 className="font-semibold text-base sm:text-lg">{reactivation.title || 'Your free demo line has been used'}</h3>
+          </div>
+          <p className="text-sm mb-5 leading-relaxed" style={{ color: theme.textMuted }}>
+            {reactivation.message || 'Your first demo line was free for 30 days. To start a new one, add a card so we can bill the minutes it uses, or upgrade to Pro for a demo line that does not expire plus lower rates.'}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <a href="/agency/settings?tab=billing" className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-all hover:scale-[1.01]" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+              {reactivation.cta_upgrade || 'Upgrade to Pro'}
+            </a>
+            <a href="/agency/settings?tab=payments" className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition-colors" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.text }}>
+              {reactivation.cta_card || 'Add a card'}
+            </a>
+          </div>
+          <button onClick={() => setReactivation(null)} className="mt-4 text-xs underline" style={{ color: theme.textMuted }}>Back</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="flex items-center gap-3 mb-6 sm:mb-8">
@@ -1010,6 +1095,15 @@ export default function DemoPhonePage() {
             </p>
           </div>
         </div>
+
+        {isFreePlanAgency && (
+          <div className="mb-5 rounded-xl p-3.5 flex items-start gap-3" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
+            <Sparkles className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.primary }} />
+            <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>
+              <span className="font-medium" style={{ color: theme.text }}>Your first demo line is free for 30 days.</span> No card needed. After 30 days it expires and the number is released. Upgrade to Pro any time for a demo line that never expires.
+            </p>
+          </div>
+        )}
 
         {isUS ? (
           /* US: platform provisions a local US number by area code */
