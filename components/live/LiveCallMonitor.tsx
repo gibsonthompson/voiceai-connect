@@ -70,7 +70,18 @@ interface Info {
   barge_supported?: boolean;
 }
 
-interface Line { id: string; role: 'caller' | 'assistant'; text: string; }
+interface Line { id: string; role: 'caller' | 'assistant'; text: string; speaker?: string | null; }
+
+// Pull the agent's display name out of a takeover status label like
+// "Gibson is on the call" / "Gibson took over the call". Returns null for a
+// generic label so the UI can fall back to a neutral phrase.
+function agentNameFromLabel(lbl?: string | null): string | null {
+  if (!lbl) return null;
+  const m = String(lbl).match(/^(.*?)\s+(?:is on the call|took over)/i);
+  const n = m ? m[1].trim() : '';
+  if (!n || /^(a teammate|your teammate|someone|a team member)$/i.test(n)) return null;
+  return n;
+}
 interface Activity { id: string; tool: string; label: string; detail: string | null; ts: number; }
 
 type Theme = ReturnType<typeof palette>;
@@ -217,6 +228,13 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
   // events (true on agent_connected, false on every other status) so the pill
   // can never claim someone is on the call when no one is.
   const [humanOnCall, setHumanOnCall] = useState(false);
+  // Human-takeover view: who is on the call, when they took it, and whether the
+  // transcript pane shows the live transcript or a compact "now talking" card.
+  // Both are fed by the same barge transcript stream from the backend.
+  const [takeoverName, setTakeoverName] = useState<string | null>(null);
+  const [takeoverSince, setTakeoverSince] = useState<number | null>(null);
+  const [takeoverView, setTakeoverView] = useState<'transcript' | 'status'>('transcript');
+  const takeoverNameRef = useRef<string | null>(null);
   // The caller currently on the line (populated at call start by the backend
   // 'call_started' event), plus a live elapsed timer so an agent sees how long
   // the call has been running.
@@ -378,9 +396,9 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
   }, [mode, info?.barge_supported]);
 
   // ---- helpers to append to the feed --------------------------------------
-  const addLine = useCallback((role: 'caller' | 'assistant', text: string) => {
+  const addLine = useCallback((role: 'caller' | 'assistant', text: string, speaker?: string | null) => {
     if (!text.trim()) return;
-    setLines((prev) => [...prev, { id: uid(), role, text }]);
+    setLines((prev) => [...prev, { id: uid(), role, text, speaker: speaker || null }]);
   }, []);
 
   const addActivity = useCallback((tool: string, detail?: string | null, label?: string) => {
@@ -390,6 +408,7 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
 
   const resetFeed = useCallback(() => {
     setLines([]); setPartial(null); setActivities([]);
+    setTakeoverName(null); takeoverNameRef.current = null; setTakeoverSince(null); setTakeoverView('transcript');
   }, []);
 
   // Tear down the browser WebRTC leg + mic. Safe to call repeatedly.
@@ -489,7 +508,11 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
     }
     if (ev.callId) { callIdRef.current = ev.callId; setHasCallId(true); }
     if (ev.type === 'transcript') {
-      if (ev.final) { setPartial(null); addLine(ev.role === 'caller' ? 'caller' : 'assistant', ev.text || ''); }
+      // During a human takeover the backend streams both sides with source:'barge'
+      // (agent -> assistant role, caller -> user role). Label those by name so the
+      // agent is not shown as "AI".
+      const spk = ev.source === 'barge' ? (ev.role === 'caller' ? 'Caller' : (takeoverNameRef.current || 'Teammate')) : null;
+      if (ev.final) { setPartial(null); addLine(ev.role === 'caller' ? 'caller' : 'assistant', ev.text || '', spk); }
       else setPartial({ role: ev.role === 'caller' ? 'caller' : 'assistant', text: ev.text || '' });
     } else if (ev.type === 'activity') {
       addActivity(ev.tool || 'tool', ev.detail, ev.label);
@@ -511,7 +534,7 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
     } else if (ev.type === 'status') {
       const s = String(ev.status || '').toLowerCase();
       const lbl = ev.label ? String(ev.label) : null;
-      if (s === 'in-progress') { setCallState('live'); setStatusLabel(lbl || 'Live'); setBridged(null); setHumanOnCall(false); }
+      if (s === 'in-progress') { setCallState('live'); setStatusLabel(lbl || 'Live'); setBridged(null); setHumanOnCall(false); setTakeoverName(null); takeoverNameRef.current = null; setTakeoverSince(null); setTakeoverView('transcript'); }
       else if (s === 'ringing' || s === 'queued') { setCallState('connecting'); setStatusLabel(lbl || 'Ringing'); setHumanOnCall(false); }
       else if (s === 'forwarding') { setStatusLabel('Transferring'); addActivity('transferCall'); setHumanOnCall(false); }
       // Own-the-call warm transfer lifecycle (telnyx_cc): dialing the team, then
@@ -522,8 +545,12 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
       // Browser human-barge: a teammate joined and is talking to the caller. Stay
       // "live"; the pill tells every viewer a person is on. The viewer who
       // actually jumped in gets their own live state from the WebRTC leg.
-      else if (s === 'agent_connected') { setCallState('live'); setStatusLabel(lbl || 'A teammate is on the call'); setBridged(null); setPartial(null); setHumanOnCall(true); }
-      else if (s === 'ended') { setCallState('ended'); setStatusLabel('Call ended'); setSpeaking(null); setPartial(null); setBridged(null); setHumanOnCall(false); if (bargeStateRef.current !== 'idle') { cleanupBarge(); setBargeState('idle'); } }
+      else if (s === 'agent_connected') {
+        setCallState('live'); setStatusLabel(lbl || 'A teammate is on the call'); setBridged(null); setPartial(null); setHumanOnCall(true);
+        const nm = agentNameFromLabel(lbl); setTakeoverName(nm); takeoverNameRef.current = nm;
+        setTakeoverSince((prev) => prev || Date.now());
+      }
+      else if (s === 'ended') { setCallState('ended'); setStatusLabel('Call ended'); setSpeaking(null); setPartial(null); setBridged(null); setHumanOnCall(false); setTakeoverName(null); takeoverNameRef.current = null; setTakeoverSince(null); setTakeoverView('transcript'); if (bargeStateRef.current !== 'idle') { cleanupBarge(); setBargeState('idle'); } }
     } else if (ev.type === 'takeover') {
       // jump_in and an end_call jump_out already arrive as named activity events
       // from the backend ("<name> took over the call" / "<name> ended the call"),
@@ -535,8 +562,17 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
         if (bargeStateRef.current !== 'idle') { cleanupBarge(); setBargeState('idle'); }
       } else if (ev.action === 'jump_out') {
         addActivity('barge_ended', null, 'Teammate handed back to the AI');
-      } else if (ev.action !== 'jump_in') {
-        addActivity('request_human_transfer', ev.text || null, `You stepped in (${ev.action})`);
+      } else if (ev.action && ev.action !== 'jump_in') {
+        // Monitoring actions (start/stop listening, mic mute). Map to a clean
+        // phrase; never surface the raw action token in the feed.
+        const TAKEOVER_LABEL: Record<string, string> = {
+          listen_start: 'You started listening in',
+          listen_stop: 'You stopped listening in',
+          mute: 'You muted your mic',
+          unmute: 'You unmuted your mic',
+        };
+        const lbl = TAKEOVER_LABEL[String(ev.action)];
+        if (lbl) addActivity('barge_dialing', ev.text || null, lbl);
       }
     }
   }, [addLine, addActivity, cleanupBarge]);
@@ -1068,6 +1104,20 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
           <div className="px-4 sm:px-6 py-3 flex items-center gap-2" style={{ borderBottom: `1px solid ${t.borderSubtle}` }}>
             <Radio className="h-4 w-4" style={{ color: accent }} />
             <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: t.textMuted }}>Live transcript</span>
+            {humanOnCall && (
+              <div className="ml-auto flex items-center gap-0.5 rounded-lg p-0.5" style={{ backgroundColor: t.surface }}>
+                {(['transcript', 'status'] as const).map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => setTakeoverView(v)}
+                    className="px-2.5 py-1 rounded-md text-[11px] font-semibold transition"
+                    style={{ backgroundColor: takeoverView === v ? accent : 'transparent', color: takeoverView === v ? accentText : t.textMuted }}
+                  >
+                    {v === 'transcript' ? 'Transcript' : 'Now talking'}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div
             ref={transcriptScrollRef}
@@ -1077,23 +1127,53 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
             }}
             className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-3"
           >
-            {lines.length === 0 && !partial && !bridged && (
+            {humanOnCall && takeoverView === 'status' ? (
               <div className="h-full flex flex-col items-center justify-center text-center py-16">
-                <CircleDot className="h-8 w-8 mb-3" style={{ color: t.textFaint }} />
-                <p className="text-sm" style={{ color: t.textMuted }}>
-                  {isDemo ? 'Press Start call and talk to the AI. Everything it hears, says, and does shows up here live.'
-                          : 'Waiting for the next call. When one comes in, it will appear here in real time.'}
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl mb-4" style={{ backgroundColor: 'rgba(245,158,11,0.16)' }}>
+                  <UserPlus className="h-7 w-7" style={{ color: '#f59e0b' }} />
+                </div>
+                <p className="text-base font-semibold" style={{ color: t.text }}>
+                  {takeoverName ? `${takeoverName} is on the call` : 'A teammate is on the call'}
+                </p>
+                <p className="text-sm mt-1" style={{ color: t.textMuted }}>
+                  Speaking with {callerInfo?.name || callerInfo?.number || 'the caller'}
+                </p>
+                {takeoverSince && (() => {
+                  const secs = Math.max(0, Math.floor((nowMs - takeoverSince) / 1000));
+                  return (
+                    <>
+                      <p className="text-3xl font-bold tabular-nums mt-4" style={{ color: accent }}>
+                        {`${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`}
+                      </p>
+                      <p className="text-[11px] uppercase tracking-wide mt-1" style={{ color: t.textFaint }}>on the call</p>
+                    </>
+                  );
+                })()}
+                <p className="text-xs mt-5 max-w-[260px]" style={{ color: t.textFaint }}>
+                  Switch to Transcript to read the live conversation as it happens.
                 </p>
               </div>
+            ) : (
+              <>
+                {lines.length === 0 && !partial && !bridged && (
+                  <div className="h-full flex flex-col items-center justify-center text-center py-16">
+                    <CircleDot className="h-8 w-8 mb-3" style={{ color: t.textFaint }} />
+                    <p className="text-sm" style={{ color: t.textMuted }}>
+                      {isDemo ? 'Press Start call and talk to the AI. Everything it hears, says, and does shows up here live.'
+                              : 'Waiting for the next call. When one comes in, it will appear here in real time.'}
+                    </p>
+                  </div>
+                )}
+                {lines.map((l) => <Bubble key={l.id} role={l.role} text={l.text} speaker={l.speaker} t={t} accent={accent} accentText={accentText} />)}
+                {bridged && (
+                  <div className="rounded-lg px-3 py-2.5 text-xs leading-relaxed" style={{ backgroundColor: t.borderSubtle, color: t.textMuted }}>
+                    <span style={{ color: t.text, fontWeight: 600 }}>{bridged}.</span>{' '}
+                    The caller is now speaking with a team member. The live AI transcript pauses during the human conversation; a recorded recap is saved to this call once it ends.
+                  </div>
+                )}
+                <div ref={transcriptEndRef} />
+              </>
             )}
-            {lines.map((l) => <Bubble key={l.id} role={l.role} text={l.text} t={t} accent={accent} accentText={accentText} />)}
-            {bridged && (
-              <div className="rounded-lg px-3 py-2.5 text-xs leading-relaxed" style={{ backgroundColor: t.borderSubtle, color: t.textMuted }}>
-                <span style={{ color: t.text, fontWeight: 600 }}>{bridged}.</span>{' '}
-                The caller is now speaking with a team member. The live AI transcript pauses during the human conversation; a recorded recap is saved to this call once it ends.
-              </div>
-            )}
-            <div ref={transcriptEndRef} />
           </div>
 
           {/* Live caption strip: pinned at the bottom of the transcript pane so
@@ -1101,7 +1181,7 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
               scrolling. Finalized lines flow into the history above; this shows
               the in-progress partial live, which reads as real-time instead of
               waiting for a chat bubble to pop in. */}
-          {(callState === 'live' || partial) && !bridged && (
+          {(callState === 'live' || partial) && !bridged && !humanOnCall && (
             <div
               className="flex-none border-t px-4 sm:px-6 py-3 flex items-start"
               style={{ borderColor: t.borderSubtle, backgroundColor: 'rgba(127,127,127,0.06)', minHeight: '3.75rem' }}
@@ -1324,7 +1404,7 @@ function StatusPill({ state, label, t }: { state: CallState; label: string; t: T
   );
 }
 
-function Bubble({ role, text, t, accent, accentText, faded }: { role: 'caller' | 'assistant'; text: string; t: Theme; accent: string; accentText: string; faded?: boolean }) {
+function Bubble({ role, text, t, accent, accentText, faded, speaker }: { role: 'caller' | 'assistant'; text: string; t: Theme; accent: string; accentText: string; faded?: boolean; speaker?: string | null }) {
   const isAI = role === 'assistant';
   const labelColor = isAI
     ? t.textFaint
@@ -1339,7 +1419,7 @@ function Bubble({ role, text, t, accent, accentText, faded }: { role: 'caller' |
              borderBottomRightRadius: isAI ? 16 : 4,
            }}>
         <p className="text-[10px] uppercase tracking-wide mb-0.5" style={{ color: labelColor }}>
-          {isAI ? 'AI' : 'Caller'}
+          {speaker || (isAI ? 'AI' : 'Caller')}
         </p>
         {text}
       </div>
