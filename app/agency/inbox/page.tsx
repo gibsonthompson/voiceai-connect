@@ -1,542 +1,364 @@
 'use client';
 
 // ============================================================================
-// AGENCY INBOX, the unified iMessage-style messaging center.
-// One conversation list across every channel the agency talks on:
-//   - VoiceAI Connect (platform support thread), pinned on top
-//   - each client (in-app two-way thread)
-//   - prospects (in-app contact-form requests)
-//   - carrier SMS on the agency demo number (follow-ups + replies)
-// Compose can start a thread with a client, any phone number (SMS from the demo
-// number), or VoiceAI Connect. Backend: GET /inbox, POST /inbox/send,
-// POST /inbox/read on agencyRouter.
+// ADMIN INBOX, one unified iMessage-style inbox for all platform comms.
+// One conversation per agency: the in-app support thread, SMS, feedback and
+// help-bot chats are ALL merged into a single thread (no tabs) so nothing is
+// split off and context stays together. Plus the public FAQ-bot prospect chats
+// as read-only conversations. Each conversation can be marked as a support item
+// and resolved; resolved persists until a newer message arrives.
+// Backend: GET /api/admin/inbox, POST /inbox/send, /inbox/read,
+// /inbox/mark-support, /inbox/resolve, /inbox/reopen.
 // ============================================================================
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  Search, Loader2, ArrowLeft, Send, Plus, MessageSquare, Phone, X, Sparkles, Building2, Hash,
-  HelpCircle, ShieldCheck
+  MessageSquare, Send, ArrowLeft, Loader2, RefreshCw, Phone, Building2, Bot,
+  ExternalLink, Mail, LifeBuoy, CheckCircle2, RotateCcw,
 } from 'lucide-react';
-import { useAgency } from '../context';
-import { useTheme } from '@/hooks/useTheme';
 
-interface InboxMessage { id: string; sender: 'in' | 'out'; body: string; at: string; }
+type SupportStatus = 'none' | 'support' | 'resolved';
+interface InboxMessage { id: string; sender: 'in' | 'out'; body: string; at: string; kind: 'inapp' | 'sms' | 'faq' | 'feedback' | 'help'; }
 interface Conversation {
   key: string;
-  type: 'platform' | 'client' | 'prospect' | 'sms';
-  name: string | null;
+  type: 'agency' | 'faq';
+  agencyId: string | null;
+  planType?: string | null;
+  name: string;
   phone: string | null;
-  clientId?: string;
-  pinned?: boolean;
-  target: string | null;
+  contactPhone?: string | null;
+  email?: string | null;
   messages: InboxMessage[];
   unread: number;
   lastAt: string | null;
   lastDirection: 'in' | 'out' | null;
   lastPreview: string;
+  lastInboundKind?: 'inapp' | 'sms' | 'faq' | 'feedback' | 'help';
   needsReply: boolean;
+  readOnly?: boolean;
+  escalated?: boolean;
+  supportStatus?: SupportStatus;
+  faqOrigin?: { userType: string | null; source: string | null; agencyName: string | null; tag: string; visitorName?: string | null; visitorContact?: string | null } | null;
 }
-interface ClientRow { id: string; business_name: string | null; owner_name: string | null; owner_phone: string | null; }
 
-function hexToRgba(hex: string, alpha: number): string {
-  const c = (hex || '#10b981').replace('#', '');
-  const full = c.length === 3 ? c.split('').map(x => x + x).join('') : c;
-  const r = parseInt(full.slice(0, 2), 16), g = parseInt(full.slice(2, 4), 16), b = parseInt(full.slice(4, 6), 16);
-  if ([r, g, b].some(Number.isNaN)) return `rgba(16,185,129,${alpha})`;
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-function formatPhone(phone: string): string {
-  if (!phone) return '';
-  const d = phone.replace(/\D/g, '');
-  if (d.length === 11 && d.startsWith('1')) return `(${d.slice(1,4)}) ${d.slice(4,7)}-${d.slice(7)}`;
-  if (d.length === 10) return `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`;
-  return phone;
-}
-function listTime(dateStr: string | null): string {
-  if (!dateStr) return '';
-  const d = new Date(dateStr), now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const msgDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const diff = Math.floor((today.getTime() - msgDay.getTime()) / 86400000);
-  if (diff === 0) return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-  if (diff === 1) return 'Yesterday';
-  if (diff < 7) return d.toLocaleDateString('en-US', { weekday: 'short' });
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-function msgTime(dateStr: string): string {
-  if (!dateStr) return '';
-  return new Date(dateStr).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-}
-function factDate(iso: string | null): string {
+const backendUrl = () => process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
+const authHeaders = (): Record<string, string> => ({
+  Authorization: `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('admin_token') || '' : ''}`,
+});
+
+function fmtTime(iso: string | null): string {
   if (!iso) return '';
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-function factMoney(cents: number): string {
-  const whole = cents % 100 === 0;
-  return `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: whole ? 0 : 2, maximumFractionDigits: 2 })}/mo`;
-}
-function trialDaysLeft(iso: string): number {
-  return Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000));
-}
-function prettyStatus(s: string | null): string {
-  if (!s) return '';
-  if (s === 'trialing') return 'Trial';
-  if (s === 'active') return 'Active';
-  return s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  try { return new Date(iso).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); }
+  catch { return ''; }
 }
 
-export default function AgencyInboxPage() {
-  const { agency, loading: agencyLoading } = useAgency();
-  const theme = useTheme();
-  const primaryColor = theme.primary || '#10b981';
-  const textMuted2 = (theme as any).textMuted4 || theme.textMuted;
-  const hairline = theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
-  const glass = { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.8)', border: `1px solid ${hairline}` };
-
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
-  const agencyId = agency?.id;
-
+export default function AdminInboxPage() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [active, setActive] = useState<Conversation | null>(null);
-  const [newMessage, setNewMessage] = useState('');
+  const [selected, setSelected] = useState<Conversation | null>(null);
+  const [loadingList, setLoadingList] = useState(true);
+  // Per-conversation drafts: clicking out of a thread to answer another must
+  // not lose what you typed. Each thread's unsent text is kept by its key, and
+  // mirrored to localStorage so a refresh, or opening the Account tab and
+  // coming back, keeps it too.
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [sending, setSending] = useState(false);
-  const [search, setSearch] = useState('');
-
-  // "How support works" inline explainer. The Inbox mixes threads from the
-  // agency's own clients with the pinned VoiceAI Connect (platform) thread, so
-  // this clears up the two directions and the white-label promise right where
-  // the confusion is. Collapses to a small link once dismissed, saved per agency.
-  const [helpOpen, setHelpOpen] = useState(true);
-  useEffect(() => {
-    try { setHelpOpen(localStorage.getItem(`vac_inbox_help_${agencyId || 'x'}`) !== '1'); } catch {}
-  }, [agencyId]);
-  const dismissHelp = () => {
-    setHelpOpen(false);
-    try { localStorage.setItem(`vac_inbox_help_${agencyId || 'x'}`, '1'); } catch {}
-  };
-
-  // Quick facts about the open thread's client or prospect, shown at the top of
-  // the thread so the agency has context while replying.
-  const [facts, setFacts] = useState<any>(null);
-
-  // Compose
-  const [showCompose, setShowCompose] = useState(false);
-  const [composeMode, setComposeMode] = useState<'root' | 'client' | 'number'>('root');
-  const [composeNumber, setComposeNumber] = useState('');
-  const [clients, setClients] = useState<ClientRow[]>([]);
-  const [clientsLoaded, setClientsLoaded] = useState(false);
-  const [clientSearch, setClientSearch] = useState('');
-
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [error, setError] = useState('');
+  const threadEndRef = useRef<HTMLDivElement | null>(null);
   const stickRef = useRef(true);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-  const pollRef = useRef<NodeJS.Timeout | null>(null);
+  const replyRef = useRef<HTMLTextAreaElement | null>(null);
 
-  const token = () => localStorage.getItem('auth_token');
+  const currentDraft = selected ? (drafts[selected.key] ?? '') : '';
+  const setDraft = (key: string, val: string) => setDrafts((prev) => ({ ...prev, [key]: val }));
+  const clearDraft = (key: string) => setDrafts((prev) => { const next = { ...prev }; delete next[key]; return next; });
 
-  const onThreadScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const el = e.currentTarget;
-    stickRef.current = (el.scrollHeight - el.scrollTop - el.clientHeight) < 80;
-  };
+  // Hydrate drafts once on mount, then persist on every change. Wrapped because
+  // localStorage can throw (private mode) and must never break the inbox.
+  useEffect(() => {
+    try { const raw = localStorage.getItem('admin_inbox_drafts'); if (raw) setDrafts(JSON.parse(raw) || {}); } catch {}
+  }, []);
+  useEffect(() => {
+    try { localStorage.setItem('admin_inbox_drafts', JSON.stringify(drafts)); } catch {}
+  }, [drafts]);
 
-  const fetchInbox = useCallback(async () => {
-    if (!agencyId) return;
+  const load = useCallback(async () => {
     try {
-      const r = await fetch(`${backendUrl}/api/agency/${agencyId}/inbox`, { headers: { Authorization: `Bearer ${token()}` } });
-      if (r.ok) {
-        const d = await r.json();
-        const convos: Conversation[] = d.conversations || [];
-        setConversations(convos);
-        setActive(cur => {
-          if (!cur) return cur;
-          const fresh = convos.find(c => c.key === cur.key);
-          // Keep a virtual (not-yet-persisted) conversation until it appears.
-          return fresh ? fresh : cur;
+      const res = await fetch(`${backendUrl()}/api/admin/inbox`, { headers: authHeaders() });
+      if (!res.ok) throw new Error('Failed to load');
+      const data = await res.json();
+      const convos: Conversation[] = data.conversations || [];
+      setConversations(convos);
+      setSelected((cur) => (cur ? convos.find((c) => c.key === cur.key) || cur : cur));
+      // Drop drafts for conversations that no longer exist, so storage stays
+      // tidy. Guarded by a non-empty load so a transient empty/failed fetch
+      // never wipes a draft you are in the middle of writing.
+      if (convos.length) {
+        setDrafts((prev) => {
+          const keys = new Set(convos.map((c) => c.key));
+          let changed = false; const next: Record<string, string> = {};
+          for (const k in prev) { if (keys.has(k)) next[k] = prev[k]; else changed = true; }
+          return changed ? next : prev;
         });
       }
-    } catch {} finally { setLoading(false); }
-  }, [agencyId, backendUrl]);
-
-  useEffect(() => { if (agencyId) fetchInbox(); }, [agencyId, fetchInbox]);
+      setError('');
+    } catch {
+      setError('Could not load the inbox.');
+    } finally {
+      setLoadingList(false);
+    }
+  }, []);
 
   useEffect(() => {
-    if (pollRef.current) clearInterval(pollRef.current);
-    pollRef.current = setInterval(() => { fetchInbox(); }, 8000);
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [fetchInbox]);
+    load();
+    const t = setInterval(load, 15000);
+    return () => clearInterval(t);
+  }, [load]);
 
-  // Load quick facts when switching to a client or prospect thread. Keyed on
-  // active.key so the 8s inbox poll (which replaces the active object) does not
-  // refetch; a stale response for a thread we've left is dropped.
+  useEffect(() => { stickRef.current = true; }, [selected?.key]);
+  useEffect(() => { if (stickRef.current) threadEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [selected]);
+  // Auto-grow the reply box as you type so the whole message stays visible.
+  // The composer is shrink-0 and the thread above is flex-1, so as the box
+  // grows the conversation gives up height (and scrolls) to make room. Caps at
+  // ~45vh, then the textarea scrolls internally instead of eating the panel.
   useEffect(() => {
-    if (!active || !agencyId || (active.type !== 'client' && active.type !== 'prospect')) { setFacts(null); return; }
-    const target = active.type === 'client' ? (active.clientId || active.target) : active.target;
-    if (!target) { setFacts(null); return; }
-    const forKey = active.key;
-    setFacts(null);
-    let cancelled = false;
-    (async () => {
-      try {
-        const r = await fetch(`${backendUrl}/api/agency/${agencyId}/inbox/facts?type=${active.type}&target=${encodeURIComponent(String(target))}`, { headers: { Authorization: `Bearer ${token()}` } });
-        if (r.ok && !cancelled) { const d = await r.json(); if (!cancelled) setFacts(d.facts || null); }
-      } catch {}
-    })();
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active?.key, agencyId]);
-
-  useEffect(() => { stickRef.current = true; }, [active?.key]);
-  useEffect(() => { const el = scrollRef.current; if (el && stickRef.current) el.scrollTop = el.scrollHeight; }, [active]);
+    const el = replyRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [currentDraft, selected?.key]);
 
   const markRead = async (c: Conversation) => {
-    if (c.type === 'sms' || !c.unread) return;
-    try { await fetch(`${backendUrl}/api/agency/${agencyId}/inbox/read`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` }, body: JSON.stringify({ type: c.type, target: c.type === 'client' ? (c.clientId || c.target) : c.target }) }); } catch {}
-    setConversations(prev => prev.map(x => x.key === c.key ? { ...x, unread: 0 } : x));
-  };
-
-  const openConvo = (c: Conversation) => { setActive(c); setNewMessage(''); markRead(c); };
-
-  const handleSend = async () => {
-    if (!active || !newMessage.trim() || sending) return;
-    setSending(true);
-    const text = newMessage.trim();
-    setNewMessage('');
-    const optimistic: InboxMessage = { id: `temp-${Date.now()}`, sender: 'out', body: text, at: new Date().toISOString() };
-    setActive(prev => prev ? { ...prev, messages: [...prev.messages, optimistic] } : prev);
+    if (c.type !== 'agency' || !c.agencyId || !c.unread) return;
     try {
-      const target = active.type === 'client' ? (active.clientId || active.target) : active.target;
-      const r = await fetch(`${backendUrl}/api/agency/${agencyId}/inbox/send`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
-        body: JSON.stringify({ type: active.type, target, body: text }),
+      await fetch(`${backendUrl()}/api/admin/inbox/read`, {
+        method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agencyId: c.agencyId }),
       });
-      const d = await r.json().catch(() => ({}));
-      if (!r.ok || !d.success) {
-        setActive(prev => prev ? { ...prev, messages: prev.messages.filter(m => m.id !== optimistic.id) } : prev);
-        setNewMessage(text);
-      } else {
-        await fetchInbox();
-      }
-    } catch {
-      setActive(prev => prev ? { ...prev, messages: prev.messages.filter(m => m.id !== optimistic.id) } : prev);
-      setNewMessage(text);
-    } finally { setSending(false); inputRef.current?.focus(); }
+    } catch {}
+    setConversations((prev) => prev.map((x) => (x.key === c.key ? { ...x, unread: 0 } : x)));
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } };
+  // Select a thread. The draft is NOT cleared, each thread keeps its own unsent
+  // text, so switching away and back restores exactly what you had typed.
+  const open = (c: Conversation) => { setSelected(c); markRead(c); };
 
-  const loadClients = useCallback(async () => {
-    if (clientsLoaded || !agencyId) return;
+  // Support / resolved: mark a thread as a support item, resolve it, or reopen
+  // it. Optimistic so the badge flips immediately; the backend persists it.
+  const setThreadStatus = async (c: Conversation, action: 'mark-support' | 'resolve' | 'reopen') => {
+    const next: SupportStatus = action === 'resolve' ? 'resolved' : 'support';
+    setConversations((prev) => prev.map((x) => (x.key === c.key ? { ...x, supportStatus: next } : x)));
+    setSelected((prev) => (prev && prev.key === c.key ? { ...prev, supportStatus: next } : prev));
     try {
-      const r = await fetch(`${backendUrl}/api/agency/${agencyId}/clients`, { headers: { Authorization: `Bearer ${token()}` } });
-      if (r.ok) { const d = await r.json(); setClients(d.clients || []); }
-    } catch {} finally { setClientsLoaded(true); }
-  }, [agencyId, backendUrl, clientsLoaded]);
-
-  const openCompose = () => { setComposeMode('root'); setComposeNumber(''); setClientSearch(''); setShowCompose(true); };
-
-  const startPlatform = () => {
-    setShowCompose(false);
-    const existing = conversations.find(c => c.type === 'platform');
-    openConvo(existing || { key: 'platform', type: 'platform', name: 'VoiceAI Connect', phone: null, pinned: true, target: null, messages: [], unread: 0, lastAt: null, lastDirection: null, lastPreview: '', needsReply: false });
-  };
-  const startClient = (c: ClientRow) => {
-    setShowCompose(false);
-    const existing = conversations.find(x => x.key === `client-${c.id}`);
-    openConvo(existing || { key: `client-${c.id}`, type: 'client', name: c.business_name || c.owner_name || 'Client', phone: c.owner_phone, clientId: c.id, target: c.id, messages: [], unread: 0, lastAt: null, lastDirection: null, lastPreview: '', needsReply: false });
-  };
-  const startNumber = () => {
-    const digits = composeNumber.replace(/\D/g, '');
-    if (digits.length < 10) return;
-    setShowCompose(false);
-    const key = `sms-${digits.slice(-10)}`;
-    const existing = conversations.find(x => x.key === key);
-    openConvo(existing || { key, type: 'sms', name: null, phone: composeNumber.trim(), target: composeNumber.trim(), messages: [], unread: 0, lastAt: null, lastDirection: null, lastPreview: '', needsReply: false });
+      await fetch(`${backendUrl()}/api/admin/inbox/${action}`, {
+        method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ threadKey: c.key }),
+      });
+    } catch { setError('Could not update status.'); }
   };
 
-  const typeLabel = (t: Conversation['type']) => t === 'platform' ? 'VoiceAI Connect' : t === 'client' ? 'Client' : t === 'sms' ? 'Text' : 'Prospect';
-  const convoTitle = (c: Conversation) => c.name || (c.phone ? formatPhone(c.phone) : 'Conversation');
-  const avatarInitial = (c: Conversation) => c.type === 'platform' ? 'V' : (convoTitle(c).charAt(0).toUpperCase() || '?');
-
-  const Avatar = ({ c, size }: { c: Conversation; size: number }) => {
-    if (c.type === 'platform') {
-      return (
-        <img src="/icon-512x512.png" alt="VoiceAI Connect" className="rounded-full object-cover flex-shrink-0" style={{ width: size, height: size }} />
-      );
+  const send = async () => {
+    if (!selected || selected.type !== 'agency' || !selected.agencyId || sending) return;
+    const key = selected.key;
+    const text = (drafts[key] || '').trim();
+    if (!text) return;
+    setSending(true);
+    const optimistic: InboxMessage = { id: `tmp-${Date.now()}`, sender: 'out', body: text, at: new Date().toISOString(), kind: selected.lastInboundKind === 'sms' ? 'sms' : 'inapp' };
+    setSelected((prev) => (prev ? { ...prev, messages: [...prev.messages, optimistic] } : prev));
+    try {
+      const res = await fetch(`${backendUrl()}/api/admin/inbox/send`, {
+        method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agencyId: selected.agencyId, channel: selected.lastInboundKind === 'sms' ? 'sms' : 'inapp', body: text }),
+      });
+      if (!res.ok) throw new Error('send failed');
+      clearDraft(key);
+      await load();
+    } catch {
+      setSelected((prev) => (prev ? { ...prev, messages: prev.messages.filter((m) => m.id !== optimistic.id) } : prev));
+      setError('Failed to send. Try again.');
+    } finally {
+      setSending(false);
     }
-    return (
-      <div className="rounded-full flex items-center justify-center flex-shrink-0 font-semibold" style={{ width: size, height: size, fontSize: size * 0.4, backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.14 : 0.1), color: primaryColor }}>
-        {c.type === 'sms' ? <Hash style={{ width: size * 0.5, height: size * 0.5 }} /> : avatarInitial(c)}
-      </div>
-    );
   };
 
-  const filtered = conversations.filter(c => {
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return convoTitle(c).toLowerCase().includes(q) || (c.phone || '').includes(q) || c.lastPreview.toLowerCase().includes(q);
-  });
-  const filteredClients = clients.filter(c => {
-    if (!clientSearch) return true;
-    const q = clientSearch.toLowerCase();
-    return (c.business_name || '').toLowerCase().includes(q) || (c.owner_name || '').toLowerCase().includes(q) || (c.owner_phone || '').includes(q);
-  });
+  const totalUnread = conversations.reduce((n, c) => n + (c.unread || 0), 0);
 
-  if (agencyLoading || !agency) return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" style={{ color: textMuted2 }} /></div>;
+  const TypeTag = ({ c }: { c: Conversation }) => (
+    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
+      style={c.type === 'faq'
+        ? { background: '#eef2ff', color: '#4338ca' }
+        : { background: 'var(--a-em-soft, #ecfdf5)', color: 'var(--a-em-deep, #047857)' }}>
+      {c.type === 'faq' ? `${c.faqOrigin?.tag || 'Help bot'}${c.escalated ? ', escalated' : ''}` : 'Agency'}
+    </span>
+  );
 
-  const showThread = !!active;
+  // Small status chip for the list + header.
+  const StatusChip = ({ status }: { status?: SupportStatus }) => {
+    // Only an open support item surfaces a chip. Once resolved (or never
+    // flagged) the row is clean, no "Resolved" badge lingering on the thread.
+    if (status === 'support') return (<span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 inline-flex items-center gap-0.5" style={{ background: '#FBF0D6', color: 'var(--a-amber, #92400e)' }}><LifeBuoy className="h-2.5 w-2.5" />Support</span>);
+    return null;
+  };
 
   return (
-    <div className="flex flex-col" style={{ backgroundColor: theme.bg, zoom: 1.2, height: 'calc((100vh - 64px) / 1.2)' }}>
-      <div className="flex flex-1 min-h-0">
-
-        {/* List */}
-        <div className={`${showThread ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:w-96 lg:border-r min-h-0`} style={{ borderColor: hairline }}>
-          <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-            <h1 className="text-xl font-semibold" style={{ color: theme.text }}>Inbox</h1>
-            <button onClick={openCompose} className="flex items-center justify-center h-9 w-9 rounded-full transition hover:opacity-90" style={{ backgroundColor: primaryColor, color: theme.primaryText || '#fff' }} title="New message"><Plus className="h-4 w-4" /></button>
+    <div className="flex h-[calc(100dvh-4rem)] overflow-hidden" style={{ color: 'var(--a-ink)' }}>
+      {/* Conversation list */}
+      <aside className={`${selected ? 'hidden sm:flex' : 'flex'} w-full sm:w-80 shrink-0 flex-col border-r`} style={{ borderColor: 'var(--a-line)', background: 'white' }}>
+        <div className="flex items-center justify-between px-4 h-14 border-b" style={{ borderColor: 'var(--a-line)' }}>
+          <div className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" style={{ color: 'var(--a-em-deep)' }} />
+            <h1 className="text-sm font-semibold">Inbox</h1>
+            {totalUnread > 0 && (<span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white" style={{ background: 'var(--a-em)' }}>{totalUnread}</span>)}
           </div>
-          <div className="px-4 pb-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: textMuted2 }} />
-              <input type="text" placeholder="Search" value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-9 pr-3 py-2 rounded-xl text-sm focus:outline-none" style={{ ...glass, color: theme.text }} />
-            </div>
-          </div>
-
-          {/* How support works, inline explainer */}
-          {helpOpen ? (
-            <div className="mx-4 mb-2 rounded-xl p-3" style={{ ...glass }}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold flex items-center gap-1.5" style={{ color: theme.text }}>
-                  <HelpCircle className="h-3.5 w-3.5" style={{ color: primaryColor }} /> How support works
-                </span>
-                <button onClick={dismissHelp} className="p-0.5 rounded transition hover:opacity-70" style={{ color: textMuted2 }} title="Dismiss"><X className="h-3.5 w-3.5" /></button>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-start gap-2">
-                  <Building2 className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" style={{ color: textMuted2 }} />
-                  <p className="text-[11px] leading-snug" style={{ color: theme.textMuted }}><span style={{ color: theme.text, fontWeight: 600 }}>Your clients reach you here.</span> Their messages arrive as Client threads, and you&apos;re their support.</p>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Sparkles className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" style={{ color: textMuted2 }} />
-                  <p className="text-[11px] leading-snug" style={{ color: theme.textMuted }}><span style={{ color: theme.text, fontWeight: 600 }}>Need help yourself?</span> Message the VoiceAI Connect thread pinned up top. That one&apos;s us.</p>
-                </div>
-                <div className="flex items-start gap-2">
-                  <ShieldCheck className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" style={{ color: primaryColor }} />
-                  <p className="text-[11px] leading-snug" style={{ color: theme.textMuted }}>Your clients never see or contact VoiceAI Connect. Everything they send routes to you.</p>
-                </div>
-              </div>
-              <button onClick={dismissHelp} className="mt-2.5 w-full text-[11px] font-semibold rounded-lg py-1.5 transition hover:opacity-90" style={{ backgroundColor: hexToRgba(primaryColor, 0.1), color: primaryColor }}>Got it</button>
-            </div>
-          ) : (
-            <button onClick={() => setHelpOpen(true)} className="mx-4 mb-2 flex items-center gap-1.5 text-[11px] font-medium transition hover:opacity-80" style={{ color: textMuted2 }}>
-              <HelpCircle className="h-3.5 w-3.5" /> How support works
-            </button>
-          )}
-
-          <div className="flex-1 overflow-y-auto">
-            {loading ? (
-              <div className="flex items-center justify-center py-12"><Loader2 className="h-5 w-5 animate-spin" style={{ color: textMuted2 }} /></div>
-            ) : filtered.length === 0 ? (
-              <div className="text-center py-12 px-6">
-                <MessageSquare className="h-9 w-9 mx-auto mb-2" style={{ color: textMuted2, opacity: 0.4 }} />
-                <p className="text-sm font-medium" style={{ color: theme.textMuted }}>No conversations yet</p>
-                <p className="text-xs mt-1" style={{ color: textMuted2 }}>Start one with the + button</p>
-              </div>
-            ) : (
-              filtered.map(c => (
-                <button key={c.key} onClick={() => openConvo(c)}
-                  className="w-full text-left px-4 py-3 flex items-center gap-3 transition-colors"
-                  style={{ backgroundColor: active?.key === c.key ? hexToRgba(primaryColor, theme.isDark ? 0.08 : 0.04) : c.pinned ? hexToRgba(primaryColor, theme.isDark ? 0.03 : 0.02) : 'transparent', borderBottom: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)'}` }}>
-                  <Avatar c={c} size={44} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-semibold truncate flex items-center gap-1.5" style={{ color: theme.text }}>
-                        {convoTitle(c)}
-                        <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, 0.12), color: primaryColor }}>{typeLabel(c.type)}</span>
-                      </span>
-                      <span className="text-[10px] flex-shrink-0" style={{ color: textMuted2 }}>{listTime(c.lastAt)}</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-2 mt-0.5">
-                      <span className="text-xs truncate" style={{ color: (c.unread > 0 || c.needsReply) ? theme.text : textMuted2 }}>{c.lastDirection === 'out' ? 'You: ' : ''}{c.lastPreview || 'No messages yet'}</span>
-                      {c.unread > 0 ? (
-                        <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{ backgroundColor: primaryColor, color: theme.primaryText || '#fff' }}>{c.unread > 9 ? '9+' : c.unread}</span>
-                      ) : c.needsReply ? (
-                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: primaryColor }} />
-                      ) : null}
-                    </div>
-                  </div>
-                </button>
-              ))
-            )}
-          </div>
+          <button onClick={load} className="p-1.5 rounded-lg hover:bg-black/5" aria-label="Refresh"><RefreshCw className="h-3.5 w-3.5" style={{ color: 'var(--a-dim)' }} /></button>
         </div>
 
-        {/* Thread */}
-        <div className={`${showThread ? 'flex' : 'hidden lg:flex'} flex-col flex-1 min-h-0`}>
-          {!active ? (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center px-6">
-                <MessageSquare className="h-12 w-12 mx-auto mb-3" style={{ color: textMuted2 }} />
-                <p className="text-sm font-medium" style={{ color: theme.textMuted }}>Select a conversation</p>
-                <p className="text-xs mt-1" style={{ color: textMuted2 }}>Clients, prospects, texts, and VoiceAI Connect, all here</p>
-              </div>
-            </div>
+        <div className="flex-1 overflow-y-auto">
+          {loadingList ? (
+            <div className="flex items-center justify-center py-16"><Loader2 className="h-5 w-5 animate-spin" style={{ color: 'var(--a-dim)' }} /></div>
+          ) : conversations.length === 0 ? (
+            <div className="px-6 py-16 text-center text-sm" style={{ color: 'var(--a-dim)' }}>No conversations yet. Agency messages (in-app + SMS) and FAQ chats land here.</div>
           ) : (
-            <>
-              <div className="px-4 py-3 flex items-center gap-3" style={{ borderBottom: `1px solid ${hairline}` }}>
-                <button onClick={() => setActive(null)} className="lg:hidden p-1" style={{ color: theme.textMuted }}><ArrowLeft className="h-5 w-5" /></button>
-                <Avatar c={active} size={36} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate" style={{ color: theme.text }}>{convoTitle(active)}</p>
-                  <p className="text-[11px]" style={{ color: textMuted2 }}>{active.type === 'platform' ? 'Platform support' : active.type === 'client' ? 'Client' : active.type === 'sms' ? `Text, from your demo number` : 'Prospect'}{active.phone && active.type !== 'platform' ? ` · ${formatPhone(active.phone)}` : ''}</p>
+            conversations.map((c) => (
+              <button key={c.key} onClick={() => open(c)} className="w-full text-left px-4 py-3 border-b transition-colors hover:bg-black/[0.02]"
+                style={{ borderColor: 'var(--a-line)', background: selected?.key === c.key ? 'var(--a-em-soft)' : 'transparent' }}>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className={`text-sm truncate ${c.unread > 0 ? 'font-semibold' : 'font-medium'}`}>{c.name}</span>
+                    <TypeTag c={c} />
+                    {c.type === 'agency' && c.planType && (<span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 capitalize" style={{ background: '#f1f5f9', color: '#334155' }}>{c.planType}</span>)}
+                  </div>
+                  <span className="text-[10px] shrink-0" style={{ color: 'var(--a-dim)' }}>{fmtTime(c.lastAt)}</span>
                 </div>
-                {active.phone && active.type !== 'platform' && (
-                  <a href={`tel:${active.phone}`} className="p-2 rounded-xl transition hover:opacity-80" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.1 : 0.06), color: primaryColor }}><Phone className="h-4 w-4" /></a>
-                )}
+                <div className="flex items-center justify-between gap-2 mt-0.5">
+                  <span className="text-xs truncate" style={{ color: (c.unread > 0 || c.needsReply) ? 'var(--a-ink)' : 'var(--a-dim)' }}>
+                    {c.lastDirection === 'out' ? 'You: ' : ''}{c.lastPreview}
+                  </span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <StatusChip status={c.supportStatus} />
+                    {c.unread > 0 ? (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white min-w-[18px] text-center" style={{ background: 'var(--a-em)' }}>{c.unread > 99 ? '99+' : c.unread}</span>
+                    ) : c.needsReply ? (
+                      <span className="w-2 h-2 rounded-full" style={{ background: 'var(--a-em)' }} />
+                    ) : null}
+                  </div>
+                </div>
+              </button>
+            ))
+          )}
+        </div>
+      </aside>
+
+      {/* Thread */}
+      <main className={`${selected ? 'flex' : 'hidden sm:flex'} flex-1 flex-col min-w-0`} style={{ background: 'var(--a-em-soft, #f8f8f6)' }}>
+        {!selected ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-center px-6" style={{ color: 'var(--a-dim)' }}>
+            <MessageSquare className="h-8 w-8 mb-3 opacity-40" />
+            <p className="text-sm">Select a conversation to read and reply.</p>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-3 px-4 py-2.5 border-b shrink-0" style={{ borderColor: 'var(--a-line)', background: 'white' }}>
+              <button onClick={() => setSelected(null)} className="sm:hidden p-1.5 -ml-1.5 rounded-lg hover:bg-black/5" aria-label="Back"><ArrowLeft className="h-4 w-4" style={{ color: 'var(--a-dim)' }} /></button>
+              <div className="h-8 w-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--a-em-soft, #ecfdf5)', color: 'var(--a-em-deep, #047857)' }}>
+                {selected.type === 'faq' ? <Bot className="h-4 w-4" /> : <Building2 className="h-4 w-4" />}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-semibold truncate flex items-center gap-1.5">{selected.name}<TypeTag c={selected} /><StatusChip status={selected.supportStatus} /></div>
+                <div className="text-[11px] flex items-center gap-x-3 gap-y-0.5 flex-wrap" style={{ color: 'var(--a-dim)' }}>
+                  {selected.type === 'faq' && (
+                    <span>{selected.faqOrigin?.source === 'marketing' || selected.faqOrigin?.userType === 'prospect'
+                      ? 'Prospect, public marketing site'
+                      : selected.faqOrigin?.agencyName
+                        ? `${selected.faqOrigin.agencyName}, in-dashboard help`
+                        : 'In-dashboard help widget'}</span>
+                  )}
+                  {selected.contactPhone && (<span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" />{selected.contactPhone}</span>)}
+                  {selected.email && (<span className="inline-flex items-center gap-1 truncate"><Mail className="h-3 w-3" />{selected.email}</span>)}
+                  {selected.type === 'agency' && !selected.contactPhone && !selected.email && <span>Agency</span>}
+                </div>
               </div>
 
-              <div ref={scrollRef} onScroll={onThreadScroll} className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
-                {facts && (active.type === 'client' || active.type === 'prospect') && (() => {
-                  const rows: { label: string; value: string }[] = [];
-                  if (active.type === 'client') {
-                    if (facts.plan) rows.push({ label: 'Plan', value: facts.plan });
-                    const statusVal = (facts.status === 'trialing' && facts.trialEndsAt) ? `Trial, ${trialDaysLeft(facts.trialEndsAt)}d left` : prettyStatus(facts.status);
-                    if (statusVal) rows.push({ label: 'Status', value: statusVal });
-                    if (facts.priceCents != null) rows.push({ label: 'Billing', value: factMoney(facts.priceCents) });
-                    if (facts.aiPhone) rows.push({ label: 'AI number', value: formatPhone(facts.aiPhone) });
-                    if (facts.ownerPhone) rows.push({ label: 'Owner', value: formatPhone(facts.ownerPhone) });
-                    if (facts.memberSince) rows.push({ label: 'Client since', value: factDate(facts.memberSince) });
-                    if (facts.callsThisMonth != null) rows.push({ label: 'Calls this mo.', value: facts.monthlyCallLimit != null ? `${facts.callsThisMonth} / ${facts.monthlyCallLimit}` : `${facts.callsThisMonth}` });
-                    if (facts.lastCallAt) rows.push({ label: 'Last call', value: factDate(facts.lastCallAt) });
-                  } else {
-                    if (facts.contact) rows.push({ label: /@/.test(facts.contact) ? 'Email' : 'Phone', value: /@/.test(facts.contact) ? facts.contact : formatPhone(facts.contact) });
-                    if (facts.status) rows.push({ label: 'Status', value: prettyStatus(facts.status) });
-                    if (facts.createdAt) rows.push({ label: 'Requested', value: factDate(facts.createdAt) });
-                  }
-                  const hasMsg = active.type === 'prospect' && facts.firstMessage;
-                  if (rows.length === 0 && !hasMsg) return null;
+              {/* Support / resolve controls */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                {selected.supportStatus === 'resolved' ? (
+                  <button onClick={() => setThreadStatus(selected, 'reopen')} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors hover:bg-black/5" style={{ border: '1px solid var(--a-line)', color: 'var(--a-ink)' }} title="Reopen this thread">
+                    <RotateCcw className="h-3 w-3" /> Reopen
+                  </button>
+                ) : selected.supportStatus === 'support' ? (
+                  <button onClick={() => setThreadStatus(selected, 'resolve')} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-white transition-colors hover:brightness-95" style={{ background: 'var(--a-em)' }} title="Mark resolved">
+                    <CheckCircle2 className="h-3 w-3" /> Resolve
+                  </button>
+                ) : (
+                  <button onClick={() => setThreadStatus(selected, 'mark-support')} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors hover:bg-black/5" style={{ border: '1px solid var(--a-line)', color: 'var(--a-ink)' }} title="Mark as a support item">
+                    <LifeBuoy className="h-3 w-3" /> Mark support
+                  </button>
+                )}
+                {selected.type === 'agency' && selected.agencyId && (
+                  <a href={`/admin/agencies?expand=${selected.agencyId}`} target="_blank" rel="noopener noreferrer"
+                     className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors hover:bg-black/5"
+                     style={{ border: '1px solid var(--a-line)', color: 'var(--a-ink)' }} title="Open this agency's account">
+                    <span>Account</span>
+                    <ExternalLink className="h-3 w-3" style={{ color: 'var(--a-dim)' }} />
+                  </a>
+                )}
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+              {selected.messages.length === 0 ? (
+                <div className="flex items-center justify-center py-16 text-sm" style={{ color: 'var(--a-dim)' }}>No messages yet.</div>
+              ) : (
+                selected.messages.map((m) => {
+                  const isIn = m.sender === 'in';
                   return (
-                    <div className="rounded-2xl p-3.5 mb-1" style={{ ...glass }}>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: textMuted2 }}>{active.type === 'client' ? 'About this client' : 'About this prospect'}</span>
-                        {active.type === 'client' && facts.isTest && (
-                          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: hexToRgba(primaryColor, 0.12), color: primaryColor }}>Test</span>
-                        )}
+                    <div key={m.id} className={`flex ${isIn ? 'justify-start' : 'justify-end'}`}>
+                      <div className="max-w-[78%]">
+                        <div className="rounded-2xl px-3.5 py-2 text-sm whitespace-pre-wrap break-words"
+                          style={isIn ? { background: 'white', border: '1px solid var(--a-line)', color: 'var(--a-ink)' } : { background: 'var(--a-em)', color: 'white' }}>
+                          {m.body}
+                        </div>
+                        <div className={`mt-1 text-[10px] flex items-center gap-1.5 ${isIn ? 'justify-start' : 'justify-end'}`} style={{ color: 'var(--a-dim)' }}>
+                          {m.kind === 'sms' && <span className="uppercase tracking-wide">Text</span>}
+                          {m.kind === 'feedback' && <span className="uppercase tracking-wide" style={{ color: '#92400e' }}>Feedback</span>}
+                          {m.kind === 'help' && <span className="uppercase tracking-wide" style={{ color: '#4338ca' }}>Help bot</span>}
+                          <span>{fmtTime(m.at)}</span>
+                        </div>
                       </div>
-                      {rows.length > 0 && (
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                          {rows.map((r, i) => {
-                            const lastOdd = i === rows.length - 1 && rows.length % 2 === 1;
-                            return (
-                              <div key={r.label} className={lastOdd ? 'col-span-2' : ''}>
-                                <p className="text-[10px] uppercase tracking-wide" style={{ color: textMuted2 }}>{r.label}</p>
-                                <p className="text-[13px] font-medium truncate" style={{ color: theme.text }}>{r.value}</p>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                      {hasMsg && (
-                        <div className={`${rows.length > 0 ? 'mt-2 pt-2' : ''}`} style={rows.length > 0 ? { borderTop: `1px solid ${hairline}` } : undefined}>
-                          <p className="text-[10px] uppercase tracking-wide mb-0.5" style={{ color: textMuted2 }}>What they asked</p>
-                          <p className="text-[12px] leading-relaxed" style={{ color: theme.textMuted }}>{facts.firstMessage}</p>
-                        </div>
-                      )}
                     </div>
                   );
-                })()}
-                {active.messages.length === 0 ? (
-                  <div className="text-center py-12"><p className="text-xs" style={{ color: textMuted2 }}>No messages yet. Send the first one below.</p></div>
-                ) : (
-                  active.messages.map(m => {
-                    const out = m.sender === 'out';
-                    return (
-                      <div key={m.id} className={`flex ${out ? 'justify-end' : 'justify-start'}`}>
-                        <div className="max-w-[75%] sm:max-w-[65%]">
-                          <div className="rounded-2xl px-3.5 py-2.5" style={{ backgroundColor: out ? primaryColor : theme.isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6', color: out ? (theme.primaryText || '#fff') : theme.text, borderBottomRightRadius: out ? 4 : 16, borderBottomLeftRadius: out ? 16 : 4 }}>
-                            <p className="text-[13px] leading-relaxed whitespace-pre-wrap">{m.body}</p>
-                          </div>
-                          <div className={`mt-0.5 px-1 ${out ? 'text-right' : ''}`}><span className="text-[10px]" style={{ color: textMuted2 }}>{msgTime(m.at)}</span></div>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-
-              <div className="px-4 py-3" style={{ borderTop: `1px solid ${hairline}` }}>
-                <div className="flex items-end gap-2">
-                  <textarea ref={inputRef} value={newMessage} onChange={e => setNewMessage(e.target.value)} onKeyDown={handleKeyDown} placeholder={active.type === 'sms' ? 'Send a text...' : `Message ${convoTitle(active)}...`} rows={1} className="flex-1 px-4 py-2.5 rounded-2xl text-sm resize-none focus:outline-none max-h-24" style={{ ...glass, color: theme.text }} />
-                  <button onClick={handleSend} disabled={!newMessage.trim() || sending} className="p-2.5 rounded-xl transition-all hover:scale-105 active:scale-95 disabled:opacity-40 flex-shrink-0" style={{ backgroundColor: primaryColor, color: theme.primaryText || '#fff' }}>{sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}</button>
-                </div>
-                <p className="text-[10px] mt-1 text-center" style={{ color: textMuted2 }}>
-                  {active.type === 'sms' ? 'Sent as a text from your demo number' : active.type === 'platform' ? 'Goes to VoiceAI Connect support' : 'Delivered in-app, the recipient is notified'}
-                </p>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Compose modal */}
-      {showCompose && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={() => setShowCompose(false)}>
-          <div className="w-full max-w-sm rounded-2xl p-5" style={{ backgroundColor: theme.isDark ? '#141414' : '#ffffff', border: `1px solid ${hairline}` }} onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold" style={{ color: theme.text }}>{composeMode === 'client' ? 'Message a client' : composeMode === 'number' ? 'Text a number' : 'New message'}</h3>
-              <button onClick={() => composeMode === 'root' ? setShowCompose(false) : setComposeMode('root')} style={{ color: theme.textMuted }}>{composeMode === 'root' ? <X className="h-4 w-4" /> : <ArrowLeft className="h-4 w-4" />}</button>
+                })
+              )}
+              <div ref={threadEndRef} />
             </div>
 
-            {composeMode === 'root' && (
-              <div className="space-y-2">
-                <button onClick={startPlatform} className="w-full flex items-center gap-3 p-2.5 rounded-xl transition hover:opacity-90" style={{ border: `1px solid ${hairline}` }}>
-                  <img src="/icon-512x512.png" alt="VoiceAI Connect" className="h-9 w-9 rounded-full object-cover flex-shrink-0" />
-                  <div className="text-left"><p className="text-sm font-medium" style={{ color: theme.text }}>VoiceAI Connect</p><p className="text-[10px]" style={{ color: textMuted2 }}>Message platform support</p></div>
-                </button>
-                <button onClick={() => { setComposeMode('client'); loadClients(); }} className="w-full flex items-center gap-3 p-2.5 rounded-xl transition hover:opacity-90" style={{ border: `1px solid ${hairline}` }}>
-                  <div className="h-9 w-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, 0.12), color: primaryColor }}><Building2 className="h-4 w-4" /></div>
-                  <div className="text-left"><p className="text-sm font-medium" style={{ color: theme.text }}>A client</p><p className="text-[10px]" style={{ color: textMuted2 }}>Message one of your clients in-app</p></div>
-                </button>
-                <button onClick={() => setComposeMode('number')} className="w-full flex items-center gap-3 p-2.5 rounded-xl transition hover:opacity-90" style={{ border: `1px solid ${hairline}` }}>
-                  <div className="h-9 w-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(primaryColor, 0.12), color: primaryColor }}><Hash className="h-4 w-4" /></div>
-                  <div className="text-left"><p className="text-sm font-medium" style={{ color: theme.text }}>A phone number</p><p className="text-[10px]" style={{ color: textMuted2 }}>Text any number from your demo line</p></div>
-                </button>
+            {selected.readOnly || selected.type === 'faq' ? (
+              <div className="border-t p-3 shrink-0 text-center text-[11px]" style={{ borderColor: 'var(--a-line)', background: 'white', color: 'var(--a-dim)' }}>
+                {selected.faqOrigin?.source === 'marketing' || selected.faqOrigin?.userType === 'prospect'
+                  ? 'Read-only. A prospect chat with the help bot on the public marketing site.'
+                  : selected.faqOrigin?.agencyName
+                    ? `Read-only. ${selected.faqOrigin.agencyName} used the help bot inside their dashboard. To reply, message them in their agency conversation.`
+                    : 'Read-only. A logged-in user asked the help bot inside their dashboard (not a public prospect).'}
               </div>
-            )}
-
-            {composeMode === 'client' && (
-              <div>
-                <div className="relative mb-2">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: textMuted2 }} />
-                  <input value={clientSearch} onChange={e => setClientSearch(e.target.value)} placeholder="Search clients" className="w-full pl-9 pr-3 py-2 rounded-xl text-sm focus:outline-none" style={{ ...glass, color: theme.text }} />
+            ) : (
+              <div className="border-t p-3 shrink-0" style={{ borderColor: 'var(--a-line)', background: 'white' }}>
+                <div className="flex items-end gap-2">
+                  <textarea ref={replyRef} value={currentDraft} onChange={(e) => selected && setDraft(selected.key, e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); send(); } }}
+                    rows={1} placeholder="Reply as VoiceAI Connect..." className="flex-1 resize-none rounded-xl border px-3.5 py-2.5 text-sm focus:outline-none"
+                    style={{ borderColor: 'var(--a-line)', color: 'var(--a-ink)', maxHeight: '45vh', overflowY: 'auto' }} />
+                  <button onClick={send} disabled={sending || !currentDraft.trim()} className="flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium text-white disabled:opacity-40" style={{ background: 'var(--a-em)' }}>
+                    {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  </button>
                 </div>
-                <div className="max-h-64 overflow-y-auto -mx-1">
-                  {!clientsLoaded ? (
-                    <div className="flex items-center justify-center py-8"><Loader2 className="h-4 w-4 animate-spin" style={{ color: textMuted2 }} /></div>
-                  ) : filteredClients.length === 0 ? (
-                    <p className="text-xs text-center py-6" style={{ color: textMuted2 }}>No clients found</p>
-                  ) : filteredClients.map(c => (
-                    <button key={c.id} onClick={() => startClient(c)} className="w-full flex items-center gap-3 p-2 rounded-lg text-left transition" onMouseEnter={e => e.currentTarget.style.backgroundColor = theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-                      <div className="h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-semibold" style={{ backgroundColor: hexToRgba(primaryColor, 0.1), color: primaryColor }}>{(c.business_name || c.owner_name || '?').charAt(0).toUpperCase()}</div>
-                      <div className="min-w-0"><p className="text-sm truncate" style={{ color: theme.text }}>{c.business_name || c.owner_name}</p>{c.owner_phone && <p className="text-[10px]" style={{ color: textMuted2 }}>{formatPhone(c.owner_phone)}</p>}</div>
-                    </button>
-                  ))}
-                </div>
+                <p className="mt-1.5 text-[10px]" style={{ color: 'var(--a-dim)' }}>
+                  {selected.lastInboundKind === 'sms' ? 'Replies go out as a text from your platform number.' : 'Replies land in the agency dashboard inbox.'}
+                </p>
               </div>
             )}
+          </>
+        )}
+      </main>
 
-            {composeMode === 'number' && (
-              <div>
-                <label className="text-[10px] uppercase tracking-wide" style={{ color: textMuted2 }}>Phone number</label>
-                <input value={composeNumber} onChange={e => setComposeNumber(e.target.value)} placeholder="+1 555 123 4567" className="w-full mt-1 mb-4 px-3 py-2 rounded-xl text-sm focus:outline-none" style={{ ...glass, color: theme.text }} />
-                <button onClick={startNumber} disabled={composeNumber.replace(/\D/g, '').length < 10} className="w-full py-2.5 rounded-xl text-sm font-semibold transition disabled:opacity-50" style={{ backgroundColor: primaryColor, color: theme.primaryText || '#fff' }}>Open conversation</button>
-                <p className="text-[10px] mt-2 text-center" style={{ color: textMuted2 }}>Texts go out from your demo number.</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {error && (<div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 rounded-lg px-4 py-2 text-sm text-white" style={{ background: '#dc2626' }}>{error}</div>)}
     </div>
   );
 }
