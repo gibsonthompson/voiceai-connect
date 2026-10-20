@@ -34,6 +34,9 @@ function getContrastColor(hex: string): string {
 }
 
 const getBackendUrl = () => process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'https://urchin-app-bqb4i.ondigitalocean.app';
+// VoiceAI Connect brand color (emerald). Used on the platform (unbranded) login
+// so it renders as true VoiceAI Connect, not a generic default.
+const VAC_PRIMARY = '#10b981';
 
 // Seed the theme from the last visit so a light-themed agency never flashes dark
 // before the host lookup resolves. Read after mount (not in a useState init) so
@@ -190,10 +193,16 @@ export default function AgencyLoginPage() {
   const isBranded = !!agency;
   const brandName = agency?.name || 'VoiceAI Connect';
   const brandLogo = agency?.logo_url || (isBranded ? null : '/icon-512x512.png');
+  // Tab + home-screen icon: the real VoiceAI Connect product icon on the platform
+  // (never a generated mark), the agency's own on a branded host.
+  const faviconSrc = agency?.logo_url || (isBranded ? null : '/icon-512x512.png');
+  const appleIconSrc = isBranded ? '/api/agency-app-icon?size=180' : '/icon-512x512.png';
   const initial = (brandName.trim().charAt(0) || 'A').toUpperCase();
-  const primaryColor = agency?.primary_color || '#4f46e5';
+  const primaryColor = agency?.primary_color || VAC_PRIMARY;
   const primaryText = getContrastColor(primaryColor);
-  const isDark = isBranded ? agency?.website_theme === 'dark' : (themeHint === 'dark');
+  // The platform login is the dark VoiceAI Connect brand; a branded host follows
+  // its own agency theme.
+  const isDark = isBranded ? agency?.website_theme === 'dark' : true;
 
   const c = isDark ? {
     bg: '#09090b', text: '#fafaf9', muted: 'rgba(250,250,249,0.56)', subtle: 'rgba(250,250,249,0.34)',
@@ -274,6 +283,8 @@ export default function AgencyLoginPage() {
     .al-wrap{grid-template-columns:1.05fr 1fr}
     .al-stage{display:flex;flex-direction:column;justify-content:center;padding:56px;position:relative;overflow:hidden;color:var(--primaryText);background:var(--primary);
       background-image:radial-gradient(130% 115% at 8% 0%,rgba(255,255,255,.30),transparent 56%),radial-gradient(120% 120% at 100% 100%,rgba(0,0,0,.38),transparent 58%)}
+    .al-stage.vac{background:#09090b;color:#fafaf9;
+      background-image:radial-gradient(90% 75% at 12% 8%,rgba(16,185,129,.20),transparent 58%),radial-gradient(85% 90% at 100% 100%,rgba(0,0,0,.55),transparent 55%)}
     .al-rings{position:absolute;inset:0;width:100%;height:100%}
     .al-stage-center{position:relative;z-index:1;max-width:460px}
     .al-stage-logo{height:52px;width:auto;max-width:300px;object-fit:contain;display:block}
@@ -288,10 +299,10 @@ export default function AgencyLoginPage() {
   return (
     <div className="al-wrap" style={vars}>
       <style dangerouslySetInnerHTML={{ __html: css }} />
-      <DynamicFavicon logoUrl={agency?.logo_url} primaryColor={primaryColor} appleIconUrl="/api/agency-app-icon?size=180" />
+      <DynamicFavicon logoUrl={faviconSrc} primaryColor={primaryColor} appleIconUrl={appleIconSrc} />
 
       {/* Brand stage (desktop) */}
-      <aside className="al-stage">
+      <aside className={isBranded ? 'al-stage' : 'al-stage vac'}>
         <svg className="al-rings" viewBox="0 0 600 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
           <g fill="none" stroke={primaryText} strokeOpacity="0.13">
             {[90, 170, 250, 330, 410, 490].map((r) => <circle key={r} cx="300" cy="300" r={r} />)}
@@ -301,7 +312,7 @@ export default function AgencyLoginPage() {
           {brandLogo
             ? <img src={brandLogo} alt={brandName} className="al-stage-logo" />
             : <h2 className="al-stage-name">{brandName}</h2>}
-          <p className="al-stage-tag">Sign in to pick up live calls, see every booking, and keep each business covered.</p>
+          <p className="al-stage-tag">{isBranded ? 'Sign in to pick up live calls, see every booking, and keep each business covered.' : 'Sign in to run your white-label AI receptionist agency. Your clients, calls, and revenue in one place.'}</p>
         </div>
       </aside>
 

@@ -363,6 +363,11 @@ function SetPasswordContent() {
               <a href="/" className="flex items-center gap-2.5 sm:gap-3 group min-w-0">
                 {agency?.logo_url ? (
                   <img src={agency.logo_url} alt={agency.name} className="h-10 sm:h-12 w-auto max-w-[200px] object-contain" />
+                ) : !isAgencySubdomain ? (
+                  <>
+                    <img src="/icon-512x512.png" alt="VoiceAI Connect" className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl object-contain" />
+                    <span className="text-sm sm:text-base font-semibold tracking-tight">{brandName}</span>
+                  </>
                 ) : (
                   <>
                     <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl" style={{ backgroundColor: primaryColor, border: isDark ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
