@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { 
   Phone, ArrowRight, Loader2, Building, Mail, User, MapPin,
   ArrowLeft, Sparkles, Shield, Clock, Zap, Globe,
-  Headphones, LayoutDashboard, Users
+  LayoutDashboard, Users
 } from 'lucide-react';
 import { countries as supportedCountries } from '@/lib/currency';
 import { getCountryFromCookie } from '@/lib/geo';
@@ -793,7 +793,6 @@ function AgencySignupForm({ isEmbed }: { isEmbed: boolean }) {
   // Premium value panel copy, tailored to the call-center flow vs the standard
   // agency flow. Shown beside the form on desktop; the headline collapses in on
   // mobile. The form logic (and the is_call_center POST) is unchanged.
-  const heroBadge = isCallCenter ? 'AI Call Center' : 'AI Voice Agency';
   const heroTitle = isCallCenter
     ? 'Answer every call, for every business you run.'
     : 'Launch your own AI voice agency.';
@@ -927,10 +926,7 @@ function AgencySignupForm({ isEmbed }: { isEmbed: boolean }) {
           <div className="relative mx-auto max-w-6xl grid lg:grid-cols-2 gap-10 lg:gap-16 lg:items-center">
             {/* Value panel: the pitch, tailored to call center vs agency. */}
             <div className="order-1">
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide text-emerald-300/90">
-                <Headphones className="h-3.5 w-3.5 text-emerald-400" />{heroBadge}
-              </div>
-              <h2 className="mt-5 text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-[1.05]">{heroTitle}</h2>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-[1.05]">{heroTitle}</h2>
               <p className="mt-4 max-w-md text-base sm:text-lg leading-relaxed text-[#fafaf9]/55">{heroSub}</p>
 
               <ul className="hidden lg:block mt-10 space-y-5">
