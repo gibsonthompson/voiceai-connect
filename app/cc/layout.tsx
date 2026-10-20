@@ -286,12 +286,6 @@ function CallCenterShell({ children }: { children: ReactNode }) {
       </nav>
 
       <div className="flex-shrink-0 p-3" style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 0.75rem)' : '0.75rem' }}>
-        {user && (
-          <div className="px-3 py-2 mb-1 rounded-xl" style={{ backgroundColor: theme.hover }}>
-            <p className="text-xs font-medium truncate" style={{ color: theme.sidebarText }}>{[user.first_name, user.last_name].filter(Boolean).join(' ') || user.email}</p>
-            <p className="text-[10px] truncate" style={{ color: theme.sidebarTextMuted }}>{isAgent ? 'Agent' : 'Manager'}</p>
-          </div>
-        )}
         <button onClick={handleSignOut} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all" style={{ color: theme.sidebarTextMuted }}
           onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover; }}
           onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}>

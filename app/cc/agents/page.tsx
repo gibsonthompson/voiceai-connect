@@ -19,13 +19,12 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  Headset, Radio, Loader2, Send, UserPlus, Phone, Monitor, Trash2, ChevronDown,
+  Headset, Loader2, UserPlus, Phone, Monitor, Trash2, ChevronDown,
   Check, Eye, EyeOff, Building2, X, AlertCircle, Users, Copy, RotateCcw,
   Smartphone, ExternalLink, Clock, Plus, Save, Zap, HelpCircle,
 } from 'lucide-react';
 import { useAgency } from '../../agency/context';
 import { useTheme } from '../../../hooks/useTheme';
-import { CustomSelect, type DropdownUI } from '@/components/ui/custom-select';
 
 const AGENT_PERMISSION_PRESET: Record<string, boolean> = {
   dashboard: true, clients: true, leads: false, outreach: false,
@@ -110,49 +109,6 @@ function onSchedule(ah: Member['availability_hours'], tz: string): boolean {
 
 const API = () => process.env.NEXT_PUBLIC_API_URL || '';
 const TOKEN = () => (typeof window !== 'undefined' ? localStorage.getItem('auth_token') : '');
-
-// ----------------------------------------------------------------------------
-// Test escalation pop (manager tool, unchanged behavior).
-// ----------------------------------------------------------------------------
-function TestEscalationPop({ agencyId, businesses, theme }: { agencyId: string; businesses: Biz[]; theme: ReturnType<typeof useTheme> }) {
-  const [clientId, setClientId] = useState('');
-  const [sending, setSending] = useState(false);
-  const [result, setResult] = useState<string | null>(null);
-  useEffect(() => { if (businesses[0] && !clientId) setClientId(businesses[0].id); }, [businesses]);
-
-  const send = async () => {
-    if (!clientId) return;
-    setSending(true); setResult(null);
-    try {
-      const r = await fetch(`${API()}/api/cc/${agencyId}/agents/test-offer`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` },
-        body: JSON.stringify({ clientId }),
-      });
-      const d = await r.json().catch(() => ({}));
-      if (r.ok && d.success) setResult(d.offered > 0 ? `Sent to ${d.offered} available agent${d.offered === 1 ? '' : 's'}.` : (d.note || 'No available agents assigned to that business.'));
-      else setResult(d.error || 'Could not send the test pop.');
-    } catch { setResult('Could not send the test pop.'); }
-    finally { setSending(false); }
-  };
-  if (businesses.length === 0) return null;
-  return (
-    <div className="mt-6 rounded-2xl p-4 sm:p-5" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-      <div className="flex items-center gap-2 mb-1"><Radio className="h-4 w-4" style={{ color: theme.primary }} /><h3 className="text-sm font-semibold" style={{ color: theme.text }}>Test the escalation pop</h3></div>
-      <p className="text-[13px] mb-3" style={{ color: theme.textMuted }}>Fire a sample pop at the available agents assigned to a business. They see the same screen-pop a real escalation produces, with no live caller.</p>
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-        <div className="flex-1">
-          <CustomSelect value={clientId} onChange={setClientId}
-            options={businesses.map((b) => ({ value: b.id, label: b.business_name }))}
-            ui={{ inputStyle: { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }, text: theme.text, muted: theme.textMuted, panelBg: theme.card, panelBorder: theme.border, hover: theme.hover, accent: theme.primary, isDark: theme.isDark }} />
-        </div>
-        <button onClick={send} disabled={sending || !clientId} className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:opacity-60" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
-          {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Send test pop
-        </button>
-      </div>
-      {result && <p className="text-[13px] mt-2.5" style={{ color: theme.textMuted }}>{result}</p>}
-    </div>
-  );
-}
 
 export default function CallCenterAgents() {
   const { agency, canManageTeam } = useAgency();
@@ -565,7 +521,7 @@ export default function CallCenterAgents() {
                         <div className="flex items-center justify-between gap-3 px-3 py-2.5" style={{ borderTop: `1px solid ${theme.borderSubtle}` }}>
                           <div className="min-w-0">
                             <p className="text-[11px]" style={{ color: theme.textMuted }}>Email</p>
-                            <p className="text-[13px] truncate" style={{ color: theme.text }}>{m.email || '—'}</p>
+                            <p className="text-[13px] truncate" style={{ color: theme.text }}>{m.email || '-'}</p>
                           </div>
                           {m.email && <button onClick={() => copyText(`email-${m.id}`, m.email!)} className="inline-flex items-center justify-center rounded-lg h-[30px] w-[30px] flex-shrink-0" style={{ backgroundColor: theme.hover, color: copied === `email-${m.id}` ? '#22c55e' : theme.textMuted }} title="Copy">{copied === `email-${m.id}` ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}</button>}
                         </div>
@@ -748,8 +704,6 @@ export default function CallCenterAgents() {
           })}
         </div>
       )}
-
-      <TestEscalationPop agencyId={agencyId} businesses={clients} theme={theme} />
     </div>
   );
 }

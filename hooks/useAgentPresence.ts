@@ -266,6 +266,22 @@ export function useAgentPresence(enabled: boolean) {
     } catch { /* presence will reconcile on the next heartbeat */ }
   }, []);
 
+  // Turn the working-hours override on/off (take calls outside set hours). The
+  // override lives in team_members and the heartbeat reads it back, so we also
+  // flip it locally for an instant UI response.
+  const setOverride = useCallback(async (next: boolean) => {
+    setScheduleState((s) => ({ ...s, override: next }));
+    const t = token();
+    if (!t) return;
+    try {
+      await fetch(`${API}/api/cc/agent/override`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
+        body: JSON.stringify({ override: next }),
+      });
+    } catch { /* heartbeat will reconcile */ }
+  }, []);
+
   const claim = useCallback(async (offerId: string): Promise<ClaimResult> => {
     const t = token();
     if (!t) return { won: false, reason: 'no_auth' };
@@ -296,5 +312,5 @@ export function useAgentPresence(enabled: boolean) {
     } catch { /* non-fatal */ }
   }, [dismiss]);
 
-  return { offers, status, setStatus, claim, decline, dismiss, connected, schedule, notifySupported, notifyPermission, requestNotify };
+  return { offers, status, setStatus, setOverride, claim, decline, dismiss, connected, schedule, notifySupported, notifyPermission, requestNotify };
 }

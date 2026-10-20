@@ -215,9 +215,9 @@ export default function CcAgentSettings() {
               <Clock className="h-4 w-4" style={{ color: theme.textMuted }} />
               <p className="text-sm font-semibold" style={{ color: theme.text }}>Availability</p>
               <span className="ml-auto inline-flex items-center gap-1.5 text-[11.5px] font-semibold px-2.5 py-1 rounded-full"
-                style={{ backgroundColor: available ? theme.successBg : theme.hover, color: available ? theme.success : theme.textMuted }}>
-                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: available ? theme.success : theme.textSubtle }} />
-                {available ? 'Available' : 'Away'}
+                style={{ backgroundColor: eligibleNow ? theme.successBg : theme.hover, color: eligibleNow ? theme.success : theme.textMuted }}>
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: eligibleNow ? theme.success : theme.textSubtle }} />
+                {eligibleNow ? 'Taking calls' : 'Paused'}
               </span>
             </div>
 
@@ -231,32 +231,26 @@ export default function CcAgentSettings() {
                 </p>
                 <p className="text-[12px] mt-0.5 leading-relaxed" style={{ color: theme.textMuted }}>
                   {!available
-                    ? 'You are set to Away. Use the status control in the corner of the console to go Available.'
+                    ? 'You are paused. Tap the "Taking calls" control in the bottom corner of the console to start.'
                     : scheduleEnabled && !onSchedule && !override
-                    ? 'You are outside your set working hours. Turn on "Available now" below to take calls anyway.'
-                    : override ? 'You are available outside your set hours (override on).'
+                    ? 'You are outside your set working hours. Turn on "Take calls outside my hours" below to take calls anyway.'
+                    : override ? 'You are taking calls outside your set hours.'
                     : scheduleEnabled ? 'You are within your set working hours.'
-                    : 'You have no set working hours, so you are available whenever your status is Available.'}
+                    : 'You have no set working hours, so you take calls whenever you are on.'}
                 </p>
               </div>
             </div>
 
-            {/* The override */}
+            {/* The override - one clean row: label + toggle. */}
             {scheduleEnabled && (
               <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.borderSubtle}` }}>
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium flex items-center gap-2" style={{ color: theme.text }}>
-                      <Zap className="h-4 w-4" style={{ color: theme.primary }} /> Available now
-                    </p>
-                    <p className="text-[12px] mt-1 leading-relaxed" style={{ color: theme.textMuted }}>
-                      {override
-                        ? 'On: you will be offered calls even when you are outside your set hours. Stays on until you turn it off.'
-                        : 'Turn this on to take calls now even though you are outside your set hours. Stays on until you turn it off.'}
-                    </p>
-                  </div>
+                <div className="flex items-center justify-between gap-4">
+                  <p className="text-sm font-medium flex items-center gap-2 min-w-0" style={{ color: theme.text }}>
+                    <Zap className="h-4 w-4 flex-shrink-0" style={{ color: theme.primary }} />
+                    <span className="truncate">Take calls outside my hours</span>
+                  </p>
                   <button onClick={() => setOverride(!override)} disabled={savingOverride} role="switch" aria-checked={override}
-                    aria-label="Available now, outside my hours"
+                    aria-label="Take calls outside my hours"
                     className="relative inline-flex h-7 w-12 flex-shrink-0 items-center rounded-full transition disabled:opacity-50"
                     style={{ backgroundColor: override ? theme.primary : theme.hover }}>
                     {savingOverride
@@ -265,7 +259,7 @@ export default function CcAgentSettings() {
                           style={{ transform: override ? 'translateX(22px)' : 'translateX(3px)', boxShadow: '0 1px 2px rgba(0,0,0,0.2)' }} />}
                   </button>
                 </div>
-                {overrideErr && <p className="text-[12px] mt-3" style={{ color: theme.error }}>{overrideErr}</p>}
+                {overrideErr && <p className="text-[12px] mt-2" style={{ color: theme.error }}>{overrideErr}</p>}
               </div>
             )}
 
@@ -282,7 +276,7 @@ export default function CcAgentSettings() {
               </div>
               {!scheduleEnabled ? (
                 <p className="text-[12px] leading-relaxed" style={{ color: theme.textMuted }}>
-                  You do not have set working hours. You are available for calls whenever your status is Available.
+                  You do not have set working hours, so you take calls whenever you are on.
                   Your manager can set working hours for you from the Agents page.
                 </p>
               ) : (
