@@ -218,7 +218,7 @@ export default function DemoCustomizer({ agencyId, theme, demoNumberId }: Props)
     <div className="rounded-xl p-5 sm:p-6 mb-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
       <div className="flex items-center gap-2 mb-1">
         <Mic className="h-4 w-4" style={{ color: theme.primary }} />
-        <h3 className="font-semibold text-base sm:text-lg" style={{ color: theme.text }}>Customize your demo</h3>
+        <h3 className="font-semibold text-base sm:text-lg" style={{ color: theme.text }}>Customize Your Demo</h3>
       </div>
       <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>
         Pick the voice callers hear and, if you want, tweak the greeting and add a few instructions. Optional, the demo works great as-is.

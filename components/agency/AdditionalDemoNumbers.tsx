@@ -20,6 +20,8 @@ interface DemoRow {
   status: 'provisioning' | 'active' | 'error';
   provisioning_error: string | null;
   country: string | null;
+  call_count?: number;
+  text_count?: number;
 }
 
 interface Props {
@@ -116,7 +118,7 @@ export default function AdditionalDemoNumbers({ agencyId, theme, country, byotEn
     <div className="rounded-xl p-5 sm:p-6 mb-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
       <div className="flex items-center gap-2 mb-1">
         <Phone className="h-4 w-4" style={{ color: theme.primary }} />
-        <h3 className="font-semibold text-base sm:text-lg" style={{ color: theme.text }}>Additional demo numbers</h3>
+        <h3 className="font-semibold text-base sm:text-lg" style={{ color: theme.text }}>Additional Demo Numbers</h3>
       </div>
       <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>
         Add more demo lines, each with its own greeting, voice, and instructions, so different traffic sources get different experiences. Up to {max} extra.
@@ -144,6 +146,11 @@ export default function AdditionalDemoNumbers({ agencyId, theme, country, byotEn
                           <span className="inline-flex items-center gap-1 text-[11px] font-medium" style={{ color: theme.errorText || '#dc2626' }}><AlertCircle className="h-3 w-3" /> Failed</span>
                         )}
                       </div>
+                      {d.status === 'active' && (
+                        <p className="text-[11px] mt-0.5" style={{ color: theme.textMuted }}>
+                          {(d.call_count || 0)} call{(d.call_count || 0) === 1 ? '' : 's'} · {(d.text_count || 0)} text{(d.text_count || 0) === 1 ? '' : 's'} on this line
+                        </p>
+                      )}
                       {d.status === 'error' && d.provisioning_error && (
                         <p className="text-[11px] mt-0.5" style={{ color: theme.textMuted }}>{d.provisioning_error}</p>
                       )}
