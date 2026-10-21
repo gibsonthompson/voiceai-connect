@@ -18,7 +18,26 @@ import {
 } from 'lucide-react';
 
 type SupportStatus = 'none' | 'support' | 'resolved';
-interface InboxMessage { id: string; sender: 'in' | 'out'; body: string; at: string; kind: 'inapp' | 'sms' | 'faq' | 'feedback' | 'help'; }
+interface InboxMessage { id: string; sender: 'in' | 'out'; body: string; at: string; kind: 'inapp' | 'sms' | 'faq' | 'feedback' | 'help'; source?: string | null; }
+
+// A clear, unambiguous label for where each bubble came from, so the admin can
+// tell an automated help-bot answer from the agency's own message from their own
+// reply at a glance. Returns null for the admin's own in-app replies (obvious).
+function msgLabel(m: InboxMessage): { text: string; color: string } | null {
+  if (m.kind === 'sms') return { text: 'Text', color: '#0f766e' };
+  if (m.kind === 'help') {
+    return m.sender === 'in'
+      ? { text: 'Via help bot', color: '#4338ca' }          // the agency asked the bot
+      : { text: 'Help bot auto-reply', color: '#4338ca' };  // the BOT answered, not you
+  }
+  if (m.kind === 'feedback') return { text: 'Feedback', color: '#92400e' };
+  if (m.kind === 'inapp' && m.sender === 'in') {
+    if (m.source === 'feedback') return { text: 'Feedback', color: '#92400e' };
+    if (m.source === 'widget' || m.source === 'support_chat') return { text: 'Support request', color: '#92400e' };
+    if (m.source === 'inbox') return { text: 'Direct message', color: '#334155' };
+  }
+  return null; // admin's own reply, or a plain message
+}
 interface Conversation {
   key: string;
   type: 'agency' | 'faq';
@@ -56,12 +75,29 @@ export default function AdminInboxPage() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selected, setSelected] = useState<Conversation | null>(null);
   const [loadingList, setLoadingList] = useState(true);
-  const [reply, setReply] = useState('');
+  // Per-conversation drafts: clicking out of a thread to answer another must
+  // not lose what you typed. Each thread's unsent text is kept by its key, and
+  // mirrored to localStorage so a refresh, or opening the Account tab and
+  // coming back, keeps it too.
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const threadEndRef = useRef<HTMLDivElement | null>(null);
   const stickRef = useRef(true);
   const replyRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const currentDraft = selected ? (drafts[selected.key] ?? '') : '';
+  const setDraft = (key: string, val: string) => setDrafts((prev) => ({ ...prev, [key]: val }));
+  const clearDraft = (key: string) => setDrafts((prev) => { const next = { ...prev }; delete next[key]; return next; });
+
+  // Hydrate drafts once on mount, then persist on every change. Wrapped because
+  // localStorage can throw (private mode) and must never break the inbox.
+  useEffect(() => {
+    try { const raw = localStorage.getItem('admin_inbox_drafts'); if (raw) setDrafts(JSON.parse(raw) || {}); } catch {}
+  }, []);
+  useEffect(() => {
+    try { localStorage.setItem('admin_inbox_drafts', JSON.stringify(drafts)); } catch {}
+  }, [drafts]);
 
   const load = useCallback(async () => {
     try {
@@ -71,6 +107,17 @@ export default function AdminInboxPage() {
       const convos: Conversation[] = data.conversations || [];
       setConversations(convos);
       setSelected((cur) => (cur ? convos.find((c) => c.key === cur.key) || cur : cur));
+      // Drop drafts for conversations that no longer exist, so storage stays
+      // tidy. Guarded by a non-empty load so a transient empty/failed fetch
+      // never wipes a draft you are in the middle of writing.
+      if (convos.length) {
+        setDrafts((prev) => {
+          const keys = new Set(convos.map((c) => c.key));
+          let changed = false; const next: Record<string, string> = {};
+          for (const k in prev) { if (keys.has(k)) next[k] = prev[k]; else changed = true; }
+          return changed ? next : prev;
+        });
+      }
       setError('');
     } catch {
       setError('Could not load the inbox.');
@@ -96,7 +143,7 @@ export default function AdminInboxPage() {
     if (!el) return;
     el.style.height = 'auto';
     el.style.height = `${el.scrollHeight}px`;
-  }, [reply, selected?.key]);
+  }, [currentDraft, selected?.key]);
 
   const markRead = async (c: Conversation) => {
     if (c.type !== 'agency' || !c.agencyId || !c.unread) return;
@@ -109,7 +156,9 @@ export default function AdminInboxPage() {
     setConversations((prev) => prev.map((x) => (x.key === c.key ? { ...x, unread: 0 } : x)));
   };
 
-  const open = (c: Conversation) => { setSelected(c); setReply(''); markRead(c); };
+  // Select a thread. The draft is NOT cleared, each thread keeps its own unsent
+  // text, so switching away and back restores exactly what you had typed.
+  const open = (c: Conversation) => { setSelected(c); markRead(c); };
 
   // Support / resolved: mark a thread as a support item, resolve it, or reopen
   // it. Optimistic so the badge flips immediately; the backend persists it.
@@ -126,8 +175,10 @@ export default function AdminInboxPage() {
   };
 
   const send = async () => {
-    const text = reply.trim();
-    if (!text || !selected || selected.type !== 'agency' || !selected.agencyId || sending) return;
+    if (!selected || selected.type !== 'agency' || !selected.agencyId || sending) return;
+    const key = selected.key;
+    const text = (drafts[key] || '').trim();
+    if (!text) return;
     setSending(true);
     const optimistic: InboxMessage = { id: `tmp-${Date.now()}`, sender: 'out', body: text, at: new Date().toISOString(), kind: selected.lastInboundKind === 'sms' ? 'sms' : 'inapp' };
     setSelected((prev) => (prev ? { ...prev, messages: [...prev.messages, optimistic] } : prev));
@@ -137,7 +188,7 @@ export default function AdminInboxPage() {
         body: JSON.stringify({ agencyId: selected.agencyId, channel: selected.lastInboundKind === 'sms' ? 'sms' : 'inapp', body: text }),
       });
       if (!res.ok) throw new Error('send failed');
-      setReply('');
+      clearDraft(key);
       await load();
     } catch {
       setSelected((prev) => (prev ? { ...prev, messages: prev.messages.filter((m) => m.id !== optimistic.id) } : prev));
@@ -285,9 +336,7 @@ export default function AdminInboxPage() {
                           {m.body}
                         </div>
                         <div className={`mt-1 text-[10px] flex items-center gap-1.5 ${isIn ? 'justify-start' : 'justify-end'}`} style={{ color: 'var(--a-dim)' }}>
-                          {m.kind === 'sms' && <span className="uppercase tracking-wide">Text</span>}
-                          {m.kind === 'feedback' && <span className="uppercase tracking-wide" style={{ color: '#92400e' }}>Feedback</span>}
-                          {m.kind === 'help' && <span className="uppercase tracking-wide" style={{ color: '#4338ca' }}>Help bot</span>}
+                          {(() => { const lbl = msgLabel(m); return lbl ? <span className="uppercase tracking-wide" style={{ color: lbl.color }}>{lbl.text}</span> : null; })()}
                           <span>{fmtTime(m.at)}</span>
                         </div>
                       </div>
@@ -309,11 +358,11 @@ export default function AdminInboxPage() {
             ) : (
               <div className="border-t p-3 shrink-0" style={{ borderColor: 'var(--a-line)', background: 'white' }}>
                 <div className="flex items-end gap-2">
-                  <textarea ref={replyRef} value={reply} onChange={(e) => setReply(e.target.value)}
+                  <textarea ref={replyRef} value={currentDraft} onChange={(e) => selected && setDraft(selected.key, e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); send(); } }}
                     rows={1} placeholder="Reply as VoiceAI Connect..." className="flex-1 resize-none rounded-xl border px-3.5 py-2.5 text-sm focus:outline-none"
                     style={{ borderColor: 'var(--a-line)', color: 'var(--a-ink)', maxHeight: '45vh', overflowY: 'auto' }} />
-                  <button onClick={send} disabled={sending || !reply.trim()} className="flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium text-white disabled:opacity-40" style={{ background: 'var(--a-em)' }}>
+                  <button onClick={send} disabled={sending || !currentDraft.trim()} className="flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium text-white disabled:opacity-40" style={{ background: 'var(--a-em)' }}>
                     {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                   </button>
                 </div>
