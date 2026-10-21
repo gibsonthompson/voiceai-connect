@@ -13,6 +13,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { usePlanFeatures } from '../../../hooks/usePlanFeatures';
 import LockedFeature from '@/components/LockedFeature';
 import DemoCustomizer from '@/components/agency/DemoCustomizer';
+import AdditionalDemoNumbers from '@/components/agency/AdditionalDemoNumbers';
 
 // ============================================================================
 // HELPERS
@@ -999,6 +1000,11 @@ export default function DemoPhonePage() {
         <HowItWorksCard theme={theme} />
 
         {agency?.id && <DemoCustomizer agencyId={agency.id} theme={theme} />}
+
+        {/* Extra demo numbers (Pro/Scale): each with its own greeting/experience. */}
+        {agency?.id && ['pro', 'scale'].includes(String(agency?.plan_type || '').toLowerCase()) && (
+          <AdditionalDemoNumbers agencyId={agency.id} theme={theme} country={agencyCountry} byotEnabled={byotEnabled} />
+        )}
 
         <div
           className="rounded-xl overflow-hidden mb-6"

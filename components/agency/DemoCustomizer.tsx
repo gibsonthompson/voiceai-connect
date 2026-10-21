@@ -19,6 +19,9 @@ interface Voice {
 interface Props {
   agencyId: string;
   theme: any;
+  // When set, this editor targets an EXTRA demo number's experience (its own
+  // row in agency_demo_numbers) instead of the agency's primary demo config.
+  demoNumberId?: string;
 }
 
 const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
@@ -26,7 +29,11 @@ const getToken = () => (typeof window !== 'undefined' ? localStorage.getItem('au
 const PLATFORM_DEFAULT_VOICE_ID = 'EXAVITQu4vr4xnSDxMaL'; // Sarah, the demo default
 const DEFAULT_PREVIEW = "Hi, thanks for calling! I'm the AI receptionist, how can I help you today?";
 
-export default function DemoCustomizer({ agencyId, theme }: Props) {
+export default function DemoCustomizer({ agencyId, theme, demoNumberId }: Props) {
+  // Primary demo uses /demo-phone/config; an extra number uses its own row.
+  const configUrl = demoNumberId
+    ? `${backendUrl}/api/agency/${agencyId}/demo-numbers/${demoNumberId}`
+    : `${backendUrl}/api/agency/${agencyId}/demo-phone/config`;
   const [voices, setVoices] = useState<Voice[]>([]);
   const [loading, setLoading] = useState(true);
   const [voiceFilter, setVoiceFilter] = useState<'all' | 'male' | 'female'>('all');
@@ -71,11 +78,16 @@ export default function DemoCustomizer({ agencyId, theme }: Props) {
       try {
         const [vRes, cRes] = await Promise.all([
           fetch(`${backendUrl}/api/agency/${agencyId}/ai-templates/voices`, { headers: { Authorization: `Bearer ${getToken()}` } }),
-          fetch(`${backendUrl}/api/agency/${agencyId}/demo-phone/config`, { headers: { Authorization: `Bearer ${getToken()}` } }),
+          fetch(configUrl, { headers: { Authorization: `Bearer ${getToken()}` } }),
         ]);
         const vData = vRes.ok ? await vRes.json() : {};
         const list: Voice[] = Array.isArray(vData.voices) ? vData.voices : [];
-        const cData = cRes.ok ? await cRes.json() : {};
+        const cRaw = cRes.ok ? await cRes.json() : {};
+        // An extra number returns { demo: row }; the primary returns the fields
+        // directly. Normalize to the demo_* shape the rest of this reads.
+        const cData = demoNumberId
+          ? { demo_voice_id: cRaw.demo?.voice_id, demo_greeting: cRaw.demo?.greeting, demo_prompt_additions: cRaw.demo?.prompt_additions }
+          : cRaw;
         if (cancelled) return;
         setVoices(list);
         const vid = cData.demo_voice_id || PLATFORM_DEFAULT_VOICE_ID;
@@ -181,10 +193,12 @@ export default function DemoCustomizer({ agencyId, theme }: Props) {
   const save = async () => {
     setSaving(true); setError(''); setSaved(false);
     try {
-      const r = await fetch(`${backendUrl}/api/agency/${agencyId}/demo-phone/config`, {
-        method: 'PUT',
+      const r = await fetch(configUrl, {
+        method: demoNumberId ? 'PATCH' : 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-        body: JSON.stringify({ demo_voice_id: selectedVoiceId || null, demo_greeting: greeting, demo_prompt_additions: promptAdditions }),
+        body: JSON.stringify(demoNumberId
+          ? { voice_id: selectedVoiceId || null, greeting, prompt_additions: promptAdditions }
+          : { demo_voice_id: selectedVoiceId || null, demo_greeting: greeting, demo_prompt_additions: promptAdditions }),
       });
       if (!r.ok) { const d = await r.json().catch(() => ({})); setError(d.error || 'Failed to save'); return; }
       setInitial({ voice: selectedVoiceId, greeting, additions: promptAdditions });
