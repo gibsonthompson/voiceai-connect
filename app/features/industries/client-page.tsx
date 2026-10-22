@@ -14,7 +14,7 @@ export default function IndustriesFeaturePage() {
   useEffect(() => { const handleScroll = () => setScrolled(window.scrollY > 20); window.addEventListener('scroll', handleScroll); return () => window.removeEventListener('scroll', handleScroll); }, []);
 
   const industries = [
-    { icon: Stethoscope, name: 'Healthcare', examples: 'Medical offices, dental, chiropractic, therapy', features: 'HIPAA compliance, appointment booking, insurance questions' },
+    { icon: Stethoscope, name: 'Healthcare', examples: 'Medical offices, dental, chiropractic, therapy', features: 'HIPAA mode, appointment booking, insurance questions' },
     { icon: Scale, name: 'Legal', examples: 'Law firms, attorneys, legal services', features: 'Intake screening, consultation scheduling, confidentiality' },
     { icon: Wrench, name: 'Home Services', examples: 'Plumbing, HVAC, electrical, roofing', features: 'Emergency dispatch, service scheduling, estimates' },
     { icon: Scissors, name: 'Beauty & Wellness', examples: 'Salons, spas, barbershops, med spas', features: 'Appointment booking, service menus, stylist requests' },
@@ -84,7 +84,7 @@ export default function IndustriesFeaturePage() {
                   { title: 'Correct terminology', desc: 'AI uses industry-specific language naturally.' },
                   { title: 'Proper procedures', desc: 'Knows when to book vs. when to escalate.' },
                   { title: 'Realistic expectations', desc: 'Sets appropriate wait times and pricing ranges.' },
-                  { title: 'Compliance awareness', desc: 'Understands HIPAA, attorney-client privilege, etc.' },
+                  { title: 'Context awareness', desc: 'Handles privacy-sensitive calls in healthcare, legal, and similar fields with discretion.' },
                 ].map((item) => (
                   <div key={item.title} className="flex gap-3"><Check className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" /><div><h3 className="font-medium">{item.title}</h3><p className="text-sm text-[#fafaf9]/50">{item.desc}</p></div></div>
                 ))}

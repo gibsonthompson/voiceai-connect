@@ -73,7 +73,7 @@ export default function VoiceAIConnectVsTrillet() {
           ['White-Label Marketing Site', '✅ Included', '✅ Included'],
           ['Industry Templates', '✅ Pre-built for 10+ industries', 'Manual configuration'],
           ['Outbound Calling', '❌ Not yet', '✅ Included'],
-          ['HIPAA Compliance', 'Contact for details', '✅ Included all plans'],
+          ['HIPAA', 'HIPAA mode (no BAA)', '✅ Included all plans'],
           ['Free Trial', '✅ 14-day', '✅ Available'],
         ]}
       />

@@ -106,7 +106,7 @@ export default function VsEchowinPage() {
       </p>
 
       <p>
-        <strong>VoiceAI Connect</strong> includes <a href="/features/security">enterprise-grade security</a> across all plans, meaning compliance capabilities are available without negotiating a custom contract.
+        <strong>VoiceAI Connect</strong> includes <a href="/features/security">security features</a> like encryption, per-agency data isolation, and HIPAA mode across all plans, without negotiating a custom contract.
       </p>
 
       <h2 id="who-should-choose">Who Should Choose What</h2>

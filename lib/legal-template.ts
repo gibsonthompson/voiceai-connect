@@ -423,7 +423,7 @@ Our Service uses artificial intelligence to answer phone calls on your behalf. P
 All calls handled by the AI receptionist are recorded and transcribed. The AI greeting informs callers that the call may be recorded for quality and training purposes. By continuing the call after this disclosure, the caller provides implied consent to recording.
 
 ### 4.2 Two-Party Consent Compliance
-We operate under a universal disclosure policy: every call includes a recording disclosure regardless of the caller's location. This ensures compliance with all-party consent states, including California, Connecticut, Delaware, Florida, Illinois, Maryland, Massachusetts, Montana, Nevada, New Hampshire, Pennsylvania, and Washington.
+We provide a universal recording disclosure so that, when it is enabled in your AI greeting, callers are informed the call may be recorded regardless of their location. This is intended to help you meet all-party (two-party) consent requirements in states such as California, Connecticut, Delaware, Florida, Illinois, Maryland, Massachusetts, Montana, Nevada, New Hampshire, Pennsylvania, and Washington. You are responsible for ensuring the disclosure is enabled and that each caller is properly notified and, where required, consents to recording under the laws that apply to you and your callers.
 
 ### 4.3 Your Responsibilities
 As the business owner, you are responsible for ensuring that call recording complies with all applicable laws in your jurisdiction. If your jurisdiction requires additional disclosures beyond what the AI provides, you should configure your greeting message accordingly.
@@ -502,9 +502,9 @@ We implement industry-standard security measures to protect your information:
 
 - **Encryption:** Data is encrypted in transit (TLS 1.2+) and at rest (AES-256).
 - **Access Controls:** Access to personal data is restricted to authorized personnel on a need-to-know basis.
-- **Infrastructure:** We use enterprise-grade cloud hosting with SOC 2 compliance.
+- **Infrastructure:** We host on established cloud providers (such as Supabase and Vercel) that maintain their own SOC 2 compliance.
 - **Monitoring:** We monitor for unauthorized access and security incidents.
-- **Incident Response:** We maintain a breach response plan and will notify affected users within 72 hours of discovering a breach, as required by applicable law.
+- **Incident Response:** If we become aware of a breach affecting your information, we will notify affected users without undue delay and as required by applicable law.
 
 No method of transmission or storage is 100% secure. While we strive to protect your information, we cannot guarantee absolute security.
 

@@ -84,7 +84,7 @@ const GROUPS: Group[] = [
     label: 'The substrate',
     features: [
       { icon: Lock, title: 'Encryption + RLS', desc: 'Postgres row-level security per agency. PII never written to logs.', href: '/features/security' },
-      { icon: Server, title: 'Industry compliance', desc: 'HIPAA-ready architecture. SOC2-compliant vendors throughout.', href: '/features/hipaa' },
+      { icon: Server, title: 'Privacy controls', desc: 'HIPAA mode for sensitive calls. Built on SOC 2-audited cloud vendors.', href: '/features/hipaa' },
       { icon: Cloud, title: '99.99% uptime', desc: 'Vercel edge + Cloudflare. Sentry monitors every request.', href: '/features/uptime' },
       { icon: Wand2, title: 'API access', desc: 'REST API for agency operations and client provisioning. Pro+ tier.', href: '/features/api-access' },
       { icon: Database, title: 'Workflow automations', desc: 'Make and n8n event hooks fire on every platform action.' },

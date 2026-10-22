@@ -32,9 +32,9 @@ export default function SecurityFeaturePage() {
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-1.5 text-sm mb-6"><Shield className="h-4 w-4 text-emerald-400" /><span className="text-emerald-300/90">All Plans</span></div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight leading-[1.1]">Enterprise-grade security.<span className="block mt-2 text-[#fafaf9]/40">Your data protected.</span></h1>
-              <p className="mt-6 text-lg sm:text-xl text-[#fafaf9]/60">Bank-level encryption, SOC 2 compliance, and strict access controls protect every call, recording, and piece of customer data.</p>
+              <p className="mt-6 text-lg sm:text-xl text-[#fafaf9]/60">Encryption, strict access controls, and per-agency data isolation protect every call, recording, and piece of customer data.</p>
               <div className="mt-8 space-y-3">
-                {['AES-256 encryption at rest', 'TLS 1.3 in transit', 'SOC 2 Type II compliant', 'Regular security audits'].map((item) => (<div key={item} className="flex items-center gap-3"><div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10"><Check className="h-3 w-3 text-emerald-400" /></div><span className="text-[#fafaf9]/70">{item}</span></div>))}
+                {['Encryption in transit and at rest', 'Per-agency row-level data isolation', 'Role-based access controls', 'Built on SOC 2-audited cloud providers'].map((item) => (<div key={item} className="flex items-center gap-3"><div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10"><Check className="h-3 w-3 text-emerald-400" /></div><span className="text-[#fafaf9]/70">{item}</span></div>))}
               </div>
             </div>
             <div className="relative">
@@ -45,9 +45,9 @@ export default function SecurityFeaturePage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 rounded-lg bg-white/[0.03] text-center"><Lock className="h-6 w-6 text-emerald-400 mx-auto mb-2" /><p className="text-sm font-medium">AES-256</p><p className="text-xs text-[#fafaf9]/40">Encryption</p></div>
-                  <div className="p-4 rounded-lg bg-white/[0.03] text-center"><Shield className="h-6 w-6 text-emerald-400 mx-auto mb-2" /><p className="text-sm font-medium">SOC 2</p><p className="text-xs text-[#fafaf9]/40">Certified</p></div>
-                  <div className="p-4 rounded-lg bg-white/[0.03] text-center"><Eye className="h-6 w-6 text-emerald-400 mx-auto mb-2" /><p className="text-sm font-medium">Audit Logs</p><p className="text-xs text-[#fafaf9]/40">Full trail</p></div>
-                  <div className="p-4 rounded-lg bg-white/[0.03] text-center"><Server className="h-6 w-6 text-emerald-400 mx-auto mb-2" /><p className="text-sm font-medium">US Data</p><p className="text-xs text-[#fafaf9]/40">Centers</p></div>
+                  <div className="p-4 rounded-lg bg-white/[0.03] text-center"><Shield className="h-6 w-6 text-emerald-400 mx-auto mb-2" /><p className="text-sm font-medium">Per Agency</p><p className="text-xs text-[#fafaf9]/40">Row-level isolation</p></div>
+                  <div className="p-4 rounded-lg bg-white/[0.03] text-center"><Lock className="h-6 w-6 text-emerald-400 mx-auto mb-2" /><p className="text-sm font-medium">TLS 1.3</p><p className="text-xs text-[#fafaf9]/40">In transit</p></div>
+                  <div className="p-4 rounded-lg bg-white/[0.03] text-center"><Shield className="h-6 w-6 text-emerald-400 mx-auto mb-2" /><p className="text-sm font-medium">Role-based</p><p className="text-xs text-[#fafaf9]/40">Access control</p></div>
                 </div>
               </div>
             </div>
@@ -60,10 +60,10 @@ export default function SecurityFeaturePage() {
           <h2 className="text-2xl font-semibold text-center mb-12">Security measures</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { icon: Lock, title: 'Encryption', desc: 'AES-256 at rest, TLS 1.3 in transit.' },
-              { icon: Shield, title: 'Access Control', desc: 'Role-based permissions, 2FA available.' },
-              { icon: Eye, title: 'Audit Logging', desc: 'Complete trail of all system access.' },
-              { icon: Server, title: 'Secure Hosting', desc: 'AWS with strict network policies.' },
+              { icon: Lock, title: 'Encryption', desc: 'Encrypted in transit and at rest.' },
+              { icon: Shield, title: 'Access Control', desc: 'Role-based permissions across the platform.' },
+              { icon: Eye, title: 'Data Isolation', desc: 'Row-level security scopes every query to one agency.' },
+              { icon: Server, title: 'Managed Hosting', desc: 'Built on established cloud providers (Supabase, Vercel).' },
             ].map((item) => (<div key={item.title} className="p-6 rounded-xl border border-white/[0.06] bg-white/[0.02] text-center"><div className="flex h-10 w-10 mx-auto items-center justify-center rounded-lg bg-emerald-500/10 mb-4"><item.icon className="h-5 w-5 text-emerald-400" /></div><h3 className="font-semibold mb-2">{item.title}</h3><p className="text-sm text-[#fafaf9]/50">{item.desc}</p></div>))}
           </div>
         </div>
@@ -73,7 +73,7 @@ export default function SecurityFeaturePage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2 className="text-xl font-semibold mb-8">Related features</h2>
           <div className="grid sm:grid-cols-3 gap-4">
-            {[{ title: 'HIPAA Ready', desc: 'Healthcare compliance', href: '/features/hipaa' },{ title: '99.9% Uptime', desc: 'Enterprise reliability', href: '/features/uptime' },{ title: 'Backups', desc: 'Automatic data protection', href: '/features/backups' }].map((item) => (<Link key={item.title} href={item.href} className="p-4 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:border-emerald-500/30 transition-colors group"><h3 className="font-medium group-hover:text-emerald-400">{item.title}</h3><p className="text-sm text-[#fafaf9]/50 mt-1">{item.desc}</p></Link>))}
+            {[{ title: 'HIPAA Mode', desc: 'Privacy mode for sensitive calls', href: '/features/hipaa' },{ title: '99.9% Uptime', desc: 'Enterprise reliability', href: '/features/uptime' },{ title: 'Backups', desc: 'Automatic data protection', href: '/features/backups' }].map((item) => (<Link key={item.title} href={item.href} className="p-4 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:border-emerald-500/30 transition-colors group"><h3 className="font-medium group-hover:text-emerald-400">{item.title}</h3><p className="text-sm text-[#fafaf9]/50 mt-1">{item.desc}</p></Link>))}
           </div>
         </div>
       </section>

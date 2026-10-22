@@ -111,7 +111,7 @@ export default function BestWhiteLabelPlatformsRanked() {
       </p>
 
       <p>
-        <strong>Strengths:</strong> True zero-fulfillment operation. Flat-fee pricing with no per-client or per-minute costs. Full white-label branding (custom domain, dashboard, emails). 60-second client onboarding. Stripe Connect so payments go directly to your bank. Mobile-first admin dashboard. A2P 10DLC compliant. SOC 2 Type II certified.
+        <strong>Strengths:</strong> True zero-fulfillment operation. Flat-fee pricing with no per-client or per-minute costs. Full white-label branding (custom domain, dashboard, emails). 60-second client onboarding. Stripe Connect so payments go directly to your bank. Mobile-first admin dashboard. A2P 10DLC compliant. Built on SOC 2-audited cloud infrastructure (Supabase, Vercel).
       </p>
 
       <p>

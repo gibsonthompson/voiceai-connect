@@ -167,7 +167,7 @@ export default function WhiteLabelPricingBreakdown() {
           <strong>SMS and messaging fees.</strong> Call summary texts, follow-up messages, and appointment confirmations are typically billed at $0.01–$0.05 per message. A client receiving 100 SMS notifications/month costs $1–$5 in messaging fees.
         </li>
         <li>
-          <strong>HIPAA compliance surcharges.</strong> Some platforms charge $100–$200/month extra for HIPAA-compliant infrastructure. If you serve any healthcare clients, this is mandatory. Platforms that include compliance at no extra cost (like Trillet and VoiceAI Connect) save you this recurring expense.
+          <strong>HIPAA compliance surcharges.</strong> Some platforms charge $100–$200/month extra for HIPAA-compliant infrastructure, some restrict it to higher tiers, and some (including VoiceAI Connect) do not offer formal HIPAA compliance or a BAA today. If you serve healthcare clients, confirm exactly what your platform provides before onboarding them.
         </li>
         <li>
           <strong>Overage penalties.</strong> Plans with included minutes often charge steep overage rates — sometimes 2–3x the standard per-minute rate. One client with unexpectedly high call volume can blow your margins for the month.
@@ -302,7 +302,7 @@ export default function WhiteLabelPricingBreakdown() {
         <div className="p-5 rounded-lg bg-white/[0.02] border border-white/[0.08]">
           <h4 className="font-semibold mb-2">Is HIPAA compliance included in white-label AI receptionist pricing?</h4>
           <p className="text-[#fafaf9]/70">
-            It varies. Some platforms include HIPAA compliance at all tiers (Trillet, VoiceAI Connect). Others charge $100–$200/month extra for HIPAA-compliant infrastructure. If you plan to serve healthcare clients — dental offices, medical practices, therapy providers — confirm compliance costs before committing. An unexpected $200/month compliance fee changes your margin calculations significantly.
+            It varies. Some platforms include HIPAA compliance, some charge $100–$200/month extra for it, and some (including VoiceAI Connect) do not offer formal HIPAA compliance or a BAA today, only a privacy-focused HIPAA mode. If you plan to serve healthcare clients — dental offices, medical practices, therapy providers — confirm compliance availability and costs before committing.
           </p>
         </div>
       </div>

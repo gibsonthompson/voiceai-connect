@@ -134,7 +134,7 @@ export const INDUSTRIES: Industry[] = [
     label: 'Medical',
     icon: 'Stethoscope',
     description: 'Clinics, practices, specialists',
-    intelligence: { services: 38, faqs: 11, terms: 8, features: ['HIPAA Compliant', 'Emergency Triage', 'Insurance Terminology'] },
+    intelligence: { services: 38, faqs: 11, terms: 8, features: ['HIPAA Mode', 'Emergency Triage', 'Insurance Terminology'] },
     aliases: ['medical_dental', 'Medical/Dental'],
   },
   {
@@ -142,7 +142,7 @@ export const INDUSTRIES: Industry[] = [
     label: 'Dental & Orthodontics',
     icon: 'Smile',
     description: 'Dental and orthodontic offices',
-    intelligence: { services: 30, faqs: 10, terms: 8, features: ['HIPAA Compliant', 'Appointment Booking', 'Insurance Terminology'] },
+    intelligence: { services: 30, faqs: 10, terms: 8, features: ['HIPAA Mode', 'Appointment Booking', 'Insurance Terminology'] },
     aliases: ['dentist', 'orthodontics'],
   },
   {

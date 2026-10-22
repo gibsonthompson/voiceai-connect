@@ -220,7 +220,7 @@ export default function ComplianceGuide() {
       <ComparisonTable
         headers={['Platform', 'HIPAA', 'SOC 2', 'A2P 10DLC', 'GDPR', 'TCPA']}
         rows={[
-          ['VoiceAI Connect', '✓', '✓ Type II', '✓', '—', '✓ (inbound)'],
+          ['VoiceAI Connect', 'Privacy mode', 'Via providers', '✓', '—', '✓ (inbound)'],
           ['Trillet', '✓', 'Not published', '✓', '✓', '✓'],
           ['Synthflow', '✓', '✓', '✓', '✓', '✓'],
           ['My AI Front Desk', 'Not published', 'Not published', '✓', '—', '✓ (inbound)'],

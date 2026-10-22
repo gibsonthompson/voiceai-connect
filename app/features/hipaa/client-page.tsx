@@ -24,17 +24,20 @@ export default function HipaaFeaturePage() {
         </div></div>
       </nav>
 
-      <div className="pt-24 sm:pt-28"><div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"><div className="flex items-center gap-2 text-sm text-[#fafaf9]/40"><Link href="/features" className="hover:text-[#fafaf9]">Features</Link><ChevronRight className="h-4 w-4" /><span className="text-[#fafaf9]/60">HIPAA Ready</span></div></div></div>
+      <div className="pt-24 sm:pt-28"><div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"><div className="flex items-center gap-2 text-sm text-[#fafaf9]/40"><Link href="/features" className="hover:text-[#fafaf9]">Features</Link><ChevronRight className="h-4 w-4" /><span className="text-[#fafaf9]/60">HIPAA Mode</span></div></div></div>
 
       <section className="relative pt-8 sm:pt-12 pb-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/[0.08] px-4 py-1.5 text-sm mb-6"><Heart className="h-4 w-4 text-blue-400" /><span className="text-blue-300/90">Scale Plan</span></div>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight leading-[1.1]">HIPAA ready.<span className="block mt-2 text-[#fafaf9]/40">Healthcare-compliant AI.</span></h1>
-              <p className="mt-6 text-lg sm:text-xl text-[#fafaf9]/60">Serve medical offices, dental practices, therapy clinics, and other healthcare providers with confidence. Our platform meets HIPAA technical safeguards.</p>
+              <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/[0.08] px-4 py-1.5 text-sm mb-6"><Heart className="h-4 w-4 text-blue-400" /><span className="text-blue-300/90">Privacy mode</span></div>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight leading-[1.1]">HIPAA mode.<span className="block mt-2 text-[#fafaf9]/40">Extra privacy for sensitive calls.</span></h1>
+              <p className="mt-6 text-lg sm:text-xl text-[#fafaf9]/60">A per-client privacy setting for medical, dental, therapy, and other sensitive practices. When it is on, call recordings and transcripts are not stored, and the AI collects only the minimum details it needs.</p>
               <div className="mt-8 space-y-3">
-                {['BAA available on request', 'PHI handling procedures', 'Encrypted call recordings', 'Audit trail for all access'].map((item) => (<div key={item} className="flex items-center gap-3"><div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10"><Check className="h-3 w-3 text-emerald-400" /></div><span className="text-[#fafaf9]/70">{item}</span></div>))}
+                {['Call recordings and transcripts not stored', 'AI collects only name, phone, and reason', 'No caller-recognition history kept', 'Recording disabled end to end'].map((item) => (<div key={item} className="flex items-center gap-3"><div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10"><Check className="h-3 w-3 text-emerald-400" /></div><span className="text-[#fafaf9]/70">{item}</span></div>))}
+              </div>
+              <div className="mt-6 rounded-xl border border-amber-500/20 bg-amber-500/[0.06] px-4 py-3 text-sm text-amber-200/80">
+                HIPAA mode is a privacy setting, not a certification. VoiceAI Connect does not currently offer HIPAA compliance or a Business Associate Agreement (BAA). If your work requires a signed BAA, this platform is not a fit yet.
               </div>
             </div>
             <div className="relative">
@@ -57,13 +60,13 @@ export default function HipaaFeaturePage() {
 
       <section className="py-16 border-t border-white/[0.06]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-semibold text-center mb-12">HIPAA safeguards</h2>
+          <h2 className="text-2xl font-semibold text-center mb-12">What HIPAA mode does</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { icon: Lock, title: 'Access Controls', desc: 'Role-based access to patient data.' },
-              { icon: Shield, title: 'Encryption', desc: 'PHI encrypted at rest and in transit.' },
-              { icon: FileText, title: 'Audit Logs', desc: 'Complete trail of data access.' },
-              { icon: Heart, title: 'BAA', desc: 'Business Associate Agreement available.' },
+              { icon: Lock, title: 'No recording stored', desc: 'Call audio is never saved while HIPAA mode is on.' },
+              { icon: Shield, title: 'No transcript stored', desc: 'Transcripts are discarded, not written to the database.' },
+              { icon: FileText, title: 'Minimal collection', desc: 'The AI asks only for name, phone, and reason, never medical details.' },
+              { icon: Heart, title: 'No recognition history', desc: 'No caller-recognition profile is kept across calls.' },
             ].map((item) => (<div key={item.title} className="p-6 rounded-xl border border-white/[0.06] bg-white/[0.02] text-center"><div className="flex h-10 w-10 mx-auto items-center justify-center rounded-lg bg-blue-500/10 mb-4"><item.icon className="h-5 w-5 text-blue-400" /></div><h3 className="font-semibold mb-2">{item.title}</h3><p className="text-sm text-[#fafaf9]/50">{item.desc}</p></div>))}
           </div>
         </div>
@@ -80,8 +83,8 @@ export default function HipaaFeaturePage() {
 
       <section className="py-16 border-t border-white/[0.06]">
         <div className="mx-auto max-w-4xl px-4 text-center">
-          <h2 className="text-2xl font-semibold">Serve healthcare with confidence</h2>
-          <p className="mt-4 text-[#fafaf9]/50">HIPAA-ready features available on Scale plan.</p>
+          <h2 className="text-2xl font-semibold">Extra privacy for sensitive calls</h2>
+          <p className="mt-4 text-[#fafaf9]/50">HIPAA mode is available as a per-client privacy setting. It is not HIPAA compliance and does not include a BAA.</p>
           <div className="mt-8"><Link href="/signup" className="group inline-flex items-center gap-3 rounded-full bg-white px-8 py-4 font-medium text-[#050505]">Start Your Free Trial <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" /></Link></div>
         </div>
       </section>
