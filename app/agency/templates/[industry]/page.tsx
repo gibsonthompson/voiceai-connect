@@ -48,6 +48,7 @@ const MODEL_OPTIONS = [
 
 const TTS_MODEL_OPTIONS: { id: string; name: string; desc: string; tag: string; comingSoon?: boolean }[] = [
   { id: 'eleven_flash_v2_5', name: 'Flash v2.5', desc: 'Fastest and most responsive on live calls (~75ms). The real-time standard, recommended for phone receptionists.', tag: 'Recommended' },
+  { id: 'eleven_v4_turbo', name: 'Eleven v4 Turbo', desc: 'ElevenLabs newest model (Sept 2026): their most expressive voice at real-time speed (~100ms), recommended for voice agents. Test it on a call before setting it on a live client.', tag: 'Newest' },
   { id: 'eleven_multilingual_v2', name: 'Multilingual v2', desc: 'Very natural across 29 languages, but noticeably higher latency. Best when voice quality matters more than call speed.', tag: 'Most natural' },
   { id: 'eleven_v3', name: 'Eleven v3', desc: 'Most expressive and human, but built for pre-rendered audio, so it can feel laggy on fast back-and-forth calls.', tag: 'Most expressive' },
   // Eleven v3 Conversational is v3's expressiveness at real-time latency (~280ms,

@@ -50,6 +50,7 @@ interface AssistantConfig {
 // Same options as the per-industry template editor so the two pages match.
 const TTS_MODEL_OPTIONS = [
   { value: 'eleven_flash_v2_5', label: 'Flash v2.5 (Recommended)' },
+  { value: 'eleven_v4_turbo', label: 'Eleven v4 Turbo (Newest)' },
   { value: 'eleven_multilingual_v2', label: 'Multilingual v2 (Most natural)' },
   { value: 'eleven_v3', label: 'Eleven v3 (Most expressive)' },
 ];
