@@ -4,10 +4,11 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, ArrowRight, Delete, KeyRound, Grid3x3 } from 'lucide-react';
 
-// ── Palette (Mercedes-AMG Petronas inspired) ───────────────────────────────
-// Tiffany/Petronas teal is the core; a brighter teal drives glows. Silver +
-// dark gray + near-black do the rest. Kept local to this page so it can read
-// distinct from the emerald app theme without touching global tokens.
+// ── Palette ─────────────────────────────────────────────────────────────────
+// The core green (#00B98C) is the same accent the admin theme uses (--a-em), so
+// the login and the dashboard read as one product; a brighter green drives the
+// glows. Silver + dark gray + near-black do the rest. Kept local so the dark
+// login chrome never leaks into the white dashboard tokens.
 const C = {
   teal: '#00B98C',
   tealBright: '#1FE6A8',
@@ -19,32 +20,6 @@ const C = {
 const GRID = 4;            // 4x4
 const CELLS = GRID * GRID; // 16
 const MIN_TAPS = 6;        // ~24 bits of entropy at 16^6, more than a 6-digit PIN
-
-// ── Animated equalizer logo (the real waveform mark, in teal) ───────────────
-function WaveformLogo({ size = 44 }: { size?: number }) {
-  const bars = [
-    { x: 2, h: 6, d: '0.9s' }, { x: 5, h: 10, d: '1.3s' }, { x: 8, h: 16, d: '0.7s' },
-    { x: 11, h: 12, d: '1.1s' }, { x: 14, h: 18, d: '0.8s' }, { x: 17, h: 10, d: '1.4s' },
-    { x: 20, h: 6, d: '1.0s' },
-  ];
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-label="VoiceAI Connect">
-      {bars.map((b, i) => (
-        <rect
-          key={i}
-          x={b.x}
-          y={12 - b.h / 2}
-          width="2"
-          height={b.h}
-          rx="1"
-          fill={i === 4 ? C.tealBright : C.teal}
-          className="vac-bar"
-          style={{ animationDuration: b.d }}
-        />
-      ))}
-    </svg>
-  );
-}
 
 // ── Telemetry background: drifting teal particles wired into a faint web ────
 function TelemetryBackground() {
@@ -61,10 +36,14 @@ function TelemetryBackground() {
     let pts: P[] = [];
 
     const resize = () => {
-      w = canvas.clientWidth; h = canvas.clientHeight;
+      // Size from the viewport, not the element, so the field always covers the
+      // full screen edge to edge (the element-based measure could read 0 or a
+      // partial width on first paint and leave half the screen bare).
+      w = window.innerWidth; h = window.innerHeight;
       canvas.width = w * dpr; canvas.height = h * dpr;
+      canvas.style.width = `${w}px`; canvas.style.height = `${h}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const count = Math.min(64, Math.floor((w * h) / 22000));
+      const count = Math.min(110, Math.floor((w * h) / 17000));
       pts = Array.from({ length: count }, () => ({
         x: Math.random() * w, y: Math.random() * h,
         vx: (Math.random() - 0.5) * 0.25, vy: (Math.random() - 0.5) * 0.25,
@@ -105,7 +84,7 @@ function TelemetryBackground() {
     return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', resize); };
   }, []);
 
-  return <canvas ref={ref} className="absolute inset-0 h-full w-full" />;
+  return <canvas ref={ref} className="fixed inset-0" style={{ width: '100vw', height: '100vh' }} />;
 }
 
 export default function AdminLoginPage() {
@@ -182,26 +161,35 @@ export default function AdminLoginPage() {
         .vac-glow { animation: vacGlow 3s ease-in-out infinite; }
       `}</style>
 
-      {/* Background */}
+      {/* Background — full-bleed, edge to edge, lit on both sides. Every layer is
+          fixed to the viewport so nothing clips at the halfway point. */}
+      <div className="fixed inset-0" style={{ background: 'radial-gradient(1200px 820px at 50% -12%, rgba(0,185,140,0.12), transparent 60%), radial-gradient(900px 720px at 2% 102%, rgba(31,230,168,0.08), transparent 55%), radial-gradient(900px 720px at 98% 100%, rgba(0,185,140,0.07), transparent 55%), linear-gradient(180deg, #070a09 0%, #050505 52%, #040605 100%)' }} />
       <TelemetryBackground />
-      <div className="pointer-events-none absolute inset-0">
-        <div className="vac-glow absolute top-1/4 left-1/2 -translate-x-1/2 w-[560px] h-[560px] rounded-full blur-[130px]" style={{ backgroundColor: 'rgba(0,185,140,0.10)' }} />
+      <div className="pointer-events-none fixed inset-0">
+        {/* symmetric glows so the left and right are always lit, never a bare half */}
+        <div className="vac-glow absolute top-[12%] left-[14%] w-[520px] h-[520px] rounded-full blur-[150px]" style={{ backgroundColor: 'rgba(0,185,140,0.13)' }} />
+        <div className="vac-glow absolute bottom-[8%] right-[12%] w-[560px] h-[560px] rounded-full blur-[160px]" style={{ backgroundColor: 'rgba(31,230,168,0.09)', animationDelay: '1.4s' }} />
+        {/* top sweep line */}
         <div className="absolute inset-x-0 top-0 h-px overflow-hidden">
           <div className="vac-sweep h-px w-1/3" style={{ background: `linear-gradient(90deg, transparent, ${C.tealBright}, transparent)` }} />
         </div>
-        {/* subtle scanline grain */}
-        <div className="absolute inset-0 opacity-[0.035]" style={{ backgroundImage: 'repeating-linear-gradient(0deg, #fff 0, #fff 1px, transparent 1px, transparent 3px)' }} />
+        {/* faint telemetry grid across the whole field */}
+        <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'linear-gradient(rgba(200,204,206,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(200,204,206,0.6) 1px, transparent 1px)', backgroundSize: '64px 64px' }} />
+        {/* scanline grain */}
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'repeating-linear-gradient(0deg, #fff 0, #fff 1px, transparent 1px, transparent 3px)' }} />
+        {/* vignette that keeps the eye on the card without darkening the edges to a seam */}
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(1100px 680px at 50% 46%, transparent 42%, rgba(0,0,0,0.5) 100%)' }} />
       </div>
 
-      <div className={`relative w-full max-w-[380px] ${shake ? 'vac-shake' : ''}`}>
+      <div className={`relative z-10 w-full max-w-[380px] ${shake ? 'vac-shake' : ''}`}>
         {/* Header */}
         <div className="text-center mb-8 vac-rise">
           <div className="inline-flex items-center justify-center mb-5 relative">
-            <div className="absolute inset-0 -m-4 blur-2xl rounded-full" style={{ backgroundColor: 'rgba(31,230,168,0.18)' }} />
-            <WaveformLogo size={46} />
+            <div className="absolute inset-0 -m-8 blur-2xl rounded-full" style={{ backgroundColor: 'rgba(31,230,168,0.16)' }} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/voiceai-connect-logo.png" alt="VoiceAI Connect" className="relative" style={{ height: 42, width: 'auto' }} />
           </div>
-          <h1 className="text-[22px] font-semibold tracking-tight text-white">VoiceAI Connect</h1>
-          <div className="mt-2 flex items-center justify-center gap-2">
+          <div className="mt-1 flex items-center justify-center gap-2">
             <span className="h-px w-6" style={{ background: `linear-gradient(90deg, transparent, ${C.teal})` }} />
             <p className="text-[10px] font-mono uppercase tracking-[0.28em]" style={{ color: C.teal }}>Platform Administration</p>
             <span className="h-px w-6" style={{ background: `linear-gradient(90deg, ${C.teal}, transparent)` }} />

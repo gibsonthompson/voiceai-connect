@@ -5,10 +5,10 @@
    layout adds className="admin-scope" on its root wrapper. Components reference
    these with Tailwind arbitrary values, e.g. bg-[var(--a-card)] text-[var(--a-ink)].
 
-   Accent = the logo mint (#01F5D1, the "Connect" wordmark color). It is bright,
-   so anything SITTING ON --a-em uses dark ink (#04140D), never white (the shared
-   .a-btn / .a-chip primitives already do). For green TEXT on white, use
-   --a-em-deep (a legible deep teal of the same hue), never --a-em.
+   Accent = the login page green (#00B98C, with #1FE6A8 for glows). Anything
+   SITTING ON --a-em uses dark ink (#04140D), never white (the shared .a-btn /
+   .a-chip primitives already do). For green TEXT on white, use --a-em-deep (a
+   legible deeper green of the same hue), never --a-em.
    ========================================================================== */
 
 .admin-scope {
@@ -27,13 +27,13 @@
   --a-line: #E8EBEA;
   --a-line-2: #DBE0DE;
 
-  /* mint accent (primary) — matches the logo */
-  --a-em: #01F5D1;        /* fills + nav accent; put DARK ink on top, not white */
-  --a-em-deep: #0A8C78;   /* green TEXT on white (links, eyebrows) */
-  --a-em-2: #00E2C4;      /* hover for mint fills */
-  --a-em-soft: #E4FCF7;   /* light mint tint for soft backgrounds */
-  --a-em-line: #B6F2E8;
-  --a-em-ink: #04231E;    /* ink to place on a mint fill */
+  /* green accent (primary) — the login page green (#00B98C), not the logo teal */
+  --a-em: #00B98C;        /* fills + nav accent; put DARK ink on top, not white */
+  --a-em-deep: #0A7D60;   /* green TEXT on white (links, eyebrows) */
+  --a-em-2: #1FE6A8;      /* brighter green for hover/glow (login tealBright) */
+  --a-em-soft: #E3F7F0;   /* light green tint for soft backgrounds */
+  --a-em-line: #B2EBD9;
+  --a-em-ink: #04231B;    /* ink to place on a green fill */
 
   /* semantic accents, tuned for a white background */
   --a-cyan: #0E9BB5; --a-cyan-soft: #DBF1F6;
