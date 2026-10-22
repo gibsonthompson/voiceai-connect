@@ -62,17 +62,28 @@ async function resolveAgency(host: string): Promise<IconAgency | null> {
   return (data as IconAgency) || null;
 }
 
+// Resolve the agency directly by id. The dashboard knows the logged-in agency,
+// but its host is the platform domain, where resolveAgency(host) cannot match a
+// subdomain slug or a verified marketing domain, so it would fall through to the
+// default tile. Passing the id resolves the right agency regardless of host.
+async function resolveAgencyById(id: string): Promise<IconAgency | null> {
+  const cols = 'name, logo_url, app_icon_url, primary_color, logo_background_color, website_theme';
+  const { data } = await supabase.from('agencies').select(cols).eq('id', id).single();
+  return (data as IconAgency) || null;
+}
+
 interface RenderOpts {
   host: string;
   size: number;
   clientId?: string | null;
+  agencyId?: string | null;
 }
 
 /**
  * Renders a square app icon as a PNG ImageResponse. Always square, never
  * stretched. Safe to call from a route handler or a metadata icon file.
  */
-export async function renderAgencyAppIcon({ host, size, clientId }: RenderOpts) {
+export async function renderAgencyAppIcon({ host, size, clientId, agencyId }: RenderOpts) {
   let name = '';
   let primary = '#10b981';
   let iconSrc: string | null = null;
@@ -80,7 +91,7 @@ export async function renderAgencyAppIcon({ host, size, clientId }: RenderOpts) 
   let isDark = false;
 
   try {
-    const agency = host ? await resolveAgency(host) : null;
+    const agency = agencyId ? await resolveAgencyById(agencyId) : (host ? await resolveAgency(host) : null);
     if (agency) {
       name = agency.name || '';
       primary = agency.primary_color || primary;

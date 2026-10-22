@@ -24,8 +24,9 @@ export async function GET(request: NextRequest) {
   const rawSize = parseInt(request.nextUrl.searchParams.get('size') || '512', 10);
   const size = ALLOWED_SIZES.includes(rawSize) ? rawSize : 512;
   const clientId = request.nextUrl.searchParams.get('clientId');
+  const agencyId = request.nextUrl.searchParams.get('agencyId');
 
-  const res = await renderAgencyAppIcon({ host, size, clientId });
+  const res = await renderAgencyAppIcon({ host, size, clientId, agencyId });
 
   // ImageResponse sets its own content-type; add a short cache so the OS and
   // link-preview fetchers do not hammer the renderer, while still picking up an

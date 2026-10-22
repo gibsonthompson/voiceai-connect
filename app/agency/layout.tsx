@@ -85,12 +85,15 @@ const AGENCY_HREF_ROUTE: Record<string, NavRoute> = {
  * VoiceAI Connect waveform favicon from the root layout persists.
  */
 function AgencyFavicon() {
-  const { branding } = useAgency();
-  if (!branding.logoUrl) return null;
-  // appleIconUrl points at the square compositor so the iOS home-screen /
-  // link-preview icon is the agency's app icon (or logo, contained), never the
-  // raw wordmark stretched into a square.
-  return <DynamicFavicon logoUrl={branding.logoUrl} faviconUrl="/api/agency-app-icon?size=96" appleIconUrl="/api/agency-app-icon?size=180" />;
+  const { agency, effectivePlan } = useAgency();
+  // Favicon precedence (the agency app icon, then its logo composited onto a
+  // square so a wordmark never stretches, then a brand-initial placeholder) is
+  // handled server-side by /api/agency-app-icon. We pass the logged-in agency id
+  // so it resolves the right agency on the dashboard domain, where a host lookup
+  // cannot. Free agencies keep the platform default.
+  if (effectivePlan === 'free' || !agency?.id) return null;
+  const base = `/api/agency-app-icon?agencyId=${agency.id}`;
+  return <DynamicFavicon logoUrl={agency.logo_url || null} faviconUrl={`${base}&size=96`} appleIconUrl={`${base}&size=180`} />;
 }
 
 function TourLauncher({ theme }: { theme: any }) {
