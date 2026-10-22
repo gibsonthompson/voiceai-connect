@@ -112,7 +112,7 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
     return (
       <div className="admin-scope min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="rounded-xl px-4 py-3" style={{ background: 'var(--a-sidebar)' }}><BrandLogo height={24} /></div>
+          <div className="rounded-xl px-6 py-4" style={{ background: 'var(--a-sidebar)' }}><BrandLogo height={38} /></div>
           <Loader2 className="h-5 w-5 animate-spin text-[var(--a-dim)]" />
         </div>
       </div>
@@ -144,11 +144,8 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
       {/* Mobile header */}
       <div className="sticky top-0 z-30 md:hidden bg-[var(--a-card)] border-b border-[var(--a-line)]" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <header className="flex items-center justify-between h-14 px-4">
-          <div className="flex items-center gap-2.5">
-            <div style={{ background: 'var(--a-sidebar)' }} className="rounded-lg px-2.5 py-1.5 flex items-center">
-              <BrandLogo height={16} />
-            </div>
-            <span className="text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--a-em-deep)' }}>Admin</span>
+          <div style={{ background: 'var(--a-sidebar)' }} className="rounded-lg px-3 py-2 flex items-center">
+            <BrandLogo height={24} />
           </div>
           <button onClick={() => setSidebarOpen(true)} className="flex items-center justify-center w-9 h-9 rounded-lg text-[var(--a-muted)] hover:bg-[var(--a-em-soft)] transition-colors">
             <Menu className="h-5 w-5" />
@@ -170,9 +167,8 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
           </button>
         </div>
 
-        <div className="flex items-center gap-2.5 px-5 h-[72px] shrink-0">
-          <BrandLogo height={20} />
-          <span className="text-[9px] font-semibold uppercase tracking-[0.18em] self-start mt-3.5" style={{ color: 'var(--a-em)' }}>Admin</span>
+        <div className="flex items-center px-5 h-[76px] shrink-0">
+          <BrandLogo height={34} />
         </div>
 
         <nav className="px-3 pb-2 space-y-0.5 overflow-y-auto flex-1 min-h-0">
