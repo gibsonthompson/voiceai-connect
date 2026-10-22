@@ -494,10 +494,15 @@ export default function TermsOfService() {
 
             <h3>13.5 Insurance</h3>
             <p>
-              The Agency will obtain and maintain, at its own expense, commercially reasonable insurance appropriate to 
-              its business and its use of the Service, which may include commercial general liability and, where applicable, 
-              professional liability or technology errors-and-omissions coverage. VoiceAI Connect may request written 
-              evidence of such coverage, and the Agency will provide it within a reasonable time.
+              VoiceAI Connect does not require the Agency to carry any insurance as a condition of the free trial, of
+              onboarding End Clients, or of using the Service. Whether to carry insurance, and of what type and in what
+              amount, is entirely the Agency&apos;s decision. VoiceAI Connect recommends, but does not require, that the
+              Agency maintain commercially reasonable coverage for its business, such as general liability and, where the
+              Agency provides professional services, professional liability or technology errors-and-omissions coverage.
+              VoiceAI Connect does not set or require any minimum coverage limits and does not require a certificate of
+              insurance, additional-insured status, or any specific policy endorsements or wording. For the avoidance of
+              doubt, whether or not the Agency carries insurance does not change the Agency&apos;s obligations under
+              Section 13.6 (Defense and Indemnification) or under Sections 10 and 11, which apply in full either way.
             </p>
 
             <h3>13.6 Defense and Indemnification</h3>
