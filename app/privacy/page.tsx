@@ -322,11 +322,12 @@ export default function PrivacyPolicy() {
             <p>Specific retention periods:</p>
             
             <ul>
-              <li><strong>Account data:</strong> Retained while your account is active and for 30 days after deletion request.</li>
-              <li><strong>Call recordings and transcripts:</strong> Retained for 90 days by default. Agency Users can configure shorter retention periods or request immediate deletion.</li>
+              <li><strong>Call recordings, transcripts, and summaries:</strong> Retained while your account is active, and for 90 days after cancellation so you can reactivate, after which they are permanently deleted. You can request earlier deletion at any time.</li>
+              <li><strong>Account data:</strong> Retained while your account is active, and for up to 90 days after cancellation to allow reactivation, after which your account and client data are permanently deleted. A deletion request is honored promptly.</li>
               <li><strong>Google Calendar OAuth tokens:</strong> Retained while the integration is active. Immediately deleted when you disconnect Google Calendar from your dashboard or revoke access through your Google Account.</li>
               <li><strong>Google Calendar event data:</strong> Not persistently stored. Retrieved in real time for availability checks and not cached after use.</li>
-              <li><strong>Billing records:</strong> Retained for 7 years to comply with tax and accounting requirements.</li>
+              <li><strong>Billing records:</strong> Retained for 7 years to comply with tax and accounting requirements, even after your account is deleted.</li>
+              <li><strong>Backups:</strong> After data is deleted from our live systems, residual copies may persist in encrypted backups for up to 30 days before those backups rotate out.</li>
               <li><strong>Analytics data:</strong> Aggregated analytics retained indefinitely; individual-level analytics retained for 26 months.</li>
             </ul>
 

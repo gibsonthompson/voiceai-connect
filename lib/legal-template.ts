@@ -191,11 +191,11 @@ You may cancel your subscription at any time from your dashboard or by contactin
 ### 6.3 Effect of Cancellation
 Upon cancellation:
 - Your AI phone number will be released and may be reassigned.
-- Call recordings, transcripts, and account data will be retained for 30 days, then permanently deleted unless you request earlier deletion.
+- Call recordings, transcripts, summaries, and account data will be retained for 90 days after cancellation, then permanently deleted, unless you request earlier deletion.
 - Any outstanding balance remains due.
 
 ### 6.4 Reactivation
-If you wish to reactivate your account within 30 days of cancellation, contact us and we will attempt to restore your data and phone number (subject to availability).
+If you wish to reactivate your account within 90 days of cancellation, contact us and we will attempt to restore your data (your phone number may no longer be available, as numbers are released shortly after cancellation).
 
 ---
 
@@ -455,10 +455,11 @@ We may also disclose information:
 
 ## 6. Data Retention
 
-- **Call Recordings:** Retained for the duration of your active subscription plus 30 days after cancellation, unless you request earlier deletion.
-- **Call Transcripts and Summaries:** Retained for the duration of your active subscription plus 30 days after cancellation.
-- **Account Information:** Retained for as long as your account is active, plus up to 90 days after deletion to allow for reactivation.
-- **Billing Records:** Retained for up to 7 years as required by tax and accounting regulations.
+- **Call Recordings:** Retained for the duration of your active subscription plus 90 days after cancellation, then permanently deleted, unless you request earlier deletion.
+- **Call Transcripts and Summaries:** Retained for the duration of your active subscription plus 90 days after cancellation, then permanently deleted.
+- **Account Information:** Retained for as long as your account is active, plus up to 90 days after cancellation to allow for reactivation, after which it is permanently deleted.
+- **Billing Records:** Retained for up to 7 years as required by tax and accounting regulations, even after deletion.
+- **Backups:** After deletion from our live systems, residual copies may remain in encrypted backups for up to 30 days before those backups rotate out.
 - **Usage Analytics:** Retained in aggregate, anonymized form indefinitely.
 
 You may request deletion of your call recordings and transcripts at any time by contacting us at {{SUPPORT_EMAIL}}.
