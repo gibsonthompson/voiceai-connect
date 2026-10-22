@@ -24,24 +24,17 @@ import Link from 'next/link';
 import {
   LayoutDashboard, Building2, Users, DollarSign, Target, Mail,
   MessageSquare, Youtube, LogOut, Loader2, Menu, X, PhoneCall, Sparkles,
-  Headphones, Bot, AlertTriangle, Globe, Megaphone,
+  Headphones, AlertTriangle, Globe, Megaphone,
 } from 'lucide-react';
 
 const AUTH_PAGES = ['/admin/login'];
 interface Admin { id: string; email: string; name: string; role: string; }
 
-// The actual VoiceAI Connect brand mark (public/favicon.svg): a rounded black
-// tile with the gradient waveform, not the bare bars we used before.
-function BrandLogo({ size = 26 }: { size?: number }) {
-  return (
-    <img
-      src="/favicon.svg"
-      alt="VoiceAI Connect"
-      width={size}
-      height={size}
-      style={{ width: size, height: size, borderRadius: Math.round(size * 0.22), display: 'block' }}
-    />
-  );
+// The full VoiceAI Connect wordmark (white "VoiceAI" + mint "Connect"). It lives
+// on the black sidebar / mobile header, where the white-and-mint logo reads clean.
+function BrandLogo({ height = 22, className = '' }: { height?: number; className?: string }) {
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src="/voiceai-connect-logo.png" alt="VoiceAI Connect" style={{ height, width: 'auto' }} className={className} />;
 }
 
 // Grouped nav. Each href resolves to a page that exists today. Merged pages
@@ -49,10 +42,9 @@ function BrandLogo({ size = 26 }: { size?: number }) {
 const NAV: { section: string | null; items: { href: string; label: string; icon: any }[] }[] = [
   { section: null, items: [
     { href: '/admin', label: 'Overview', icon: LayoutDashboard },
-    { href: '/admin/agencies', label: 'Agencies', icon: Building2 },
-    { href: '/admin/inbox', label: 'Inbox', icon: MessageSquare },
-    { href: '/admin/clients', label: 'Clients', icon: Users },
     { href: '/admin/calls', label: 'Calls', icon: PhoneCall },
+    { href: '/admin/agencies', label: 'Agencies', icon: Building2 },
+    { href: '/admin/clients', label: 'Clients', icon: Users },
     { href: '/admin/money', label: 'Money', icon: DollarSign },
   ]},
   { section: 'Growth', items: [
@@ -62,9 +54,9 @@ const NAV: { section: string | null; items: { href: string; label: string; icon:
     { href: '/admin/concierge', label: 'Concierge', icon: Headphones },
   ]},
   { section: null, items: [
+    { href: '/admin/inbox', label: 'Inbox', icon: MessageSquare },
     { href: '/admin/broadcast', label: 'Broadcast', icon: Megaphone },
     { href: '/admin/alerts', label: 'Alerts', icon: AlertTriangle },
-    { href: '/admin/faq-chats', label: 'FAQ Chats', icon: Bot },
   ]},
   { section: 'Content', items: [
     { href: '/admin/youtube', label: 'YouTube', icon: Youtube },
@@ -120,7 +112,7 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
     return (
       <div className="admin-scope min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <BrandLogo size={44} />
+          <div className="rounded-xl px-4 py-3" style={{ background: 'var(--a-sidebar)' }}><BrandLogo height={24} /></div>
           <Loader2 className="h-5 w-5 animate-spin text-[var(--a-dim)]" />
         </div>
       </div>
@@ -153,8 +145,10 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
       <div className="sticky top-0 z-30 md:hidden bg-[var(--a-card)] border-b border-[var(--a-line)]" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <header className="flex items-center justify-between h-14 px-4">
           <div className="flex items-center gap-2.5">
-            <BrandLogo size={30} />
-            <span className="text-sm font-semibold text-[var(--a-ink)] tracking-tight">VoiceAI Connect</span>
+            <div style={{ background: 'var(--a-sidebar)' }} className="rounded-lg px-2.5 py-1.5 flex items-center">
+              <BrandLogo height={16} />
+            </div>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--a-em-deep)' }}>Admin</span>
           </div>
           <button onClick={() => setSidebarOpen(true)} className="flex items-center justify-center w-9 h-9 rounded-lg text-[var(--a-muted)] hover:bg-[var(--a-em-soft)] transition-colors">
             <Menu className="h-5 w-5" />
@@ -164,7 +158,7 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
 
       {sidebarOpen && (<div className="fixed inset-0 z-40 bg-black/40 md:hidden" onClick={() => setSidebarOpen(false)} />)}
 
-      {/* Sidebar (deep emerald) */}
+      {/* Sidebar (black) */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 w-[238px] flex flex-col overflow-hidden transform transition-transform duration-300 ease-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}
         style={{ background: 'var(--a-sidebar)', paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0 }}
@@ -176,12 +170,9 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
           </button>
         </div>
 
-        <div className="flex items-center gap-3 px-5 h-[72px] shrink-0">
-          <BrandLogo size={30} />
-          <div>
-            <span className="text-[15px] font-semibold text-white tracking-tight leading-none block">VoiceAI Connect</span>
-            <span className="block text-[9px] font-semibold uppercase tracking-[0.18em] mt-1" style={{ color: 'var(--a-em-2)' }}>Admin</span>
-          </div>
+        <div className="flex items-center gap-2.5 px-5 h-[72px] shrink-0">
+          <BrandLogo height={20} />
+          <span className="text-[9px] font-semibold uppercase tracking-[0.18em] self-start mt-3.5" style={{ color: 'var(--a-em)' }}>Admin</span>
         </div>
 
         <nav className="px-3 pb-2 space-y-0.5 overflow-y-auto flex-1 min-h-0">

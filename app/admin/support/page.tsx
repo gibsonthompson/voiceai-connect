@@ -320,7 +320,7 @@ function SupportTab({ onChanged }: { onChanged: () => void }) {
                 </div>
                 <div className="flex items-center gap-2 mt-1 pl-[22px]">
                   {c.open > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded-full border font-medium shrink-0" style={{ color: 'var(--a-em-deep)', background: 'var(--a-em-soft)', borderColor: 'var(--a-em-line)' }}>{c.open} open</span>}
-                  <span className={`text-[11px] truncate ${c.unread > 0 ? 'text-[var(--a-ink)] font-medium' : 'text-[var(--a-dim)]'}`}>{c.lastReplyBy === 'agency' ? 'New reply: ' : ''}{c.lastMessage}</span>
+                  <span className={`text-[11px] truncate ${c.unread > 0 ? 'text-[var(--a-ink)] font-medium' : 'text-[var(--a-dim)]'}`}>{c.lastReplyBy === 'agency' ? 'New message: ' : ''}{c.lastMessage}</span>
                 </div>
               </button>
             ))}

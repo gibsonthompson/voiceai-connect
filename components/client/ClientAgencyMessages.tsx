@@ -275,7 +275,7 @@ export default function ClientAgencyMessages({ onUnreadChange }: { onUnreadChang
                     <span className="text-[11px] shrink-0" style={{ color: theme.textMuted }}>{fmt(last)}</span>
                   </div>
                   <div className="text-[11px] mt-0.5" style={{ color: theme.textMuted }}>
-                    {t.last_sender === 'agency' ? `${agencyName} replied` : t.last_sender === 'client' ? 'You replied' : 'Sent'}
+                    {t.last_sender === 'agency' ? `New message from ${agencyName}` : t.last_sender === 'client' ? 'You replied' : 'Sent'}
                   </div>
                 </div>
               </button>
