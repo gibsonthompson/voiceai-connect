@@ -36,11 +36,12 @@ interface IconAgency {
   primary_color: string | null;
   logo_background_color: string | null;
   website_theme: 'auto' | 'light' | 'dark' | null;
+  branding_overrides: Record<string, string> | null;
 }
 
 async function resolveAgency(host: string): Promise<IconAgency | null> {
   const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
-  const cols = 'name, logo_url, app_icon_url, primary_color, logo_background_color, website_theme';
+  const cols = 'name, logo_url, app_icon_url, primary_color, logo_background_color, website_theme, branding_overrides';
 
   const subdomainMatch = host.match(new RegExp(`^([^.]+)\\.${platformDomain.replace('.', '\\.')}$`));
   if (subdomainMatch) {
@@ -67,9 +68,35 @@ async function resolveAgency(host: string): Promise<IconAgency | null> {
 // subdomain slug or a verified marketing domain, so it would fall through to the
 // default tile. Passing the id resolves the right agency regardless of host.
 async function resolveAgencyById(id: string): Promise<IconAgency | null> {
-  const cols = 'name, logo_url, app_icon_url, primary_color, logo_background_color, website_theme';
+  const cols = 'name, logo_url, app_icon_url, primary_color, logo_background_color, website_theme, branding_overrides';
   const { data } = await supabase.from('agencies').select(cols).eq('id', id).single();
   return (data as IconAgency) || null;
+}
+
+function isValidHexColor(v?: string | null): boolean {
+  return typeof v === 'string' && /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(v.trim());
+}
+function isLightHex(hex: string): boolean {
+  let c = hex.replace('#', '').trim();
+  if (c.length === 3) c = c.split('').map((x) => x + x).join('');
+  const r = parseInt(c.slice(0, 2), 16), g = parseInt(c.slice(2, 4), 16), b = parseInt(c.slice(4, 6), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5;
+}
+// The dashboard page background the agency actually sees, mirroring
+// hooks/useTheme.ts, so the favicon square matches the color scheme instead of
+// the logo_background_color tile (which can be black on a light theme, the bug
+// this fixes). Mode follows website_theme the same way the dashboard does
+// (anything not 'light' is dark), and a page_bg override only applies when its
+// brightness fits the mode, exactly like the theme's mode-gating.
+function resolveThemeBg(agency: IconAgency): string {
+  const mode: 'dark' | 'light' = agency.website_theme === 'light' ? 'light' : 'dark';
+  const baseBg = mode === 'dark' ? '#050505' : '#f9fafb';
+  const override = agency.branding_overrides ? agency.branding_overrides.page_bg : null;
+  if (isValidHexColor(override)) {
+    const light = isLightHex(override as string);
+    if (mode === 'dark' ? !light : light) return override as string;
+  }
+  return baseBg;
 }
 
 interface RenderOpts {
@@ -88,15 +115,13 @@ export async function renderAgencyAppIcon({ host, size, clientId, agencyId }: Re
   let primary = '#10b981';
   let iconSrc: string | null = null;
   let bg: string | null = null;
-  let isDark = false;
 
   try {
     const agency = agencyId ? await resolveAgencyById(agencyId) : (host ? await resolveAgency(host) : null);
     if (agency) {
       name = agency.name || '';
       primary = agency.primary_color || primary;
-      isDark = agency.website_theme === 'dark';
-      bg = agency.logo_background_color || null;
+      bg = resolveThemeBg(agency);
       // Dedicated square app icon wins over the wordmark logo.
       iconSrc = agency.app_icon_url || agency.logo_url || null;
     }
@@ -118,7 +143,7 @@ export async function renderAgencyAppIcon({ host, size, clientId, agencyId }: Re
     // Fall through to the default initial tile below.
   }
 
-  const background = bg || (isDark ? '#0a0a0a' : '#ffffff');
+  const background = bg || '#f9fafb';
 
   if (iconSrc) {
     // 0.78 keeps the artwork inside the maskable safe zone (center 80%), so a
