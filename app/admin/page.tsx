@@ -286,63 +286,6 @@ export default function AdminOverviewPage() {
       <h1 className="text-[22px] font-semibold tracking-tight text-[var(--a-ink)]">Overview</h1>
       <p className="mt-1 text-sm text-[var(--a-dim)]">Is everything working, who just signed up, and what needs action.</p>
 
-      {/* ── BILLING & TRIALS (agencies) ── */}
-      <div className="a-eyebrow mt-8">Billing &amp; Trials</div>
-      {billing && (
-        <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4 items-start">
-            <div className="a-panel">
-              <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]"><h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Trials ending soon</h3><span className="text-[11px] text-[var(--a-dim)]">{billing.nearExpiringTrials.length}</span></div>
-              {billing.nearExpiringTrials.length === 0 ? <div className="p-4 text-[13px] text-[var(--a-dim)]">No active agency trials.</div> : billing.nearExpiringTrials.slice(0, 10).map((t: any, i: number) => (
-                <div key={i} className="flex items-center justify-between px-4 py-2 text-[13px]" style={{ borderTop: i ? '1px solid var(--a-line)' : 'none' }}>
-                  <span className="text-[var(--a-ink)] truncate mr-3">{t.name}</span>
-                  <span style={{ whiteSpace: 'nowrap', color: t.days_left != null && t.days_left <= 3 ? '#ef4444' : t.days_left != null && t.days_left <= 7 ? '#f59e0b' : 'var(--a-dim)' }}>{t.days_left == null ? '—' : t.days_left < 0 ? 'ended' : t.days_left === 0 ? 'today' : `${t.days_left}d`}{t.trial_ends_at ? ` · ${billDate(t.trial_ends_at)}` : ''}</span>
-                </div>
-              ))}
-            </div>
-            <div className="a-panel">
-              <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]"><h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Upcoming renewals</h3><span className="text-[11px] text-[var(--a-dim)]">{billing.upcomingRenewals.length}</span></div>
-              {billing.upcomingRenewals.length === 0 ? <div className="p-4 text-[13px] text-[var(--a-dim)]">No upcoming renewals on file.</div> : billing.upcomingRenewals.slice(0, 10).map((u: any, i: number) => (
-                <div key={i} className="flex items-center justify-between px-4 py-2 text-[13px]" style={{ borderTop: i ? '1px solid var(--a-line)' : 'none' }}>
-                  <span className="text-[var(--a-ink)] truncate mr-3">{u.name}</span>
-                  <span className="text-[var(--a-dim)]" style={{ whiteSpace: 'nowrap' }}>{u.current_period_end ? billDate(u.current_period_end) : ''}{u.days_until != null ? ` (${u.days_until}d)` : ''} · {u.plan_type}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4 items-start">
-            <div className="a-panel">
-              <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]"><h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Signed up, not paid</h3><span className="text-[11px] text-[var(--a-dim)]">{billing.pendingPayment.length}</span></div>
-              {billing.pendingPayment.length === 0 ? <div className="p-4 text-[13px] text-[var(--a-dim)]">Nobody pending.</div> : billing.pendingPayment.slice(0, 10).map((p: any, i: number) => (
-                <div key={i} className="flex items-center justify-between px-4 py-2 text-[13px]" style={{ borderTop: i ? '1px solid var(--a-line)' : 'none' }}>
-                  <span className="text-[var(--a-ink)] truncate mr-3">{p.name}</span><span style={{ whiteSpace: 'nowrap', color: '#f59e0b' }}>{p.days_waiting}d waiting</span>
-                </div>
-              ))}
-            </div>
-            <div className="a-panel">
-              <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]"><h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Overdue</h3><span className="text-[11px] text-[var(--a-dim)]">{billing.pastDue.length}</span></div>
-              {billing.pastDue.length === 0 ? <div className="p-4 text-[13px] text-[var(--a-dim)]">Nobody overdue.</div> : billing.pastDue.slice(0, 10).map((p: any, i: number) => (
-                <div key={i} className="flex items-center justify-between px-4 py-2 text-[13px]" style={{ borderTop: i ? '1px solid var(--a-line)' : 'none' }}>
-                  <span className="text-[var(--a-ink)] truncate mr-3">{p.name}</span><span style={{ whiteSpace: 'nowrap', color: '#ef4444' }}>payment failed · {p.plan_type}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="a-panel mt-4">
-            <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]"><h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Free agencies</h3><span className="text-[11px] text-[var(--a-dim)]">{billing.freeAgencies.length} · upgrade targets</span></div>
-            {billing.freeAgencies.length === 0 ? <div className="p-4 text-[13px] text-[var(--a-dim)]">No free-tier agencies.</div> : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-0.5 p-1.5">
-                {billing.freeAgencies.slice(0, 20).map((a: any, i: number) => (
-                  <div key={i} className="flex items-center justify-between px-3 py-2 text-[13px]">
-                    <span className="text-[var(--a-ink)] truncate mr-3">{a.name}</span><span className="text-[var(--a-dim)]" style={{ whiteSpace: 'nowrap' }}>{a.days_since}d old</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </>
-      )}
-
       {/* RECENT SIGNUPS (hero) */}
       <div className="a-eyebrow mt-8">Who Just Signed Up</div>
       <div className="a-panel">
@@ -531,10 +474,67 @@ export default function AdminOverviewPage() {
         </div>
       </div>
 
+      {/* ── BILLING & TRIALS (agencies) ── */}
+      <div className="a-eyebrow mt-8">Billing &amp; Trials</div>
+      {billing && (
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4 items-start">
+            <div className="a-panel">
+              <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]"><h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Trials ending soon</h3><span className="text-[11px] text-[var(--a-dim)]">{billing.nearExpiringTrials.length}</span></div>
+              {billing.nearExpiringTrials.length === 0 ? <div className="p-4 text-[13px] text-[var(--a-dim)]">No active agency trials.</div> : billing.nearExpiringTrials.slice(0, 10).map((t: any, i: number) => (
+                <div key={i} className="flex items-center justify-between px-4 py-2 text-[13px]" style={{ borderTop: i ? '1px solid var(--a-line)' : 'none' }}>
+                  <span className="text-[var(--a-ink)] truncate mr-3">{t.name}</span>
+                  <span style={{ whiteSpace: 'nowrap', color: t.days_left != null && t.days_left <= 3 ? '#ef4444' : t.days_left != null && t.days_left <= 7 ? '#f59e0b' : 'var(--a-dim)' }}>{t.days_left == null ? '—' : t.days_left < 0 ? 'ended' : t.days_left === 0 ? 'today' : `${t.days_left}d`}{t.trial_ends_at ? ` · ${billDate(t.trial_ends_at)}` : ''}</span>
+                </div>
+              ))}
+            </div>
+            <div className="a-panel">
+              <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]"><h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Upcoming renewals</h3><span className="text-[11px] text-[var(--a-dim)]">{billing.upcomingRenewals.length}</span></div>
+              {billing.upcomingRenewals.length === 0 ? <div className="p-4 text-[13px] text-[var(--a-dim)]">No upcoming renewals on file.</div> : billing.upcomingRenewals.slice(0, 10).map((u: any, i: number) => (
+                <div key={i} className="flex items-center justify-between px-4 py-2 text-[13px]" style={{ borderTop: i ? '1px solid var(--a-line)' : 'none' }}>
+                  <span className="text-[var(--a-ink)] truncate mr-3">{u.name}</span>
+                  <span className="text-[var(--a-dim)]" style={{ whiteSpace: 'nowrap' }}>{u.current_period_end ? billDate(u.current_period_end) : ''}{u.days_until != null ? ` (${u.days_until}d)` : ''} · {u.plan_type}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4 items-start">
+            <div className="a-panel">
+              <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]"><h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Signed up, not paid</h3><span className="text-[11px] text-[var(--a-dim)]">{billing.pendingPayment.length}</span></div>
+              {billing.pendingPayment.length === 0 ? <div className="p-4 text-[13px] text-[var(--a-dim)]">Nobody pending.</div> : billing.pendingPayment.slice(0, 10).map((p: any, i: number) => (
+                <div key={i} className="flex items-center justify-between px-4 py-2 text-[13px]" style={{ borderTop: i ? '1px solid var(--a-line)' : 'none' }}>
+                  <span className="text-[var(--a-ink)] truncate mr-3">{p.name}</span><span style={{ whiteSpace: 'nowrap', color: '#f59e0b' }}>{p.days_waiting}d waiting</span>
+                </div>
+              ))}
+            </div>
+            <div className="a-panel">
+              <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]"><h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Overdue</h3><span className="text-[11px] text-[var(--a-dim)]">{billing.pastDue.length}</span></div>
+              {billing.pastDue.length === 0 ? <div className="p-4 text-[13px] text-[var(--a-dim)]">Nobody overdue.</div> : billing.pastDue.slice(0, 10).map((p: any, i: number) => (
+                <div key={i} className="flex items-center justify-between px-4 py-2 text-[13px]" style={{ borderTop: i ? '1px solid var(--a-line)' : 'none' }}>
+                  <span className="text-[var(--a-ink)] truncate mr-3">{p.name}</span><span style={{ whiteSpace: 'nowrap', color: '#ef4444' }}>payment failed · {p.plan_type}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="a-panel mt-4">
+            <div className="flex items-center gap-2 p-4 border-b border-[var(--a-line)]"><h3 className="text-[15px] font-semibold text-[var(--a-ink)]">Free agencies</h3><span className="text-[11px] text-[var(--a-dim)]">{billing.freeAgencies.length} · upgrade targets</span></div>
+            {billing.freeAgencies.length === 0 ? <div className="p-4 text-[13px] text-[var(--a-dim)]">No free-tier agencies.</div> : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-0.5 p-1.5">
+                {billing.freeAgencies.slice(0, 20).map((a: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between px-3 py-2 text-[13px]">
+                    <span className="text-[var(--a-ink)] truncate mr-3">{a.name}</span><span className="text-[var(--a-dim)]" style={{ whiteSpace: 'nowrap' }}>{a.days_since}d old</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
       {/* REACH-OUT MODAL (copy/paste + log) */}
       {reachOut && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={() => setReachOut(null)}>
-          <div className="w-full max-w-lg rounded-2xl bg-white overflow-hidden" style={{ border: '1px solid var(--a-line)' }} onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-lg rounded-2xl bg-[var(--a-card)] overflow-hidden" style={{ border: '1px solid var(--a-line)' }} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'var(--a-line)' }}>
               <div className="min-w-0">
                 <h3 className="text-[15px] font-semibold text-[var(--a-ink)] truncate">Reach out to {reachOut.name}</h3>

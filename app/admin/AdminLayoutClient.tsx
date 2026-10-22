@@ -30,17 +30,17 @@ import {
 const AUTH_PAGES = ['/admin/login'];
 interface Admin { id: string; email: string; name: string; role: string; }
 
-function WaveformLogo({ size = 26, color = '#34d399' }: { size?: number; color?: string }) {
+// The actual VoiceAI Connect brand mark (public/favicon.svg): a rounded black
+// tile with the gradient waveform, not the bare bars we used before.
+function BrandLogo({ size = 26 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="2" y="9" width="2" height="6" rx="1" fill={color} opacity="0.5" />
-      <rect x="5" y="7" width="2" height="10" rx="1" fill={color} opacity="0.7" />
-      <rect x="8" y="4" width="2" height="16" rx="1" fill={color} opacity="0.9" />
-      <rect x="11" y="6" width="2" height="12" rx="1" fill={color} />
-      <rect x="14" y="3" width="2" height="18" rx="1" fill={color} />
-      <rect x="17" y="7" width="2" height="10" rx="1" fill={color} opacity="0.7" />
-      <rect x="20" y="9" width="2" height="6" rx="1" fill={color} opacity="0.5" />
-    </svg>
+    <img
+      src="/favicon.svg"
+      alt="VoiceAI Connect"
+      width={size}
+      height={size}
+      style={{ width: size, height: size, borderRadius: Math.round(size * 0.22), display: 'block' }}
+    />
   );
 }
 
@@ -49,9 +49,10 @@ function WaveformLogo({ size = 26, color = '#34d399' }: { size?: number; color?:
 const NAV: { section: string | null; items: { href: string; label: string; icon: any }[] }[] = [
   { section: null, items: [
     { href: '/admin', label: 'Overview', icon: LayoutDashboard },
-    { href: '/admin/calls', label: 'Calls', icon: PhoneCall },
     { href: '/admin/agencies', label: 'Agencies', icon: Building2 },
+    { href: '/admin/inbox', label: 'Inbox', icon: MessageSquare },
     { href: '/admin/clients', label: 'Clients', icon: Users },
+    { href: '/admin/calls', label: 'Calls', icon: PhoneCall },
     { href: '/admin/money', label: 'Money', icon: DollarSign },
   ]},
   { section: 'Growth', items: [
@@ -61,7 +62,6 @@ const NAV: { section: string | null; items: { href: string; label: string; icon:
     { href: '/admin/concierge', label: 'Concierge', icon: Headphones },
   ]},
   { section: null, items: [
-    { href: '/admin/inbox', label: 'Inbox', icon: MessageSquare },
     { href: '/admin/broadcast', label: 'Broadcast', icon: Megaphone },
     { href: '/admin/alerts', label: 'Alerts', icon: AlertTriangle },
     { href: '/admin/faq-chats', label: 'FAQ Chats', icon: Bot },
@@ -120,7 +120,7 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
     return (
       <div className="admin-scope min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <WaveformLogo size={44} color="#10b981" />
+          <BrandLogo size={44} />
           <Loader2 className="h-5 w-5 animate-spin text-[var(--a-dim)]" />
         </div>
       </div>
@@ -153,9 +153,7 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
       <div className="sticky top-0 z-30 md:hidden bg-[var(--a-card)] border-b border-[var(--a-line)]" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <header className="flex items-center justify-between h-14 px-4">
           <div className="flex items-center gap-2.5">
-            <div style={{ background: 'var(--a-sidebar)' }} className="h-8 w-8 rounded-lg flex items-center justify-center">
-              <WaveformLogo size={18} />
-            </div>
+            <BrandLogo size={30} />
             <span className="text-sm font-semibold text-[var(--a-ink)] tracking-tight">VoiceAI Connect</span>
           </div>
           <button onClick={() => setSidebarOpen(true)} className="flex items-center justify-center w-9 h-9 rounded-lg text-[var(--a-muted)] hover:bg-[var(--a-em-soft)] transition-colors">
@@ -179,7 +177,7 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
         </div>
 
         <div className="flex items-center gap-3 px-5 h-[72px] shrink-0">
-          <WaveformLogo size={26} />
+          <BrandLogo size={30} />
           <div>
             <span className="text-[15px] font-semibold text-white tracking-tight leading-none block">VoiceAI Connect</span>
             <span className="block text-[9px] font-semibold uppercase tracking-[0.18em] mt-1" style={{ color: 'var(--a-em-2)' }}>Admin</span>

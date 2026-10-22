@@ -220,7 +220,7 @@ export default function AdminInboxPage() {
   return (
     <div className="flex h-[calc(100dvh-4rem)] overflow-hidden" style={{ color: 'var(--a-ink)' }}>
       {/* Conversation list */}
-      <aside className={`${selected ? 'hidden sm:flex' : 'flex'} w-full sm:w-80 shrink-0 flex-col border-r`} style={{ borderColor: 'var(--a-line)', background: 'white' }}>
+      <aside className={`${selected ? 'hidden sm:flex' : 'flex'} w-full sm:w-80 shrink-0 flex-col border-r`} style={{ borderColor: 'var(--a-line)', background: 'var(--a-card)' }}>
         <div className="flex items-center justify-between px-4 h-14 border-b" style={{ borderColor: 'var(--a-line)' }}>
           <div className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" style={{ color: 'var(--a-em-deep)' }} />
@@ -275,7 +275,7 @@ export default function AdminInboxPage() {
           </div>
         ) : (
           <>
-            <div className="flex items-center gap-3 px-4 py-2.5 border-b shrink-0" style={{ borderColor: 'var(--a-line)', background: 'white' }}>
+            <div className="flex items-center gap-3 px-4 py-2.5 border-b shrink-0" style={{ borderColor: 'var(--a-line)', background: 'var(--a-card)' }}>
               <button onClick={() => setSelected(null)} className="sm:hidden p-1.5 -ml-1.5 rounded-lg hover:bg-black/5" aria-label="Back"><ArrowLeft className="h-4 w-4" style={{ color: 'var(--a-dim)' }} /></button>
               <div className="h-8 w-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--a-em-soft, #ecfdf5)', color: 'var(--a-em-deep, #047857)' }}>
                 {selected.type === 'faq' ? <Bot className="h-4 w-4" /> : <Building2 className="h-4 w-4" />}
@@ -332,7 +332,7 @@ export default function AdminInboxPage() {
                     <div key={m.id} className={`flex ${isIn ? 'justify-start' : 'justify-end'}`}>
                       <div className="max-w-[78%]">
                         <div className="rounded-2xl px-3.5 py-2 text-sm whitespace-pre-wrap break-words"
-                          style={isIn ? { background: 'white', border: '1px solid var(--a-line)', color: 'var(--a-ink)' } : { background: 'var(--a-em)', color: 'white' }}>
+                          style={isIn ? { background: 'var(--a-card)', border: '1px solid var(--a-line)', color: 'var(--a-ink)' } : { background: 'var(--a-em)', color: 'white' }}>
                           {m.body}
                         </div>
                         <div className={`mt-1 text-[10px] flex items-center gap-1.5 ${isIn ? 'justify-start' : 'justify-end'}`} style={{ color: 'var(--a-dim)' }}>
@@ -348,7 +348,7 @@ export default function AdminInboxPage() {
             </div>
 
             {selected.readOnly || selected.type === 'faq' ? (
-              <div className="border-t p-3 shrink-0 text-center text-[11px]" style={{ borderColor: 'var(--a-line)', background: 'white', color: 'var(--a-dim)' }}>
+              <div className="border-t p-3 shrink-0 text-center text-[11px]" style={{ borderColor: 'var(--a-line)', background: 'var(--a-card)', color: 'var(--a-dim)' }}>
                 {selected.faqOrigin?.source === 'marketing' || selected.faqOrigin?.userType === 'prospect'
                   ? 'Read-only. A prospect chat with the help bot on the public marketing site.'
                   : selected.faqOrigin?.agencyName
@@ -356,7 +356,7 @@ export default function AdminInboxPage() {
                     : 'Read-only. A logged-in user asked the help bot inside their dashboard (not a public prospect).'}
               </div>
             ) : (
-              <div className="border-t p-3 shrink-0" style={{ borderColor: 'var(--a-line)', background: 'white' }}>
+              <div className="border-t p-3 shrink-0" style={{ borderColor: 'var(--a-line)', background: 'var(--a-card)' }}>
                 <div className="flex items-end gap-2">
                   <textarea ref={replyRef} value={currentDraft} onChange={(e) => selected && setDraft(selected.key, e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); send(); } }}
