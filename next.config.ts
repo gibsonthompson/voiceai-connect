@@ -33,6 +33,21 @@ const nextConfig: NextConfig = {
         destination: "/signup/:path*",
         permanent: true,
       },
+      // The /features/* landing pages (and some blog posts) link their nav and
+      // CTA to /pricing, but the plans live in the homepage #pricing section and
+      // no /pricing route exists, so those links were 404ing (a visitor clicking
+      // "Pricing" from a feature page hit Next's not-found page, which read as
+      // "the pricing page errored"). Send /pricing and /plans to the real section.
+      {
+        source: "/pricing",
+        destination: "/#pricing",
+        permanent: true,
+      },
+      {
+        source: "/plans",
+        destination: "/#pricing",
+        permanent: true,
+      },
     ];
   },
 };

@@ -12,14 +12,12 @@
 //   POST /api/agency/:id/inbox/send       { type, target, body } routes the reply
 //   POST /api/agency/:id/inbox/read       { type, target } clears unread
 //   GET  /api/agency/:id/inbox/facts      context for a client/prospect thread
-// New-message compose can START a conversation with a client, a texted number,
-// or the platform, so "message VoiceAI Connect" is one option, not the only one.
 // ============================================================================
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   MessageSquare, Send, ArrowLeft, Loader2, RefreshCw, Phone, Building2,
-  User, Headphones, PenSquare, X,
+  User, Headphones, PenSquare, X, Search, Inbox as InboxIcon, Clock, Users,
 } from 'lucide-react';
 import { useAgency } from '@/app/agency/context';
 import { useTheme } from '@/hooks/useTheme';
@@ -56,6 +54,22 @@ const TYPE_META: Record<ConvType, { label: string; short: string }> = {
   prospect: { label: 'Prospect', short: 'Prospect' },
   sms: { label: 'Text', short: 'Text' },
 };
+// Per-type accent for avatars and tags. Fixed hues that read on light and dark.
+const TYPE_ACCENT: Record<ConvType, { bg: string; fg: string }> = {
+  platform: { bg: 'rgba(0,227,170,0.16)', fg: '#0d9f7d' },
+  client: { bg: 'rgba(59,130,246,0.16)', fg: '#2f6fed' },
+  prospect: { bg: 'rgba(245,158,11,0.18)', fg: '#c77905' },
+  sms: { bg: 'rgba(16,185,129,0.16)', fg: '#0e9f6e' },
+};
+
+type Segment = 'all' | ConvType;
+const SEGMENTS: { key: Segment; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'client', label: 'Clients' },
+  { key: 'prospect', label: 'Prospects' },
+  { key: 'sms', label: 'Texts' },
+  { key: 'platform', label: 'Platform' },
+];
 
 function fmtTime(iso: string | null): string {
   if (!iso) return '';
@@ -71,6 +85,15 @@ function money(cents?: number | null): string {
   if (cents == null) return '';
   return `$${(cents / 100).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 }
+function initials(name?: string | null, phone?: string | null): string {
+  const n = (name || '').trim();
+  if (n) {
+    const parts = n.split(/\s+/).filter(Boolean);
+    return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase() || n[0].toUpperCase();
+  }
+  const d = (phone || '').replace(/\D/g, '');
+  return d ? d.slice(-2) : '#';
+}
 
 export default function AgencyInboxPage() {
   const { agency } = useAgency();
@@ -84,6 +107,8 @@ export default function AgencyInboxPage() {
   const [error, setError] = useState('');
   const [sending, setSending] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [query, setQuery] = useState('');
+  const [segment, setSegment] = useState<Segment>('all');
 
   // Compose (new message) panel.
   const [composeOpen, setComposeOpen] = useState(false);
@@ -95,7 +120,6 @@ export default function AgencyInboxPage() {
   const [clients, setClients] = useState<AgencyClient[]>([]);
   const [clientsLoaded, setClientsLoaded] = useState(false);
 
-  // Facts for the open client/prospect thread.
   const [facts, setFacts] = useState<ClientFacts | null>(null);
 
   const threadEndRef = useRef<HTMLDivElement | null>(null);
@@ -118,7 +142,6 @@ export default function AgencyInboxPage() {
     hover: theme.hover, accent: theme.primary, isDark: theme.isDark,
   }), [theme]);
 
-  // Drafts persist per conversation so switching threads never loses unsent text.
   useEffect(() => {
     try { const raw = localStorage.getItem('agency_inbox_drafts'); if (raw) setDrafts(JSON.parse(raw) || {}); } catch {}
   }, []);
@@ -135,8 +158,6 @@ export default function AgencyInboxPage() {
       const convos: Conversation[] = data.conversations || [];
       setConversations(convos);
       setError('');
-      // Prune drafts for conversations that no longer exist (guarded by a
-      // non-empty load so a transient failure never wipes what you're typing).
       if (convos.length) {
         setDrafts((prev) => {
           const keys = new Set(convos.map((c) => c.key));
@@ -158,7 +179,6 @@ export default function AgencyInboxPage() {
     return () => clearInterval(t);
   }, [load]);
 
-  // Honor /agency/inbox?channel=platform from the Support handoff.
   useEffect(() => {
     if (selectedKey || !conversations.length) return;
     try {
@@ -227,7 +247,6 @@ export default function AgencyInboxPage() {
     }
   };
 
-  // ---- Compose (new conversation) ----
   const openCompose = async () => {
     setComposeOpen(true);
     setComposeBody(''); setComposePhone(''); setComposeClientId('');
@@ -276,7 +295,6 @@ export default function AgencyInboxPage() {
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'send failed'); }
       setComposeOpen(false);
       await load();
-      // Select the conversation we just wrote to.
       const wantKey =
         composeChannel === 'client' ? `client-${composeClientId}`
         : composeChannel === 'platform' ? 'platform'
@@ -290,73 +308,111 @@ export default function AgencyInboxPage() {
   };
 
   const totalUnread = conversations.reduce((n, c) => n + (c.unread || 0), 0);
+  const clientCount = conversations.filter((c) => c.type === 'client').length;
+  const needsReplyCount = conversations.filter((c) => c.needsReply).length;
+  const segCount = (s: Segment) => s === 'all' ? conversations.length : conversations.filter((c) => c.type === s).length;
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return conversations.filter((c) => {
+      if (segment !== 'all' && c.type !== segment) return false;
+      if (!q) return true;
+      const hay = `${c.name || ''} ${c.phone || ''} ${c.lastPreview || ''} ${TYPE_META[c.type].label}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }, [conversations, segment, query]);
 
   const TypeTag = ({ type }: { type: ConvType }) => (
-    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
-      style={type === 'platform'
-        ? { background: theme.primary15, color: theme.primary }
-        : { background: theme.isDark ? 'rgba(255,255,255,0.06)' : '#f1f5f9', color: theme.textMuted }}>
+    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full shrink-0" style={{ background: TYPE_ACCENT[type].bg, color: TYPE_ACCENT[type].fg }}>
       {TYPE_META[type].short}
     </span>
   );
-  const ConvIcon = ({ type }: { type: ConvType }) =>
-    type === 'platform' ? <Headphones className="h-4 w-4" />
-    : type === 'client' ? <Building2 className="h-4 w-4" />
-    : type === 'sms' ? <MessageSquare className="h-4 w-4" />
-    : <User className="h-4 w-4" />;
+  const Avatar = ({ c, size = 38 }: { c: Conversation; size?: number }) => (
+    <div className="rounded-full flex items-center justify-center shrink-0 font-semibold" style={{ width: size, height: size, background: TYPE_ACCENT[c.type].bg, color: TYPE_ACCENT[c.type].fg, fontSize: size * 0.34 }}>
+      {c.type === 'platform' ? <Headphones style={{ width: size * 0.42, height: size * 0.42 }} /> : initials(c.name, c.phone)}
+    </div>
+  );
 
   return (
     <div className="flex h-[calc(100dvh-4rem)] overflow-hidden" style={{ color: theme.text, background: theme.bg }}>
       {/* Conversation list */}
-      <aside className={`${selected ? 'hidden sm:flex' : 'flex'} w-full sm:w-80 shrink-0 flex-col border-r`} style={{ borderColor: theme.border, background: theme.card }}>
-        <div className="flex items-center justify-between px-4 h-14 border-b" style={{ borderColor: theme.border }}>
-          <div className="flex items-center gap-2">
-            <MessageSquare className="h-4 w-4" style={{ color: theme.primary }} />
-            <h1 className="text-sm font-semibold">Inbox</h1>
-            {totalUnread > 0 && (<span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: theme.primary, color: theme.primaryText }}>{totalUnread}</span>)}
+      <aside className={`${selected ? 'hidden lg:flex' : 'flex'} w-full lg:w-[380px] shrink-0 flex-col border-r`} style={{ borderColor: theme.border, background: theme.card }}>
+        <div className="px-4 pt-4 pb-3 border-b space-y-3" style={{ borderColor: theme.border }}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-semibold tracking-tight">Inbox</h1>
+              {totalUnread > 0 && (<span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: theme.primary, color: theme.primaryText }}>{totalUnread}</span>)}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <button onClick={load} className="p-2 rounded-lg" style={{ color: theme.textMuted }} aria-label="Refresh"
+                onMouseEnter={(e) => (e.currentTarget.style.background = theme.hover)} onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
+                <RefreshCw className="h-4 w-4" />
+              </button>
+              <button onClick={openCompose} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold" style={{ background: theme.primary, color: theme.primaryText }}>
+                <PenSquare className="h-3.5 w-3.5" /> New
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-1">
-            <button onClick={openCompose} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold" style={{ background: theme.primary, color: theme.primaryText }} aria-label="New message">
-              <PenSquare className="h-3.5 w-3.5" /> New
-            </button>
-            <button onClick={load} className="p-1.5 rounded-lg" style={{ color: theme.textMuted }} aria-label="Refresh"
-              onMouseEnter={(e) => (e.currentTarget.style.background = theme.hover)} onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
-              <RefreshCw className="h-3.5 w-3.5" />
-            </button>
+
+          {/* Search */}
+          <div className="relative">
+            <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2" style={{ color: theme.textMuted }} />
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search conversations"
+              className="w-full rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none" style={{ background: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+          </div>
+
+          {/* Segment filters */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            {SEGMENTS.filter((s) => s.key === 'all' || segCount(s.key) > 0).map((s) => {
+              const active = segment === s.key;
+              return (
+                <button key={s.key} onClick={() => setSegment(s.key)}
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium whitespace-nowrap transition-colors"
+                  style={active
+                    ? { background: theme.primary, color: theme.primaryText }
+                    : { background: theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)', color: theme.textMuted }}>
+                  {s.label}
+                  <span className="text-[10px] font-semibold" style={{ opacity: 0.8 }}>{segCount(s.key)}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
         <div className="flex-1 overflow-y-auto">
           {loadingList ? (
             <div className="flex items-center justify-center py-16"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.textMuted }} /></div>
-          ) : conversations.length === 0 ? (
+          ) : filtered.length === 0 ? (
             <div className="px-6 py-16 text-center text-sm" style={{ color: theme.textMuted }}>
-              No conversations yet. Messages with your clients, prospects, and the VoiceAI Connect team all land here.
+              {conversations.length === 0 ? 'No conversations yet. Messages with your clients, prospects, and the VoiceAI Connect team all land here.' : 'No conversations match.'}
             </div>
           ) : (
-            conversations.map((c) => (
-              <button key={c.key} onClick={() => openConversation(c)} className="w-full text-left px-4 py-3 border-b transition-colors"
+            filtered.map((c) => (
+              <button key={c.key} onClick={() => openConversation(c)} className="w-full text-left px-4 py-3.5 border-b transition-colors flex items-center gap-3"
                 style={{ borderColor: theme.border, background: selectedKey === c.key ? theme.primary15 : 'transparent' }}
                 onMouseEnter={(e) => { if (selectedKey !== c.key) e.currentTarget.style.background = theme.hover; }}
                 onMouseLeave={(e) => { if (selectedKey !== c.key) e.currentTarget.style.background = 'transparent'; }}>
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span className={`text-sm truncate ${c.unread > 0 ? 'font-semibold' : 'font-medium'}`} style={{ color: theme.text }}>
-                      {c.name || fmtPhone(c.phone) || TYPE_META[c.type].label}
-                    </span>
-                    <TypeTag type={c.type} />
+                <Avatar c={c} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className={`text-sm truncate ${c.unread > 0 ? 'font-semibold' : 'font-medium'}`} style={{ color: theme.text }}>
+                        {c.name || fmtPhone(c.phone) || TYPE_META[c.type].label}
+                      </span>
+                      <TypeTag type={c.type} />
+                    </div>
+                    <span className="text-[10px] shrink-0" style={{ color: theme.textMuted }}>{fmtTime(c.lastAt)}</span>
                   </div>
-                  <span className="text-[10px] shrink-0" style={{ color: theme.textMuted }}>{fmtTime(c.lastAt)}</span>
-                </div>
-                <div className="flex items-center justify-between gap-2 mt-0.5">
-                  <span className="text-xs truncate" style={{ color: (c.unread > 0 || c.needsReply) ? theme.text : theme.textMuted }}>
-                    {c.lastDirection === 'out' ? 'You: ' : ''}{c.lastPreview || 'No messages yet'}
-                  </span>
-                  {c.unread > 0 ? (
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center shrink-0" style={{ background: theme.primary, color: theme.primaryText }}>{c.unread > 99 ? '99+' : c.unread}</span>
-                  ) : c.needsReply ? (
-                    <span className="w-2 h-2 rounded-full shrink-0" style={{ background: theme.primary }} />
-                  ) : null}
+                  <div className="flex items-center justify-between gap-2 mt-1">
+                    <span className="text-xs truncate" style={{ color: (c.unread > 0 || c.needsReply) ? theme.text : theme.textMuted }}>
+                      {c.lastDirection === 'out' ? 'You: ' : ''}{c.lastPreview || 'No messages yet'}
+                    </span>
+                    {c.unread > 0 ? (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center shrink-0" style={{ background: theme.primary, color: theme.primaryText }}>{c.unread > 99 ? '99+' : c.unread}</span>
+                    ) : c.needsReply ? (
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ background: theme.primary }} />
+                    ) : null}
+                  </div>
                 </div>
               </button>
             ))
@@ -365,23 +421,42 @@ export default function AgencyInboxPage() {
       </aside>
 
       {/* Thread */}
-      <main className={`${selected ? 'flex' : 'hidden sm:flex'} flex-1 flex-col min-w-0`} style={{ background: theme.bg }}>
+      <main className={`${selected ? 'flex' : 'hidden lg:flex'} flex-1 flex-col min-w-0`} style={{ background: theme.bg }}>
         {!selected ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center px-6" style={{ color: theme.textMuted }}>
-            <MessageSquare className="h-8 w-8 mb-3 opacity-40" />
-            <p className="text-sm">Select a conversation to read and reply.</p>
-            <button onClick={openCompose} className="mt-4 inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-semibold" style={{ background: theme.primary, color: theme.primaryText }}>
-              <PenSquare className="h-4 w-4" /> New message
-            </button>
+          <div className="flex-1 flex flex-col items-center justify-center px-6">
+            <div className="w-full max-w-md text-center">
+              <div className="h-16 w-16 rounded-2xl flex items-center justify-center mx-auto mb-5" style={{ background: theme.primary15, color: theme.primary }}>
+                <InboxIcon className="h-8 w-8" />
+              </div>
+              <h2 className="text-xl font-semibold tracking-tight" style={{ color: theme.text }}>Your conversations, all in one place</h2>
+              <p className="text-sm mt-2 leading-relaxed" style={{ color: theme.textMuted }}>
+                Client messages, prospect inquiries, demo-line texts, and the VoiceAI Connect team, one thread each. Pick a conversation on the left or start a new one.
+              </p>
+              <div className="grid grid-cols-2 gap-3 mt-7 text-left">
+                {[
+                  { label: 'Conversations', value: conversations.length, icon: MessageSquare },
+                  { label: 'Unread', value: totalUnread, icon: InboxIcon },
+                  { label: 'Clients', value: clientCount, icon: Users },
+                  { label: 'Needs reply', value: needsReplyCount, icon: Clock },
+                ].map((s) => (
+                  <div key={s.label} className="rounded-xl p-4" style={{ background: theme.card, border: `1px solid ${theme.border}` }}>
+                    <s.icon className="h-4 w-4 mb-2" style={{ color: theme.primary }} />
+                    <div className="text-2xl font-semibold t-numeric" style={{ color: theme.text }}>{s.value}</div>
+                    <div className="text-[11px] mt-0.5" style={{ color: theme.textMuted }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+              <button onClick={openCompose} className="mt-7 inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold" style={{ background: theme.primary, color: theme.primaryText }}>
+                <PenSquare className="h-4 w-4" /> New message
+              </button>
+            </div>
           </div>
         ) : (
           <>
             {/* Header */}
-            <div className="flex items-center gap-3 px-4 py-2.5 border-b shrink-0" style={{ borderColor: theme.border, background: theme.card }}>
-              <button onClick={() => setSelectedKey(null)} className="sm:hidden p-1.5 -ml-1.5 rounded-lg" style={{ color: theme.textMuted }} aria-label="Back"><ArrowLeft className="h-4 w-4" /></button>
-              <div className="h-8 w-8 rounded-full flex items-center justify-center shrink-0" style={{ background: theme.primary15, color: theme.primary }}>
-                <ConvIcon type={selected.type} />
-              </div>
+            <div className="flex items-center gap-3 px-5 py-3 border-b shrink-0" style={{ borderColor: theme.border, background: theme.card }}>
+              <button onClick={() => setSelectedKey(null)} className="lg:hidden p-1.5 -ml-1.5 rounded-lg" style={{ color: theme.textMuted }} aria-label="Back"><ArrowLeft className="h-4 w-4" /></button>
+              <Avatar c={selected} size={40} />
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-semibold truncate flex items-center gap-1.5" style={{ color: theme.text }}>
                   {selected.name || fmtPhone(selected.phone) || TYPE_META[selected.type].label}<TypeTag type={selected.type} />
@@ -396,7 +471,7 @@ export default function AgencyInboxPage() {
 
             {/* Client facts strip */}
             {selected.type === 'client' && facts && (
-              <div className="shrink-0 border-b px-4 py-2 grid grid-cols-2 sm:grid-cols-4 gap-2" style={{ borderColor: theme.border, background: theme.card }}>
+              <div className="shrink-0 border-b px-5 py-2.5 grid grid-cols-2 sm:grid-cols-4 gap-3" style={{ borderColor: theme.border, background: theme.card }}>
                 {[
                   { label: 'Plan', value: facts.plan || '--' },
                   { label: 'Status', value: facts.status || '--' },
@@ -412,48 +487,52 @@ export default function AgencyInboxPage() {
             )}
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-              {selected.messages.length === 0 ? (
-                <div className="flex items-center justify-center py-16 text-sm" style={{ color: theme.textMuted }}>No messages yet. Say hello below.</div>
-              ) : (
-                selected.messages.map((m) => {
-                  const isIn = m.sender === 'in';
-                  return (
-                    <div key={m.id} className={`flex ${isIn ? 'justify-start' : 'justify-end'}`}>
-                      <div className="max-w-[78%]">
-                        <div className="rounded-2xl px-3.5 py-2 text-sm whitespace-pre-wrap break-words"
-                          style={isIn
-                            ? { background: theme.card, border: `1px solid ${theme.border}`, color: theme.text, borderBottomLeftRadius: 4 }
-                            : { background: theme.primary, color: theme.primaryText, borderBottomRightRadius: 4 }}>
-                          {m.body}
+            <div className="flex-1 overflow-y-auto px-5 py-5 space-y-3">
+              <div className="mx-auto w-full max-w-3xl space-y-3">
+                {selected.messages.length === 0 ? (
+                  <div className="flex items-center justify-center py-16 text-sm" style={{ color: theme.textMuted }}>No messages yet. Say hello below.</div>
+                ) : (
+                  selected.messages.map((m) => {
+                    const isIn = m.sender === 'in';
+                    return (
+                      <div key={m.id} className={`flex ${isIn ? 'justify-start' : 'justify-end'}`}>
+                        <div className="max-w-[78%]">
+                          <div className="rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap break-words"
+                            style={isIn
+                              ? { background: theme.card, border: `1px solid ${theme.border}`, color: theme.text, borderBottomLeftRadius: 4 }
+                              : { background: theme.primary, color: theme.primaryText, borderBottomRightRadius: 4 }}>
+                            {m.body}
+                          </div>
+                          <div className={`mt-1 text-[10px] ${isIn ? 'text-left' : 'text-right'}`} style={{ color: theme.textMuted }}>{fmtTime(m.at)}</div>
                         </div>
-                        <div className={`mt-1 text-[10px] ${isIn ? 'text-left' : 'text-right'}`} style={{ color: theme.textMuted }}>{fmtTime(m.at)}</div>
                       </div>
-                    </div>
-                  );
-                })
-              )}
-              <div ref={threadEndRef} />
+                    );
+                  })
+                )}
+                <div ref={threadEndRef} />
+              </div>
             </div>
 
             {/* Composer */}
-            <div className="border-t p-3 shrink-0" style={{ borderColor: theme.border, background: theme.card }}>
-              <div className="flex items-end gap-2">
-                <textarea ref={replyRef} value={currentDraft} onChange={(e) => selected && setDraft(selected.key, e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); send(); } }}
-                  rows={1} placeholder={selected.type === 'platform' ? 'Message the VoiceAI Connect team...' : selected.type === 'sms' ? 'Send a text...' : 'Write a message...'}
-                  className="flex-1 resize-none rounded-xl px-3.5 py-2.5 text-sm focus:outline-none"
-                  style={{ background: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text, maxHeight: '45vh', overflowY: 'auto' }} />
-                <button onClick={send} disabled={sending || !currentDraft.trim()} className="flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium disabled:opacity-40" style={{ background: theme.primary, color: theme.primaryText }}>
-                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                </button>
+            <div className="border-t px-5 py-3.5 shrink-0" style={{ borderColor: theme.border, background: theme.card }}>
+              <div className="mx-auto w-full max-w-3xl">
+                <div className="flex items-end gap-2">
+                  <textarea ref={replyRef} value={currentDraft} onChange={(e) => selected && setDraft(selected.key, e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); send(); } }}
+                    rows={1} placeholder={selected.type === 'platform' ? 'Message the VoiceAI Connect team...' : selected.type === 'sms' ? 'Send a text...' : 'Write a message...'}
+                    className="flex-1 resize-none rounded-xl px-4 py-3 text-sm focus:outline-none"
+                    style={{ background: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text, maxHeight: '45vh', overflowY: 'auto' }} />
+                  <button onClick={send} disabled={sending || !currentDraft.trim()} className="flex items-center justify-center rounded-xl px-4 py-3 text-sm font-medium disabled:opacity-40" style={{ background: theme.primary, color: theme.primaryText }}>
+                    {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  </button>
+                </div>
+                <p className="mt-1.5 text-[10px]" style={{ color: theme.textMuted }}>
+                  {selected.type === 'platform' ? 'Goes to the VoiceAI Connect team. Replies land right here.'
+                    : selected.type === 'sms' ? 'Sends as a text from your demo number.'
+                    : selected.type === 'client' ? 'Lands in your client\'s dashboard inbox, and texts them a heads-up.'
+                    : 'Texts the prospect your reply.'}
+                </p>
               </div>
-              <p className="mt-1.5 text-[10px]" style={{ color: theme.textMuted }}>
-                {selected.type === 'platform' ? 'Goes to the VoiceAI Connect team. Replies land right here.'
-                  : selected.type === 'sms' ? 'Sends as a text from your demo number.'
-                  : selected.type === 'client' ? 'Lands in your client\'s dashboard inbox, and texts them a heads-up.'
-                  : 'Texts the prospect your reply.'}
-              </p>
             </div>
           </>
         )}
@@ -463,11 +542,11 @@ export default function AgencyInboxPage() {
       {composeOpen && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={() => !composeSending && setComposeOpen(false)}>
           <div className="w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl overflow-hidden" style={{ background: theme.card, border: `1px solid ${theme.border}` }} onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-4 h-12 border-b" style={{ borderColor: theme.border }}>
+            <div className="flex items-center justify-between px-5 h-12 border-b" style={{ borderColor: theme.border }}>
               <span className="text-sm font-semibold" style={{ color: theme.text }}>New message</span>
               <button onClick={() => setComposeOpen(false)} className="p-1.5 rounded-lg" style={{ color: theme.textMuted }} aria-label="Close"><X className="h-4 w-4" /></button>
             </div>
-            <div className="p-4 space-y-3">
+            <div className="p-5 space-y-3">
               <div>
                 <label className="block text-[11px] font-medium mb-1" style={{ color: theme.textMuted }}>Send to</label>
                 <CustomSelect value={composeChannel} onChange={(v) => setComposeChannel(v as any)} options={channelOptions} ui={selectUi} />
