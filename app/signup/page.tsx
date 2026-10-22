@@ -409,6 +409,30 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
     return base;
   });
 
+  // Industry gating: the agency can restrict which industries a client may pick
+  // (or lock to one vertical). Empty allowed = all. The agency's own custom
+  // verticals are offered alongside the built-ins.
+  const industryOptions = (() => {
+    const allowed: string[] = Array.isArray((agency as any).allowed_industries) ? (agency as any).allowed_industries : [];
+    const customs: { key: string; label: string }[] = Array.isArray((agency as any).custom_industries) ? (agency as any).custom_industries : [];
+    const all = [
+      ...SELECTABLE_INDUSTRIES.map((o) => ({ value: o.value, label: o.label })),
+      ...customs.map((c) => ({ value: c.key, label: c.label })),
+    ];
+    return allowed.length ? all.filter((o) => allowed.includes(o.value)) : all;
+  })();
+  const singleVertical = industryOptions.length === 1;
+
+  // Keep the selected industry valid for the gate: fixes the hardcoded 'general'
+  // default when it is not allowed, and forces the single-vertical value.
+  useEffect(() => {
+    if (!industryOptions.length) return;
+    if (!industryOptions.some((o) => o.value === formData.industry)) {
+      setFormData((fd) => ({ ...fd, industry: industryOptions[0].value }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agency]);
+
   const trialDays = (agency.client_trial_days ?? 7) as number;
   const phoneConfig = COUNTRY_PHONE_CONFIG[formData.country] || { code: '', placeholder: 'Phone number' };
   const useMask = phoneConfig.mask && (formData.country === 'US' || formData.country === 'CA');
@@ -588,9 +612,18 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
                 {renderStateField()}
               </div>
 
-              <ThemedSelect label="Industry" name="industry" value={formData.industry} onChange={handleChange} isDark={isDark} primaryColor={primaryColor}>
-                {SELECTABLE_INDUSTRIES.map((opt) => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}
-              </ThemedSelect>
+              {singleVertical ? (
+                <div>
+                  <label className="block text-sm font-medium mb-1.5" style={{ color: isDark ? '#d4d4d4' : '#404040' }}>Receptionist type</label>
+                  <div className="rounded-xl px-4 py-3 text-sm" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e5e5'}`, color: isDark ? '#fafafa' : '#171717' }}>
+                    {industryOptions[0].label}
+                  </div>
+                </div>
+              ) : (
+                <ThemedSelect label="Industry" name="industry" value={formData.industry} onChange={handleChange} isDark={isDark} primaryColor={primaryColor}>
+                  {industryOptions.map((opt) => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}
+                </ThemedSelect>
+              )}
 
               {error && (
                 <div className="rounded-xl p-4 text-sm"

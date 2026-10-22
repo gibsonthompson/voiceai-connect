@@ -16,6 +16,7 @@ import ApiKeysTab from '@/components/agency/ApiKeysTab';
 import WebhooksTab from '@/components/agency/WebhooksTab';
 import CancelSubscriptionModal from '@/components/CancelSubscriptionModal';
 import PlansEditor, { UiPlan } from '@/components/agency/PlansEditor';
+import IndustryGating from '@/components/agency/IndustryGating';
 import PlanUpgrade from '@/components/agency/PlanUpgrade';
 
 type SettingsTab = 'profile' | 'pricing' | 'payments' | 'billing' | 'twilio' | 'embed' | 'team' | 'demo' | 'support' | 'developer' | 'webhooks';
@@ -1308,6 +1309,8 @@ function AgencySettingsContent() {
                   featureLabels={{ ...Object.fromEntries(FEATURE_ORDER.map((k) => [k, builtinLabel(k)])), ...Object.fromEntries(customFeatures.map((f) => [f.key, f.label])) }}
                   theme={{ text: theme.text, textMuted: theme.textMuted, input: theme.input, inputBorder: theme.inputBorder, primary: theme.primary, isDark: theme.isDark, card: theme.isDark ? 'rgba(255,255,255,0.02)' : '#ffffff', cardBorder: theme.inputBorder }}
                 />
+
+                <div className="mt-4"><IndustryGating /></div>
 
                 <div className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                   <div className="flex items-center gap-2 mb-1"><Sparkles className="h-4 w-4" style={{ color: theme.primary }} /><h4 className="font-medium text-sm sm:text-base">Features</h4></div>
