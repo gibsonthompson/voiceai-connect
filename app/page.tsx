@@ -37,8 +37,8 @@ const SITE_URL = 'https://www.myvoiceaiconnect.com';
 
 // Platform demo line: the callable number a prospect dials to hear the AI live.
 // SET BOTH to the real provisioned platform demo number before deploy.
-const PLATFORM_DEMO_NUMBER = '(404) 671-9089';
-const PLATFORM_DEMO_TEL = '+14046719089';
+const PLATFORM_DEMO_NUMBER = '(404) 201-7505';
+const PLATFORM_DEMO_TEL = '+14042017505';
 
 const FAQ_ITEMS = [
                 { q: 'What is VoiceAI Connect?', a: 'VoiceAI Connect is a white-label AI receptionist platform built for agencies and resellers. Agencies use the platform to brand and resell AI receptionist subscriptions to local service businesses for $99 to $299 per month. The platform automatically provisions the AI voice agent, dedicated phone number, and client-facing dashboard at signup. Subscription payments flow directly to the agency through Stripe Connect, and the underlying infrastructure, voice synthesis, telephony, payments, database, hosting, is operated by VoiceAI Connect as a single integrated product.' },
