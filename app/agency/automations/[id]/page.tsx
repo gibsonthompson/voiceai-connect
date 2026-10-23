@@ -16,7 +16,7 @@ import { Loader2, AlertCircle, Lock } from 'lucide-react';
 const backendUrl = () => process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
 const authHeaders = (): Record<string, string> => ({
   'Content-Type': 'application/json',
-  Authorization: `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('admin_token') || '' : ''}`,
+  Authorization: `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('auth_token') || '' : ''}`,
 });
 
 export default function AutomationBuilderPage() {
