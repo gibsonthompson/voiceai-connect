@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  MessageCircleQuestion, X, Search, ChevronLeft, ChevronRight,
+  X, Search, ChevronLeft, ChevronRight,
   Send, Loader2, Bot, User, ArrowUpRight, Sparkles, MessageSquare,
   HelpCircle, Phone, CreditCard, Users, FlaskConical, BookOpen,
   Target, Wrench, Palette, UserPlus, PhoneCall, Receipt, Check,
@@ -221,7 +221,11 @@ export default function SupportWidget({ theme, userType = 'agency', openSignal, 
         }}
         aria-label="Help"
       >
-        <MessageCircleQuestion className="h-6 w-6" />
+        <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M16.1 20A9 9 0 1 1 20 16.1L22 22Z" />
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+          <path d="M12 17h.01" />
+        </svg>
       </button>
     );
   }

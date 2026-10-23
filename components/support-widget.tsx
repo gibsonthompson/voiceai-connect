@@ -15,19 +15,9 @@ const FAQ_DATA: FAQItem[] = [
   { category: 'Platform', question: 'How does the white-label experience work?', answer: "Every client-facing surface is configured per agency: logo, color palette, custom domain with auto-provisioned SSL, transactional emails, marketing website, and the phone experience itself. End clients interact only with the agency's brand. VoiceAI Connect is not visible to the businesses you serve at any point in the lifecycle, from signup through ongoing usage to billing." },
   { category: 'Platform', question: 'Do my clients get their own dashboard?', answer: "Yes. Every business you onboard receives their own fully branded dashboard: call recordings, time-coded transcripts, AI-generated summaries with intent and sentiment, contact management, and configurable SMS and email alerts. They never see your other clients or your agency backend. You get a separate agency dashboard where you manage all clients, revenue, branding, and operations from one interface." },
   { category: 'Pricing', question: 'What does it cost to start an AI receptionist agency?', answer: "Three tiers. The Free tier has no platform fee, agencies pay $29.99 per client per month plus $0.12 per minute of voice usage, making it zero-risk to start. The Pro tier costs $99 per month and includes full white-label branding, a marketing website, and a demo phone line, with reduced per-client ($9.99) and per-minute ($0.10) rates. The Scale tier at $499 per month eliminates per-client fees entirely at $0.05 per minute. Pro and Scale both include a 14-day free trial (you add a card to start it and aren't charged until the trial ends)." },
-  { category: 'Pricing', question: 'How do free trials work?', answer: "Two separate trial systems. At the agency level, the Pro and Scale plans include a 14-day free trial (you add a card to start it and aren't charged until day 14, and you can cancel anytime before then at no cost). That gives you full access to white-label branding, marketing site, CRM, and all platform features. The Free plan has no trial because there is no platform fee, and it starts with no card. At the client level, every plan includes a 7-day free trial for the businesses you onboard. When a local business signs up through your branded page, they get seven days of full AI receptionist service before their first billing cycle begins." },
-  { category: 'Pricing', question: 'Why is a credit card required to start a Pro or Scale trial?', answer: "It keeps the 14-day trial reserved for operators who are seriously building an agency. Trials cost real money to run (phone numbers, voice minutes, and infrastructure), so requiring a card lets us avoid subsidizing tire-kickers and keep platform pricing low for everyone who is actually building. You are never charged during the trial and can cancel anytime before it ends at no cost; if you continue, billing simply begins at day 14. The Free plan always needs no card." },
   { category: 'Features', question: 'Does the AI book appointments?', answer: "Yes. Google Calendar integration is included on every plan, including Free. When a caller requests an appointment, the AI checks the business owner's Google Calendar for available time slots in real time, offers options to the caller, and creates the calendar event automatically with the caller's name, phone number, and reason for the appointment. The booking appears in Google Calendar instantly." },
-  { category: 'Features', question: 'Does the AI filter spam and robocalls?', answer: "Yes, automatically, on every plan. The AI detects telemarketers, robocalls, and solicitors and ends those calls immediately. Spam calls are not counted against the client's monthly limit. The business owner receives a notification when spam is blocked. No configuration required, it works out of the box." },
-  { category: 'Features', question: 'Can the AI handle multiple calls at once?', answer: "Unlimited simultaneous calls. Unlike a human receptionist who can only answer one call at a time, the AI handles as many concurrent calls as needed: no busy signals, no hold music, no missed calls during peak hours. This is one of the strongest selling points to local businesses." },
-  { category: 'Features', question: 'Does the AI work in Spanish?', answer: "Yes, automatic English and Spanish on every plan, no configuration required. The AI detects when a caller speaks Spanish and switches to Spanish for the entire conversation. It collects names, phone numbers, appointment requests, and everything else in Spanish, then sends the business owner a summary in English." },
-  { category: 'Setup', question: 'What do I need from each client to get them set up?', answer: "Just the basics: business name, industry, phone number, and some information about their services, hours, and common questions. Everything is entered through the branded signup flow. If the client has a website, the AI scans it automatically. The entire client onboarding completes in under sixty seconds." },
   { category: 'Comparison', question: 'How is this different from GoHighLevel?', answer: "GoHighLevel is a multi-purpose marketing platform: CRM, funnels, email, SMS, websites. VoiceAI Connect is purpose-built for one product: AI receptionist resale. Three concrete differences: end clients receive their own branded dashboard (GoHighLevel does not), client onboarding completes in under sixty seconds (GoHighLevel requires per-client A2P registration that can take days), and the agency interface is mobile-first (GoHighLevel is desktop-bound)." },
-  { category: 'Compliance', question: 'Does it support HIPAA clients?', answer: "We offer HIPAA mode, a per-client privacy toggle. When enabled, call recordings and transcripts are not stored, data collection is limited to the caller's name and reason for visit, and appointment booking can be disabled. Important: HIPAA mode is a privacy setting, not HIPAA compliance, and we do not currently offer a Business Associate Agreement (BAA). If a client requires a signed BAA, we are not a fit for them yet. VoiceAI Connect never uses call data for AI model training, on any plan, for any client." },
   { category: 'Billing', question: 'How does Stripe Connect billing work?', answer: "Stripe Connect routes every client subscription directly into your bank account at the price tier you set. Zero revenue share, zero holdbacks, zero middleman. The platform never sees the money, your clients pay you. Automated invoicing on every client signup." },
-  { category: 'Data', question: 'Does VoiceAI Connect use call data for AI training?', answer: "No. VoiceAI Connect never uses call data, transcriptions, or recordings to train AI models. The underlying AI providers also do not train on API-submitted data per their terms of service. Your data and your clients' data is never used for model training." },
-  { category: 'Platform', question: 'Is this another make money with AI product?', answer: "No. VoiceAI Connect is software infrastructure, not a course or a coaching program. The platform functions as the operating system for an actual service business, comparable to how Shopify functions as the operating system for an e-commerce business. There are no upsells, community fees, or playbooks to purchase." },
-  { category: 'Support', question: 'Who handles client support?', answer: "You are the point of contact for your clients. That is the white-label model. Your clients interact with your brand through their dashboard and never contact VoiceAI Connect directly. On our side, we provide platform support to you as the agency operator. If you hit a technical issue, we resolve it." },
 ];
 
 const QUICK_ACTIONS = [
@@ -45,12 +35,12 @@ interface ChatMessage { role: 'user' | 'assistant'; content: string; }
 
 const font = "'Geist', system-ui, sans-serif";
 const mono = "'Geist Mono', ui-monospace, monospace";
-const em = '#4aeabc';
+const em = '#10b981';
 
 function WIcon({ type }: { type: string }) {
   const p = { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
   switch (type) {
-    case 'chat': return <svg {...p}><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" /></svg>;
+    case 'chat': return <svg {...p}><g transform="translate(24,0) scale(-1,1)"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" /></g></svg>;
     case 'x': return <svg {...p}><path d="M18 6 6 18M6 6l12 12" /></svg>;
     case 'up': return <svg {...p}><path d="M12 19V5M5 12l7-7 7 7" /></svg>;
     case 'chev': return <svg {...p} width={14} height={14}><path d="M9 18l6-6-6-6" /></svg>;
@@ -66,7 +56,7 @@ function WIcon({ type }: { type: string }) {
 
 function WidgetLogoMark() {
   return (
-    <div style={{ width: 34, height: 34, borderRadius: 10, overflow: 'hidden', flexShrink: 0, boxShadow: '0 0 0 1px rgba(74,234,188,0.15), 0 4px 12px -4px rgba(74,234,188,0.3)' }}>
+    <div style={{ width: 34, height: 34, borderRadius: 10, overflow: 'hidden', flexShrink: 0, boxShadow: '0 0 0 1px rgba(16,185,129,0.15), 0 4px 12px -4px rgba(16,185,129,0.3)' }}>
       <Image src="/icon-512x512.png" alt="VoiceAI Connect" width={34} height={34} style={{ width: 34, height: 34, objectFit: 'cover' }} />
     </div>
   );
@@ -78,7 +68,7 @@ function WidgetEyebrow({ children, color }: { children: string; color?: string }
 
 function WidgetBtn({ children, active, onClick }: { children: React.ReactNode; active?: boolean; onClick: () => void }) {
   return (
-    <button onClick={onClick} style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${active ? 'rgba(74,234,188,0.2)' : 'rgba(255,255,255,0.06)'}`, background: active ? 'rgba(74,234,188,0.08)' : 'rgba(255,255,255,0.03)', color: active ? em : 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: font, transition: 'all 0.15s' }}>
+    <button onClick={onClick} style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${active ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.06)'}`, background: active ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.03)', color: active ? em : 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: font, transition: 'all 0.15s' }}>
       {children}
     </button>
   );
@@ -93,7 +83,7 @@ function WidgetInput({ value, onChange, placeholder, label }: { value: string; o
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
         style={{ width: '100%', marginTop: 7, padding: '10px 14px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.025)', color: 'rgba(255,255,255,0.85)', fontSize: 13, outline: 'none', fontFamily: font, boxSizing: 'border-box' }}
-        onFocus={e => { (e.target as HTMLInputElement).style.borderColor = 'rgba(74,234,188,0.25)'; }}
+        onFocus={e => { (e.target as HTMLInputElement).style.borderColor = 'rgba(16,185,129,0.25)'; }}
         onBlur={e => { (e.target as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.08)'; }}
       />
     </div>
@@ -107,7 +97,7 @@ function WidgetInput({ value, onChange, placeholder, label }: { value: string; o
 const css = `
 @keyframes wBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-3px)}}
 @keyframes wSlide{from{transform:translateY(12px) scale(0.97);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
-@keyframes wPulse{0%,100%{box-shadow:0 0 0 0 rgba(74,234,188,0.25)}50%{box-shadow:0 0 0 8px rgba(74,234,188,0)}}
+@keyframes wPulse{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,0.25)}50%{box-shadow:0 0 0 8px rgba(16,185,129,0)}}
 `;
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -117,7 +107,7 @@ const css = `
 export default function SupportWidget() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const [view, setView] = useState<'landing' | 'gate' | 'faq' | 'chat' | 'escalation'>('landing');
+  const [view, setView] = useState<'landing' | 'gate' | 'faq' | 'chat' | 'escalation'>('chat');
   const [activeFAQ, setActiveFAQ] = useState<FAQItem | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -289,9 +279,9 @@ export default function SupportWidget() {
       <button onClick={open} aria-label="Open support"
         style={{
           position: 'fixed', bottom: 20, right: 20, width: 54, height: 54, borderRadius: 16,
-          border: '1px solid rgba(74,234,188,0.45)', background: 'linear-gradient(135deg, #0c0c0c, #050505)',
+          border: '1px solid rgba(16,185,129,0.45)', background: 'linear-gradient(135deg, #0c0c0c, #050505)',
           cursor: 'pointer', display: isOpen ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 8px 24px -6px rgba(0,0,0,0.5), 0 0 0 1px rgba(74,234,188,0.15)',
+          boxShadow: '0 8px 24px -6px rgba(0,0,0,0.5), 0 0 0 1px rgba(16,185,129,0.15)',
           transition: 'all 0.25s cubic-bezier(0.16,1,0.3,1)', zIndex: 9999, color: em,
           animation: 'wPulse 3s ease-in-out 2',
         }}>
@@ -310,12 +300,12 @@ export default function SupportWidget() {
         }}>
 
           {/* Header */}
-          <div style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0, background: 'linear-gradient(180deg, rgba(74,234,188,0.03), transparent)' }}>
+          <div style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0, background: 'linear-gradient(180deg, rgba(16,185,129,0.03), transparent)' }}>
             <WidgetLogoMark />
             <div style={{ flex: 1 }}>
               <div style={{ fontFamily: font, fontSize: 14, fontWeight: 600, color: '#fafaf9', letterSpacing: '-0.01em' }}>VoiceAI Connect</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
-                <span style={{ width: 5, height: 5, borderRadius: '50%', background: em, display: 'inline-block', boxShadow: '0 0 6px rgba(74,234,188,0.5)' }} />
+                <span style={{ width: 5, height: 5, borderRadius: '50%', background: em, display: 'inline-block', boxShadow: '0 0 6px rgba(16,185,129,0.5)' }} />
                 <span style={{ fontFamily: mono, fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 500, color: 'rgba(255,255,255,0.3)' }}>Online now</span>
               </div>
             </div>
@@ -337,7 +327,7 @@ export default function SupportWidget() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 18 }}>
                 {QUICK_ACTIONS.map(a => (
                   <button key={a.label} onClick={() => qa(a)} style={{ borderRadius: 14, padding: '14px 12px', cursor: 'pointer', textAlign: 'left', background: 'linear-gradient(180deg, rgba(255,255,255,0.022), rgba(255,255,255,0.006))', border: '1px solid rgba(255,255,255,0.06)', fontFamily: font, display: 'flex', flexDirection: 'column', gap: 3, transition: 'all 0.2s' }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(74,234,188,0.25)'; e.currentTarget.style.background = 'linear-gradient(180deg, rgba(74,234,188,0.04), rgba(74,234,188,0.01))'; }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(16,185,129,0.25)'; e.currentTarget.style.background = 'linear-gradient(180deg, rgba(16,185,129,0.04), rgba(16,185,129,0.01))'; }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.background = 'linear-gradient(180deg, rgba(255,255,255,0.022), rgba(255,255,255,0.006))'; }}>
                     <span style={{ fontSize: 13, fontWeight: 500, color: '#fafaf9', letterSpacing: '-0.01em' }}>{a.label}</span>
                     <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.28)' }}>{a.sub}</span>
@@ -397,13 +387,17 @@ export default function SupportWidget() {
           {/* ── Chat ── */}
           {view === 'chat' && (
             <div style={{ flex: 1, overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {messages.length === 0 && <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.18)', textAlign: 'center', marginTop: 40, fontFamily: font }}>Ask anything about VoiceAI Connect</p>}
+              {messages.length === 0 && (
+                <div style={{ maxWidth: '85%', padding: '12px 15px', fontSize: 13, lineHeight: 1.6, fontFamily: font, alignSelf: 'flex-start', borderRadius: '14px 14px 14px 4px', background: 'linear-gradient(180deg, rgba(16,185,129,0.1), rgba(16,185,129,0.03))', border: '1px solid rgba(16,185,129,0.18)', color: 'rgba(255,255,255,0.82)' }}>
+                  Hey there! Ask me anything about VoiceAI Connect, pricing, white-labeling, or getting your agency started. What can I help with?
+                </div>
+              )}
               {messages.map((m, i) => (
                 <div key={i} style={{
                   maxWidth: '85%', padding: '11px 14px', fontSize: 13, lineHeight: 1.6, fontFamily: font,
                   whiteSpace: 'pre-wrap', wordBreak: 'break-word',
                   alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
-                  ...(m.role === 'user' ? { borderRadius: '14px 14px 4px 14px', background: 'rgba(74,234,188,0.1)', border: '1px solid rgba(74,234,188,0.14)', color: 'rgba(255,255,255,0.85)' }
+                  ...(m.role === 'user' ? { borderRadius: '14px 14px 4px 14px', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.14)', color: 'rgba(255,255,255,0.85)' }
                     : { borderRadius: '14px 14px 14px 4px', background: 'linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.008))', border: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.65)' }),
                 }}>
                   {m.content || (streaming && i === messages.length - 1 ? '...' : '')}
@@ -411,13 +405,13 @@ export default function SupportWidget() {
               ))}
               {streaming && messages[messages.length - 1]?.role === 'user' && (
                 <div style={{ display: 'flex', gap: 5, alignItems: 'center', padding: '11px 14px', width: 'fit-content', borderRadius: '14px 14px 14px 4px', background: 'linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.008))', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  {[0, 0.2, 0.4].map((d, j) => <span key={j} style={{ width: 4, height: 4, borderRadius: '50%', background: 'rgba(74,234,188,0.4)', animation: `wBounce 1.2s infinite ${d}s` }} />)}
+                  {[0, 0.2, 0.4].map((d, j) => <span key={j} style={{ width: 4, height: 4, borderRadius: '50%', background: 'rgba(16,185,129,0.4)', animation: `wBounce 1.2s infinite ${d}s` }} />)}
                 </div>
               )}
               <div ref={endRef} />
               {messages.length >= 2 && !streaming && (
                 <button onClick={goEsc} style={{ alignSelf: 'center', marginTop: 4, padding: '7px 16px', borderRadius: 8, background: 'transparent', border: '1px solid rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.25)', fontSize: 11, cursor: 'pointer', fontFamily: font, transition: 'all 0.15s' }}
-                  onMouseEnter={e => { e.currentTarget.style.color = em; e.currentTarget.style.borderColor = 'rgba(74,234,188,0.15)'; }}
+                  onMouseEnter={e => { e.currentTarget.style.color = em; e.currentTarget.style.borderColor = 'rgba(16,185,129,0.15)'; }}
                   onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.25)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.04)'; }}>
                   Talk to a person
                 </button>
@@ -430,7 +424,7 @@ export default function SupportWidget() {
             <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
               {escDone ? (
                 <div style={{ textAlign: 'center', padding: '32px 12px' }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(74,234,188,0.08)', border: '1px solid rgba(74,234,188,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', color: em }}><WIcon type="check" /></div>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', color: em }}><WIcon type="check" /></div>
                   <p style={{ fontFamily: font, fontSize: 16, fontWeight: 500, color: '#fafaf9', margin: 0 }}>Message received</p>
                   <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.38)', marginTop: 8, lineHeight: 1.5, fontFamily: font }}>A team member will follow up within one business day.</p>
                   <button onClick={goLanding} style={{ marginTop: 18, padding: '8px 18px', borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', fontSize: 12, cursor: 'pointer', fontFamily: font }}>Back to help</button>
@@ -451,7 +445,7 @@ export default function SupportWidget() {
                         rows={3}
                         maxLength={1000}
                         style={{ width: '100%', marginTop: 7, padding: '10px 14px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.025)', color: 'rgba(255,255,255,0.85)', fontSize: 13, outline: 'none', fontFamily: font, boxSizing: 'border-box', resize: 'none' }}
-                        onFocus={e => { (e.target as HTMLTextAreaElement).style.borderColor = 'rgba(74,234,188,0.25)'; }}
+                        onFocus={e => { (e.target as HTMLTextAreaElement).style.borderColor = 'rgba(16,185,129,0.25)'; }}
                         onBlur={e => { (e.target as HTMLTextAreaElement).style.borderColor = 'rgba(255,255,255,0.08)'; }}
                       />
                     </div>
@@ -464,7 +458,7 @@ export default function SupportWidget() {
                     </button>
                   </div>
                   <p style={{ marginTop: 18, fontSize: 11, color: 'rgba(255,255,255,0.18)', fontFamily: font, margin: '18px 0 0' }}>
-                    Or email <a href="mailto:support@myvoiceaiconnect.com" style={{ color: 'rgba(74,234,188,0.5)', textDecoration: 'none' }}>support@myvoiceaiconnect.com</a>
+                    Or email <a href="mailto:support@myvoiceaiconnect.com" style={{ color: 'rgba(16,185,129,0.5)', textDecoration: 'none' }}>support@myvoiceaiconnect.com</a>
                   </p>
                 </>
               )}
@@ -478,7 +472,7 @@ export default function SupportWidget() {
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
                 placeholder="Ask anything..."
                 style={{ flex: 1, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '10px 14px', fontSize: 13, background: 'rgba(255,255,255,0.025)', color: 'rgba(255,255,255,0.85)', outline: 'none', fontFamily: font }}
-                onFocus={e => { (e.target as HTMLInputElement).style.borderColor = 'rgba(74,234,188,0.25)'; if (view === 'landing') goChat(); }}
+                onFocus={e => { (e.target as HTMLInputElement).style.borderColor = 'rgba(16,185,129,0.25)'; if (view === 'landing') goChat(); }}
                 onBlur={e => { (e.target as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.08)'; }} />
               <button onClick={() => send()} disabled={!input.trim() || streaming}
                 style={{ width: 34, height: 34, borderRadius: 10, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: input.trim() ? 'pointer' : 'default', transition: 'all 0.15s', background: input.trim() ? em : 'rgba(255,255,255,0.04)', color: input.trim() ? '#050505' : 'rgba(255,255,255,0.15)' }}>
