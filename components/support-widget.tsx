@@ -37,7 +37,7 @@ const font = "'Geist', system-ui, sans-serif";
 const mono = "'Geist Mono', ui-monospace, monospace";
 const em = '#10b981';
 // Shared text treatment for solid green buttons: bold white with a crisp black outline.
-const greenBtnText = { color: '#ffffff', fontWeight: 800, WebkitTextStroke: '0.9px #000', paintOrder: 'stroke fill', textShadow: '0 1px 1px rgba(0,0,0,0.3)' } as React.CSSProperties;
+const greenBtnText = { color: '#04120f', fontWeight: 800 } as React.CSSProperties;
 
 function WIcon({ type }: { type: string }) {
   const p = { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
@@ -479,7 +479,7 @@ export default function SupportWidget() {
                 onFocus={e => { (e.target as HTMLInputElement).style.borderColor = 'rgba(16,185,129,0.25)'; if (view === 'landing') goChat(); }}
                 onBlur={e => { (e.target as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.08)'; }} />
               <button onClick={() => send()} disabled={!input.trim() || streaming}
-                style={{ width: 34, height: 34, borderRadius: 10, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: input.trim() ? 'pointer' : 'default', transition: 'all 0.15s', background: input.trim() ? em : 'rgba(255,255,255,0.04)', color: input.trim() ? '#ffffff' : 'rgba(255,255,255,0.15)' }}>
+                style={{ width: 34, height: 34, borderRadius: 10, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: input.trim() ? 'pointer' : 'default', transition: 'all 0.15s', background: input.trim() ? em : 'rgba(255,255,255,0.04)', color: input.trim() ? '#04120f' : 'rgba(255,255,255,0.15)' }}>
                 <WIcon type="up" />
               </button>
             </div>
