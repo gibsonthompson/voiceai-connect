@@ -275,7 +275,7 @@ export default function AgencyLoginPage() {
   .al-form input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--pGlow)}
   .al-form input:-webkit-autofill,.al-form input:-webkit-autofill:hover,.al-form input:-webkit-autofill:focus{-webkit-box-shadow:0 0 0 9999px var(--afBg) inset !important;-webkit-text-fill-color:var(--afText) !important;border-color:var(--inputBorder) !important;transition:background-color 0s 600000s,color 0s 600000s !important}
   .al-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:0;color:var(--subtle);cursor:pointer;display:flex;padding:6px}
-  .al-row{display:flex;justify-content:flex-end;margin-top:-5px}
+  .al-row{display:flex;justify-content:center;margin-top:-5px}
   .al-link{font-size:13.5px;color:var(--primary);font-weight:550;text-decoration:none}
   .al-link:hover{text-decoration:underline;text-underline-offset:2px}
   .al-btn{height:52px;border:0;border-radius:12px;background:var(--primary);color:var(--primaryText);font-size:15.5px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:filter .15s,transform .05s;margin-top:3px}
