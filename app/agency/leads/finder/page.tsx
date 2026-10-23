@@ -252,7 +252,7 @@ function LeadCard({ lead, expanded, onToggle, theme, onSave, saving, saved, sele
               </div>
             )}
             {lead.businessStatus && (
-              <div className="mb-1 text-xs" style={{ color: lead.businessStatus === "OPERATIONAL" ? "#10b981" : "#ef4444" }}>
+              <div className="mb-1 text-xs" style={{ color: lead.businessStatus === "OPERATIONAL" ? "#00a19b" : "#ef4444" }}>
                 {lead.businessStatus === "OPERATIONAL" ? "✓ " : "⚠ "}{lead.businessStatus}
               </div>
             )}

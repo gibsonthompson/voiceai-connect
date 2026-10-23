@@ -130,7 +130,7 @@ export default function ComposerModal({
   const autoSelectDone = useRef(false);
 
   const isDark = adminMode ? true : (agency?.website_theme !== 'light');
-  const primaryColor = adminMode ? '#3b82f6' : (branding?.primaryColor || '#10b981');
+  const primaryColor = adminMode ? '#3b82f6' : (branding?.primaryColor || '#00a19b');
   const primaryLight = isLightColor(primaryColor);
 
   const accent = getTypeAccent(type);
@@ -620,9 +620,9 @@ export default function ComposerModal({
                     }}
                     className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors shrink-0"
                     style={{
-                      backgroundColor: copied === 'recipient' ? 'rgba(16,185,129,0.1)' : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'),
-                      color: copied === 'recipient' ? '#10b981' : theme.textMuted,
-                      border: `1px solid ${copied === 'recipient' ? 'rgba(16,185,129,0.3)' : theme.border}`,
+                      backgroundColor: copied === 'recipient' ? 'rgba(0, 161, 155,0.1)' : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'),
+                      color: copied === 'recipient' ? '#00a19b' : theme.textMuted,
+                      border: `1px solid ${copied === 'recipient' ? 'rgba(0, 161, 155,0.3)' : theme.border}`,
                     }}
                   >
                     {copied === 'recipient' ? <><Check className="h-3 w-3" /> Copied</> : <><Copy className="h-3 w-3" /> Copy</>}

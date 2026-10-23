@@ -108,8 +108,8 @@ export default function RouteProgress() {
         style={{
           height: '100%',
           width: `${width}%`,
-          background: 'linear-gradient(90deg, #059669, #34d399)',
-          boxShadow: '0 0 8px rgba(52,211,153,0.7), 0 0 4px rgba(52,211,153,0.5)',
+          background: 'linear-gradient(90deg, #007e77, #01f5d1)',
+          boxShadow: '0 0 8px rgba(1, 245, 209,0.7), 0 0 4px rgba(1, 245, 209,0.5)',
           borderTopRightRadius: 2,
           borderBottomRightRadius: 2,
           transition: 'width 0.2s ease, opacity 0.25s ease',

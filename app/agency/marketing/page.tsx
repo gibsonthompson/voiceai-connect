@@ -34,7 +34,7 @@ interface TemplateOption {
 }
 
 const TEMPLATES: TemplateOption[] = [
-  { id: 'classic', name: 'Classic', description: 'Clean, professional layout with centered hero, card-based features, and standard pricing grid. Works for every industry.', style: 'Professional & Versatile', preview: { bgColor: '#f9f9f7', accentColor: '#10b981', textColor: '#1f2937', sections: ['Centered Hero', 'Stats Bar', 'Problem Cards', 'Solution Box', 'Step Cards', 'Feature Grid', 'Pricing Cards', 'FAQ Accordion'] } },
+  { id: 'classic', name: 'Classic', description: 'Clean, professional layout with centered hero, card-based features, and standard pricing grid. Works for every industry.', style: 'Professional & Versatile', preview: { bgColor: '#f9f9f7', accentColor: '#00a19b', textColor: '#1f2937', sections: ['Centered Hero', 'Stats Bar', 'Problem Cards', 'Solution Box', 'Step Cards', 'Feature Grid', 'Pricing Cards', 'FAQ Accordion'] } },
   { id: 'beside', name: 'Spotlight', description: 'Product-led storytelling with split hero, floating UI mockups, warm gradient cards, and narrative flow. High-converting for service businesses.', style: 'Modern & Story-Driven', preview: { bgColor: '#ffffff', accentColor: '#e85d2a', textColor: '#0a0a0a', sections: ['Split Hero + UI Cards', 'Demo Phone Strip', 'Pill Tab Features', 'Phone Mockup', '3-Column Proof Row', 'Narrative Sections', 'Industry Cards', 'Pricing Tiers'] } },
   { id: 'editorial', name: 'Editorial', description: 'Handhold-inspired editorial layout with serif headlines, organic wave illustrations, alternating feature sections, and large testimonials.', style: 'Premium & Editorial', preview: { bgColor: '#FAFAF8', accentColor: '#0a0a0a', textColor: '#0a0a0a', sections: ['Serif Hero + Wave Art', 'Logo Bar', 'Alternating Features', 'Numbered Steps', 'Value Prop Cards', 'Single Testimonial', 'FAQ Accordion', 'Artistic Footer CTA'] } },
 ];
@@ -164,9 +164,9 @@ export default function MarketingWebsitePage() {
   const [savingSignupText, setSavingSignupText] = useState(false);
   const [signupTextSaved, setSignupTextSaved] = useState(false);
   // Colors
-  const [primaryColor, setPrimaryColor] = useState('#10b981');
-  const [secondaryColor, setSecondaryColor] = useState('#059669');
-  const [accentColor, setAccentColor] = useState('#34d399');
+  const [primaryColor, setPrimaryColor] = useState('#00a19b');
+  const [secondaryColor, setSecondaryColor] = useState('#007e77');
+  const [accentColor, setAccentColor] = useState('#01f5d1');
   const [savingColors, setSavingColors] = useState(false);
   const [colorsSaved, setColorsSaved] = useState(false);
   const [plans, setPlans] = useState<any[]>([]);
@@ -204,7 +204,7 @@ export default function MarketingWebsitePage() {
   const [dnsConfig, setDnsConfig] = useState<{ aRecord: string; cname: string; misconfigured?: boolean; isSubdomain?: boolean; subdomainPrefix?: string | null } | null>(null);
 
   const isDark = false;
-  const agencyPrimaryColor = branding.primaryColor || '#10b981';
+  const agencyPrimaryColor = branding.primaryColor || '#00a19b';
   const textColor = isDark ? '#fafaf9' : '#111827';
   const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
   const borderColor = isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb';
@@ -235,9 +235,9 @@ export default function MarketingWebsitePage() {
     errorBg: isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2',
     errorText: isDark ? '#f87171' : '#dc2626',
     errorBorder: isDark ? 'rgba(239,68,68,0.2)' : '#fecaca',
-    successBg: isDark ? 'rgba(52,211,153,0.12)' : 'rgba(52,211,153,0.1)',
-    successText: isDark ? '#34d399' : '#059669',
-    successBorder: isDark ? 'rgba(52,211,153,0.2)' : 'rgba(52,211,153,0.2)',
+    successBg: isDark ? 'rgba(1, 245, 209,0.12)' : 'rgba(1, 245, 209,0.1)',
+    successText: isDark ? '#01f5d1' : '#007e77',
+    successBorder: isDark ? 'rgba(1, 245, 209,0.2)' : 'rgba(1, 245, 209,0.2)',
     warningBg: isDark ? 'rgba(245,158,11,0.12)' : 'rgba(245,158,11,0.1)',
     warningText: isDark ? '#fbbf24' : '#92400e',
     warningBorder: isDark ? 'rgba(245,158,11,0.2)' : 'rgba(245,158,11,0.2)',
@@ -280,8 +280,8 @@ export default function MarketingWebsitePage() {
   }, [agency?.id, domainStatus, demoMode]);
 
   useEffect(() => {
-    if (demoMode) { setTagline('AI-Powered Phone Answering'); setHeadline('Never Miss Another Call'); setSubheadline('Our AI receptionist answers calls 24/7.'); setCustomDomain('voiceai.youragency.com'); setDomainStatus('verified'); setPrimaryColor(agency?.primary_color || '#10b981'); setSecondaryColor(agency?.secondary_color || '#059669'); setAccentColor(agency?.accent_color || '#34d399'); setSelectedTemplate(agency?.marketing_template || 'classic'); setCustomNavLinks([{ label: 'Home', url: 'https://yourmainsite.com' }]); setDisplayCurrency(''); setGtmId(''); setFbPixelId(''); setGoogleAnalyticsId(''); setCustomHeadScripts(''); setCustomBodyScripts(''); setOgTitle(''); setOgDescription(''); setOgImageUrl(''); setPlans([]); return; }
-    if (agency) { if (agency.marketing_domain) { setCustomDomain(agency.marketing_domain); setDomainStatus(agency.domain_verified ? 'verified' : 'pending'); } setTagline(agency.company_tagline || ''); setHeadline(agency.website_headline || ''); setSubheadline(agency.website_subheadline || ''); setSignupHeadline((agency as any).signup_headline || ''); setSignupSubtitle((agency as any).signup_subtitle || ''); setSignupLogoAlign((agency as any).signup_logo_align === 'center' || (agency as any).signup_logo_align === 'right' ? (agency as any).signup_logo_align : 'left'); setPrimaryColor(agency.primary_color || '#10b981'); setSecondaryColor(agency.secondary_color || '#059669'); setAccentColor(agency.accent_color || '#34d399'); setSelectedTemplate(agency.marketing_template || 'classic'); setCustomNavLinks(Array.isArray((agency as any).custom_nav_links) ? (agency as any).custom_nav_links : []); setDisplayCurrency((agency as any).display_currency || ''); setGtmId(agency.gtm_id || ''); setFbPixelId(agency.fb_pixel_id || ''); setGoogleAnalyticsId(agency.google_analytics_id || ''); setCustomHeadScripts(agency.custom_head_scripts || ''); setCustomBodyScripts(agency.custom_body_scripts || ''); setOgTitle(agency.og_title || ''); setOgDescription(agency.og_description || ''); setOgImageUrl(agency.og_image_url || ''); setPlans(Array.isArray((agency as any).plans) ? (agency as any).plans : []); }
+    if (demoMode) { setTagline('AI-Powered Phone Answering'); setHeadline('Never Miss Another Call'); setSubheadline('Our AI receptionist answers calls 24/7.'); setCustomDomain('voiceai.youragency.com'); setDomainStatus('verified'); setPrimaryColor(agency?.primary_color || '#00a19b'); setSecondaryColor(agency?.secondary_color || '#007e77'); setAccentColor(agency?.accent_color || '#01f5d1'); setSelectedTemplate(agency?.marketing_template || 'classic'); setCustomNavLinks([{ label: 'Home', url: 'https://yourmainsite.com' }]); setDisplayCurrency(''); setGtmId(''); setFbPixelId(''); setGoogleAnalyticsId(''); setCustomHeadScripts(''); setCustomBodyScripts(''); setOgTitle(''); setOgDescription(''); setOgImageUrl(''); setPlans([]); return; }
+    if (agency) { if (agency.marketing_domain) { setCustomDomain(agency.marketing_domain); setDomainStatus(agency.domain_verified ? 'verified' : 'pending'); } setTagline(agency.company_tagline || ''); setHeadline(agency.website_headline || ''); setSubheadline(agency.website_subheadline || ''); setSignupHeadline((agency as any).signup_headline || ''); setSignupSubtitle((agency as any).signup_subtitle || ''); setSignupLogoAlign((agency as any).signup_logo_align === 'center' || (agency as any).signup_logo_align === 'right' ? (agency as any).signup_logo_align : 'left'); setPrimaryColor(agency.primary_color || '#00a19b'); setSecondaryColor(agency.secondary_color || '#007e77'); setAccentColor(agency.accent_color || '#01f5d1'); setSelectedTemplate(agency.marketing_template || 'classic'); setCustomNavLinks(Array.isArray((agency as any).custom_nav_links) ? (agency as any).custom_nav_links : []); setDisplayCurrency((agency as any).display_currency || ''); setGtmId(agency.gtm_id || ''); setFbPixelId(agency.fb_pixel_id || ''); setGoogleAnalyticsId(agency.google_analytics_id || ''); setCustomHeadScripts(agency.custom_head_scripts || ''); setCustomBodyScripts(agency.custom_body_scripts || ''); setOgTitle(agency.og_title || ''); setOgDescription(agency.og_description || ''); setOgImageUrl(agency.og_image_url || ''); setPlans(Array.isArray((agency as any).plans) ? (agency as any).plans : []); }
   }, [agency, demoMode]);
 
   const copyToClipboard = (text: string, key: string) => { navigator.clipboard.writeText(text); setCopied(key); setTimeout(() => setCopied(null), 2000); };
@@ -559,7 +559,7 @@ export default function MarketingWebsitePage() {
                 <span className="flex gap-1.5">
                   <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#f87171' }} />
                   <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#fbbf24' }} />
-                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#34d399' }} />
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#01f5d1' }} />
                 </span>
                 <span className="flex items-center gap-1.5 ml-1.5 text-[10px] sm:text-xs font-medium" style={{ color: mutedTextColor }}><Eye className="h-3.5 w-3.5" />Live preview, the real form your visitors see</span>
               </div>

@@ -626,7 +626,7 @@ function ForgotPasswordContent() {
   // page: #050505 canvas, #fafaf9 ink, emerald accent). An agency subdomain
   // respects that agency's own brand color and light/dark preference.
 
-  const primaryColor = agency?.primary_color || (isAgencySubdomain ? '#2563eb' : '#10b981');
+  const primaryColor = agency?.primary_color || (isAgencySubdomain ? '#2563eb' : '#00a19b');
   const primaryLight = isLightColor(primaryColor);
 
   // On platform domain -> dark theme (agency login style)

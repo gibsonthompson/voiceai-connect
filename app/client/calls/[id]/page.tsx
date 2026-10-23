@@ -253,7 +253,7 @@ export default function CallDetailPage() {
           <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
             {hipaaMode && (
               <span className="rounded-full px-3 py-1.5 text-[11px] sm:text-xs font-semibold flex items-center gap-1.5"
-                style={{ backgroundColor: hexToRgba('#10b981', theme.isDark ? 0.12 : 0.08), color: '#10b981' }}>
+                style={{ backgroundColor: hexToRgba('#00a19b', theme.isDark ? 0.12 : 0.08), color: '#00a19b' }}>
                 <Shield className="h-3.5 w-3.5" /> HIPAA
               </span>
             )}
@@ -375,8 +375,8 @@ export default function CallDetailPage() {
 
           {/* HIPAA notice — shown when HIPAA mode hides recording/transcript */}
           {hipaaMode && (
-            <div className="rounded-2xl p-5 sm:p-6 fu fu2 flex items-start gap-3" style={{ ...glass, borderColor: hexToRgba('#10b981', 0.2) }}>
-              <Shield className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: '#10b981' }} />
+            <div className="rounded-2xl p-5 sm:p-6 fu fu2 flex items-start gap-3" style={{ ...glass, borderColor: hexToRgba('#00a19b', 0.2) }}>
+              <Shield className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: '#00a19b' }} />
               <div>
                 <p className="text-sm font-medium" style={{ color: theme.text }}>HIPAA Compliance Active</p>
                 <p className="text-xs mt-1 leading-relaxed" style={{ color: theme.textMuted }}>

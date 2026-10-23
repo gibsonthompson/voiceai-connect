@@ -107,9 +107,9 @@ const CALL_OUTCOMES: CallOutcomeOption[] = [
     value: 'answered_booked',
     label: 'Booked Demo',
     icon: <Target className="h-4 w-4" />,
-    color: '#34d399',
-    colorBg: 'rgba(52,211,153,0.1)',
-    colorBorder: 'rgba(52,211,153,0.3)',
+    color: '#01f5d1',
+    colorBg: 'rgba(1, 245, 209,0.1)',
+    colorBorder: 'rgba(1, 245, 209,0.3)',
     updatesStatus: 'qualified',
   },
   {
@@ -676,9 +676,9 @@ export default function CallScriptModal({
                 onClick={handleCopyPhone}
                 className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors shrink-0"
                 style={{
-                  backgroundColor: phoneCopied ? 'rgba(16,185,129,0.1)' : theme.hover,
-                  color: phoneCopied ? '#10b981' : theme.textMuted,
-                  border: `1px solid ${phoneCopied ? 'rgba(16,185,129,0.3)' : theme.border}`,
+                  backgroundColor: phoneCopied ? 'rgba(0, 161, 155,0.1)' : theme.hover,
+                  color: phoneCopied ? '#00a19b' : theme.textMuted,
+                  border: `1px solid ${phoneCopied ? 'rgba(0, 161, 155,0.3)' : theme.border}`,
                 }}
               >
                 {phoneCopied ? <><Check className="h-3 w-3" /> Copied</> : <><Copy className="h-3 w-3" /> Copy</>}

@@ -37,7 +37,7 @@ function timeAgo(dateStr: string): string {
 }
 
 const TAG_COLORS: Record<string, string> = {
-  emergency: '#ef4444', high_priority: '#f59e0b', repeat_caller: '#8b5cf6', appointment_booked: '#10b981',
+  emergency: '#ef4444', high_priority: '#f59e0b', repeat_caller: '#8b5cf6', appointment_booked: '#00a19b',
 };
 
 interface Contact { id: string; name: string; phone: string; email: string | null; tags: string[]; total_calls: number; last_call_at: string | null; ai_summary: string | null; source: string; created_at: string; }

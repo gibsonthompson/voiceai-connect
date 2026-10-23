@@ -36,7 +36,7 @@ function getContrastColor(hex: string): string {
 const getBackendUrl = () => process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'https://urchin-app-bqb4i.ondigitalocean.app';
 // VoiceAI Connect brand color (emerald). Used on the platform (unbranded) login
 // so it renders as true VoiceAI Connect, not a generic default.
-const VAC_PRIMARY = '#10b981';
+const VAC_PRIMARY = '#00a19b';
 
 // Seed the theme from the last visit so a light-themed agency never flashes dark
 // before the host lookup resolves. Read after mount (not in a useState init) so

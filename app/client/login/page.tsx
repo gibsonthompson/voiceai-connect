@@ -183,7 +183,7 @@ function ClientLoginContent() {
     headerBg: 'rgba(10,10,10,0.8)', headerBorder: 'rgba(255,255,255,0.05)',
     autofillBg: '#1a1a1a', autofillText: '#f5f5f0',
     errorBg: 'rgba(239,68,68,0.1)', errorBorder: 'rgba(239,68,68,0.2)', errorText: '#f87171',
-    successBg: 'rgba(16,185,129,0.1)', successBorder: 'rgba(16,185,129,0.2)', successText: '#6ee7b7',
+    successBg: 'rgba(0, 161, 155,0.1)', successBorder: 'rgba(0, 161, 155,0.2)', successText: '#4fefdc',
     helpText: 'rgba(245,245,240,0.4)',
   } : {
     bg: '#ffffff', text: '#111827', textMuted: '#6b7280', textSubtle: '#9ca3af',
@@ -193,7 +193,7 @@ function ClientLoginContent() {
     headerBg: 'rgba(255,255,255,0.8)', headerBorder: '#e5e7eb',
     autofillBg: '#f9fafb', autofillText: '#111827',
     errorBg: '#fef2f2', errorBorder: '#fecaca', errorText: '#dc2626',
-    successBg: 'rgba(16,185,129,0.1)', successBorder: 'rgba(16,185,129,0.3)', successText: '#059669',
+    successBg: 'rgba(0, 161, 155,0.1)', successBorder: 'rgba(0, 161, 155,0.3)', successText: '#007e77',
     helpText: '#9ca3af',
   };
 
@@ -249,12 +249,12 @@ function ClientLoginContent() {
         <div className="relative w-full max-w-md fu">
           {welcome ? (
             <div className="mb-6 rounded-2xl p-4 flex items-center gap-3" style={{ backgroundColor: t.successBg, border: `1px solid ${t.successBorder}` }}>
-              <CheckCircle2 className="h-5 w-5 flex-shrink-0" style={{ color: '#10b981' }} />
+              <CheckCircle2 className="h-5 w-5 flex-shrink-0" style={{ color: '#00a19b' }} />
               <p className="text-sm" style={{ color: t.successText }}>You are all set. Sign in with your new password to finish setting up your dashboard.</p>
             </div>
           ) : signupSuccess ? (
             <div className="mb-6 rounded-2xl p-4 flex items-center gap-3" style={{ backgroundColor: t.successBg, border: `1px solid ${t.successBorder}` }}>
-              <CheckCircle2 className="h-5 w-5 flex-shrink-0" style={{ color: '#10b981' }} />
+              <CheckCircle2 className="h-5 w-5 flex-shrink-0" style={{ color: '#00a19b' }} />
               <p className="text-sm" style={{ color: t.successText }}>Account created! Check your email or SMS for password setup instructions.</p>
             </div>
           ) : null}

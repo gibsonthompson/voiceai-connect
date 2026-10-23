@@ -26,7 +26,7 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
 }
 function hexToRgbString(hex: string): string {
   const rgb = hexToRgb(hex);
-  return rgb ? `${rgb.r}, ${rgb.g}, ${rgb.b}` : '16, 185, 129';
+  return rgb ? `${rgb.r}, ${rgb.g}, ${rgb.b}` : '0, 161, 155';
 }
 function getLuminance(hex: string): number {
   const rgb = hexToRgb(hex);
@@ -863,7 +863,7 @@ export default function MarketingPageBeside({ config: partialConfig }: Marketing
   };
 
   const theme = config.theme || 'light';
-  const primary = config.branding.primaryColor || '#10b981';
+  const primary = config.branding.primaryColor || '#00a19b';
   const hover = config.branding.primaryHoverColor || adjustColor(primary, -12);
   const accent = config.branding.accentColor || adjustColor(primary, 14);
 

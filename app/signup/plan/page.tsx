@@ -202,7 +202,7 @@ function ThemedLoading({ theme, message = 'Loading plans...' }: { theme: 'light'
 // ============================================================================
 // SHARED COMPONENTS
 // ============================================================================
-function ProgressSteps({ currentStep, totalSteps = 3, accentColor = '#10b981' }: { 
+function ProgressSteps({ currentStep, totalSteps = 3, accentColor = '#00a19b' }: { 
   currentStep: number; 
   totalSteps?: number;
   accentColor?: string;
@@ -259,7 +259,7 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
 
   const theme: 'light' | 'dark' = agency.website_theme === 'dark' ? 'dark' : 'light';
   const isDark = theme === 'dark';
-  const primaryColor = agency.primary_color || '#10b981';
+  const primaryColor = agency.primary_color || '#00a19b';
   const logoAlign = agency.signup_logo_align || 'left';
   const accentColor = agency.accent_color || primaryColor;
   const primaryLight = isLightColor(primaryColor);
@@ -807,7 +807,7 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
           </a>
 
           <div className="mb-8 sm:mb-10">
-            <ProgressSteps currentStep={2} accentColor="#10b981" />
+            <ProgressSteps currentStep={2} accentColor="#00a19b" />
           </div>
 
           <div className="text-center mb-10 sm:mb-12">
@@ -835,7 +835,7 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
                     ? 'border-emerald-500/30 bg-[#0a0a0a] md:scale-[1.02] shadow-2xl' 
                     : 'border-white/[0.08] bg-[#0a0a0a]/50 hover:border-white/[0.15] hover:bg-[#0a0a0a]'
                 }`}
-                style={plan.popular ? { boxShadow: '0 0 60px rgba(16, 185, 129, 0.1)' } : undefined}>
+                style={plan.popular ? { boxShadow: '0 0 60px rgba(0, 161, 155, 0.1)' } : undefined}>
                 {plan.popular && (
                   <div className="absolute -top-3 sm:-top-4 left-1/2 -translate-x-1/2">
                     <span className="px-4 py-1.5 rounded-full text-xs font-semibold bg-emerald-500 text-[#050505] shadow-lg shadow-emerald-500/30">Most Popular</span>

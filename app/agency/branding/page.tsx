@@ -143,9 +143,9 @@ export default function BrandingPage() {
   useEffect(() => { const href = googleFontsHref([displayFont, bodyFont]); if (!href) return; const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = href; document.head.appendChild(link); return () => { if (link.parentNode) link.parentNode.removeChild(link); }; }, [displayFont, bodyFont]);
 
   const mode = agency?.website_theme !== 'light' ? 'dark' : 'light';
-  const primaryColor = branding.primaryColor || '#10b981';
-  const secondaryColor = branding.secondaryColor || '#059669';
-  const accentColor = branding.accentColor || '#34d399';
+  const primaryColor = branding.primaryColor || '#00a19b';
+  const secondaryColor = branding.secondaryColor || '#007e77';
+  const accentColor = branding.accentColor || '#01f5d1';
   const previewTheme = useMemo(() => buildTheme(mode as 'dark' | 'light', primaryColor, overrides), [mode, primaryColor, overrides]);
   const defaultTheme = useMemo(() => buildTheme(mode as 'dark' | 'light', primaryColor), [mode, primaryColor]);
   const getDefaultForField = useCallback((key: keyof BrandingOverrides): string => { const map: Record<keyof BrandingOverrides, string> = { nav_bg: defaultTheme.sidebarBg, nav_text: defaultTheme.sidebarText, page_bg: defaultTheme.bg, card_bg: defaultTheme.card, card_border: defaultTheme.border, button_text: defaultTheme.primaryText, text_primary: defaultTheme.text, text_muted: defaultTheme.textMuted }; return map[key] || '#000000'; }, [defaultTheme]);

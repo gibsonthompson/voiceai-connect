@@ -78,7 +78,7 @@ export default function PlatformPage() {
             {/* Agency owner card */}
             <div className="bento-cell p-7 lg:p-9">
               <div className="flex items-center gap-2.5 mb-5">
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(0, 227, 170, 0.1)', border: '1px solid rgba(0, 227, 170, 0.22)' }}>
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(1, 245, 209, 0.1)', border: '1px solid rgba(1, 245, 209, 0.22)' }}>
                   <Users className="w-4 h-4 text-em" strokeWidth={2} />
                 </div>
                 <p className="font-mono text-[11px] tracking-[0.16em] uppercase text-em">For the agency owner</p>
@@ -164,8 +164,8 @@ export default function PlatformPage() {
               { icon: Wand2, title: 'Workflow automation', desc: 'Signed webhooks fire on every signup, call, and booking, so you can drive Make, n8n, or your own tools with real events.' },
             ].map(c => (
               <div key={c.title} className="rounded-[14px] border border-black/[0.06] bg-white p-6 transition-colors hover:border-black/[0.16]">
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-5" style={{ background: 'rgba(0, 227, 170, 0.06)', border: '1px solid rgba(0, 227, 170, 0.18)' }}>
-                  <c.icon className="w-4 h-4" style={{ color: '#05795b' }} strokeWidth={1.9} />
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-5" style={{ background: 'rgba(1, 245, 209, 0.06)', border: '1px solid rgba(1, 245, 209, 0.18)' }}>
+                  <c.icon className="w-4 h-4" style={{ color: '#007e77' }} strokeWidth={1.9} />
                 </div>
                 <h3 className="font-display text-[16px] font-medium text-black tracking-tight">{c.title}</h3>
                 <p className="text-[13.5px] text-black/60 leading-relaxed mt-2">{c.desc}</p>
@@ -199,7 +199,7 @@ export default function PlatformPage() {
               { icon: Lock, title: 'Encrypted by default', desc: 'Postgres row-level security per agency. Built on SOC 2 certified providers. PII never written to logs.' },
             ].map(c => (
               <div key={c.title} className="bento-cell p-6">
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-5" style={{ background: 'rgba(0, 227, 170, 0.08)', border: '1px solid rgba(0, 227, 170, 0.2)' }}>
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-5" style={{ background: 'rgba(1, 245, 209, 0.08)', border: '1px solid rgba(1, 245, 209, 0.2)' }}>
                   <c.icon className="w-4 h-4 text-em" strokeWidth={1.9} />
                 </div>
                 <h3 className="font-display text-[16px] font-medium text-white tracking-tight">{c.title}</h3>

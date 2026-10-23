@@ -108,8 +108,8 @@ export default function ReferralProgramPage() {
             ].map(s => (
               <div key={s.n} className="rounded-2xl border border-black/[0.06] bg-white p-6">
                 <p className="font-mono text-[11px] tracking-[0.14em] text-black/35">{s.n}</p>
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center mt-4 mb-4" style={{ background: 'rgba(16, 185, 129, 0.06)', border: '1px solid rgba(16, 185, 129, 0.18)' }}>
-                  <s.icon className="w-4 h-4" style={{ color: '#047857' }} strokeWidth={1.9} />
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center mt-4 mb-4" style={{ background: 'rgba(0, 161, 155, 0.06)', border: '1px solid rgba(0, 161, 155, 0.18)' }}>
+                  <s.icon className="w-4 h-4" style={{ color: '#0a5a54' }} strokeWidth={1.9} />
                 </div>
                 <h3 className="font-display text-[15.5px] font-medium text-black tracking-tight">{s.title}</h3>
                 <p className="text-[13.5px] text-black/60 leading-relaxed mt-2">{s.desc}</p>

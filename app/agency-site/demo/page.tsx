@@ -203,7 +203,7 @@ export default function DemoPage() {
     const t = getCachedTheme();
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: t === 'dark' ? '#0f0f0f' : '#fff' }}>
-        <div style={{ width: 40, height: 40, border: '3px solid transparent', borderTopColor: '#10b981', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        <div style={{ width: 40, height: 40, border: '3px solid transparent', borderTopColor: '#00a19b', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
@@ -217,9 +217,9 @@ export default function DemoPage() {
     );
   }
 
-  const pc = agency.primary_color || '#10b981';
+  const pc = agency.primary_color || '#00a19b';
   const sc = agency.secondary_color || adjustColor(pc, -15);
-  const ac = agency.accent_color || '#34d399';
+  const ac = agency.accent_color || '#01f5d1';
   const theme = agency.website_theme || 'light';
   const isDark = theme === 'dark';
   const pcLight = isLightColor(pc);

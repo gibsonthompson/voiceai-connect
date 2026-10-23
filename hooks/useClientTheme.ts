@@ -144,10 +144,10 @@ export function useClientTheme() {
       warningBorder: isDark ? 'rgba(245,158,11,0.2)' : 'rgba(245,158,11,0.2)',
 
       // Semantic — success
-      success: isDark ? '#34d399' : '#059669',
-      successBg: isDark ? 'rgba(52,211,153,0.1)' : 'rgba(52,211,153,0.1)',
-      successText: isDark ? '#34d399' : '#059669',
-      successBorder: isDark ? 'rgba(52,211,153,0.2)' : 'rgba(52,211,153,0.2)',
+      success: isDark ? '#01f5d1' : '#007e77',
+      successBg: isDark ? 'rgba(1, 245, 209,0.1)' : 'rgba(1, 245, 209,0.1)',
+      successText: isDark ? '#01f5d1' : '#007e77',
+      successBorder: isDark ? 'rgba(1, 245, 209,0.2)' : 'rgba(1, 245, 209,0.2)',
 
       // Semantic — info
       info: isDark ? '#60a5fa' : '#2563eb',

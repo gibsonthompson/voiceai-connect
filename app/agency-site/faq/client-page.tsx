@@ -220,16 +220,16 @@ export default function AgencyFAQPage() {
 
   if (loading) {
     const bg = (() => { try { return sessionStorage.getItem('agency_theme') === 'dark' ? '#0f0f0f' : '#ffffff'; } catch { return '#ffffff'; } })();
-    return (<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: bg }}><div style={{ width: 40, height: 40, border: '3px solid transparent', borderTopColor: '#10b981', borderRadius: '50%', animation: 'spin 1s linear infinite' }} /><style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style></div>);
+    return (<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: bg }}><div style={{ width: 40, height: 40, border: '3px solid transparent', borderTopColor: '#00a19b', borderRadius: '50%', animation: 'spin 1s linear infinite' }} /><style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style></div>);
   }
 
   if (error || !agency) {
     return (<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', fontFamily: 'system-ui' }}><div style={{ textAlign: 'center' }}><h1 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{error || 'Site not found'}</h1><p style={{ color: '#6b7280' }}>This site is not available.</p></div></div>);
   }
 
-  const primaryColor = agency.primary_color || '#10b981';
+  const primaryColor = agency.primary_color || '#00a19b';
   const primaryRgb = hexToRgbString(primaryColor);
-  const accentColor = agency.accent_color || '#34d399';
+  const accentColor = agency.accent_color || '#01f5d1';
   const accentRgb = hexToRgbString(accentColor);
   const theme = agency.website_theme || 'light';
   const isDark = theme === 'dark';

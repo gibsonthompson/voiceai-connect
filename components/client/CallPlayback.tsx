@@ -9,7 +9,7 @@ interface CallPlaybackProps {
   brandColor?: string; // Agency primary color for theming
 }
 
-export default function CallPlayback({ recordingUrl, callDuration, brandColor = '#10b981' }: CallPlaybackProps) {
+export default function CallPlayback({ recordingUrl, callDuration, brandColor = '#00a19b' }: CallPlaybackProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(callDuration || 0);

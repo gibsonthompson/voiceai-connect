@@ -472,7 +472,7 @@ export default function TemplateEditorPage() {
                 <div>
                   <p className="text-[10px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Lead</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {variables.lead.map((v) => renderVariableButton(v, '#34d399'))}
+                    {variables.lead.map((v) => renderVariableButton(v, '#01f5d1'))}
                   </div>
                 </div>
                 <div>
@@ -509,7 +509,7 @@ export default function TemplateEditorPage() {
                 <div>
                   <p className="text-xs font-medium mb-2" style={{ color: theme.textMuted }}>Lead Info</p>
                   <div className="space-y-1">
-                    {variables.lead.map((v) => renderVariableRow(v, '#34d399'))}
+                    {variables.lead.map((v) => renderVariableRow(v, '#01f5d1'))}
                   </div>
                 </div>
 

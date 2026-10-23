@@ -16,7 +16,7 @@ function hexToRgb(hex: string) {
   const c = hex.replace('#','');
   const f = c.length===3 ? c.split('').map(x=>x+x).join('') : c;
   const r = /^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(f);
-  return r ? `${parseInt(r[1],16)},${parseInt(r[2],16)},${parseInt(r[3],16)}` : '16,185,129';
+  return r ? `${parseInt(r[1],16)},${parseInt(r[2],16)},${parseInt(r[3],16)}` : '0, 161, 155';
 }
 function isLight(hex: string) {
   const c = hex.replace('#',''); if(c.length<6) return false;

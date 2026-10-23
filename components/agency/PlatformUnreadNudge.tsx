@@ -14,10 +14,10 @@ import { MessageSquare, ArrowRight } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 
 function rgba(hex: string, a: number): string {
-  const c = (hex || '#10b981').replace('#', '');
+  const c = (hex || '#00a19b').replace('#', '');
   const f = c.length === 3 ? c.split('').map(x => x + x).join('') : c;
   const r = parseInt(f.slice(0, 2), 16), g = parseInt(f.slice(2, 4), 16), b = parseInt(f.slice(4, 6), 16);
-  if ([r, g, b].some(Number.isNaN)) return `rgba(16,185,129,${a})`;
+  if ([r, g, b].some(Number.isNaN)) return `rgba(0, 161, 155,${a})`;
   return `rgba(${r}, ${g}, ${b}, ${a})`;
 }
 

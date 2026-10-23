@@ -117,7 +117,7 @@ function AgencyOverview() {
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         {([
-          { label: 'Total Clients', value: AGENCY.stats.clients, icon: Users, color: '#10b981' },
+          { label: 'Total Clients', value: AGENCY.stats.clients, icon: Users, color: '#00a19b' },
           { label: 'Monthly Revenue', value: AGENCY.stats.revenue, icon: DollarSign, color: '#f59e0b' },
           { label: 'Calls This Month', value: AGENCY.stats.calls, icon: PhoneCall, color: '#3b82f6' },
           { label: 'MRR', value: AGENCY.stats.mrr, icon: TrendingUp, color: '#a78bfa' },
@@ -197,13 +197,13 @@ function AgencyClients({ onAdd }: { onAdd: () => void }) {
           <div key={c.id} className="px-4 sm:px-6 py-4 hover:bg-white/[0.03] cursor-pointer transition-colors" style={{ borderBottom: i < filtered.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
             <div className="lg:hidden">
               <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-3 min-w-0"><div className="flex h-10 w-10 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: c.test ? 'rgba(139,92,246,0.15)' : 'rgba(16,185,129,0.1)' }}>{c.test ? <FlaskConical className="h-4 w-4" style={{ color: '#8b5cf6' }} /> : <span className="text-sm font-medium text-emerald-400">{c.name[0]}</span>}</div><div className="min-w-0"><div className="flex items-center gap-2"><p className="font-medium text-sm text-[#fafaf9] truncate">{c.name}</p>{c.test && <span className="flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ backgroundColor: 'rgba(139,92,246,0.15)', color: '#8b5cf6' }}>Test</span>}</div><p className="text-xs text-[#fafaf9]/40 truncate">{c.email}</p></div></div>
+                <div className="flex items-center gap-3 min-w-0"><div className="flex h-10 w-10 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: c.test ? 'rgba(139,92,246,0.15)' : 'rgba(0, 161, 155,0.1)' }}>{c.test ? <FlaskConical className="h-4 w-4" style={{ color: '#8b5cf6' }} /> : <span className="text-sm font-medium text-emerald-400">{c.name[0]}</span>}</div><div className="min-w-0"><div className="flex items-center gap-2"><p className="font-medium text-sm text-[#fafaf9] truncate">{c.name}</p>{c.test && <span className="flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ backgroundColor: 'rgba(139,92,246,0.15)', color: '#8b5cf6' }}>Test</span>}</div><p className="text-xs text-[#fafaf9]/40 truncate">{c.email}</p></div></div>
                 <ArrowUpRight className="h-4 w-4 text-[#fafaf9]/30 flex-shrink-0" />
               </div>
               <div className="flex items-center justify-between text-xs pl-[52px]"><span className={`rounded-full px-2.5 py-1 text-[10px] font-medium capitalize ${c.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}`}>{c.status}</span><span className="text-[#fafaf9]/40 capitalize">{c.test ? 'Test client' : `${c.plan} \u00b7 ${c.calls} calls`}</span></div>
             </div>
             <div className="hidden lg:grid lg:grid-cols-12 gap-4 items-center">
-              <div className="col-span-4 flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ backgroundColor: c.test ? 'rgba(139,92,246,0.15)' : 'rgba(16,185,129,0.1)' }}>{c.test ? <FlaskConical className="h-4 w-4" style={{ color: '#8b5cf6' }} /> : <span className="text-sm font-medium text-emerald-400">{c.name[0]}</span>}</div><div className="min-w-0"><div className="flex items-center gap-2"><p className="font-medium text-sm text-[#fafaf9] truncate">{c.name}</p>{c.test && <span className="flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ backgroundColor: 'rgba(139,92,246,0.15)', color: '#8b5cf6' }}>Test</span>}</div><p className="text-xs text-[#fafaf9]/40 truncate">{c.email}</p></div></div>
+              <div className="col-span-4 flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ backgroundColor: c.test ? 'rgba(139,92,246,0.15)' : 'rgba(0, 161, 155,0.1)' }}>{c.test ? <FlaskConical className="h-4 w-4" style={{ color: '#8b5cf6' }} /> : <span className="text-sm font-medium text-emerald-400">{c.name[0]}</span>}</div><div className="min-w-0"><div className="flex items-center gap-2"><p className="font-medium text-sm text-[#fafaf9] truncate">{c.name}</p>{c.test && <span className="flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ backgroundColor: 'rgba(139,92,246,0.15)', color: '#8b5cf6' }}>Test</span>}</div><p className="text-xs text-[#fafaf9]/40 truncate">{c.email}</p></div></div>
               <div className="col-span-2">{c.test ? (<p className="text-sm" style={{ color: '#8b5cf6' }}>Test client</p>) : (<><p className="text-sm text-[#fafaf9] capitalize">{c.plan}</p><p className="text-xs text-[#fafaf9]/40">{c.mrr}/mo</p></>)}</div>
               <div className="col-span-2 flex items-center gap-2"><PhoneCall className="h-4 w-4 text-[#fafaf9]/30" /><span className="text-sm text-[#fafaf9]">{c.calls}</span><span className="text-xs text-[#fafaf9]/40">this month</span></div>
               <div className="col-span-2"><span className={`inline-flex rounded-full px-3 py-1 text-xs font-medium capitalize ${c.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}`}>{c.status}</span></div>
@@ -246,7 +246,7 @@ function AgencyAddClient({ onBack }: { onBack: () => void }) {
               <div><label className={labelCls}>Industry {req}</label><select defaultValue="HVAC" className={inputCls}><option>HVAC</option><option>Plumbing</option><option>Dental</option><option>Legal</option><option>Roofing</option><option>Auto Repair</option><option>Other</option></select></div>
               <div>
                 <label className={labelCls}>Pricing</label>
-                <div className="inline-flex rounded-lg p-0.5 mb-2 bg-white/[0.04] border border-white/[0.08]">{(['plan', 'custom'] as const).map(m => (<button key={m} type="button" onClick={() => setPmode(m)} className="px-3 py-1 rounded-md text-xs font-medium transition-colors" style={pmode === m ? { backgroundColor: '#10b981', color: '#050505' } : { color: 'rgba(250,250,249,0.7)' }}>{m === 'plan' ? 'Use a plan' : 'Custom'}</button>))}</div>
+                <div className="inline-flex rounded-lg p-0.5 mb-2 bg-white/[0.04] border border-white/[0.08]">{(['plan', 'custom'] as const).map(m => (<button key={m} type="button" onClick={() => setPmode(m)} className="px-3 py-1 rounded-md text-xs font-medium transition-colors" style={pmode === m ? { backgroundColor: '#00a19b', color: '#050505' } : { color: 'rgba(250,250,249,0.7)' }}>{m === 'plan' ? 'Use a plan' : 'Custom'}</button>))}</div>
                 {pmode === 'plan' ? (
                   <select value={plan} onChange={e => setPlan(e.target.value)} className={inputCls}><option value="starter">Starter - $149/mo</option><option value="pro">Professional - $199/mo</option><option value="growth">Growth - $349/mo</option></select>
                 ) : (
@@ -307,7 +307,7 @@ function AgencyLeads() {
       contacted: { bg: 'rgba(245,158,11,0.1)', text: '#f59e0b' },
       qualified: { bg: 'rgba(168,85,247,0.1)', text: '#a78bfa' },
       proposal: { bg: 'rgba(6,182,212,0.1)', text: '#22d3ee' },
-      won: { bg: 'rgba(16,185,129,0.1)', text: '#10b981' },
+      won: { bg: 'rgba(0, 161, 155,0.1)', text: '#00a19b' },
       lost: { bg: 'rgba(239,68,68,0.1)', text: '#ef4444' },
     };
     return m[s] || { bg: 'rgba(255,255,255,0.05)', text: 'rgba(250,250,249,0.5)' };
@@ -345,7 +345,7 @@ function AgencyLeads() {
         {([
           { label: 'Active', value: ls.active, icon: Target, color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' },
           { label: 'Qualified', value: ls.qualified, icon: TrendingUp, color: '#a78bfa', bg: 'rgba(168,85,247,0.1)' },
-          { label: 'Pipeline', value: fmtCents(ls.pipeline), icon: DollarSign, color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
+          { label: 'Pipeline', value: fmtCents(ls.pipeline), icon: DollarSign, color: '#00a19b', bg: 'rgba(0, 161, 155,0.1)' },
           { label: 'Sequence Due', value: '7', icon: Mail, color: '#a78bfa', bg: 'rgba(168,85,247,0.1)' },
           { label: 'Today', value: ls.followUpsToday, icon: Calendar, color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
         ] as const).map(s => (
@@ -427,7 +427,7 @@ function AgencyOutreach() {
       {/* Search + filter */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
         <div className="relative flex-1 sm:max-w-xs"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#fafaf9]/30" /><input type="text" placeholder="Search templates..." value={sq} onChange={e => setSq(e.target.value)} className="w-full rounded-xl pl-10 pr-4 py-2.5 text-sm bg-white/[0.04] border border-white/[0.08] text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:outline-none" /></div>
-        <div className="flex items-center gap-1">{[{ v: null, l: 'All' }, { v: 'email', l: 'Email' }, { v: 'sms', l: 'SMS' }, { v: 'call_script', l: 'Call Scripts' }].map(f => (<button key={f.l} onClick={() => setTf(f.v)} className="rounded-lg px-3 py-2 text-xs font-medium transition-colors" style={tf === f.v ? { backgroundColor: 'rgba(16,185,129,0.1)', color: '#10b981' } : { color: 'rgba(250,250,249,0.5)' }}>{f.l}</button>))}</div>
+        <div className="flex items-center gap-1">{[{ v: null, l: 'All' }, { v: 'email', l: 'Email' }, { v: 'sms', l: 'SMS' }, { v: 'call_script', l: 'Call Scripts' }].map(f => (<button key={f.l} onClick={() => setTf(f.v)} className="rounded-lg px-3 py-2 text-xs font-medium transition-colors" style={tf === f.v ? { backgroundColor: 'rgba(0, 161, 155,0.1)', color: '#00a19b' } : { color: 'rgba(250,250,249,0.5)' }}>{f.l}</button>))}</div>
       </div>
       {/* Grouped lists */}
       <div className="space-y-5">
@@ -448,7 +448,7 @@ function AgencyAnalytics() {
       <div className="mb-6"><h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[#fafaf9]">Analytics & Revenue</h1><p className="mt-1 text-sm text-[#fafaf9]/50">Track your earnings and client metrics.</p></div>
       <div data-tour="analytics-stats" className="grid gap-3 grid-cols-2 lg:grid-cols-4 mb-6">
         {([
-          { label: 'Monthly Recurring', value: fmtCents(AGENCY.analyticsStats.mrr), icon: TrendingUp, color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
+          { label: 'Monthly Recurring', value: fmtCents(AGENCY.analyticsStats.mrr), icon: TrendingUp, color: '#00a19b', bg: 'rgba(0, 161, 155,0.1)' },
           { label: 'Total Earned', value: fmtCents(AGENCY.analyticsStats.totalEarned), icon: DollarSign, color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' },
           { label: 'Pending Payout', value: fmtCents(AGENCY.analyticsStats.pendingPayout), icon: Wallet, color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
           { label: 'Paying Clients', value: String(AGENCY.analyticsStats.activeClients), icon: Users, color: '#a78bfa', bg: 'rgba(167,139,250,0.1)', sub: `+${AGENCY.analyticsStats.trialClients} in trial` },
@@ -462,13 +462,13 @@ function AgencyAnalytics() {
         <div className="lg:col-span-2 rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 sm:p-6">
           <h3 className="font-medium mb-4 text-sm text-[#fafaf9]">Revenue Over Time</h3>
           <div className="h-36 sm:h-48"><div className="flex items-end justify-between h-full gap-1 sm:gap-2">
-            {AGENCY.revenueByMonth.map((item, idx) => (<div key={item.month} className="flex-1 flex flex-col items-center gap-1"><div className="w-full flex flex-col items-center justify-end h-28 sm:h-40"><div className="w-full max-w-[32px] sm:max-w-[40px] rounded-t-lg" style={{ height: `${Math.max((item.amount / mx) * 100, 4)}%`, backgroundColor: '#10b981', opacity: 0.5 + (idx / AGENCY.revenueByMonth.length) * 0.5 }} title={fmtCents(item.amount)} /></div><span className="text-[8px] sm:text-xs text-[#fafaf9]/40">{fmtMonth(item.month)}</span></div>))}
+            {AGENCY.revenueByMonth.map((item, idx) => (<div key={item.month} className="flex-1 flex flex-col items-center gap-1"><div className="w-full flex flex-col items-center justify-end h-28 sm:h-40"><div className="w-full max-w-[32px] sm:max-w-[40px] rounded-t-lg" style={{ height: `${Math.max((item.amount / mx) * 100, 4)}%`, backgroundColor: '#00a19b', opacity: 0.5 + (idx / AGENCY.revenueByMonth.length) * 0.5 }} title={fmtCents(item.amount)} /></div><span className="text-[8px] sm:text-xs text-[#fafaf9]/40">{fmtMonth(item.month)}</span></div>))}
           </div></div>
         </div>
         <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 sm:p-6">
           <h3 className="font-medium mb-4 text-sm text-[#fafaf9]">Revenue by Plan</h3>
           <div className="space-y-4">
-            {[{ plan: 'Starter', count: AGENCY.planClients.starter, price: 14900, color: '#3b82f6' }, { plan: 'Professional', count: AGENCY.planClients.pro, price: 19900, color: '#10b981' }, { plan: 'Growth', count: AGENCY.planClients.growth, price: 34900, color: '#a78bfa' }].map(p => {
+            {[{ plan: 'Starter', count: AGENCY.planClients.starter, price: 14900, color: '#3b82f6' }, { plan: 'Professional', count: AGENCY.planClients.pro, price: 19900, color: '#00a19b' }, { plan: 'Growth', count: AGENCY.planClients.growth, price: 34900, color: '#a78bfa' }].map(p => {
               const rev = p.count * p.price; const pct = (rev / AGENCY.analyticsStats.mrr) * 100;
               return (<div key={p.plan}><div className="flex items-center justify-between mb-1"><span className="text-xs sm:text-sm text-[#fafaf9]">{p.plan}</span><span className="text-xs sm:text-sm font-medium text-[#fafaf9]">{fmtCents(rev)}</span></div><div className="h-1.5 sm:h-2 rounded-full bg-white/[0.06] overflow-hidden"><div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: p.color }} /></div><p className="text-[10px] text-[#fafaf9]/40 mt-1">{p.count} client{p.count !== 1 ? 's' : ''}</p></div>);
             })}
@@ -508,7 +508,7 @@ function AgencyBranding() {
           {[{ g: 'Sidebar / Navigation', f: [{ l: 'Sidebar Background', c: '#0a2e1f', custom: true }, { l: 'Sidebar Text', c: '#ffffff', custom: false }] }, { g: 'Page Background', f: [{ l: 'Page Background', c: '#0a0a0a', custom: false }] }, { g: 'Cards & Surfaces', f: [{ l: 'Card Background', c: '#111111', custom: false }, { l: 'Card Border', c: '#1a1a1a', custom: true }] }, { g: 'Text Colors', f: [{ l: 'Primary Text', c: '#fafaf9', custom: false }, { l: 'Muted Text', c: '#888888', custom: false }] }].map(s => (
             <div key={s.g} className="rounded-2xl border border-white/[0.08] bg-white/[0.025] overflow-hidden">
               <div className="px-4 py-3 flex items-center gap-2 border-b border-white/[0.06]"><Paintbrush className="h-4 w-4 text-emerald-400" /><span className="text-sm font-semibold text-[#fafaf9]">{s.g}</span></div>
-              <div className="p-3 space-y-2">{s.f.map(f => (<div key={f.l} className="flex items-center gap-3 rounded-xl px-3 py-3" style={{ backgroundColor: f.custom ? 'rgba(16,185,129,0.05)' : 'transparent', border: f.custom ? '1px solid rgba(16,185,129,0.2)' : '1px solid rgba(255,255,255,0.04)' }}><div className="w-9 h-9 rounded-lg border border-white/10 flex-shrink-0" style={{ backgroundColor: f.c }} /><div className="flex-1 min-w-0"><div className="flex items-center gap-2"><span className="text-sm font-medium text-[#fafaf9]">{f.l}</span>{f.custom && <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-emerald-500/10 text-emerald-400">Custom</span>}</div></div><span className="w-[90px] text-xs font-mono text-center rounded-lg px-2 py-1.5 bg-white/[0.04] border border-white/[0.06] text-[#fafaf9]/60">{f.c}</span></div>))}</div>
+              <div className="p-3 space-y-2">{s.f.map(f => (<div key={f.l} className="flex items-center gap-3 rounded-xl px-3 py-3" style={{ backgroundColor: f.custom ? 'rgba(0, 161, 155,0.05)' : 'transparent', border: f.custom ? '1px solid rgba(0, 161, 155,0.2)' : '1px solid rgba(255,255,255,0.04)' }}><div className="w-9 h-9 rounded-lg border border-white/10 flex-shrink-0" style={{ backgroundColor: f.c }} /><div className="flex-1 min-w-0"><div className="flex items-center gap-2"><span className="text-sm font-medium text-[#fafaf9]">{f.l}</span>{f.custom && <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-emerald-500/10 text-emerald-400">Custom</span>}</div></div><span className="w-[90px] text-xs font-mono text-center rounded-lg px-2 py-1.5 bg-white/[0.04] border border-white/[0.06] text-[#fafaf9]/60">{f.c}</span></div>))}</div>
             </div>
           ))}
         </div>
@@ -518,7 +518,7 @@ function AgencyBranding() {
             <div className="w-[130px] flex-shrink-0 p-3 bg-[#0a2e1f] border-r border-white/10"><div className="flex items-center gap-2 mb-3 px-1"><div className="w-5 h-5 rounded bg-emerald-500/20" /><div className="h-2 rounded-full flex-1 bg-white/40" /></div>{['Dashboard', 'Clients', 'Settings'].map((l, i) => (<div key={l} className="flex items-center gap-2 rounded-lg px-2 py-1.5 mb-0.5" style={{ backgroundColor: i === 0 ? 'rgba(255,255,255,0.15)' : 'transparent' }}><div className="w-3 h-3 rounded" style={{ backgroundColor: i === 0 ? '#fff' : 'rgba(255,255,255,0.4)' }} /><span className="text-[9px]" style={{ color: i === 0 ? '#fff' : 'rgba(255,255,255,0.6)' }}>{l}</span></div>))}</div>
             <div className="flex-1 p-3 bg-[#0a0a0a]"><div className="h-3 w-20 rounded-full bg-white/60 mb-3" /><div className="grid grid-cols-2 gap-2">{[1,2,3,4].map(n => (<div key={n} className="rounded-lg p-2.5 bg-[#111] border border-[#1a1a1a]"><div className="h-1.5 w-10 rounded-full bg-white/30 mb-1.5" /><div className="h-3 w-14 rounded-full bg-white/50 mb-1.5" /><div className="h-1 w-full rounded-full bg-white/10" /></div>))}</div><div className="mt-2.5 flex gap-2"><div className="rounded-lg px-2.5 py-1 bg-emerald-500"><span className="text-[9px] font-medium text-[#050505]">Primary</span></div><div className="rounded-lg px-2.5 py-1 bg-[#111] border border-[#1a1a1a]"><span className="text-[9px] font-medium text-white/70">Secondary</span></div></div></div>
           </div></div>
-          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-3"><p className="text-xs font-medium mb-2 text-[#fafaf9]/40">Your brand colors</p><div className="flex gap-3">{[{ l: 'Primary', c: '#10b981' }, { l: 'Secondary', c: '#059669' }, { l: 'Accent', c: '#34d399' }].map(({ l, c }) => (<div key={l} className="flex items-center gap-1.5 flex-1"><div className="w-5 h-5 rounded-md border border-white/10 flex-shrink-0" style={{ backgroundColor: c }} /><div><p className="text-[10px] font-medium text-[#fafaf9]">{l}</p><p className="text-[9px] font-mono text-[#fafaf9]/40">{c}</p></div></div>))}</div></div>
+          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-3"><p className="text-xs font-medium mb-2 text-[#fafaf9]/40">Your brand colors</p><div className="flex gap-3">{[{ l: 'Primary', c: '#00a19b' }, { l: 'Secondary', c: '#007e77' }, { l: 'Accent', c: '#01f5d1' }].map(({ l, c }) => (<div key={l} className="flex items-center gap-1.5 flex-1"><div className="w-5 h-5 rounded-md border border-white/10 flex-shrink-0" style={{ backgroundColor: c }} /><div><p className="text-[10px] font-medium text-[#fafaf9]">{l}</p><p className="text-[9px] font-mono text-[#fafaf9]/40">{c}</p></div></div>))}</div></div>
         </div></div>
       </div>
     </div>
@@ -543,7 +543,7 @@ function AgencyDemoPhone() {
         </div>
 
         {/* Gradient phone display */}
-        <div className="flex items-center justify-between rounded-xl p-4 mb-4" style={{ background: 'linear-gradient(135deg, #10b981, #10b981dd)' }}>
+        <div className="flex items-center justify-between rounded-xl p-4 mb-4" style={{ background: 'linear-gradient(135deg, #00a19b, #00a19bdd)' }}>
           <div className="flex items-center gap-3"><PhoneCall className="h-6 w-6 text-[#050505]" /><span className="text-xl sm:text-2xl font-bold tracking-wide text-[#050505]">(678) 555-0199</span></div>
           <button onClick={() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-white/20 text-[#050505]">
             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}{copied ? 'Copied' : 'Copy'}
@@ -612,7 +612,7 @@ function AgencyMarketing() {
         <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4"><div className="flex items-start justify-between mb-3"><div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10"><Palette className="h-5 w-5 text-emerald-400" /></div></div><h3 className="font-medium text-sm mb-1 text-[#fafaf9]">Active Template</h3><p className="text-xs mb-3 text-[#fafaf9]/40">Classic, Professional &amp; Versatile</p><button onClick={() => setActiveTab('template')} className="w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium bg-white/[0.04] border border-white/[0.08] text-[#fafaf9]/60"><LayoutDashboard className="h-4 w-4" />Change Template</button></div>
       </div>
       {/* Tabs */}
-      <div className="mb-4 overflow-x-auto border-b border-white/[0.06]"><nav className="flex gap-5 min-w-max">{tabs.map(tab => (<button key={tab.id} onClick={() => setActiveTab(tab.id)} className="flex items-center gap-1.5 pb-3 text-xs font-medium border-b-2 transition-colors" style={activeTab === tab.id ? { borderColor: '#10b981', color: '#10b981' } : { borderColor: 'transparent', color: 'rgba(250,250,249,0.4)' }}><tab.icon className="h-4 w-4" />{tab.label}</button>))}</nav></div>
+      <div className="mb-4 overflow-x-auto border-b border-white/[0.06]"><nav className="flex gap-5 min-w-max">{tabs.map(tab => (<button key={tab.id} onClick={() => setActiveTab(tab.id)} className="flex items-center gap-1.5 pb-3 text-xs font-medium border-b-2 transition-colors" style={activeTab === tab.id ? { borderColor: '#00a19b', color: '#00a19b' } : { borderColor: 'transparent', color: 'rgba(250,250,249,0.4)' }}><tab.icon className="h-4 w-4" />{tab.label}</button>))}</nav></div>
       {/* Overview */}
       {activeTab === 'overview' && (<div className="space-y-4">
         <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 sm:p-6"><h3 className="font-medium text-sm mb-4 text-[#fafaf9]">Your website includes:</h3><div className="grid grid-cols-1 sm:grid-cols-2 gap-3">{[{ t: 'Hero Section', d: 'Eye-catching headline with CTAs' }, { t: 'Features Overview', d: 'AI receptionist capabilities' }, { t: 'How It Works', d: '4-step process to get started' }, { t: 'Pricing Plans', d: 'Starter, Pro, and Growth tiers' }, { t: 'Testimonials', d: 'Social proof section' }, { t: 'FAQ Section', d: 'Common questions answered' }, { t: 'Industry Cards', d: 'Industries you serve' }, { t: 'Comparison Table', d: 'Compare vs competitors' }].map(i => (<div key={i.t} className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-emerald-400" /><div><p className="font-medium text-xs text-[#fafaf9]">{i.t}</p><p className="text-[10px] text-[#fafaf9]/40">{i.d}</p></div></div>))}</div></div>
@@ -620,7 +620,7 @@ function AgencyMarketing() {
       </div>)}
       {activeTab === 'template' && (<div className="space-y-3">
         <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4"><h3 className="font-medium text-sm text-[#fafaf9] mb-1">Choose Your Template</h3><p className="text-xs text-[#fafaf9]/40">Each template has a unique layout and style. Your content carries over between templates.</p></div>
-        {TEMPLATES.map(t => { const active = tmpl === t.id; return (<div key={t.id} className="rounded-2xl overflow-hidden border bg-white/[0.025]" style={{ borderColor: active ? '#10b981' : 'rgba(255,255,255,0.08)' }}><div className="p-4 flex items-start justify-between gap-3"><div className="min-w-0"><div className="flex items-center gap-2"><h4 className="font-semibold text-sm text-[#fafaf9]">{t.name}</h4>{active && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400">Active</span>}</div><p className="text-xs font-medium text-emerald-400 mt-0.5">{t.style}</p><p className="text-xs text-[#fafaf9]/40 mt-1">{t.desc}</p></div>{active ? (<span className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg bg-emerald-500/15 text-emerald-400 flex-shrink-0"><CheckCircle2 className="h-3.5 w-3.5" />Active</span>) : (<button onClick={() => setTmpl(t.id)} className="text-xs font-medium px-4 py-2 rounded-lg bg-emerald-500 text-[#050505] flex-shrink-0">Select</button>)}</div></div>); })}
+        {TEMPLATES.map(t => { const active = tmpl === t.id; return (<div key={t.id} className="rounded-2xl overflow-hidden border bg-white/[0.025]" style={{ borderColor: active ? '#00a19b' : 'rgba(255,255,255,0.08)' }}><div className="p-4 flex items-start justify-between gap-3"><div className="min-w-0"><div className="flex items-center gap-2"><h4 className="font-semibold text-sm text-[#fafaf9]">{t.name}</h4>{active && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400">Active</span>}</div><p className="text-xs font-medium text-emerald-400 mt-0.5">{t.style}</p><p className="text-xs text-[#fafaf9]/40 mt-1">{t.desc}</p></div>{active ? (<span className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg bg-emerald-500/15 text-emerald-400 flex-shrink-0"><CheckCircle2 className="h-3.5 w-3.5" />Active</span>) : (<button onClick={() => setTmpl(t.id)} className="text-xs font-medium px-4 py-2 rounded-lg bg-emerald-500 text-[#050505] flex-shrink-0">Select</button>)}</div></div>); })}
       </div>)}
       {activeTab === 'content' && (<div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 sm:p-6 space-y-4"><h3 className="font-medium text-sm text-[#fafaf9]">Website Content</h3><p className="text-xs text-[#fafaf9]/40 mb-4">Customize the text on your marketing website.</p>{[{ l: 'Tagline / Badge', v: 'AI-Powered Phone Answering', p: 'AI-Powered Phone Answering' }, { l: 'Main Headline', v: 'Never Miss Another Call', p: 'Never Miss Another Call' }, { l: 'Subheadline', v: 'Our AI receptionist answers calls 24/7...', p: 'AI Receptionist Starting at $49/month' }].map(f => (<div key={f.l}><label className="block text-xs font-medium mb-1.5 text-[#fafaf9]/60">{f.l}</label><input type="text" defaultValue={f.v} placeholder={f.p} className="w-full rounded-lg px-3 py-2.5 text-sm bg-white/[0.04] border border-white/[0.08] text-[#fafaf9] focus:outline-none" /></div>))}<button className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium bg-emerald-500 text-[#050505] mt-2"><Save className="h-4 w-4" />Save Content</button></div>)}
       {activeTab === 'domain' && (<div className="space-y-4"><div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 sm:p-6"><h3 className="font-medium text-sm mb-1 text-[#fafaf9]">Default Subdomain</h3><p className="text-xs text-[#fafaf9]/40 mb-3">Always available at this URL</p><div className="flex items-center gap-3 p-3 rounded-lg bg-white/[0.04] border border-white/[0.08]"><Globe className="h-5 w-5 text-[#fafaf9]/40 flex-shrink-0" /><span className="flex-1 text-xs font-mono text-[#fafaf9] truncate">https://demo.myvoiceaiconnect.com</span><Copy className="h-4 w-4 text-[#fafaf9]/30" /></div></div><div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 sm:p-6"><div className="flex items-center justify-between mb-2"><h3 className="font-medium text-sm text-[#fafaf9]">Custom Domain</h3><span className="flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-400"><CheckCircle2 className="h-3.5 w-3.5" />Verified</span></div><p className="text-xs text-[#fafaf9]/40 mb-3">Connect your own domain</p><input type="text" defaultValue="voiceai.youragency.com" className="w-full rounded-lg px-3 py-2.5 text-sm bg-white/[0.04] border border-white/[0.08] text-[#fafaf9] focus:outline-none" /></div></div>)}
@@ -656,9 +656,9 @@ function AgencyReferrals() {
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[{ l: 'Total Referrals', v: '3', sub: '2 active', icon: Users }, { l: 'This Month', v: '$119.20', icon: TrendingUp }, { l: 'Lifetime Earnings', v: '$238.40', icon: DollarSign }, { l: 'Available Balance', v: '$158.80', icon: Banknote, hl: true }].map(s => (
-          <div key={s.l} className="rounded-2xl p-5 transition-all" style={{ backgroundColor: s.hl ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.02)', border: s.hl ? '1px solid rgba(16,185,129,0.2)' : '1px solid rgba(255,255,255,0.06)' }}>
-            <div className="flex items-start justify-between mb-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: s.hl ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.05)' }}><s.icon className="h-5 w-5" style={{ color: s.hl ? '#10b981' : 'rgba(250,250,249,0.5)' }} /></div></div>
-            <p className="text-sm mb-1 text-[#fafaf9]/50">{s.l}</p><p className="text-2xl font-semibold" style={{ color: s.hl ? '#10b981' : '#fafaf9' }}>{s.v}</p>{s.sub && <p className="text-xs mt-1 text-[#fafaf9]/40">{s.sub}</p>}
+          <div key={s.l} className="rounded-2xl p-5 transition-all" style={{ backgroundColor: s.hl ? 'rgba(0, 161, 155,0.08)' : 'rgba(255,255,255,0.02)', border: s.hl ? '1px solid rgba(0, 161, 155,0.2)' : '1px solid rgba(255,255,255,0.06)' }}>
+            <div className="flex items-start justify-between mb-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: s.hl ? 'rgba(0, 161, 155,0.15)' : 'rgba(255,255,255,0.05)' }}><s.icon className="h-5 w-5" style={{ color: s.hl ? '#00a19b' : 'rgba(250,250,249,0.5)' }} /></div></div>
+            <p className="text-sm mb-1 text-[#fafaf9]/50">{s.l}</p><p className="text-2xl font-semibold" style={{ color: s.hl ? '#00a19b' : '#fafaf9' }}>{s.v}</p>{s.sub && <p className="text-xs mt-1 text-[#fafaf9]/40">{s.sub}</p>}
           </div>
         ))}
       </div>
@@ -702,7 +702,7 @@ const SETTINGS_PLANS_SEED: DemoPlan[] = [
 
 function SettingsSwitch({ on, onClick }: { on: boolean; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors flex-shrink-0" style={{ backgroundColor: on ? '#10b981' : 'rgba(255,255,255,0.15)' }}>
+    <button type="button" onClick={onClick} className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors flex-shrink-0" style={{ backgroundColor: on ? '#00a19b' : 'rgba(255,255,255,0.15)' }}>
       <span className="inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform" style={{ transform: on ? 'translateX(19px)' : 'translateX(3px)' }} />
     </button>
   );
@@ -732,7 +732,7 @@ function AgencyPlansMatrix() {
             <div key={p.id} className="p-4 rounded-t-2xl" style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderLeft: cellBorder, borderRight: cellBorder, borderTop: cellBorder, opacity: p.visible ? 1 : 0.55 }}>
               <div className="flex items-center gap-2 mb-2"><input defaultValue={p.name} className="flex-1 min-w-0 rounded-lg px-3 py-2 text-base font-semibold bg-[#050505] border border-white/[0.08] text-[#fafaf9] focus:outline-none" />{p.popular && <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400">Popular</span>}</div>
               <div className="flex items-center gap-1 mb-3">
-                <button type="button" onClick={() => setVisible(idx)} className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium bg-white/[0.04]" style={{ color: p.visible ? '#10b981' : 'rgba(250,250,249,0.4)' }}>{p.visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}{p.visible ? 'Visible' : 'Hidden'}</button>
+                <button type="button" onClick={() => setVisible(idx)} className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium bg-white/[0.04]" style={{ color: p.visible ? '#00a19b' : 'rgba(250,250,249,0.4)' }}>{p.visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}{p.visible ? 'Visible' : 'Hidden'}</button>
                 <div className="flex-1" />
                 <button type="button" disabled={idx === 0} className="disabled:opacity-30 p-1.5 text-[#fafaf9]/40"><ChevronLeft className="h-4 w-4" /></button>
                 <button type="button" disabled={idx === plans.length - 1} className="disabled:opacity-30 p-1.5 text-[#fafaf9]/40"><ChevronRight className="h-4 w-4" /></button>
@@ -742,7 +742,7 @@ function AgencyPlansMatrix() {
               <div className="relative mb-3"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-[#fafaf9]/40">$</span><input defaultValue={p.price} placeholder="0" className="w-full rounded-lg pl-7 pr-3 py-2 text-base font-semibold bg-[#050505] border border-white/[0.08] text-[#fafaf9] focus:outline-none" /></div>
               <label className="block text-[11px] font-medium mb-1 text-[#fafaf9]/40">Calls / mo</label>
               {p.unlimited ? (
-                <div className="w-full rounded-lg px-3 py-2 text-sm font-semibold flex items-center justify-center gap-2 mb-3" style={{ backgroundColor: 'rgba(16,185,129,0.09)', color: '#10b981', border: '1px solid rgba(16,185,129,0.25)' }}><InfinityIcon className="h-4 w-4" /> Unlimited</div>
+                <div className="w-full rounded-lg px-3 py-2 text-sm font-semibold flex items-center justify-center gap-2 mb-3" style={{ backgroundColor: 'rgba(0, 161, 155,0.09)', color: '#00a19b', border: '1px solid rgba(0, 161, 155,0.25)' }}><InfinityIcon className="h-4 w-4" /> Unlimited</div>
               ) : (
                 <div className="mb-3"><input defaultValue={p.calls} className={inputCls} /></div>
               )}
@@ -799,7 +799,7 @@ function AgencySettings() {
       <div className="mb-6"><h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[#fafaf9]">Settings</h1><p className="mt-1 text-sm text-[#fafaf9]/50">Manage your agency settings</p></div>
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Sidebar */}
-        <div className="lg:w-48 flex-shrink-0"><nav className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0">{tabs.map(t => (<button key={t.id} onClick={() => setTab(t.id)} className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium transition-all whitespace-nowrap" style={tab === t.id ? { backgroundColor: 'rgba(16,185,129,0.1)', color: '#10b981' } : { color: 'rgba(250,250,249,0.5)' }}><t.icon className="h-4 w-4" />{t.label}{t.id === 'demo' && <div className="w-2 h-2 rounded-full ml-auto flex-shrink-0 bg-emerald-400" />}</button>))}</nav></div>
+        <div className="lg:w-48 flex-shrink-0"><nav className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0">{tabs.map(t => (<button key={t.id} onClick={() => setTab(t.id)} className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium transition-all whitespace-nowrap" style={tab === t.id ? { backgroundColor: 'rgba(0, 161, 155,0.1)', color: '#00a19b' } : { color: 'rgba(250,250,249,0.5)' }}><t.icon className="h-4 w-4" />{t.label}{t.id === 'demo' && <div className="w-2 h-2 rounded-full ml-auto flex-shrink-0 bg-emerald-400" />}</button>))}</nav></div>
         {/* Content */}
         <div className={`flex-1 ${tab === 'pricing' ? 'max-w-5xl' : 'max-w-2xl'}`}>
           <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-4 sm:p-6">
@@ -828,7 +828,7 @@ function AgencySettings() {
               <div><h3 className="text-base font-medium mb-1 text-[#fafaf9]">Payment Settings</h3><p className="text-xs text-[#fafaf9]/40">Connect Stripe to receive payments from your clients.</p></div>
               {billMyself && (<div className={infoPill}><Info className="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-400" /><p className="text-xs text-[#fafaf9]/40">Not needed while you bill clients yourself. Turn off &ldquo;Bill my clients myself&rdquo; below if you want the platform to charge your clients through Stripe.</p></div>)}
               <div className={`${cardCls} ${billMyself ? 'opacity-50 pointer-events-none select-none' : ''}`}><div className="flex items-center gap-4"><div className="h-12 w-12 rounded-xl flex items-center justify-center bg-[#635BFF] flex-shrink-0"><CreditCard className="h-6 w-6 text-white" /></div><div className="flex-1"><p className="font-medium text-sm text-[#fafaf9]">Stripe Connect</p><div className="flex items-center gap-2 mt-0.5"><div className="h-1.5 w-1.5 rounded-full bg-emerald-400" /><p className="text-xs text-emerald-400">Active</p></div></div></div><div className="mt-4 pt-4 border-t border-white/[0.06] grid grid-cols-2 gap-3 text-xs"><div className="flex items-center justify-between rounded-lg px-3 py-2 bg-white/[0.02]"><span className="text-[#fafaf9]/40">Charges</span><span className="flex items-center gap-1 text-emerald-400"><Check className="h-3 w-3" />Enabled</span></div><div className="flex items-center justify-between rounded-lg px-3 py-2 bg-white/[0.02]"><span className="text-[#fafaf9]/40">Payouts</span><span className="flex items-center gap-1 text-emerald-400"><Check className="h-3 w-3" />Enabled</span></div></div></div>
-              <div className="rounded-xl p-4 bg-white/[0.03] border border-white/[0.08]"><div className="flex items-center gap-2 mb-1.5"><Receipt className="h-4 w-4 text-emerald-400" /><h4 className="font-medium text-sm text-[#fafaf9]">How You Bill Your Clients</h4></div><p className="text-xs mb-4 text-[#fafaf9]/40">By default, your clients pay through Stripe Connect. If you would rather bill them yourself with your own invoices or payment links, turn this on and new clients are set up with no card and no checkout.</p><div className="flex items-start justify-between rounded-xl px-4 py-3" style={billMyself ? { backgroundColor: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)' } : { backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}><div className="flex-1 min-w-0 mr-3"><p className="text-sm font-medium" style={{ color: billMyself ? '#10b981' : '#fafaf9' }}>Bill my clients myself</p><p className="text-[11px] mt-1 leading-relaxed text-[#fafaf9]/40">{billMyself ? 'On. You handle client billing outside the platform. New clients go live immediately with no card and no checkout, and the platform never charges them.' : 'Off. The platform charges your clients for you through Stripe Connect checkout, and you keep the margin.'}</p></div><SettingsSwitch on={billMyself} onClick={() => setBillMyself(!billMyself)} /></div>{billMyself && (<div className="mt-3"><label className="block text-xs font-medium mb-1.5 text-[#fafaf9]/60">How do you bill your clients?</label><select value={billMethod} onChange={e => setBillMethod(e.target.value)} className="w-full rounded-xl px-3 py-2.5 text-sm bg-white/[0.04] border border-white/[0.08] text-[#fafaf9] focus:outline-none"><option value="">Select a method...</option><option value="invoices">Manual invoices</option><option value="own_stripe">My own Stripe account</option><option value="quickbooks">QuickBooks / Xero</option><option value="paypal">PayPal</option><option value="bank">Bank transfer / ACH</option><option value="other">Other</option></select></div>)}</div>
+              <div className="rounded-xl p-4 bg-white/[0.03] border border-white/[0.08]"><div className="flex items-center gap-2 mb-1.5"><Receipt className="h-4 w-4 text-emerald-400" /><h4 className="font-medium text-sm text-[#fafaf9]">How You Bill Your Clients</h4></div><p className="text-xs mb-4 text-[#fafaf9]/40">By default, your clients pay through Stripe Connect. If you would rather bill them yourself with your own invoices or payment links, turn this on and new clients are set up with no card and no checkout.</p><div className="flex items-start justify-between rounded-xl px-4 py-3" style={billMyself ? { backgroundColor: 'rgba(0, 161, 155,0.1)', border: '1px solid rgba(0, 161, 155,0.25)' } : { backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}><div className="flex-1 min-w-0 mr-3"><p className="text-sm font-medium" style={{ color: billMyself ? '#00a19b' : '#fafaf9' }}>Bill my clients myself</p><p className="text-[11px] mt-1 leading-relaxed text-[#fafaf9]/40">{billMyself ? 'On. You handle client billing outside the platform. New clients go live immediately with no card and no checkout, and the platform never charges them.' : 'Off. The platform charges your clients for you through Stripe Connect checkout, and you keep the margin.'}</p></div><SettingsSwitch on={billMyself} onClick={() => setBillMyself(!billMyself)} /></div>{billMyself && (<div className="mt-3"><label className="block text-xs font-medium mb-1.5 text-[#fafaf9]/60">How do you bill your clients?</label><select value={billMethod} onChange={e => setBillMethod(e.target.value)} className="w-full rounded-xl px-3 py-2.5 text-sm bg-white/[0.04] border border-white/[0.08] text-[#fafaf9] focus:outline-none"><option value="">Select a method...</option><option value="invoices">Manual invoices</option><option value="own_stripe">My own Stripe account</option><option value="quickbooks">QuickBooks / Xero</option><option value="paypal">PayPal</option><option value="bank">Bank transfer / ACH</option><option value="other">Other</option></select></div>)}</div>
               <div className={infoPill}><Info className="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-400" /><p className="text-xs text-blue-300/80">Payments from your clients go directly to your Stripe account. The platform never holds your funds.</p></div>
             </div>)}
 
@@ -880,7 +880,7 @@ function AgencySettings() {
 
 function ClientOverview() {
   const [copied, setCopied] = useState(false);
-  const pc = '#10b981';
+  const pc = '#00a19b';
   const hr = new Date().getHours();
   const greet = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
   const first = CLIENT.owner.split(' ')[0];
@@ -912,7 +912,7 @@ function ClientOverview() {
         <div className="flex items-center justify-between border-b border-gray-100 p-4 sm:p-6"><h2 className="font-semibold text-sm sm:text-base text-gray-900">Recent Calls</h2><span className="flex items-center gap-1 text-xs sm:text-sm font-medium text-emerald-600 cursor-pointer">View all<ChevronRight className="h-4 w-4" /></span></div>
         <div>
           {CLIENT.calls.slice(0, 5).map((c, idx) => {
-            const urgBg = c.urgency === 'high' ? 'rgba(239,68,68,0.1)' : c.urgency === 'medium' ? 'rgba(245,158,11,0.1)' : 'rgba(16,185,129,0.1)';
+            const urgBg = c.urgency === 'high' ? 'rgba(239,68,68,0.1)' : c.urgency === 'medium' ? 'rgba(245,158,11,0.1)' : 'rgba(0, 161, 155,0.1)';
             const urgColor = c.urgency === 'high' ? '#ef4444' : c.urgency === 'medium' ? '#f59e0b' : '#6b7280';
             return (
               <div key={c.id} className="flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3.5 sm:py-4 hover:bg-gray-50 cursor-pointer transition-colors" style={{ borderBottom: idx < Math.min(CLIENT.calls.length, 5) - 1 ? '1px solid rgba(0,0,0,0.04)' : 'none' }}>
@@ -939,8 +939,8 @@ function ClientCalls() {
       <div className="mb-6"><div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"><div><h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Call History</h1><p className="mt-1 text-sm text-gray-500">{CLIENT.calls.length} total calls</p></div><div className="flex items-center gap-2"><div className="relative flex-1 sm:flex-initial"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" /><input type="text" placeholder="Search calls..." value={sq} onChange={e => setSq(e.target.value)} className="w-full sm:w-48 lg:w-64 rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-2 text-sm text-gray-900 focus:outline-none" /></div><button className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-500"><Download className="h-4 w-4" /><span className="hidden sm:inline">Export</span></button></div></div></div>
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden divide-y divide-gray-100">
         {filtered.map(c => {
-          const urgBg = c.urgency === 'high' ? 'rgba(239,68,68,0.1)' : c.urgency === 'medium' ? 'rgba(245,158,11,0.1)' : 'rgba(16,185,129,0.1)';
-          const urgColor = c.urgency === 'high' ? '#ef4444' : c.urgency === 'medium' ? '#f59e0b' : '#10b981';
+          const urgBg = c.urgency === 'high' ? 'rgba(239,68,68,0.1)' : c.urgency === 'medium' ? 'rgba(245,158,11,0.1)' : 'rgba(0, 161, 155,0.1)';
+          const urgColor = c.urgency === 'high' ? '#ef4444' : c.urgency === 'medium' ? '#f59e0b' : '#00a19b';
           return (
             <div key={c.id} className="hover:bg-gray-50 cursor-pointer transition-colors">
               <div className="p-3 sm:hidden"><div className="flex items-start gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full flex-shrink-0" style={{ backgroundColor: urgBg }}><PhoneCall className="h-5 w-5" style={{ color: urgColor }} /></div><div className="flex-1 min-w-0"><div className="flex items-center justify-between gap-2 mb-1"><p className="font-medium text-sm text-gray-900 truncate">{c.caller}</p><span className="rounded-full px-2 py-0.5 text-[10px] font-medium flex-shrink-0" style={{ backgroundColor: urgBg, color: urgColor }}>{c.urgency}</span></div><p className="text-xs text-gray-500 truncate">{c.phone}</p><div className="flex items-center justify-between mt-1"><p className="text-[10px] text-gray-400 truncate">{c.service}</p><p className="text-[10px] text-gray-400 flex-shrink-0">{c.time}</p></div></div><ChevronRight className="h-4 w-4 text-gray-300 flex-shrink-0 self-center" /></div></div>
@@ -957,7 +957,7 @@ function ClientCalls() {
 
 function ClientContacts() {
   const [statusFilter, setStatusFilter] = useState('all');
-  const pc = '#10b981';
+  const pc = '#00a19b';
   const contacts = [
     { id: '1', name: 'Sarah Johnson', phone: '(555) 123-4567', email: 'sarah@email.com', status: 'active', tags: ['repeat_caller'], calls: 3, last: '10 min ago' },
     { id: '2', name: 'Mike Chen', phone: '(555) 234-5678', email: null, status: 'new', tags: ['appointment_booked'], calls: 1, last: '1 hour ago' },
@@ -967,15 +967,15 @@ function ClientContacts() {
     { id: '6', name: 'Robert Taylor', phone: '(555) 678-9012', email: null, status: 'inactive', tags: [], calls: 1, last: '2 weeks ago' },
   ];
   const stats = { total: 6, new: 1, active: 3, converted: 1, inactive: 1 };
-  const statusConf: Record<string, { label: string; dot: string }> = { new: { label: 'New', dot: '#3b82f6' }, active: { label: 'Active', dot: '#10b981' }, converted: { label: 'Converted', dot: '#8b5cf6' }, inactive: { label: 'Inactive', dot: '#6b7280' } };
-  const tagColors: Record<string, string> = { emergency: '#ef4444', high_priority: '#f59e0b', repeat_caller: '#8b5cf6', appointment_booked: '#10b981' };
+  const statusConf: Record<string, { label: string; dot: string }> = { new: { label: 'New', dot: '#3b82f6' }, active: { label: 'Active', dot: '#00a19b' }, converted: { label: 'Converted', dot: '#8b5cf6' }, inactive: { label: 'Inactive', dot: '#6b7280' } };
+  const tagColors: Record<string, string> = { emergency: '#ef4444', high_priority: '#f59e0b', repeat_caller: '#8b5cf6', appointment_booked: '#00a19b' };
   const filtered = contacts.filter(c => statusFilter === 'all' || c.status === statusFilter);
   return (
     <div className="p-4 sm:p-6 lg:p-8" style={{ backgroundColor: '#f9fafb' }}>
       <div className="mb-4 sm:mb-6"><div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"><div><h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Contacts</h1><p className="mt-1 text-sm text-gray-500">{stats.total} total contacts from calls</p></div><button className="inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium bg-emerald-500 text-white"><Plus className="h-4 w-4" />Add Contact</button></div></div>
       {/* Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 sm:mb-6">
-        {[{ l: 'New', v: stats.new, c: '#3b82f6', f: 'new' }, { l: 'Active', v: stats.active, c: '#10b981', f: 'active' }, { l: 'Converted', v: stats.converted, c: '#8b5cf6', f: 'converted' }, { l: 'Inactive', v: stats.inactive, c: '#6b7280', f: 'inactive' }].map(s => (
+        {[{ l: 'New', v: stats.new, c: '#3b82f6', f: 'new' }, { l: 'Active', v: stats.active, c: '#00a19b', f: 'active' }, { l: 'Converted', v: stats.converted, c: '#8b5cf6', f: 'converted' }, { l: 'Inactive', v: stats.inactive, c: '#6b7280', f: 'inactive' }].map(s => (
           <button key={s.l} onClick={() => setStatusFilter(statusFilter === s.f ? 'all' : s.f)} className="rounded-xl border p-3 sm:p-4 text-left transition-all" style={{ borderColor: statusFilter === s.f ? s.c : '#e5e7eb', backgroundColor: statusFilter === s.f ? `${s.c}08` : '#fff' }}>
             <div className="flex items-center gap-2 mb-1"><div className="w-2 h-2 rounded-full" style={{ backgroundColor: s.c }} /><span className="text-xs text-gray-500">{s.l}</span></div>
             <p className="text-lg sm:text-xl font-semibold text-gray-900">{s.v}</p>
@@ -1007,7 +1007,7 @@ function ClientContacts() {
 function ClientAIAgent() {
   const [hoursOpen, setHoursOpen] = useState(false);
   const [kbOpen, setKbOpen] = useState(false);
-  const pc = '#10b981';
+  const pc = '#00a19b';
   const SectionHead = ({ icon: Icon, title, sub, live }: { icon: any; title: string; sub: string; live?: boolean }) => (
     <div className="p-3 sm:p-4 border-b border-gray-100"><div className="flex items-center gap-2 sm:gap-3"><div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-emerald-50"><Icon className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" /></div><div className="flex-1 min-w-0"><div className="flex items-center gap-1.5"><h3 className="font-semibold text-sm text-gray-900">{title}</h3>{live && <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-full uppercase bg-emerald-50 text-emerald-600">Live</span>}</div><p className="text-[10px] sm:text-xs text-gray-400">{sub}</p></div></div></div>
   );
@@ -1102,7 +1102,7 @@ const TOUR_CSS = `
 @keyframes tour-fade-in { from { opacity: 0; transform: translateY(8px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes tour-fade-in-center { from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
 @keyframes tour-spotlight-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes tour-spotlight-pulse { 0%, 100% { box-shadow: 0 0 0 3px rgba(16,185,129,0.15), 0 0 30px rgba(16,185,129,0.08); } 50% { box-shadow: 0 0 0 5px rgba(16,185,129,0.25), 0 0 50px rgba(16,185,129,0.15); } }
+@keyframes tour-spotlight-pulse { 0%, 100% { box-shadow: 0 0 0 3px rgba(0, 161, 155,0.15), 0 0 30px rgba(0, 161, 155,0.08); } 50% { box-shadow: 0 0 0 5px rgba(0, 161, 155,0.25), 0 0 50px rgba(0, 161, 155,0.15); } }
 @keyframes tour-shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 @keyframes tour-pill-enter { from { opacity: 0; transform: translateY(20px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes tour-number-pop { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.2); } 100% { transform: scale(1); opacity: 1; } }
@@ -1114,7 +1114,7 @@ const TOUR_CSS = `
 .tour-pill-enter { animation: tour-pill-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 .tour-number-pop { animation: tour-number-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
 .tour-float { animation: tour-float 3s ease-in-out infinite; }
-.tour-shimmer-bar { background: linear-gradient(90deg, transparent, rgba(16,185,129,0.3), transparent); background-size: 200% 100%; animation: tour-shimmer 2s ease-in-out infinite; }
+.tour-shimmer-bar { background: linear-gradient(90deg, transparent, rgba(0, 161, 155,0.3), transparent); background-size: 200% 100%; animation: tour-shimmer 2s ease-in-out infinite; }
 `;
 
 // ─── Tour Overlay ────────────────────────────────────────────────────────────
@@ -1301,7 +1301,7 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onPause, fra
           return (rx2 - rx > 0 && ry2 - ry > 0) ? (
             <div key={`spot-${stepIndex}`} className="absolute rounded-xl pointer-events-none tour-spotlight-enter tour-spotlight-ring" style={{
               left: rx, top: ry, width: rx2 - rx, height: ry2 - ry,
-              border: '2px solid rgba(16,185,129,0.4)',
+              border: '2px solid rgba(0, 161, 155,0.4)',
             }} />
           ) : null;
         })()}
@@ -1316,7 +1316,7 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onPause, fra
           onPointerMove={isCentered ? undefined : handlePointerMove}
           onPointerUp={isCentered ? undefined : handlePointerUp}
         >
-        <div className={`rounded-2xl border border-white/[0.1] bg-[#0a0a0a]/95 backdrop-blur-xl ${isCentered ? 'p-5 sm:p-8 w-[90vw] max-w-md' : 'p-3 sm:p-5'}`} style={{ boxShadow: '0 25px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(16,185,129,0.05)' }}>
+        <div className={`rounded-2xl border border-white/[0.1] bg-[#0a0a0a]/95 backdrop-blur-xl ${isCentered ? 'p-5 sm:p-8 w-[90vw] max-w-md' : 'p-3 sm:p-5'}`} style={{ boxShadow: '0 25px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(0, 161, 155,0.05)' }}>
 
           {/* Drag handle + step number */}
           {!isCentered && (
@@ -1354,7 +1354,7 @@ function TourOverlay({ step, stepIndex, totalSteps, onNext, onPrev, onPause, fra
                 {Array.from({ length: totalSteps }).map((_, i) => (
                   <div key={i} className="rounded-full transition-all duration-300" style={{
                     width: i === stepIndex ? 14 : 4, height: 4,
-                    backgroundColor: i === stepIndex ? '#10b981' : i < stepIndex ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.08)',
+                    backgroundColor: i === stepIndex ? '#00a19b' : i < stepIndex ? 'rgba(0, 161, 155,0.4)' : 'rgba(255,255,255,0.08)',
                   }} />
                 ))}
               </div>
@@ -1391,12 +1391,12 @@ function TourResumePill({ step, total, onResume, onRestart }: { step: number; to
   const pct = Math.round(((step + 1) / total) * 100);
   return (
     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 tour-pill-enter">
-      <div className="flex items-center gap-3 rounded-full border border-emerald-500/20 bg-[#0a0a0a]/95 backdrop-blur-xl px-2 py-1.5 shadow-2xl" style={{ boxShadow: '0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(16,185,129,0.08)' }}>
+      <div className="flex items-center gap-3 rounded-full border border-emerald-500/20 bg-[#0a0a0a]/95 backdrop-blur-xl px-2 py-1.5 shadow-2xl" style={{ boxShadow: '0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(0, 161, 155,0.08)' }}>
         {/* Progress ring */}
         <div className="relative flex items-center justify-center w-9 h-9">
           <svg className="w-9 h-9 -rotate-90" viewBox="0 0 36 36">
             <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="3" />
-            <circle cx="18" cy="18" r="15" fill="none" stroke="#10b981" strokeWidth="3" strokeDasharray={`${pct * 0.94} 100`} strokeLinecap="round" className="transition-all duration-500" />
+            <circle cx="18" cy="18" r="15" fill="none" stroke="#00a19b" strokeWidth="3" strokeDasharray={`${pct * 0.94} 100`} strokeLinecap="round" className="transition-all duration-500" />
           </svg>
           <span className="absolute text-[9px] font-bold text-emerald-400">{step + 1}</span>
         </div>
@@ -1524,7 +1524,7 @@ export default function DemoPage() {
         <header className="flex items-center justify-between h-14 px-4" style={{ borderBottom: view === 'client' ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.06)' }}>
           {/* Logo icon only, no name on mobile */}
           {view === 'agency' ? (
-            <div className="flex items-center justify-center rounded-xl flex-shrink-0 text-base font-bold text-emerald-400" style={{ height: 36, width: 36, backgroundColor: 'rgba(16,185,129,0.15)', border: '1px solid rgba(255,255,255,0.06)' }}>{AGENCY.name.charAt(0)}</div>
+            <div className="flex items-center justify-center rounded-xl flex-shrink-0 text-base font-bold text-emerald-400" style={{ height: 36, width: 36, backgroundColor: 'rgba(0, 161, 155,0.15)', border: '1px solid rgba(255,255,255,0.06)' }}>{AGENCY.name.charAt(0)}</div>
           ) : (
             <div className="flex items-center justify-center rounded-xl flex-shrink-0" style={{ height: 36, width: 36, backgroundColor: 'rgba(255,255,255,0.15)' }}><Phone className="h-5 w-5 text-white" /></div>
           )}
@@ -1581,7 +1581,7 @@ export default function DemoPage() {
                 }}
                 className="w-full flex items-center justify-between rounded-xl px-3 py-3 text-sm font-medium transition-colors text-left"
                 style={view === 'agency'
-                  ? { backgroundColor: active ? 'rgba(16,185,129,0.1)' : 'transparent', color: active ? '#10b981' : 'rgba(250,250,249,0.6)' }
+                  ? { backgroundColor: active ? 'rgba(0, 161, 155,0.1)' : 'transparent', color: active ? '#00a19b' : 'rgba(250,250,249,0.6)' }
                   : { backgroundColor: active ? 'rgba(255,255,255,0.1)' : 'transparent', color: active ? '#ffffff' : 'rgba(255,255,255,0.65)' }
                 }
               >
@@ -1589,7 +1589,7 @@ export default function DemoPage() {
                   <item.icon className="h-5 w-5" />
                   {item.label}
                 </div>
-                {active && <ChevronRight className="h-4 w-4" style={{ color: view === 'agency' ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.3)' }} />}
+                {active && <ChevronRight className="h-4 w-4" style={{ color: view === 'agency' ? 'rgba(0, 161, 155,0.4)' : 'rgba(255,255,255,0.3)' }} />}
               </button>
             );
           })}
@@ -1598,10 +1598,10 @@ export default function DemoPage() {
         {/* Bottom card, matches real layout */}
         <div className="absolute bottom-0 left-0 right-0 p-4 space-y-3" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 1rem)' }}>
           {view === 'agency' ? (
-            <div data-tour="sidebar-mrr" className="rounded-xl p-3" style={{ backgroundColor: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}>
-              <p className="text-[10px]" style={{ color: 'rgba(16,185,129,0.6)' }}>Monthly Revenue</p>
+            <div data-tour="sidebar-mrr" className="rounded-xl p-3" style={{ backgroundColor: 'rgba(0, 161, 155,0.08)', border: '1px solid rgba(0, 161, 155,0.2)' }}>
+              <p className="text-[10px]" style={{ color: 'rgba(0, 161, 155,0.6)' }}>Monthly Revenue</p>
               <p className="text-lg font-bold text-emerald-300">{AGENCY.stats.mrr}</p>
-              <p className="text-[10px] mt-0.5" style={{ color: 'rgba(16,185,129,0.5)' }}>{AGENCY.stats.clients} active clients</p>
+              <p className="text-[10px] mt-0.5" style={{ color: 'rgba(0, 161, 155,0.5)' }}>{AGENCY.stats.clients} active clients</p>
             </div>
           ) : (
             <div className="rounded-xl border p-3" style={{ borderColor: 'rgba(255,255,255,0.1)', backgroundColor: 'rgba(255,255,255,0.05)' }}>

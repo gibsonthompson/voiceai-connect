@@ -112,7 +112,7 @@ interface RenderOpts {
  */
 export async function renderAgencyAppIcon({ host, size, clientId, agencyId }: RenderOpts) {
   let name = '';
-  let primary = '#10b981';
+  let primary = '#00a19b';
   let iconSrc: string | null = null;
   let bg: string | null = null;
 

@@ -42,7 +42,7 @@ export default function LockedFeatureOverlay({
   
   // Theme
   const isDark = agency?.website_theme !== 'light';
-  const primaryColor = branding.primaryColor || '#10b981';
+  const primaryColor = branding.primaryColor || '#00a19b';
   
   // Theme-based colors
   const textColor = isDark ? '#fafaf9' : '#111827';

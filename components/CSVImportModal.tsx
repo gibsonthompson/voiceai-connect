@@ -540,7 +540,7 @@ export default function CSVImportModal({
     panelBg: theme.isDark ? '#232321' : '#ffffff',
     panelBorder: theme.inputBorder || theme.border,
     hover: theme.hover || (theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'),
-    accent: theme.primary || '#10b981',
+    accent: theme.primary || '#00a19b',
     isDark: !!theme.isDark,
   };
 

@@ -29,7 +29,7 @@ const ADMIN_LIGHT_THEME = {
   bg: '#FFFFFF', text: '#0C2018', textMuted: '#5A6E62',
   border: '#E3EFE8', hover: '#F6FCF9', card: '#FFFFFF',
   input: '#FFFFFF', inputBorder: '#D2E4DA',
-  primary: '#10b981', primary15: '#E7F8F0', primary30: '#BEEAD6', primaryText: '#04140D',
+  primary: '#00a19b', primary15: '#E7F8F0', primary30: '#BEEAD6', primaryText: '#04140D',
   error: '#D33A3F', errorBg: '#FBE3E3', errorBorder: '#F3C9C9',
   warning: '#B8790A', warningBg: '#FBF0D6', warningBorder: '#F0DCA8',
   info: '#0E9BB5', infoBg: '#DBF1F6', infoBorder: '#BFE7F0',

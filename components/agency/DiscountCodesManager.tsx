@@ -45,7 +45,7 @@ function ThemedDropdown({ value, onChange, options, theme, disabled }: { value: 
   const selected = options.find((o) => o.value === value);
   const menuBg = theme.card || theme.input || '#ffffff';
   const hover = theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
-  const selBg = (theme.primary || '#10b981') + '22';
+  const selBg = (theme.primary || '#00a19b') + '22';
   return (
     <div ref={ref} className="relative">
       <button type="button" disabled={disabled} onClick={() => setOpen((o) => !o)}
@@ -95,7 +95,7 @@ function ThemedDatePicker({ value, onChange, theme, placeholder = 'No expiry' }:
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const selStr = parsed ? fmt(parsed) : '';
   const menuBg = theme.card || theme.input || '#ffffff';
-  const prim = theme.primary || '#10b981';
+  const prim = theme.primary || '#00a19b';
   const cells: (number | null)[] = [];
   for (let i = 0; i < firstDay; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) cells.push(d);

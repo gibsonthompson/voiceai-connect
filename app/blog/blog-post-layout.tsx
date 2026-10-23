@@ -62,7 +62,7 @@ function ShareButton({ title, url }: { title: string; url: string }) {
         <Linkedin className="h-4 w-4" />
       </button>
       <button onClick={handleCopy} className={btnCls} title="Copy link" aria-label="Copy link">
-        {copied ? <Check className="h-4 w-4" style={{ color: '#10b981' }} /> : <LinkIcon className="h-4 w-4" />}
+        {copied ? <Check className="h-4 w-4" style={{ color: '#00a19b' }} /> : <LinkIcon className="h-4 w-4" />}
       </button>
     </div>
   );
@@ -100,7 +100,7 @@ function TableOfContents({ items }: { items: TableOfContentsItem[] }) {
 function CTABox() {
   return (
     <div className="p-6 rounded-2xl border border-black/[0.07] bg-gradient-to-br from-emerald-50/60 to-transparent">
-      <p className="font-mono text-[10px] tracking-[0.16em] uppercase mb-3" style={{ color: '#047857' }}>
+      <p className="font-mono text-[10px] tracking-[0.16em] uppercase mb-3" style={{ color: '#0a5a54' }}>
         Ready to launch?
       </p>
       <h4 className="font-display font-medium text-[20px] text-black leading-snug">
@@ -324,7 +324,7 @@ export function Callout({
 }) {
   const styles = {
     info: { border: 'rgba(59, 130, 246, 0.25)', bg: 'rgba(59, 130, 246, 0.04)', titleColor: '#1d4ed8' },
-    tip: { border: 'rgba(16, 185, 129, 0.3)', bg: 'rgba(16, 185, 129, 0.05)', titleColor: '#047857' },
+    tip: { border: 'rgba(0, 161, 155, 0.3)', bg: 'rgba(0, 161, 155, 0.05)', titleColor: '#0a5a54' },
     warning: { border: 'rgba(245, 158, 11, 0.3)', bg: 'rgba(245, 158, 11, 0.06)', titleColor: '#b45309' },
   }[type];
 
@@ -421,7 +421,7 @@ export function StepList({
         <div key={i} className="flex gap-4 p-5 rounded-xl border border-black/[0.07] bg-black/[0.012]">
           <div
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-display font-medium text-[13px]"
-            style={{ background: 'rgba(74, 234, 188, 0.14)', color: '#047857', border: '1px solid rgba(74, 234, 188, 0.25)' }}
+            style={{ background: 'rgba(74, 234, 188, 0.14)', color: '#0a5a54', border: '1px solid rgba(74, 234, 188, 0.25)' }}
           >
             {i + 1}
           </div>

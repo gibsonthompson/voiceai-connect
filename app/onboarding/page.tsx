@@ -227,7 +227,7 @@ function ReferralSelect({ value, options, onChange }: { value: string; options: 
           {options.filter((o) => o.value !== '').map((o) => (
             <button key={o.value} type="button" onClick={() => { onChange(o.value); setOpen(false); }}
               className="w-full text-left px-4 py-3 text-base text-[#fafaf9]/90 hover:bg-white/[0.06] transition-colors"
-              style={value === o.value ? { backgroundColor: 'rgba(16,185,129,0.15)', color: '#fafaf9' } : {}}>
+              style={value === o.value ? { backgroundColor: 'rgba(0, 161, 155,0.15)', color: '#fafaf9' } : {}}>
               {o.label}
             </button>
           ))}
@@ -543,9 +543,9 @@ function OnboardingContent() {
               {/* PRO */}
               <div className="rounded-2xl relative overflow-hidden flex flex-col md:-mt-5 md:mb-0"
                 style={{
-                  background: 'linear-gradient(180deg, rgba(16,185,129,0.12) 0%, rgba(16,185,129,0.03) 40%, rgba(5,5,5,0.95) 100%)',
-                  border: '1.5px solid rgba(16,185,129,0.35)',
-                  boxShadow: '0 0 60px -10px rgba(16,185,129,0.15), 0 20px 60px -20px rgba(0,0,0,0.5)',
+                  background: 'linear-gradient(180deg, rgba(0, 161, 155,0.12) 0%, rgba(0, 161, 155,0.03) 40%, rgba(5,5,5,0.95) 100%)',
+                  border: '1.5px solid rgba(0, 161, 155,0.35)',
+                  boxShadow: '0 0 60px -10px rgba(0, 161, 155,0.15), 0 20px 60px -20px rgba(0,0,0,0.5)',
                 }}>
                 <div className="h-1 bg-emerald-500 w-full" />
                 <div className="flex justify-center pt-5">
@@ -576,7 +576,7 @@ function OnboardingContent() {
                   </ul>
                   <button onClick={() => handleSelectPlan('pro')}
                     className="group w-full rounded-full py-[18px] text-base font-bold bg-emerald-500 text-[#050505] hover:bg-emerald-400 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
-                    style={{ boxShadow: '0 4px 24px rgba(16,185,129,0.3)' }}>
+                    style={{ boxShadow: '0 4px 24px rgba(0, 161, 155,0.3)' }}>
                     Start 14-Day Free Trial
                     <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </button>

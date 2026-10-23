@@ -314,7 +314,7 @@ export default function AdminInboxPage() {
     <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
       style={c.type === 'faq'
         ? { background: '#eef2ff', color: '#4338ca' }
-        : { background: 'var(--a-em-soft, #ecfdf5)', color: 'var(--a-em-deep, #047857)' }}>
+        : { background: 'var(--a-em-soft, #e9fefb)', color: 'var(--a-em-deep, #0a5a54)' }}>
       {c.type === 'faq' ? `${c.faqOrigin?.tag || 'Help bot'}${c.escalated ? ', escalated' : ''}` : 'Agency'}
     </span>
   );
@@ -400,7 +400,7 @@ export default function AdminInboxPage() {
           <>
             <div className="flex items-center gap-3 px-4 py-2.5 border-b shrink-0" style={{ borderColor: 'var(--a-line)', background: 'white' }}>
               <button onClick={() => setSelected(null)} className="sm:hidden p-1.5 -ml-1.5 rounded-lg hover:bg-black/5" aria-label="Back"><ArrowLeft className="h-4 w-4" style={{ color: 'var(--a-dim)' }} /></button>
-              <div className="h-8 w-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--a-em-soft, #ecfdf5)', color: 'var(--a-em-deep, #047857)' }}>
+              <div className="h-8 w-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--a-em-soft, #e9fefb)', color: 'var(--a-em-deep, #0a5a54)' }}>
                 {selected.type === 'faq' ? <Bot className="h-4 w-4" /> : <Building2 className="h-4 w-4" />}
               </div>
               <div className="min-w-0 flex-1">

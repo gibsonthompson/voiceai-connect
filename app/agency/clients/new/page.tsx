@@ -176,7 +176,7 @@ export default function AddClientPage() {
   const [billingLoading, setBillingLoading] = useState(false);
 
   const isDark = agency?.website_theme !== 'light';
-  const primaryColor = branding.primaryColor || '#10b981';
+  const primaryColor = branding.primaryColor || '#00a19b';
   const buttonTextColor = getContrastColor(primaryColor);
 
   const textColor = isDark ? '#fafaf9' : '#111827';

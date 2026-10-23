@@ -60,7 +60,7 @@ export default function MissedCallCalculatorPage() {
   }, [avgJob, callsPerWeek, missedPct, closeRate]);
 
   const name = branding.name || agency?.name || 'Your Agency';
-  const primary = branding.primaryColor || '#10b981';
+  const primary = branding.primaryColor || '#00a19b';
   const logoUrl = branding.logoUrl || agency?.logo_url || null;
   const demo = agency?.demo_phone_number || null;
   const base = agency?.marketing_domain && agency?.domain_verified

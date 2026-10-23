@@ -89,13 +89,13 @@
 
 /* ── LINKS ── */
 .article-content div a {
-  color: #047857;
+  color: #0a5a54;
   text-decoration: none;
   border-bottom: 1px solid rgba(4, 120, 87, 0.25);
   transition: border-color 0.2s ease;
 }
 .article-content div a:hover {
-  border-bottom-color: #047857;
+  border-bottom-color: #0a5a54;
 }
 
 /* ── UNORDERED LISTS ── */
@@ -120,7 +120,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #10b981;
+  background: #00a19b;
 }
 
 /* ── ORDERED LISTS ── */
@@ -147,15 +147,15 @@
   font-family: 'Geist Mono', ui-monospace, monospace;
   font-weight: 500;
   font-size: 0.95rem;
-  color: #047857;
+  color: #0a5a54;
 }
 
 /* ── BLOCKQUOTES ── */
 .article-content div > blockquote {
   margin: 1.75rem 0;
   padding: 1.1rem 1.4rem;
-  border-left: 3px solid #10b981;
-  background: rgba(16, 185, 129, 0.04);
+  border-left: 3px solid #00a19b;
+  background: rgba(0, 161, 155, 0.04);
   border-radius: 0 0.625rem 0.625rem 0;
 }
 .article-content div > blockquote p {
@@ -180,7 +180,7 @@
   background: rgba(0, 0, 0, 0.05);
   border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 4px;
-  color: #047857;
+  color: #0a5a54;
 }
 
 /* ── CODE BLOCKS — kept dark for readability ── */
@@ -251,21 +251,21 @@
 .article-content div .stat-highlight {
   display: inline-block;
   padding: 0.18rem 0.625rem;
-  background: rgba(16, 185, 129, 0.08);
-  border: 1px solid rgba(16, 185, 129, 0.22);
+  background: rgba(0, 161, 155, 0.08);
+  border: 1px solid rgba(0, 161, 155, 0.22);
   border-radius: 6px;
   font-family: 'Geist Mono', ui-monospace, monospace;
   font-size: 0.92em;
   font-weight: 500;
-  color: #047857;
+  color: #0a5a54;
 }
 
 /* ── CTA BOX ── */
 .article-content div .cta-box {
   margin: 2.25rem 0;
   padding: 1.5rem 1.75rem;
-  border: 1px solid rgba(16, 185, 129, 0.22);
-  background: linear-gradient(180deg, rgba(16, 185, 129, 0.05), rgba(16, 185, 129, 0.01));
+  border: 1px solid rgba(0, 161, 155, 0.22);
+  background: linear-gradient(180deg, rgba(0, 161, 155, 0.05), rgba(0, 161, 155, 0.01));
   border-radius: 14px;
 }
 .article-content div .cta-box p {
@@ -317,8 +317,8 @@
 /* ── CALLOUT VARIANTS ── */
 .article-content div .callout-tip,
 .article-content div .callout.tip {
-  border-color: rgba(16, 185, 129, 0.3);
-  background: rgba(16, 185, 129, 0.05);
+  border-color: rgba(0, 161, 155, 0.3);
+  background: rgba(0, 161, 155, 0.05);
 }
 .article-content div .callout-warning,
 .article-content div .callout.warning {
@@ -382,9 +382,9 @@
 .article-content div .quick-answer {
   margin: 0 0 2.25rem 0;
   padding: 1.35rem 1.6rem;
-  background: linear-gradient(180deg, rgba(16, 185, 129, 0.07), rgba(16, 185, 129, 0.02));
-  border: 1px solid rgba(16, 185, 129, 0.28);
-  border-left: 3px solid #10b981;
+  background: linear-gradient(180deg, rgba(0, 161, 155, 0.07), rgba(0, 161, 155, 0.02));
+  border: 1px solid rgba(0, 161, 155, 0.28);
+  border-left: 3px solid #00a19b;
   border-radius: 14px;
   font-size: 1.09375rem;
   line-height: 1.7;
@@ -394,7 +394,7 @@
   display: inline;
   font-family: 'Geist', system-ui, sans-serif;
   font-weight: 600;
-  color: #047857;
+  color: #0a5a54;
   letter-spacing: -0.01em;
 }
 .article-content div .quick-answer p {
@@ -443,7 +443,7 @@
   left: 0;
   top: 0;
   font-weight: 600;
-  color: #10b981;
+  color: #00a19b;
 }
 
 /* ── MOBILE ── */

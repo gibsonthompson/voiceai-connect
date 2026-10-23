@@ -1,8 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
 
 :root {
-  --a-primary: #10b981; --a-primary-rgb: 16,185,129; --a-primary-text: #fff;
-  --a-accent: #34d399; --a-accent-rgb: 52,211,153;
+  --a-primary: #00a19b; --a-primary-rgb: 0, 161, 155; --a-primary-text: #fff;
+  --a-accent: #01f5d1; --a-accent-rgb: 1, 245, 209;
   --a-bg: #0a0a0b; --a-bg-raised: #111113;
   --a-bg-card: rgba(255,255,255,0.025); --a-bg-card-hover: rgba(255,255,255,0.045);
   --a-text: #f0f0f0; --a-text-secondary: rgba(240,240,240,0.55); --a-text-muted: rgba(240,240,240,0.3);

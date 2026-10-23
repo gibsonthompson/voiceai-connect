@@ -122,9 +122,9 @@ interface AgencyContextType {
 }
 
 const defaultBranding: Branding = {
-  primaryColor: '#10b981',
-  secondaryColor: '#059669',
-  accentColor: '#34d399',
+  primaryColor: '#00a19b',
+  secondaryColor: '#007e77',
+  accentColor: '#01f5d1',
   logoUrl: null,
   name: 'VoiceAI Connect',
 };
@@ -175,9 +175,9 @@ function calculateTrialDays(trialEndsAt: string | null): number | null {
 
 function buildBranding(agency: any): Branding {
   return {
-    primaryColor: agency.primary_color || '#10b981',
-    secondaryColor: agency.secondary_color || '#059669',
-    accentColor: agency.accent_color || '#34d399',
+    primaryColor: agency.primary_color || '#00a19b',
+    secondaryColor: agency.secondary_color || '#007e77',
+    accentColor: agency.accent_color || '#01f5d1',
     logoUrl: agency.logo_url || null,
     name: agency.name || 'VoiceAI Connect',
   };

@@ -137,9 +137,9 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => { const name = agency?.name || branding?.name; document.title = name ? `Dashboard | ${name}` : 'Dashboard'; }, []);
 
-  const primaryColor = branding.primaryColor || '#10b981';
-  const secondaryColor = branding.secondaryColor || '#059669';
-  const accentColor = branding.accentColor || '#34d399';
+  const primaryColor = branding.primaryColor || '#00a19b';
+  const secondaryColor = branding.secondaryColor || '#007e77';
+  const accentColor = branding.accentColor || '#01f5d1';
   const trialDaysLeft = getTrialDaysLeft(agency?.trial_ends_at);
   const isOnTrial = isTrialStatus(agency?.subscription_status);
   const hasPaymentIssue = isPaymentFailed(agency?.subscription_status);

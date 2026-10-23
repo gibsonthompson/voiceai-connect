@@ -269,9 +269,9 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
       name: agency.name,
       logoUrl: agency.logo_url || '',
       logoBackgroundColor: logoBgColor,
-      primaryColor: agency.primary_color || '#10b981',
-      primaryHoverColor: agency.secondary_color || adjustColor(agency.primary_color || '#10b981', -15),
-      accentColor: agency.accent_color || '#34d399',
+      primaryColor: agency.primary_color || '#00a19b',
+      primaryHoverColor: agency.secondary_color || adjustColor(agency.primary_color || '#00a19b', -15),
+      accentColor: agency.accent_color || '#01f5d1',
     },
     footer: {
       ...defaultMarketingConfig.footer,
@@ -335,7 +335,7 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
         agencyId={agency.id}
         agencyName={agency.name}
         agencyLogo={agency.logo_url}
-        primaryColor={agency.primary_color || '#10b981'}
+        primaryColor={agency.primary_color || '#00a19b'}
         supportEmail={agency.support_email}
         isDark={isDark}
         pricing={(marketingConfig.pricing && marketingConfig.pricing.length > 0) ? marketingConfig.pricing : defaultMarketingConfig.pricing}

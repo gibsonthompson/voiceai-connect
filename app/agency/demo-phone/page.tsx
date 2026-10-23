@@ -882,9 +882,9 @@ export default function DemoPhonePage() {
             </div>
             <span
               className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full flex-shrink-0"
-              style={{ backgroundColor: '#10b98118', color: '#10b981' }}
+              style={{ backgroundColor: '#00a19b18', color: '#00a19b' }}
             >
-              <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ backgroundColor: '#10b981' }} />
+              <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ backgroundColor: '#00a19b' }} />
               Active
             </span>
           </div>

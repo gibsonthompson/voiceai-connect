@@ -140,10 +140,10 @@ export default function HowItWorksPage() {
                   <div className="lg:col-span-4">
                     <div className="flex items-center gap-3">
                       <div className="font-mono text-[12px] tracking-[0.14em] text-white/35">STEP {step.n}</div>
-                      <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(0, 227, 170, 0.35), transparent)' }} />
+                      <div className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(1, 245, 209, 0.35), transparent)' }} />
                     </div>
                     <div className="mt-5 flex items-start gap-3.5">
-                      <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(0, 227, 170, 0.08)', border: '1px solid rgba(0, 227, 170, 0.2)' }}>
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(1, 245, 209, 0.08)', border: '1px solid rgba(1, 245, 209, 0.2)' }}>
                         <step.icon className="w-4 h-4 text-em" strokeWidth={1.9} />
                       </div>
                       <div>
@@ -186,7 +186,7 @@ export default function HowItWorksPage() {
           <div className="space-y-3 max-w-3xl">
             {PROVISIONING.map(s => (
               <div key={s.t} className="rounded-xl border border-black/[0.07] bg-white p-5 lg:p-6 flex gap-5 items-start">
-                <div className="font-mono text-[13px] tracking-[0.04em] text-black shrink-0 pt-0.5 w-12" style={{ color: '#05795b' }}>
+                <div className="font-mono text-[13px] tracking-[0.04em] text-black shrink-0 pt-0.5 w-12" style={{ color: '#007e77' }}>
                   {s.t}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -217,7 +217,7 @@ export default function HowItWorksPage() {
               { icon: Phone, eyebrow: 'Their callers', title: 'The phone experience', desc: 'Customers call the dedicated number and speak to the AI: sub-2-second responses, automatic English and Spanish with mid-call switching, unlimited concurrent calls so no one hears a busy signal, and spam filtered out. 24/7.' },
             ].map(c => (
               <div key={c.title} className="rounded-2xl border border-white/[0.07] bg-white/[0.018] p-7">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-5" style={{ background: 'rgba(0, 227, 170, 0.08)', border: '1px solid rgba(0, 227, 170, 0.2)' }}>
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-5" style={{ background: 'rgba(1, 245, 209, 0.08)', border: '1px solid rgba(1, 245, 209, 0.2)' }}>
                   <c.icon className="w-4 h-4 text-em" strokeWidth={1.9} />
                 </div>
                 <p className="font-mono text-[10px] tracking-[0.16em] uppercase text-em">{c.eyebrow}</p>

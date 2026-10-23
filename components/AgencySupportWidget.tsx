@@ -168,8 +168,8 @@ export default function AgencySupportWidget({
     userBubbleText: onPrimary,
     aiBubbleBg: isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6',
     aiBubbleText: isDark ? 'rgba(255,255,255,0.8)' : '#374151',
-    successBg: isDark ? 'rgba(16,185,129,0.1)' : 'rgba(16,185,129,0.08)',
-    successText: isDark ? '#34d399' : '#059669',
+    successBg: isDark ? 'rgba(0, 161, 155,0.1)' : 'rgba(0, 161, 155,0.08)',
+    successText: isDark ? '#01f5d1' : '#007e77',
     errorBg: isDark ? 'rgba(239,68,68,0.1)' : 'rgba(239,68,68,0.08)',
     errorText: isDark ? '#f87171' : '#dc2626',
   };

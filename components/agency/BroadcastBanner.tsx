@@ -22,10 +22,10 @@ interface Broadcast {
 }
 
 function hexToRgba(hex: string, alpha: number): string {
-  const c = (hex || '#10b981').replace('#', '');
+  const c = (hex || '#00a19b').replace('#', '');
   const full = c.length === 3 ? c.split('').map(x => x + x).join('') : c;
   const r = parseInt(full.slice(0, 2), 16), g = parseInt(full.slice(2, 4), 16), b = parseInt(full.slice(4, 6), 16);
-  if ([r, g, b].some(Number.isNaN)) return `rgba(16,185,129,${alpha})`;
+  if ([r, g, b].some(Number.isNaN)) return `rgba(0, 161, 155,${alpha})`;
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
@@ -46,7 +46,7 @@ function formatCountdown(expiresAt: string | null, nowMs: number): string {
 export default function BroadcastBanner() {
   const { agency } = useAgency();
   const theme = useTheme();
-  const primary = theme.primary || '#10b981';
+  const primary = theme.primary || '#00a19b';
 
   const [bc, setBc] = useState<Broadcast | null>(null);
   const [hidden, setHidden] = useState(false);

@@ -58,7 +58,7 @@ function MobileAgencyDashboard({ activeTab }: { activeTab: string }) {
   const [copied, setCopied] = useState(false);
   const handleCopy = () => { setCopied(true); setTimeout(() => setCopied(false), 2000); };
   const iconMap: Record<string, any> = { users: Users, dollar: DollarSign, phone: PhoneCall };
-  const colors = ['#10b981', '#f59e0b', '#3b82f6'];
+  const colors = ['#00a19b', '#f59e0b', '#3b82f6'];
 
   if (activeTab === 'clients') {
     return (
@@ -100,7 +100,7 @@ function MobileAgencyDashboard({ activeTab }: { activeTab: string }) {
             { label: 'Total', value: '124', color: '#3b82f6' },
             { label: 'Hot', value: '18', color: '#ef4444' },
             { label: 'Warm', value: '42', color: '#f59e0b' },
-            { label: 'Won', value: '47', color: '#10b981' },
+            { label: 'Won', value: '47', color: '#00a19b' },
           ].map((stat) => (
             <div key={stat.label} className="rounded-md border border-white/[0.06] bg-white/[0.02] p-1.5 text-center">
               <p className="text-xs font-semibold" style={{ color: stat.color }}>{stat.value}</p>
@@ -249,9 +249,9 @@ function MobileClientDashboard({ activeTab }: { activeTab: string }) {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-2 mb-3">
         {[
-          { label: 'Calls', value: clientData.stats.callsThisMonth, icon: PhoneCall, color: '#10b981' },
+          { label: 'Calls', value: clientData.stats.callsThisMonth, icon: PhoneCall, color: '#00a19b' },
           { label: 'Urgent', value: clientData.stats.highUrgency, icon: AlertCircle, color: '#f59e0b' },
-          { label: 'Status', value: 'Active', icon: Zap, color: '#10b981' },
+          { label: 'Status', value: 'Active', icon: Zap, color: '#00a19b' },
         ].map((stat) => (
           <div key={stat.label} className="rounded-lg border border-gray-200 bg-white p-2">
             <div className="flex h-6 w-6 items-center justify-center rounded-md mb-1" style={{ backgroundColor: `${stat.color}15` }}>
@@ -302,7 +302,7 @@ function AgencyDashboard({ activeTab }: { activeTab: string }) {
   };
 
   const iconMap: Record<string, any> = { users: Users, dollar: DollarSign, phone: PhoneCall };
-  const colors = ['#10b981', '#f59e0b', '#3b82f6'];
+  const colors = ['#00a19b', '#f59e0b', '#3b82f6'];
 
   if (activeTab === 'clients') {
     return (
@@ -394,7 +394,7 @@ function AgencyDashboard({ activeTab }: { activeTab: string }) {
             { label: 'Total Leads', value: '124', color: '#3b82f6' },
             { label: 'Hot', value: '18', color: '#ef4444' },
             { label: 'Warm', value: '42', color: '#f59e0b' },
-            { label: 'Converted', value: '47', color: '#10b981' },
+            { label: 'Converted', value: '47', color: '#00a19b' },
           ].map((stat) => (
             <div key={stat.label} className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3 text-center">
               <p className="text-lg font-semibold" style={{ color: stat.color }}>{stat.value}</p>
@@ -466,9 +466,9 @@ function AgencyDashboard({ activeTab }: { activeTab: string }) {
             <p className="text-xs text-[#fafaf9]/50 mb-2">Theme Colors</p>
             <div className="flex items-center gap-2">
               <div className="flex gap-1">
-                <div className="h-6 w-6 rounded border border-white/20" style={{ backgroundColor: '#10b981' }} />
-                <div className="h-6 w-6 rounded border border-white/20" style={{ backgroundColor: '#059669' }} />
-                <div className="h-6 w-6 rounded border border-white/20" style={{ backgroundColor: '#34d399' }} />
+                <div className="h-6 w-6 rounded border border-white/20" style={{ backgroundColor: '#00a19b' }} />
+                <div className="h-6 w-6 rounded border border-white/20" style={{ backgroundColor: '#007e77' }} />
+                <div className="h-6 w-6 rounded border border-white/20" style={{ backgroundColor: '#01f5d1' }} />
               </div>
               <span className="text-xs text-[#fafaf9]/40">Emerald</span>
             </div>
@@ -678,9 +678,9 @@ function ClientDashboard({ activeTab }: { activeTab: string }) {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         {[
-          { label: 'Calls This Month', value: clientData.stats.callsThisMonth, sub: `of ${clientData.stats.callLimit}`, icon: PhoneCall, color: '#10b981' },
+          { label: 'Calls This Month', value: clientData.stats.callsThisMonth, sub: `of ${clientData.stats.callLimit}`, icon: PhoneCall, color: '#00a19b' },
           { label: 'High Priority', value: clientData.stats.highUrgency, sub: 'Urgent calls', icon: AlertCircle, color: '#f59e0b' },
-          { label: 'Status', value: 'Active', sub: 'Receiving calls', icon: Zap, color: '#10b981' },
+          { label: 'Status', value: 'Active', sub: 'Receiving calls', icon: Zap, color: '#00a19b' },
         ].map((stat) => (
           <div key={stat.label} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
             <div className="flex items-start justify-between">

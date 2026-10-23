@@ -65,7 +65,7 @@ export default function CcBrandingSection({ agency, refreshAgency, theme, hideHe
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [removingLogo, setRemovingLogo] = useState(false);
   const [extracting, setExtracting] = useState(false);
-  const [colors, setColors] = useState({ primary: '#10b981', secondary: '#059669', accent: '#34d399' });
+  const [colors, setColors] = useState({ primary: '#00a19b', secondary: '#007e77', accent: '#01f5d1' });
   const [appName, setAppName] = useState('');
   const [appIconUrl, setAppIconUrl] = useState('');
   const [appIconPreview, setAppIconPreview] = useState<string | null>(null);
@@ -91,7 +91,7 @@ export default function CcBrandingSection({ agency, refreshAgency, theme, hideHe
     setAppName(agency.app_name || '');
     setAppIconUrl(agency.app_icon_url || '');
     setAppIconPreview(agency.app_icon_url || null);
-    setColors({ primary: agency.primary_color || '#10b981', secondary: agency.secondary_color || '#059669', accent: agency.accent_color || '#34d399' });
+    setColors({ primary: agency.primary_color || '#00a19b', secondary: agency.secondary_color || '#007e77', accent: agency.accent_color || '#01f5d1' });
     setDisplayFont(agency.display_font || null);
     setBodyFont(agency.body_font || null);
     setIconStyle(agency.icon_style || 'lucide');
@@ -157,10 +157,10 @@ export default function CcBrandingSection({ agency, refreshAgency, theme, hideHe
     try {
       const r = await fetch(`${API()}/api/agency/${agency.id}/settings`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` },
-        body: JSON.stringify({ logo_url: null, favicon_url: null, logo_background_color: null, primary_color: '#10b981', secondary_color: '#059669', accent_color: '#34d399', branding_overrides: null }),
+        body: JSON.stringify({ logo_url: null, favicon_url: null, logo_background_color: null, primary_color: '#00a19b', secondary_color: '#007e77', accent_color: '#01f5d1', branding_overrides: null }),
       });
       if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error || 'Failed to remove logo'); }
-      setLogoUrl(''); setLogoPreview(null); setColors({ primary: '#10b981', secondary: '#059669', accent: '#34d399' });
+      setLogoUrl(''); setLogoPreview(null); setColors({ primary: '#00a19b', secondary: '#007e77', accent: '#01f5d1' });
       await refreshAgency();
     } catch (e: any) { setErr(e.message || 'Failed to remove logo'); } finally { setRemovingLogo(false); }
   };

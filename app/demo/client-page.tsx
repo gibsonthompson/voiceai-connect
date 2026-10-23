@@ -148,13 +148,13 @@ function BookingWidget() {
                   onClick={() => setSelectedDate(d)}
                   className="flex flex-col items-center min-w-[60px] px-3 py-3 rounded-xl border transition-all flex-shrink-0"
                   style={{
-                    backgroundColor: isSelected ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.02)',
-                    borderColor: isSelected ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.06)',
+                    backgroundColor: isSelected ? 'rgba(0, 161, 155,0.15)' : 'rgba(255,255,255,0.02)',
+                    borderColor: isSelected ? 'rgba(0, 161, 155,0.4)' : 'rgba(255,255,255,0.06)',
                   }}
                 >
-                  <span className="text-[10px] font-mono uppercase tracking-wider" style={{ color: isSelected ? '#10b981' : 'rgba(255,255,255,0.4)' }}>{label.weekday}</span>
+                  <span className="text-[10px] font-mono uppercase tracking-wider" style={{ color: isSelected ? '#00a19b' : 'rgba(255,255,255,0.4)' }}>{label.weekday}</span>
                   <span className="text-lg font-semibold mt-0.5" style={{ color: isSelected ? '#fafaf9' : 'rgba(255,255,255,0.7)' }}>{label.day}</span>
-                  <span className="text-[10px]" style={{ color: isSelected ? '#10b981' : 'rgba(255,255,255,0.3)' }}>{label.month}</span>
+                  <span className="text-[10px]" style={{ color: isSelected ? '#00a19b' : 'rgba(255,255,255,0.3)' }}>{label.month}</span>
                 </button>
               );
             })}
@@ -201,7 +201,7 @@ function BookingWidget() {
                       borderColor: 'rgba(255,255,255,0.08)',
                       color: '#fafaf9',
                     }}
-                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(16,185,129,0.4)'; e.currentTarget.style.backgroundColor = 'rgba(16,185,129,0.08)'; }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(0, 161, 155,0.4)'; e.currentTarget.style.backgroundColor = 'rgba(0, 161, 155,0.08)'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)'; }}
                   >
                     {slot.display}

@@ -33,12 +33,12 @@ import { useClientTheme } from '@/hooks/useClientTheme';
 const OVERLAY_Z = 2147483000;
 
 function hexToRgba(hex: string, alpha: number): string {
-  const c = (hex || '#10b981').replace('#', '');
+  const c = (hex || '#00a19b').replace('#', '');
   const full = c.length === 3 ? c.split('').map(x => x + x).join('') : c;
   const r = parseInt(full.slice(0, 2), 16);
   const g = parseInt(full.slice(2, 4), 16);
   const b = parseInt(full.slice(4, 6), 16);
-  if ([r, g, b].some(Number.isNaN)) return `rgba(16,185,129,${alpha})`;
+  if ([r, g, b].some(Number.isNaN)) return `rgba(0, 161, 155,${alpha})`;
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 

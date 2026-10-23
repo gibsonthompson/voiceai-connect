@@ -71,7 +71,7 @@ export default function HowDidYouHear({
           aria-haspopup="listbox"
           aria-expanded={open}
           className="w-full text-left rounded-xl border pl-4 pr-10 py-3.5 transition-all cursor-pointer focus:outline-none focus:ring-2 border-white/[0.08] bg-white/[0.03] text-[#fafaf9] focus:border-white/20"
-          style={{ ['--tw-ring-color' as string]: '#10b98130' } as React.CSSProperties}
+          style={{ ['--tw-ring-color' as string]: '#00a19b30' } as React.CSSProperties}
         >
           <span className={value ? '' : 'text-[#fafaf9]/40'}>{value || 'Select an option'}</span>
           <svg className={`absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 transition-transform ${open ? 'rotate-180' : ''} text-[#fafaf9]/40`}
@@ -98,7 +98,7 @@ export default function HowDidYouHear({
                   aria-selected={isSel}
                   onClick={() => pick(o)}
                   className="w-full text-left px-4 py-2.5 text-sm transition-colors text-[#fafaf9]"
-                  style={{ background: isSel ? '#10b98122' : 'transparent' }}
+                  style={{ background: isSel ? '#00a19b22' : 'transparent' }}
                   onMouseEnter={(e) => { if (!isSel) e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
                   onMouseLeave={(e) => { if (!isSel) e.currentTarget.style.background = 'transparent'; }}
                 >

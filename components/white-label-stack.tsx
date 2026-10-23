@@ -220,7 +220,7 @@ export default function WhiteLabelStack() {
                 {/* 4: End business (top of the pile). The call completes: ring, answer, book, summarize, notify. */}
                 <div ref={set('s3')} className="wls-slab" style={{ opacity: 0 }}>
                   <div className="flex items-center gap-5">
-                    <div ref={set('phone')} className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(0,227,170,0.1)', border: '1px solid rgba(0,227,170,0.25)' }}>
+                    <div ref={set('phone')} className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(1, 245, 209,0.1)', border: '1px solid rgba(1, 245, 209,0.25)' }}>
                       <Phone className="w-6 h-6 text-em" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -231,7 +231,7 @@ export default function WhiteLabelStack() {
                         <p ref={set('done')} className="absolute inset-0 font-display text-[19px] text-white font-medium whitespace-nowrap" style={{ opacity: 0 }}>Summary texted. No interruption.</p>
                       </div>
                       <div className="flex flex-wrap gap-2 mt-3">
-                        <div ref={set('cal')} className="flex items-center gap-2 rounded-lg border px-3 py-1.5" style={{ opacity: 0, borderColor: 'rgba(0,227,170,0.25)', background: 'rgba(0,227,170,0.06)' }}>
+                        <div ref={set('cal')} className="flex items-center gap-2 rounded-lg border px-3 py-1.5" style={{ opacity: 0, borderColor: 'rgba(1, 245, 209,0.25)', background: 'rgba(1, 245, 209,0.06)' }}>
                           <Calendar className="w-3.5 h-3.5 text-em" /><span className="telemetry text-[10px]">Thu 2:00 PM</span>
                         </div>
                         <div ref={set('summary')} className="flex items-center gap-2 rounded-lg border px-3 py-1.5" style={{ opacity: 0, borderColor: 'var(--hairline-strong)', background: 'rgba(255,255,255,0.03)' }}>
@@ -247,7 +247,7 @@ export default function WhiteLabelStack() {
 
                 {/* 3: Your agency (paints teal) */}
                 <div ref={set('s2')} className="wls-slab relative overflow-hidden" style={{ opacity: 0 }}>
-                  <div ref={set('wash')} className="absolute inset-0 origin-left" style={{ transform: 'scaleX(0)', background: 'linear-gradient(90deg, rgba(0,227,170,0.18), rgba(0,227,170,0.05))' }} />
+                  <div ref={set('wash')} className="absolute inset-0 origin-left" style={{ transform: 'scaleX(0)', background: 'linear-gradient(90deg, rgba(1, 245, 209,0.18), rgba(1, 245, 209,0.05))' }} />
                   <div className="absolute left-0 top-0 bottom-0 w-[3px]" style={{ background: 'var(--color-em-400)' }} />
                   <div className="relative flex items-center justify-between gap-6">
                     <div className="min-w-0">

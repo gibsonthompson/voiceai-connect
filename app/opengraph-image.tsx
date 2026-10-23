@@ -101,7 +101,7 @@ export default async function OpenGraphImage() {
             width: '900px',
             height: '560px',
             background:
-              'radial-gradient(ellipse at center, rgba(16,185,129,0.18) 0%, rgba(16,185,129,0.05) 45%, transparent 72%)',
+              'radial-gradient(ellipse at center, rgba(0, 161, 155,0.18) 0%, rgba(0, 161, 155,0.05) 45%, transparent 72%)',
           }}
         />
         {/* Hairline emerald accent along the very top edge */}
@@ -113,7 +113,7 @@ export default async function OpenGraphImage() {
             right: 0,
             height: '1px',
             background:
-              'linear-gradient(90deg, transparent 0%, rgba(16,185,129,0.5) 50%, transparent 100%)',
+              'linear-gradient(90deg, transparent 0%, rgba(0, 161, 155,0.5) 50%, transparent 100%)',
           }}
         />
 
@@ -125,7 +125,7 @@ export default async function OpenGraphImage() {
               src={iconUri}
               width={96}
               height={96}
-              style={{ borderRadius: '22px', boxShadow: '0 8px 40px rgba(16,185,129,0.15)' }}
+              style={{ borderRadius: '22px', boxShadow: '0 8px 40px rgba(0, 161, 155,0.15)' }}
               alt=""
             />
           ) : null}
@@ -192,8 +192,8 @@ export default async function OpenGraphImage() {
               width: '9px',
               height: '9px',
               borderRadius: '50%',
-              background: '#10b981',
-              boxShadow: '0 0 10px rgba(16,185,129,0.8)',
+              background: '#00a19b',
+              boxShadow: '0 0 10px rgba(0, 161, 155,0.8)',
             }}
           />
           <span style={{ fontSize: '19px', fontWeight: 600, color: 'rgba(250,250,249,0.65)' }}>

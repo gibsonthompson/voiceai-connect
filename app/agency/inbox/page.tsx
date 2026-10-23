@@ -56,10 +56,10 @@ const TYPE_META: Record<ConvType, { label: string; short: string }> = {
 };
 // Per-type accent for avatars and tags. Fixed hues that read on light and dark.
 const TYPE_ACCENT: Record<ConvType, { bg: string; fg: string }> = {
-  platform: { bg: 'rgba(0,227,170,0.16)', fg: '#0d9f7d' },
+  platform: { bg: 'rgba(1, 245, 209,0.16)', fg: '#0d9f7d' },
   client: { bg: 'rgba(59,130,246,0.16)', fg: '#2f6fed' },
   prospect: { bg: 'rgba(245,158,11,0.18)', fg: '#c77905' },
-  sms: { bg: 'rgba(16,185,129,0.16)', fg: '#0e9f6e' },
+  sms: { bg: 'rgba(0, 161, 155,0.16)', fg: '#0e9f6e' },
 };
 
 type Segment = 'all' | ConvType;

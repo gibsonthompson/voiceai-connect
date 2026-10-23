@@ -281,7 +281,7 @@ export default function MarketingKitPage() {
   }
 
   const name = branding.name || agency.name || 'Your Agency';
-  const primary = branding.primaryColor || '#10b981';
+  const primary = branding.primaryColor || '#00a19b';
   const brandSecondary = branding.secondaryColor || null;
   const brandAccent = branding.accentColor || null;
   const logoUrl = branding.logoUrl || agency.logo_url || null;

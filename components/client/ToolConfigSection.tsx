@@ -520,7 +520,7 @@ export default function ToolConfigSection({ clientId, theme, compact, industry }
                           </button>
                         ) : smsJustSaved ? (
                           <div className="w-full flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold"
-                            style={{ backgroundColor: theme.successBg || 'rgba(16,185,129,0.12)', color: theme.successText || '#10b981', border: `1px solid ${theme.successBorder || 'rgba(16,185,129,0.3)'}` }}>
+                            style={{ backgroundColor: theme.successBg || 'rgba(0, 161, 155,0.12)', color: theme.successText || '#00a19b', border: `1px solid ${theme.successBorder || 'rgba(0, 161, 155,0.3)'}` }}>
                             <Check className="h-3.5 w-3.5" /> Texting settings saved
                           </div>
                         ) : (
@@ -608,7 +608,7 @@ export default function ToolConfigSection({ clientId, theme, compact, industry }
                         </button>
                       ) : apptTplSaved ? (
                         <div className="w-full flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold"
-                          style={{ backgroundColor: theme.successBg || 'rgba(16,185,129,0.12)', color: theme.successText || '#10b981', border: `1px solid ${theme.successBorder || 'rgba(16,185,129,0.3)'}` }}>
+                          style={{ backgroundColor: theme.successBg || 'rgba(0, 161, 155,0.12)', color: theme.successText || '#00a19b', border: `1px solid ${theme.successBorder || 'rgba(0, 161, 155,0.3)'}` }}>
                           <Check className="h-3.5 w-3.5" /> Confirmation message saved
                         </div>
                       ) : (

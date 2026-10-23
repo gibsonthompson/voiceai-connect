@@ -188,9 +188,9 @@ export const defaultMarketingConfig: MarketingConfig = {
     name: 'VoiceAI',
     logoUrl: '',
     logoBackgroundColor: '',
-    primaryColor: '#10b981',
-    primaryHoverColor: '#059669',
-    accentColor: '#34d399',
+    primaryColor: '#00a19b',
+    primaryHoverColor: '#007e77',
+    accentColor: '#01f5d1',
   },
   hero: {
     badge: 'AI-Powered Phone Answering',

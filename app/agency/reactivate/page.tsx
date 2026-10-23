@@ -131,7 +131,7 @@ export default function AgencyReactivatePage() {
   };
 
   const isDark = (agency?.website_theme || 'dark') !== 'light';
-  const primary = agency?.primary_color || '#10b981';
+  const primary = agency?.primary_color || '#00a19b';
   const primaryText = readableTextOn(primary);
   const logoUrl = agency?.logo_url || null;
   const agencyName = agency?.name || 'Your Agency';
@@ -209,7 +209,7 @@ export default function AgencyReactivatePage() {
   if (mode === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#050505' }}>
-        <Loader2 className="h-7 w-7 animate-spin" style={{ color: '#10b981' }} />
+        <Loader2 className="h-7 w-7 animate-spin" style={{ color: '#00a19b' }} />
       </div>
     );
   }

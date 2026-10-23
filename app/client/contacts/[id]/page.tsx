@@ -41,7 +41,7 @@ function relativeDate(iso: string | null): string {
   return `${Math.floor(days / 365)}y ago`;
 }
 
-const TAG_COLORS: Record<string, string> = { emergency: '#ef4444', high_priority: '#f59e0b', repeat_caller: '#8b5cf6', appointment_booked: '#10b981' };
+const TAG_COLORS: Record<string, string> = { emergency: '#ef4444', high_priority: '#f59e0b', repeat_caller: '#8b5cf6', appointment_booked: '#00a19b' };
 
 interface Contact { id: string; name: string; phone: string; email: string | null; address: string | null; tags: string[]; total_calls: number; last_call_at: string | null; ai_summary: string | null; notes: string | null; source: string; created_at: string; }
 interface Call { id: string; customer_name: string | null; customer_phone: string | null; caller_phone: string | null; service_requested: string | null; urgency_level: string | null; ai_summary: string | null; duration_seconds: number | null; created_at: string; appointment_booked?: boolean | null; appointment_time?: string | null; call_status?: string | null; transfer_status?: string | null; is_spam?: boolean | null; }

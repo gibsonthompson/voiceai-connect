@@ -271,7 +271,7 @@ function SetPasswordContent() {
   // Theme detection
   const theme: 'light' | 'dark' = agency?.website_theme === 'dark' ? 'dark' : (isAgencySubdomain ? 'light' : 'dark');
   const isDark = theme === 'dark';
-  const primaryColor = agency?.primary_color || '#10b981';
+  const primaryColor = agency?.primary_color || '#00a19b';
   const primaryLight = isLightColor(primaryColor);
   const brandName = agency?.name || 'VoiceAI Connect';
   const logoAlign = agency?.signup_logo_align || 'left';

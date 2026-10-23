@@ -10,11 +10,29 @@
   --color-ink: #050505;
   --color-paper: #ffffff;
   --color-paper-soft: #f7f7f5;
-  --color-em-100: #cffbef;
-  --color-em-300: #5cefcb;
-  --color-em-400: #00e3aa;
-  --color-em-500: #00c596;
-  --color-em-700: #05795b;
+
+  /* Brand accent: F1 petronas teal + bright turquoise (matches the social /
+     brand graphic system). Replaces the former emerald accent. */
+  --color-em-100: #c9fbf3;
+  --color-em-300: #4fefdc;
+  --color-em-400: #01f5d1; /* primary accent / highlights */
+  --color-em-500: #00c6b2;
+  --color-em-700: #007e77;
+
+  /* Remap the legacy Tailwind emerald scale to the teal brand so every
+     emerald-* utility class across the app renders on-brand without editing
+     the 1000+ individual usages. Raw emerald hex/rgba literals in inline
+     styles are migrated separately (see the brand color sweep). */
+  --color-emerald-50:  #e9fefb;
+  --color-emerald-100: #c9fbf3;
+  --color-emerald-200: #93f6e8;
+  --color-emerald-300: #4fefdc;
+  --color-emerald-400: #01f5d1;
+  --color-emerald-500: #00c6b2;
+  --color-emerald-600: #00a19b;
+  --color-emerald-700: #007e77;
+  --color-emerald-800: #0a5a54;
+  --color-emerald-900: #0c3e3a;
 }
 
 /* ----- Base ----- */
@@ -192,12 +210,12 @@ body {
   color: #04120f;
   font-weight: 800;
   border-color: transparent;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 6px 18px -12px rgba(0, 227, 170, 0.5);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 6px 18px -12px rgba(1, 245, 209, 0.5);
 }
 .btn-em:hover { filter: brightness(1.05); }
 .btn-em:hover {
   transform: translateY(-1px);
-  box-shadow: 0 14px 34px -10px rgba(0, 227, 170, 0.6);
+  box-shadow: 0 14px 34px -10px rgba(1, 245, 209, 0.6);
 }
 
 .btn-ghost-dark {
@@ -205,7 +223,7 @@ body {
   color: #fff;
   border-color: var(--hairline-strong);
 }
-.btn-ghost-dark:hover { border-color: rgba(0, 227, 170, 0.45); }
+.btn-ghost-dark:hover { border-color: rgba(1, 245, 209, 0.45); }
 .btn-ghost-dark:hover { border-color: rgba(255, 255, 255, 0.4); }
 
 .btn-ink {
@@ -313,7 +331,7 @@ body {
   position: absolute;
   top: -50%; right: -20%;
   width: 60%; height: 100%;
-  background: radial-gradient(circle, rgba(0, 227, 170, 0.06), transparent 60%);
+  background: radial-gradient(circle, rgba(1, 245, 209, 0.06), transparent 60%);
   pointer-events: none;
 }
 
@@ -334,7 +352,7 @@ input[type="range"].calc-range::-webkit-slider-thumb {
   border-radius: 999px;
   background: var(--color-em-400);
   border: 4px solid #050505;
-  box-shadow: 0 0 0 1px rgba(0, 227, 170, 0.6), 0 0 12px -2px rgba(0, 227, 170, 0.5);
+  box-shadow: 0 0 0 1px rgba(1, 245, 209, 0.6), 0 0 12px -2px rgba(1, 245, 209, 0.5);
   cursor: grab;
   transition: transform 0.15s ease;
 }
@@ -344,7 +362,7 @@ input[type="range"].calc-range::-moz-range-thumb {
   border-radius: 999px;
   background: var(--color-em-400);
   border: 4px solid #050505;
-  box-shadow: 0 0 0 1px rgba(0, 227, 170, 0.6);
+  box-shadow: 0 0 0 1px rgba(1, 245, 209, 0.6);
   cursor: grab;
 }
 
@@ -392,13 +410,13 @@ input[type="range"].calc-range::-moz-range-thumb {
 .arch-tier:hover { border-color: rgba(255, 255, 255, 0.16); }
 
 .arch-tier-em {
-  background: linear-gradient(180deg, rgba(0, 227, 170, 0.07), rgba(0, 227, 170, 0.012));
-  border-color: rgba(0, 227, 170, 0.32);
+  background: linear-gradient(180deg, rgba(1, 245, 209, 0.07), rgba(1, 245, 209, 0.012));
+  border-color: rgba(1, 245, 209, 0.32);
   box-shadow:
-    0 0 0 1px rgba(0, 227, 170, 0.1),
-    0 24px 60px -22px rgba(0, 227, 170, 0.22);
+    0 0 0 1px rgba(1, 245, 209, 0.1),
+    0 24px 60px -22px rgba(1, 245, 209, 0.22);
 }
-.arch-tier-em:hover { border-color: rgba(0, 227, 170, 0.5); }
+.arch-tier-em:hover { border-color: rgba(1, 245, 209, 0.5); }
 
 .arch-tier-head {
   display: flex;
@@ -431,8 +449,8 @@ input[type="range"].calc-range::-moz-range-thumb {
   white-space: nowrap;
 }
 .arch-tier-tag-em {
-  background: rgba(0, 227, 170, 0.08);
-  border-color: rgba(0, 227, 170, 0.25);
+  background: rgba(1, 245, 209, 0.08);
+  border-color: rgba(1, 245, 209, 0.25);
   color: var(--color-em-400);
 }
 
@@ -577,7 +595,7 @@ input[type="range"].calc-range::-moz-range-thumb {
   overflow: hidden;
   transition: border-color 0.25s var(--ease-precise), transform 0.25s var(--ease-precise);
 }
-.bento-cell:hover { border-color: rgba(0, 227, 170, 0.32); transform: translateY(-2px); }
+.bento-cell:hover { border-color: rgba(1, 245, 209, 0.32); transform: translateY(-2px); }
 .bento-cell:hover { border-color: rgba(255, 255, 255, 0.14); }
 .bento-cell-content { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; min-width: 0; }
 
@@ -616,7 +634,7 @@ input[type="range"].calc-range::-moz-range-thumb {
 .pulse-ring {
   position: absolute;
   border-radius: 50%;
-  border: 1px solid rgba(0, 227, 170, 0.3);
+  border: 1px solid rgba(1, 245, 209, 0.3);
   animation: pulseRing 3s ease-out infinite;
 }
 @keyframes pulseRing {
@@ -661,7 +679,7 @@ input[type="range"].calc-range::-moz-range-thumb {
   left: 5%;
   right: 5%;
   height: 50px;
-  background: radial-gradient(ellipse at center, rgba(0, 227, 170, 0.18), transparent 70%);
+  background: radial-gradient(ellipse at center, rgba(1, 245, 209, 0.18), transparent 70%);
   filter: blur(20px);
   pointer-events: none;
 }
@@ -687,11 +705,11 @@ input[type="range"].calc-range::-moz-range-thumb {
 }
 
 .tower-floor[data-active="true"] {
-  border-color: rgba(0, 227, 170, 0.32);
+  border-color: rgba(1, 245, 209, 0.32);
   box-shadow:
     0 1px 0 0 rgba(255, 255, 255, 0.06) inset,
-    0 0 0 1px rgba(0, 227, 170, 0.16),
-    0 22px 50px -16px rgba(0, 227, 170, 0.4),
+    0 0 0 1px rgba(1, 245, 209, 0.16),
+    0 22px 50px -16px rgba(1, 245, 209, 0.4),
     0 24px 50px -18px rgba(0, 0, 0, 0.7);
 }
 
@@ -777,7 +795,7 @@ input[type="range"].calc-range::-moz-range-thumb {
 }
 .tower-mini-browser-body {
   flex: 1;
-  background: linear-gradient(180deg, rgba(0, 227, 170, 0.08), transparent);
+  background: linear-gradient(180deg, rgba(1, 245, 209, 0.08), transparent);
 }
 
 .tower-progress {
@@ -801,8 +819,8 @@ input[type="range"].calc-range::-moz-range-thumb {
   letter-spacing: 0.04em;
   padding: 3px 7px;
   border-radius: 4px;
-  background: rgba(0, 227, 170, 0.1);
-  border: 1px solid rgba(0, 227, 170, 0.2);
+  background: rgba(1, 245, 209, 0.1);
+  border: 1px solid rgba(1, 245, 209, 0.2);
   color: var(--color-em-400);
   white-space: nowrap;
   flex-shrink: 0;
@@ -841,10 +859,10 @@ input[type="range"].calc-range::-moz-range-thumb {
 .tower-pipeline span {
   width: 18px; height: 5px;
   border-radius: 2px;
-  background: rgba(0, 227, 170, 0.2);
+  background: rgba(1, 245, 209, 0.2);
 }
-.tower-pipeline span:nth-child(2) { background: rgba(0, 227, 170, 0.6); }
-.tower-pipeline span:nth-child(3) { background: rgba(0, 227, 170, 1); }
+.tower-pipeline span:nth-child(2) { background: rgba(1, 245, 209, 0.6); }
+.tower-pipeline span:nth-child(3) { background: rgba(1, 245, 209, 1); }
 
 /* Side rail */
 .tower-rail {
@@ -873,7 +891,7 @@ input[type="range"].calc-range::-moz-range-thumb {
   box-shadow: 0 0 10px var(--color-em-400);
 }
 .tower-rail-tick[data-passed="true"] {
-  background: rgba(0, 227, 170, 0.45);
+  background: rgba(1, 245, 209, 0.45);
 }
 
 /* Layer text frames */
@@ -990,13 +1008,13 @@ input[type="range"].calc-range::-moz-range-thumb {
 }
 .compare-row-head { border-top: none; padding-bottom: 1.2rem; }
 .compare-cell-em {
-  background: rgba(0, 227, 170, 0.07);
-  border-left: 1px solid rgba(0, 227, 170, 0.28);
-  border-right: 1px solid rgba(0, 227, 170, 0.28);
+  background: rgba(1, 245, 209, 0.07);
+  border-left: 1px solid rgba(1, 245, 209, 0.28);
+  border-right: 1px solid rgba(1, 245, 209, 0.28);
   position: relative;
 }
-.compare-row:first-child .compare-cell-em { border-top: 1px solid rgba(16, 185, 129, 0.28); border-radius: 14px 14px 0 0; }
-.compare-row:last-child .compare-cell-em { border-bottom: 1px solid rgba(16, 185, 129, 0.28); border-radius: 0 0 14px 14px; }
+.compare-row:first-child .compare-cell-em { border-top: 1px solid rgba(0, 161, 155, 0.28); border-radius: 14px 14px 0 0; }
+.compare-row:last-child .compare-cell-em { border-bottom: 1px solid rgba(0, 161, 155, 0.28); border-radius: 0 0 14px 14px; }
 @media (max-width: 1024px) {
   .compare-row { grid-template-columns: 1.4fr 1fr 1fr 1fr; }
   .compare-hide-md { display: none; }
@@ -1029,15 +1047,15 @@ input[type="range"].calc-range::-moz-range-thumb {
 }
 
 .price-card-em {
-  background: linear-gradient(180deg, rgba(0, 227, 170, 0.075), rgba(0, 227, 170, 0.02));
-  border-color: rgba(0, 227, 170, 0.4);
+  background: linear-gradient(180deg, rgba(1, 245, 209, 0.075), rgba(1, 245, 209, 0.02));
+  border-color: rgba(1, 245, 209, 0.4);
   box-shadow:
-    0 0 0 1px rgba(0, 227, 170, 0.15),
-    0 30px 80px -20px rgba(0, 227, 170, 0.28);
+    0 0 0 1px rgba(1, 245, 209, 0.15),
+    0 30px 80px -20px rgba(1, 245, 209, 0.28);
 }
 .price-card-em:hover {
-  border-color: rgba(0, 227, 170, 0.65);
-  background: linear-gradient(180deg, rgba(0, 227, 170, 0.1), rgba(0, 227, 170, 0.03));
+  border-color: rgba(1, 245, 209, 0.65);
+  background: linear-gradient(180deg, rgba(1, 245, 209, 0.1), rgba(1, 245, 209, 0.03));
 }
 
 /* Pricing section ambient emerald wash */
@@ -1046,8 +1064,8 @@ input[type="range"].calc-range::-moz-range-thumb {
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(45% 40% at 50% 30%, rgba(0, 227, 170, 0.08) 0%, transparent 65%),
-    radial-gradient(35% 30% at 30% 80%, rgba(16, 185, 129, 0.04) 0%, transparent 60%);
+    radial-gradient(45% 40% at 50% 30%, rgba(1, 245, 209, 0.08) 0%, transparent 65%),
+    radial-gradient(35% 30% at 30% 80%, rgba(0, 161, 155, 0.04) 0%, transparent 60%);
 }
 
 /* ============================================================================
@@ -1137,7 +1155,7 @@ details[open] .faq-chev { transform: rotate(45deg); }
   width: 6px; height: 6px;
   border-radius: 999px;
   background: var(--color-em-400);
-  box-shadow: 0 0 0 3px rgba(0, 227, 170, 0.14);
+  box-shadow: 0 0 0 3px rgba(1, 245, 209, 0.14);
   vertical-align: middle;
 }
 .t-numeric { font-variant-numeric: tabular-nums; }
@@ -1288,7 +1306,7 @@ details[open] .faq-chev { transform: rotate(45deg); }
   height: 46%;
   z-index: 1;
   pointer-events: none;
-  background: radial-gradient(ellipse at 50% 50%, rgba(0, 227, 170, 0.32), transparent 65%);
+  background: radial-gradient(ellipse at 50% 50%, rgba(1, 245, 209, 0.32), transparent 65%);
   filter: blur(28px);
   transform-origin: center;
 }

@@ -35,7 +35,7 @@ interface ChatMessage { role: 'user' | 'assistant'; content: string; }
 
 const font = "'Geist', system-ui, sans-serif";
 const mono = "'Geist Mono', ui-monospace, monospace";
-const em = '#10b981';
+const em = '#00a19b';
 // Shared text treatment for solid green buttons: bold white with a crisp black outline.
 const greenBtnText = { color: '#04120f', fontWeight: 800 } as React.CSSProperties;
 
@@ -58,7 +58,7 @@ function WIcon({ type }: { type: string }) {
 
 function WidgetLogoMark() {
   return (
-    <div style={{ width: 34, height: 34, borderRadius: 10, overflow: 'hidden', flexShrink: 0, boxShadow: '0 0 0 1px rgba(16,185,129,0.15), 0 4px 12px -4px rgba(16,185,129,0.3)' }}>
+    <div style={{ width: 34, height: 34, borderRadius: 10, overflow: 'hidden', flexShrink: 0, boxShadow: '0 0 0 1px rgba(0, 161, 155,0.15), 0 4px 12px -4px rgba(0, 161, 155,0.3)' }}>
       <Image src="/icon-512x512.png" alt="VoiceAI Connect" width={34} height={34} style={{ width: 34, height: 34, objectFit: 'cover' }} />
     </div>
   );
@@ -70,7 +70,7 @@ function WidgetEyebrow({ children, color }: { children: string; color?: string }
 
 function WidgetBtn({ children, active, onClick }: { children: React.ReactNode; active?: boolean; onClick: () => void }) {
   return (
-    <button onClick={onClick} style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${active ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.06)'}`, background: active ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.03)', color: active ? em : 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: font, transition: 'all 0.15s' }}>
+    <button onClick={onClick} style={{ padding: '8px 16px', borderRadius: 10, border: `1px solid ${active ? 'rgba(0, 161, 155,0.2)' : 'rgba(255,255,255,0.06)'}`, background: active ? 'rgba(0, 161, 155,0.08)' : 'rgba(255,255,255,0.03)', color: active ? em : 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: font, transition: 'all 0.15s' }}>
       {children}
     </button>
   );
@@ -85,7 +85,7 @@ function WidgetInput({ value, onChange, placeholder, label }: { value: string; o
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
         style={{ width: '100%', marginTop: 7, padding: '10px 14px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.025)', color: 'rgba(255,255,255,0.85)', fontSize: 13, outline: 'none', fontFamily: font, boxSizing: 'border-box' }}
-        onFocus={e => { (e.target as HTMLInputElement).style.borderColor = 'rgba(16,185,129,0.25)'; }}
+        onFocus={e => { (e.target as HTMLInputElement).style.borderColor = 'rgba(0, 161, 155,0.25)'; }}
         onBlur={e => { (e.target as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.08)'; }}
       />
     </div>
@@ -99,7 +99,7 @@ function WidgetInput({ value, onChange, placeholder, label }: { value: string; o
 const css = `
 @keyframes wBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-3px)}}
 @keyframes wSlide{from{transform:translateY(12px) scale(0.97);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
-@keyframes wPulse{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,0.25)}50%{box-shadow:0 0 0 8px rgba(16,185,129,0)}}
+@keyframes wPulse{0%,100%{box-shadow:0 0 0 0 rgba(0, 161, 155,0.25)}50%{box-shadow:0 0 0 8px rgba(0, 161, 155,0)}}
 @keyframes wFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 `;
 
@@ -284,7 +284,7 @@ export default function SupportWidget() {
         style={{
           position: 'fixed', bottom: 20, right: 20, width: 62, height: 51, padding: 0, border: 'none',
           background: 'transparent', cursor: 'pointer', display: isOpen ? 'none' : 'block', lineHeight: 0, zIndex: 9999,
-          filter: 'drop-shadow(0 8px 16px rgba(16,185,129,0.35)) drop-shadow(0 2px 5px rgba(0,0,0,0.22))',
+          filter: 'drop-shadow(0 8px 16px rgba(0, 161, 155,0.35)) drop-shadow(0 2px 5px rgba(0,0,0,0.22))',
           transition: 'transform 0.2s cubic-bezier(0.16,1,0.3,1)', animation: 'wFloat 3.6s ease-in-out infinite',
         }}>
         <svg width="62" height="51" viewBox="0 0 66 54" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -314,12 +314,12 @@ export default function SupportWidget() {
         }}>
 
           {/* Header */}
-          <div style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0, background: 'linear-gradient(180deg, rgba(16,185,129,0.03), transparent)' }}>
+          <div style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0, background: 'linear-gradient(180deg, rgba(0, 161, 155,0.03), transparent)' }}>
             <WidgetLogoMark />
             <div style={{ flex: 1 }}>
               <div style={{ fontFamily: font, fontSize: 14, fontWeight: 600, color: '#fafaf9', letterSpacing: '-0.01em' }}>VoiceAI Connect</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
-                <span style={{ width: 5, height: 5, borderRadius: '50%', background: em, display: 'inline-block', boxShadow: '0 0 6px rgba(16,185,129,0.5)' }} />
+                <span style={{ width: 5, height: 5, borderRadius: '50%', background: em, display: 'inline-block', boxShadow: '0 0 6px rgba(0, 161, 155,0.5)' }} />
                 <span style={{ fontFamily: mono, fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', fontWeight: 500, color: 'rgba(255,255,255,0.3)' }}>Online now</span>
               </div>
             </div>
@@ -341,7 +341,7 @@ export default function SupportWidget() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 18 }}>
                 {QUICK_ACTIONS.map(a => (
                   <button key={a.label} onClick={() => qa(a)} style={{ borderRadius: 14, padding: '14px 12px', cursor: 'pointer', textAlign: 'left', background: 'linear-gradient(180deg, rgba(255,255,255,0.022), rgba(255,255,255,0.006))', border: '1px solid rgba(255,255,255,0.06)', fontFamily: font, display: 'flex', flexDirection: 'column', gap: 3, transition: 'all 0.2s' }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(16,185,129,0.25)'; e.currentTarget.style.background = 'linear-gradient(180deg, rgba(16,185,129,0.04), rgba(16,185,129,0.01))'; }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0, 161, 155,0.25)'; e.currentTarget.style.background = 'linear-gradient(180deg, rgba(0, 161, 155,0.04), rgba(0, 161, 155,0.01))'; }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.background = 'linear-gradient(180deg, rgba(255,255,255,0.022), rgba(255,255,255,0.006))'; }}>
                     <span style={{ fontSize: 13, fontWeight: 500, color: '#fafaf9', letterSpacing: '-0.01em' }}>{a.label}</span>
                     <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.28)' }}>{a.sub}</span>
@@ -402,7 +402,7 @@ export default function SupportWidget() {
           {view === 'chat' && (
             <div style={{ flex: 1, overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
               {messages.length === 0 && (
-                <div style={{ maxWidth: '85%', padding: '12px 15px', fontSize: 13, lineHeight: 1.6, fontFamily: font, alignSelf: 'flex-start', borderRadius: '14px 14px 14px 4px', background: 'linear-gradient(180deg, rgba(16,185,129,0.1), rgba(16,185,129,0.03))', border: '1px solid rgba(16,185,129,0.18)', color: 'rgba(255,255,255,0.82)' }}>
+                <div style={{ maxWidth: '85%', padding: '12px 15px', fontSize: 13, lineHeight: 1.6, fontFamily: font, alignSelf: 'flex-start', borderRadius: '14px 14px 14px 4px', background: 'linear-gradient(180deg, rgba(0, 161, 155,0.1), rgba(0, 161, 155,0.03))', border: '1px solid rgba(0, 161, 155,0.18)', color: 'rgba(255,255,255,0.82)' }}>
                   Hey there! Ask me anything about VoiceAI Connect, pricing, white-labeling, or getting your agency started. What can I help with?
                 </div>
               )}
@@ -411,7 +411,7 @@ export default function SupportWidget() {
                   maxWidth: '85%', padding: '11px 14px', fontSize: 13, lineHeight: 1.6, fontFamily: font,
                   whiteSpace: 'pre-wrap', wordBreak: 'break-word',
                   alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
-                  ...(m.role === 'user' ? { borderRadius: '14px 14px 4px 14px', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.14)', color: 'rgba(255,255,255,0.85)' }
+                  ...(m.role === 'user' ? { borderRadius: '14px 14px 4px 14px', background: 'rgba(0, 161, 155,0.1)', border: '1px solid rgba(0, 161, 155,0.14)', color: 'rgba(255,255,255,0.85)' }
                     : { borderRadius: '14px 14px 14px 4px', background: 'linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.008))', border: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.65)' }),
                 }}>
                   {m.content || (streaming && i === messages.length - 1 ? '...' : '')}
@@ -419,13 +419,13 @@ export default function SupportWidget() {
               ))}
               {streaming && messages[messages.length - 1]?.role === 'user' && (
                 <div style={{ display: 'flex', gap: 5, alignItems: 'center', padding: '11px 14px', width: 'fit-content', borderRadius: '14px 14px 14px 4px', background: 'linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.008))', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  {[0, 0.2, 0.4].map((d, j) => <span key={j} style={{ width: 4, height: 4, borderRadius: '50%', background: 'rgba(16,185,129,0.4)', animation: `wBounce 1.2s infinite ${d}s` }} />)}
+                  {[0, 0.2, 0.4].map((d, j) => <span key={j} style={{ width: 4, height: 4, borderRadius: '50%', background: 'rgba(0, 161, 155,0.4)', animation: `wBounce 1.2s infinite ${d}s` }} />)}
                 </div>
               )}
               <div ref={endRef} />
               {messages.length >= 2 && !streaming && (
                 <button onClick={goEsc} style={{ alignSelf: 'center', marginTop: 4, padding: '7px 16px', borderRadius: 8, background: 'transparent', border: '1px solid rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.25)', fontSize: 11, cursor: 'pointer', fontFamily: font, transition: 'all 0.15s' }}
-                  onMouseEnter={e => { e.currentTarget.style.color = em; e.currentTarget.style.borderColor = 'rgba(16,185,129,0.15)'; }}
+                  onMouseEnter={e => { e.currentTarget.style.color = em; e.currentTarget.style.borderColor = 'rgba(0, 161, 155,0.15)'; }}
                   onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.25)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.04)'; }}>
                   Talk to a person
                 </button>
@@ -438,7 +438,7 @@ export default function SupportWidget() {
             <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
               {escDone ? (
                 <div style={{ textAlign: 'center', padding: '32px 12px' }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', color: em }}><WIcon type="check" /></div>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(0, 161, 155,0.08)', border: '1px solid rgba(0, 161, 155,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', color: em }}><WIcon type="check" /></div>
                   <p style={{ fontFamily: font, fontSize: 16, fontWeight: 500, color: '#fafaf9', margin: 0 }}>Message received</p>
                   <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.38)', marginTop: 8, lineHeight: 1.5, fontFamily: font }}>A team member will follow up within one business day.</p>
                   <button onClick={goLanding} style={{ marginTop: 18, padding: '8px 18px', borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)', fontSize: 12, cursor: 'pointer', fontFamily: font }}>Back to help</button>
@@ -459,7 +459,7 @@ export default function SupportWidget() {
                         rows={3}
                         maxLength={1000}
                         style={{ width: '100%', marginTop: 7, padding: '10px 14px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.025)', color: 'rgba(255,255,255,0.85)', fontSize: 13, outline: 'none', fontFamily: font, boxSizing: 'border-box', resize: 'none' }}
-                        onFocus={e => { (e.target as HTMLTextAreaElement).style.borderColor = 'rgba(16,185,129,0.25)'; }}
+                        onFocus={e => { (e.target as HTMLTextAreaElement).style.borderColor = 'rgba(0, 161, 155,0.25)'; }}
                         onBlur={e => { (e.target as HTMLTextAreaElement).style.borderColor = 'rgba(255,255,255,0.08)'; }}
                       />
                     </div>
@@ -472,7 +472,7 @@ export default function SupportWidget() {
                     </button>
                   </div>
                   <p style={{ marginTop: 18, fontSize: 11, color: 'rgba(255,255,255,0.18)', fontFamily: font, margin: '18px 0 0' }}>
-                    Or email <a href="mailto:support@myvoiceaiconnect.com" style={{ color: 'rgba(16,185,129,0.5)', textDecoration: 'none' }}>support@myvoiceaiconnect.com</a>
+                    Or email <a href="mailto:support@myvoiceaiconnect.com" style={{ color: 'rgba(0, 161, 155,0.5)', textDecoration: 'none' }}>support@myvoiceaiconnect.com</a>
                   </p>
                 </>
               )}
@@ -486,7 +486,7 @@ export default function SupportWidget() {
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
                 placeholder="Ask anything..."
                 style={{ flex: 1, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '10px 14px', fontSize: 13, background: 'rgba(255,255,255,0.025)', color: 'rgba(255,255,255,0.85)', outline: 'none', fontFamily: font }}
-                onFocus={e => { (e.target as HTMLInputElement).style.borderColor = 'rgba(16,185,129,0.25)'; if (view === 'landing') goChat(); }}
+                onFocus={e => { (e.target as HTMLInputElement).style.borderColor = 'rgba(0, 161, 155,0.25)'; if (view === 'landing') goChat(); }}
                 onBlur={e => { (e.target as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.08)'; }} />
               <button onClick={() => send()} disabled={!input.trim() || streaming}
                 style={{ width: 34, height: 34, borderRadius: 10, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: input.trim() ? 'pointer' : 'default', transition: 'all 0.15s', background: input.trim() ? em : 'rgba(255,255,255,0.04)', color: input.trim() ? '#04120f' : 'rgba(255,255,255,0.15)' }}>

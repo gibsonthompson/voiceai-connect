@@ -47,7 +47,7 @@ export default function AgencyClientCallsPage() {
   const exportRef = useRef<HTMLDivElement>(null);
 
   const isDark = agency?.website_theme !== 'light';
-  const primaryColor = branding.primaryColor || '#10b981';
+  const primaryColor = branding.primaryColor || '#00a19b';
 
   const theme = isDark ? {
     bg: '#0a0a0a',
@@ -302,8 +302,8 @@ export default function AgencyClientCallsPage() {
               const statusBadges = getCallBadges(call, {
                 primary: primaryColor,
                 primary15: hexToRgba(primaryColor, isDark ? 0.2 : 0.1),
-                successBg: isDark ? 'rgba(52, 211, 153, 0.18)' : 'rgba(5, 150, 105, 0.1)',
-                successText: isDark ? '#34d399' : '#059669',
+                successBg: isDark ? 'rgba(1, 245, 209, 0.18)' : 'rgba(0, 126, 119, 0.1)',
+                successText: isDark ? '#01f5d1' : '#007e77',
                 warningBg: isDark ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.1)',
                 warningText: isDark ? '#fbbf24' : '#d97706',
                 errorBg: isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)',

@@ -241,22 +241,22 @@ function buildDarkTheme(primary: string, overrides?: BrandingOverrides): Theme {
     hover: 'rgba(255,255,255,0.04)',
     active: withAlpha(primary, 0.15),
 
-    success: '#34d399',
+    success: '#01f5d1',
     warning: '#fbbf24',
     error: '#f87171',
     info: '#93c5fd',
 
-    successText: '#34d399',
+    successText: '#01f5d1',
     warningText: '#fbbf24',
     errorText: '#f87171',
     infoText: '#93c5fd',
 
-    successBg: 'rgba(52,211,153,0.1)',
+    successBg: 'rgba(1, 245, 209,0.1)',
     warningBg: 'rgba(251,191,36,0.1)',
     errorBg: 'rgba(239,68,68,0.1)',
     infoBg: 'rgba(59,130,246,0.08)',
 
-    successBorder: 'rgba(52,211,153,0.2)',
+    successBorder: 'rgba(1, 245, 209,0.2)',
     warningBorder: 'rgba(251,191,36,0.2)',
     errorBorder: 'rgba(239,68,68,0.2)',
     infoBorder: 'rgba(59,130,246,0.2)',
@@ -339,22 +339,22 @@ function buildLightTheme(primary: string, overrides?: BrandingOverrides): Theme 
     hover: 'rgba(0,0,0,0.02)',
     active: withAlpha(primary, 0.15),
 
-    success: '#059669',
+    success: '#007e77',
     warning: '#d97706',
     error: '#dc2626',
     info: '#1d4ed8',
 
-    successText: '#059669',
+    successText: '#007e77',
     warningText: '#d97706',
     errorText: '#dc2626',
     infoText: '#1d4ed8',
 
-    successBg: 'rgba(16,185,129,0.1)',
+    successBg: 'rgba(0, 161, 155,0.1)',
     warningBg: 'rgba(245,158,11,0.1)',
     errorBg: '#fef2f2',
     infoBg: 'rgba(59,130,246,0.1)',
 
-    successBorder: 'rgba(16,185,129,0.2)',
+    successBorder: 'rgba(0, 161, 155,0.2)',
     warningBorder: 'rgba(245,158,11,0.2)',
     errorBorder: '#fecaca',
     infoBorder: 'rgba(59,130,246,0.2)',
@@ -397,7 +397,7 @@ export function useTheme(): Theme {
     mode = hint === 'light' ? 'light' : 'dark';
   }
 
-  const primary = branding.primaryColor || '#10b981';
+  const primary = branding.primaryColor || '#00a19b';
   const overrides = (agency as any)?.branding_overrides as BrandingOverrides | undefined;
 
   const theme = useMemo(() => {
@@ -415,7 +415,7 @@ export function useTheme(): Theme {
 
 export function buildTheme(
   mode: 'dark' | 'light', 
-  primary: string = '#10b981',
+  primary: string = '#00a19b',
   overrides?: BrandingOverrides
 ): Theme {
   return mode === 'dark' ? buildDarkTheme(primary, overrides) : buildLightTheme(primary, overrides);

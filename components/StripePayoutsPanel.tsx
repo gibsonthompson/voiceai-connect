@@ -57,7 +57,7 @@ export default function StripePayoutsPanel({ agencyId, backendUrl, primaryColor,
       },
       appearance: {
         variables: {
-          colorPrimary: primaryColor || '#059669',
+          colorPrimary: primaryColor || '#007e77',
         },
       },
     });

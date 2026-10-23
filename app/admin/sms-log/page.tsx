@@ -21,15 +21,15 @@ interface SmsLogEntry {
 }
 
 const TYPE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  activation_sms_1: { label: 'Activation 1', color: '#34d399', bg: 'rgba(52,211,153,0.08)' },
-  activation_sms_2: { label: 'Activation 2', color: '#34d399', bg: 'rgba(52,211,153,0.08)' },
-  activation_sms_3: { label: 'Activation 3', color: '#34d399', bg: 'rgba(52,211,153,0.08)' },
-  activation_sms_4: { label: 'Activation 4', color: '#34d399', bg: 'rgba(52,211,153,0.08)' },
-  activation_sms_5: { label: 'Activation 5', color: '#34d399', bg: 'rgba(52,211,153,0.08)' },
-  activation_sms_6: { label: 'Activation 6', color: '#34d399', bg: 'rgba(52,211,153,0.08)' },
-  activation_sms_7: { label: 'Activation 7', color: '#34d399', bg: 'rgba(52,211,153,0.08)' },
-  activation_sms_8: { label: 'Activation 8', color: '#34d399', bg: 'rgba(52,211,153,0.08)' },
-  activation_sms_9: { label: 'Activation 9', color: '#34d399', bg: 'rgba(52,211,153,0.08)' },
+  activation_sms_1: { label: 'Activation 1', color: '#01f5d1', bg: 'rgba(1, 245, 209,0.08)' },
+  activation_sms_2: { label: 'Activation 2', color: '#01f5d1', bg: 'rgba(1, 245, 209,0.08)' },
+  activation_sms_3: { label: 'Activation 3', color: '#01f5d1', bg: 'rgba(1, 245, 209,0.08)' },
+  activation_sms_4: { label: 'Activation 4', color: '#01f5d1', bg: 'rgba(1, 245, 209,0.08)' },
+  activation_sms_5: { label: 'Activation 5', color: '#01f5d1', bg: 'rgba(1, 245, 209,0.08)' },
+  activation_sms_6: { label: 'Activation 6', color: '#01f5d1', bg: 'rgba(1, 245, 209,0.08)' },
+  activation_sms_7: { label: 'Activation 7', color: '#01f5d1', bg: 'rgba(1, 245, 209,0.08)' },
+  activation_sms_8: { label: 'Activation 8', color: '#01f5d1', bg: 'rgba(1, 245, 209,0.08)' },
+  activation_sms_9: { label: 'Activation 9', color: '#01f5d1', bg: 'rgba(1, 245, 209,0.08)' },
   abandoned_cart_1: { label: 'Cart 1', color: '#fbbf24', bg: 'rgba(251,191,36,0.08)' },
   abandoned_cart_2: { label: 'Cart 2', color: '#fbbf24', bg: 'rgba(251,191,36,0.08)' },
   abandoned_cart_3: { label: 'Cart 3', color: '#fbbf24', bg: 'rgba(251,191,36,0.08)' },
@@ -59,7 +59,7 @@ function getTypeStyle(type: string) {
 
 function getStatusStyle(status: string) {
   switch (status) {
-    case 'sent': case 'delivered': return { color: '#34d399', bg: 'rgba(52,211,153,0.08)', border: 'rgba(52,211,153,0.15)' };
+    case 'sent': case 'delivered': return { color: '#01f5d1', bg: 'rgba(1, 245, 209,0.08)', border: 'rgba(1, 245, 209,0.15)' };
     case 'failed': case 'undelivered': return { color: '#f87171', bg: 'rgba(248,113,113,0.08)', border: 'rgba(248,113,113,0.15)' };
     default: return { color: 'rgba(255,255,255,0.4)', bg: 'rgba(255,255,255,0.04)', border: 'rgba(255,255,255,0.06)' };
   }

@@ -446,10 +446,10 @@ export default function HomePage() {
                   <div className="max-w-md">
                     <div className="flex items-center gap-3 mb-6">
                       <span className="font-mono text-[10px] text-em tracking-[0.16em] uppercase">Layer {l.n}</span>
-                      <span className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(0, 227, 170, 0.35), transparent)' }} />
+                      <span className="h-px flex-1" style={{ background: 'linear-gradient(90deg, rgba(1, 245, 209, 0.35), transparent)' }} />
                     </div>
                     <div className="flex items-start gap-3 sm:gap-4">
-                      <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: 'rgba(0, 227, 170, 0.08)', border: '1px solid rgba(0, 227, 170, 0.18)' }}>
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: 'rgba(1, 245, 209, 0.08)', border: '1px solid rgba(1, 245, 209, 0.18)' }}>
                         <l.icon className="w-4 h-4 text-em" strokeWidth={1.7} />
                       </div>
                       <div className="min-w-0 flex-1">
@@ -481,7 +481,7 @@ export default function HomePage() {
                     <div className="tower-counter"><strong><span ref={towerCounterRef}>01</span></strong><span>/ 08</span></div>
                     <div className="tower-ground" />
 
-                    <div className="tower-floor"><div className="tower-floor-row"><span className="tower-floor-num">01</span><span className="tower-floor-title">Brand identity</span><span className="tower-floor-meta">your-brand.com</span></div><div className="tower-floor-row mt-2"><span className="tower-floor-num" style={{ visibility: 'hidden' }}>01</span><div className="tower-color-row">{['#10b981', '#0ea5e9', '#8b5cf6', '#f59e0b', '#ef4444', '#0a0a0a'].map(c => (<span key={c} style={{ background: c }} />))}</div><span className="tower-floor-sub">Logo · palette · typography</span></div></div>
+                    <div className="tower-floor"><div className="tower-floor-row"><span className="tower-floor-num">01</span><span className="tower-floor-title">Brand identity</span><span className="tower-floor-meta">your-brand.com</span></div><div className="tower-floor-row mt-2"><span className="tower-floor-num" style={{ visibility: 'hidden' }}>01</span><div className="tower-color-row">{['#00a19b', '#0ea5e9', '#8b5cf6', '#f59e0b', '#ef4444', '#0a0a0a'].map(c => (<span key={c} style={{ background: c }} />))}</div><span className="tower-floor-sub">Logo · palette · typography</span></div></div>
                     <div className="tower-floor"><div className="tower-floor-row"><span className="tower-floor-num">02</span><span className="tower-floor-title">Marketing website</span><span className="tower-floor-meta">+ AI demo line</span></div><div className="tower-floor-row mt-2"><span className="tower-floor-num" style={{ visibility: 'hidden' }}>02</span><div className="tower-mini-browser"><div className="tower-mini-browser-bar"><span /><span /><span /></div><div className="tower-mini-browser-body" /></div><span className="tower-floor-sub">Hero, pricing, testimonials, CTA</span></div></div>
                     <div className="tower-floor"><div className="tower-floor-row"><span className="tower-floor-num">03</span><span className="tower-floor-title">Self-serve onboarding</span><span className="tower-floor-meta text-em">60s</span></div><div className="tower-floor-row mt-2"><span className="tower-floor-num" style={{ visibility: 'hidden' }}>03</span><div className="tower-progress"><div className="tower-progress-fill" /></div><span className="tower-floor-sub">Signup → AI live + phone provisioned</span></div></div>
                     <div className="tower-floor"><div className="tower-floor-row"><span className="tower-floor-num">04</span><span className="tower-floor-title">AI receptionist</span><span className="tower-badge">Voice</span></div><div className="tower-floor-row mt-2"><span className="tower-floor-num" style={{ visibility: 'hidden' }}>04</span><div className="waveform">{Array.from({ length: 14 }).map((_, j) => (<span key={j} className="waveform-bar" style={{ animationDelay: `${j * 80}ms` }} />))}</div><span className="tower-floor-sub">English + Spanish · Google Calendar</span></div></div>
@@ -527,7 +527,7 @@ export default function HomePage() {
                 Call and talk to it, it&apos;s the same voice AI your clients get. Ask it anything, and it will connect you to a live receptionist demo so you hear exactly what a caller experiences. Sixty seconds, from your own phone.
               </p>
               <a href={`tel:${PLATFORM_DEMO_TEL}`} className="mt-8 group inline-flex items-center gap-3 sm:gap-4 rounded-2xl border border-white/[0.09] bg-white/[0.015] px-4 sm:px-6 py-4 sm:py-5 hover:border-white/25 transition-colors self-start">
-                <span className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(0,227,170,0.1)', border: '1px solid rgba(0,227,170,0.25)' }}><Phone className="w-5 h-5 text-em" /></span>
+                <span className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(1, 245, 209,0.1)', border: '1px solid rgba(1, 245, 209,0.25)' }}><Phone className="w-5 h-5 text-em" /></span>
                 <span>
                   <span className="block font-mono text-[10px] tracking-[0.14em] uppercase text-white/40">Tap to call, no signup</span>
                   <span className="block font-display text-[22px] sm:text-[26px] font-medium text-white t-numeric tracking-tight whitespace-nowrap">{PLATFORM_DEMO_NUMBER}</span>
@@ -580,7 +580,7 @@ export default function HomePage() {
               { Icon: ArrowUpRight, t: 'Escalates only what truly needs them', d: 'Emergencies and VIPs get transferred through. Everything else is handled, then summarized to them by text.' },
             ].map(c => (
               <div key={c.t} className="bento-cell">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(0,227,170,0.1)', border: '1px solid rgba(0,227,170,0.2)' }}><c.Icon className="w-5 h-5 text-em" /></div>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(1, 245, 209,0.1)', border: '1px solid rgba(1, 245, 209,0.2)' }}><c.Icon className="w-5 h-5 text-em" /></div>
                 <h3 className="font-display text-[16px] text-white mt-4 font-medium">{c.t}</h3>
                 <p className="text-[13px] mt-2 leading-relaxed" style={{ color: 'var(--steel-300)' }}>{c.d}</p>
               </div>
@@ -633,7 +633,7 @@ export default function HomePage() {
               <div key={t.name} className={`price-card ${t.popular ? 'price-card-em' : ''}`}>
                 {t.popular && (
                   <div className="absolute -top-3 left-7">
-                    <span className="rounded-full text-black px-3 py-1 font-mono text-[10px] tracking-[0.14em] font-medium uppercase" style={{ background: '#00e3aa' }}>Most popular</span>
+                    <span className="rounded-full text-black px-3 py-1 font-mono text-[10px] tracking-[0.14em] font-medium uppercase" style={{ background: '#01f5d1' }}>Most popular</span>
                   </div>
                 )}
                 <p className={`font-mono text-[11px] tracking-[0.14em] uppercase ${t.popular ? 'text-em' : 'text-white/40'}`}>{t.description}</p>
@@ -658,7 +658,7 @@ export default function HomePage() {
                     <li key={l} className="flex items-start gap-2.5 text-[13px]"><XIcon className="w-3.5 h-3.5 shrink-0 mt-1 text-white/20" /><span className="text-white/30">{l}</span></li>
                   ))}
                 </ul>
-                <Link href="/signup" className={`block w-full text-center rounded-full py-3 font-mono text-[11px] tracking-[0.12em] uppercase font-medium transition-all ${t.popular ? 'text-black hover:brightness-110' : 'border border-white/15 text-white hover:bg-white hover:text-black hover:border-white'}`} style={t.popular ? { background: '#00e3aa' } : undefined}>
+                <Link href="/signup" className={`block w-full text-center rounded-full py-3 font-mono text-[11px] tracking-[0.12em] uppercase font-medium transition-all ${t.popular ? 'text-black hover:brightness-110' : 'border border-white/15 text-white hover:bg-white hover:text-black hover:border-white'}`} style={t.popular ? { background: '#01f5d1' } : undefined}>
                   {t.price === 0 ? 'Start free' : 'Start 14-day trial'}
                 </Link>
               </div>
@@ -698,7 +698,7 @@ export default function HomePage() {
             ].map(([f, v, sy, g, b]) => (
               <div key={f as string} className="compare-row text-[13.5px] text-black/72">
                 <div className="pr-4">{f as string}</div>
-                <div className="text-center compare-cell-em px-3 py-3">{v ? <Check className="w-4 h-4 mx-auto" style={{ color: '#00c596' }} strokeWidth={2.5} /> : <XIcon className="w-3.5 h-3.5 text-black/20 mx-auto" />}</div>
+                <div className="text-center compare-cell-em px-3 py-3">{v ? <Check className="w-4 h-4 mx-auto" style={{ color: '#00c6b2' }} strokeWidth={2.5} /> : <XIcon className="w-3.5 h-3.5 text-black/20 mx-auto" />}</div>
                 <div className="text-center">{sy ? <Check className="w-4 h-4 text-black/45 mx-auto" /> : <XIcon className="w-3.5 h-3.5 text-black/15 mx-auto" />}</div>
                 <div className="text-center">{g ? <Check className="w-4 h-4 text-black/45 mx-auto" /> : <XIcon className="w-3.5 h-3.5 text-black/15 mx-auto" />}</div>
                 <div className="text-center">{b ? <Check className="w-4 h-4 text-black/45 mx-auto" /> : <XIcon className="w-3.5 h-3.5 text-black/15 mx-auto" />}</div>
@@ -716,7 +716,7 @@ export default function HomePage() {
               'Purpose-built for AI receptionist resale, not a bolted-on feature',
             ].map(x => (
               <div key={x} className="flex items-start gap-3 rounded-xl border border-black/[0.06] bg-paper px-4 py-3.5">
-                <Check className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#00c596' }} strokeWidth={2.5} />
+                <Check className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#00c6b2' }} strokeWidth={2.5} />
                 <span className="text-[14px] text-black/72 leading-snug">{x}</span>
               </div>
             ))}

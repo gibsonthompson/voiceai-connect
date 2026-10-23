@@ -87,13 +87,13 @@
 
 /* Links */
 .article-content a {
-  color: #047857;
+  color: #0a5a54;
   text-decoration: none;
   border-bottom: 1px solid rgba(4, 120, 87, 0.25);
   transition: border-color 0.2s ease;
 }
 .article-content a:hover {
-  border-bottom-color: #047857;
+  border-bottom-color: #0a5a54;
 }
 
 /* Don't underline links inside CTA-style boxes */
@@ -127,7 +127,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #10b981;
+  background: #00a19b;
 }
 
 /* Ordered lists */
@@ -154,15 +154,15 @@
   font-family: 'Geist Mono', ui-monospace, monospace;
   font-weight: 500;
   font-size: 0.95rem;
-  color: #047857;
+  color: #0a5a54;
 }
 
 /* Blockquotes */
 .article-content > blockquote {
   margin: 1.75rem 0;
   padding: 1.1rem 1.4rem;
-  border-left: 3px solid #10b981;
-  background: rgba(16, 185, 129, 0.04);
+  border-left: 3px solid #00a19b;
+  background: rgba(0, 161, 155, 0.04);
   border-radius: 0 0.625rem 0.625rem 0;
 }
 .article-content > blockquote p {
@@ -183,7 +183,7 @@
   background: rgba(0, 0, 0, 0.05);
   border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 4px;
-  color: #047857;
+  color: #0a5a54;
 }
 
 /* Code blocks — keep dark for readability */

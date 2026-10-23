@@ -171,7 +171,7 @@ export default function LegalPage({ type }: LegalPageProps) {
   }
 
   // Theme and colors
-  const pc = agency.primary_color || '#10b981';
+  const pc = agency.primary_color || '#00a19b';
   const sc = agency.secondary_color || adjustColor(pc, -15);
   const theme = agency.website_theme || 'light';
   const isDark = theme === 'dark';
@@ -183,9 +183,9 @@ export default function LegalPage({ type }: LegalPageProps) {
   const themeVars = {
     '--primary-color': pc,
     '--primary-hover': sc,
-    '--accent-color': agency.accent_color || '#34d399',
+    '--accent-color': agency.accent_color || '#01f5d1',
     '--primary-rgb': hexToRgbString(pc),
-    '--accent-rgb': hexToRgbString(agency.accent_color || '#34d399'),
+    '--accent-rgb': hexToRgbString(agency.accent_color || '#01f5d1'),
     '--primary-text-color': textOnPrimary,
   } as React.CSSProperties;
 
