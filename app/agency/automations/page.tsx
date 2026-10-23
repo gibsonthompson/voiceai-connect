@@ -187,15 +187,16 @@ export default function AutomationsPage() {
   }
 
   async function toggleActivity(t: TemplateCard) {
-    if (!t.workflow_id) return;
-    if (expanded === t.workflow_id) { setExpanded(null); return; }
-    setExpanded(t.workflow_id);
-    if (!runsByWf[t.workflow_id]) {
+    const wfId = t.workflow_id;
+    if (!wfId) return;
+    if (expanded === wfId) { setExpanded(null); return; }
+    setExpanded(wfId);
+    if (!runsByWf[wfId]) {
       setLoadingRuns(true);
       try {
-        const r = await fetch(`${backendUrl()}/api/agency/${agencyId}/workflows/${t.workflow_id}/runs?limit=25`, { headers: authHeaders() });
+        const r = await fetch(`${backendUrl()}/api/agency/${agencyId}/workflows/${wfId}/runs?limit=25`, { headers: authHeaders() });
         const data = await r.json();
-        setRunsByWf((prev) => ({ ...prev, [t.workflow_id as string]: data.runs || [] }));
+        setRunsByWf((prev) => ({ ...prev, [wfId]: data.runs || [] }));
       } catch { /* leave empty */ } finally { setLoadingRuns(false); }
     }
   }
@@ -252,7 +253,8 @@ export default function AutomationsPage() {
   const renderCard = (t: TemplateCard, interactive: boolean) => {
     const Icon = ICONS[t.key] || Zap;
     const isOn = t.workflow_status === 'active';
-    const stats = t.workflow_id ? statsByWf[t.workflow_id] : null;
+    const wfId = t.workflow_id;
+    const stats = wfId ? statsByWf[wfId] : null;
     const disableSwitch = !interactive || (!isOn && !t.activated && capReached);
     return (
       <div key={t.key} className="rounded-2xl p-5 flex flex-col" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
@@ -288,41 +290,45 @@ export default function AutomationsPage() {
                 <div className="text-xs" style={{ color: theme.textMuted }}>In progress</div>
               </div>
             </div>
-            <div className="mt-3 flex items-center gap-4">
-              <button
-                type="button"
-                onClick={() => interactive && toggleActivity(t)}
-                className="inline-flex items-center gap-1.5 text-xs font-medium"
-                style={{ color: theme.primary }}
-              >
-                <Activity className="h-3.5 w-3.5" /> Activity
-                <ChevronDown className="h-3.5 w-3.5 transition-transform" style={{ transform: expanded === t.workflow_id ? 'rotate(180deg)' : 'none' }} />
-              </button>
-              {interactive && t.workflow_id && (
-                <a href={`/agency/automations/${t.workflow_id}`} className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: theme.textMuted }}>
-                  <SlidersHorizontal className="h-3.5 w-3.5" /> Edit steps
-                </a>
-              )}
-            </div>
+            {wfId && (
+              <>
+                <div className="mt-3 flex items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={() => interactive && toggleActivity(t)}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium"
+                    style={{ color: theme.primary }}
+                  >
+                    <Activity className="h-3.5 w-3.5" /> Activity
+                    <ChevronDown className="h-3.5 w-3.5 transition-transform" style={{ transform: expanded === wfId ? 'rotate(180deg)' : 'none' }} />
+                  </button>
+                  {interactive && (
+                    <a href={`/agency/automations/${wfId}`} className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: theme.textMuted }}>
+                      <SlidersHorizontal className="h-3.5 w-3.5" /> Edit steps
+                    </a>
+                  )}
+                </div>
 
-            {expanded === t.workflow_id && (
-              <div className="mt-3 rounded-xl overflow-hidden" style={{ border: `1px solid ${theme.border}` }}>
-                {loadingRuns && !runsByWf[t.workflow_id] ? (
-                  <div className="flex items-center justify-center py-6"><Loader2 className="h-4 w-4 animate-spin" style={{ color: theme.textMuted }} /></div>
-                ) : (runsByWf[t.workflow_id] || []).length === 0 ? (
-                  <div className="text-xs text-center py-6" style={{ color: theme.textMuted }}>No one has gone through this yet.</div>
-                ) : (
-                  (runsByWf[t.workflow_id] || []).map((run) => (
-                    <div key={run.id} className="flex items-center justify-between px-3 py-2 text-sm" style={{ borderBottom: `1px solid ${theme.border}` }}>
-                      <span style={{ color: theme.text }}>{maskPhone(run.contact_phone)}</span>
-                      <div className="flex items-center gap-3">
-                        {runStatusChip(run)}
-                        <span className="text-xs" style={{ color: theme.textMuted }}>{fmtWhen(run.enrolled_at)}</span>
-                      </div>
-                    </div>
-                  ))
+                {expanded === wfId && (
+                  <div className="mt-3 rounded-xl overflow-hidden" style={{ border: `1px solid ${theme.border}` }}>
+                    {loadingRuns && !runsByWf[wfId] ? (
+                      <div className="flex items-center justify-center py-6"><Loader2 className="h-4 w-4 animate-spin" style={{ color: theme.textMuted }} /></div>
+                    ) : (runsByWf[wfId] || []).length === 0 ? (
+                      <div className="text-xs text-center py-6" style={{ color: theme.textMuted }}>No one has gone through this yet.</div>
+                    ) : (
+                      (runsByWf[wfId] || []).map((run) => (
+                        <div key={run.id} className="flex items-center justify-between px-3 py-2 text-sm" style={{ borderBottom: `1px solid ${theme.border}` }}>
+                          <span style={{ color: theme.text }}>{maskPhone(run.contact_phone)}</span>
+                          <div className="flex items-center gap-3">
+                            {runStatusChip(run)}
+                            <span className="text-xs" style={{ color: theme.textMuted }}>{fmtWhen(run.enrolled_at)}</span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 )}
-              </div>
+              </>
             )}
           </div>
         )}
