@@ -25,7 +25,7 @@ function useInView<T extends HTMLElement = HTMLDivElement>(threshold = 0.15) {
   return ref;
 }
 
-export default function PlatformPage() {
+export default function PlatformPage({ faq = [] }: { faq?: { q: string; a: string }[] }) {
   const r1 = useInView();
   const r2 = useInView();
   const r3 = useInView();
@@ -33,6 +33,7 @@ export default function PlatformPage() {
   const r5 = useInView();
   const r6 = useInView();
   const r7 = useInView();
+  const r8 = useInView();
 
   return (
     <main className="min-h-screen bg-ink">
@@ -46,7 +47,7 @@ export default function PlatformPage() {
             <p className="t-eyebrow text-em mb-4">The platform</p>
             <span className="racing-line" />
             <h1 className="t-h1 text-white max-w-[18ch]">
-              Everything you need to run an AI receptionist agency.
+              Everything you need to run a white-label AI receptionist agency.
             </h1>
             <p className="t-body mt-8 max-w-2xl text-[1rem]">
               This is what an agency operator actually receives at signup. White-label branding, automated client onboarding, end-client dashboards, payment processing, lead generation, and the AI receptionist itself, wired together and shipped as a single multi-tenant application. You manage the business; the platform manages the work.
@@ -293,6 +294,33 @@ export default function PlatformPage() {
           </div>
         </div>
       </section>
+
+      {/* ════════ FAQ, pillar support + FAQPage schema source ════════ */}
+      {faq.length > 0 && (
+        <section className="bg-paper py-28 lg:py-40">
+          <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
+            <div ref={r8} className="fade-up max-w-3xl mb-14">
+              <p className="t-eyebrow text-em-deep mb-6">Questions</p>
+              <h2 className="t-h2 text-black">The white-label AI receptionist platform, in plain terms.</h2>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 max-w-5xl">
+              {faq.map(item => (
+                <div key={item.q} className="rounded-[14px] border border-black/[0.06] bg-white p-6 lg:p-7">
+                  <h3 className="font-display text-[16px] font-medium text-black tracking-tight leading-snug">{item.q}</h3>
+                  <p className="text-[13.5px] text-black/60 leading-relaxed mt-3">{item.a}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-10">
+              <Link href="/faq" className="inline-flex items-center gap-1.5 font-mono text-[11px] tracking-[0.14em] uppercase text-em-deep hover:opacity-80 transition-opacity">
+                See all FAQs <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ════════ FINAL CTA ════════ */}
       <section className="bg-ink canvas-dot py-32 lg:py-44 border-t border-white/[0.04] relative overflow-hidden">

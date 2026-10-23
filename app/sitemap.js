@@ -20,13 +20,36 @@ const PLATFORM_HOSTS = new Set([
   'localhost',
 ]);
 
+// ============================================================================
+// REDIRECTED BLOG SLUGS (SEO consolidation, Oct 2026)
+// These /blog/<slug> URLs are now 301'd to a stronger owner page in
+// next.config.ts to kill keyword cannibalization on the commercial head
+// terms. A sitemap must never advertise a URL that redirects, so we filter
+// them out of BOTH the hardcoded blog list and the auto-generated blog feed.
+// Keep this set in exact sync with the SEO CONSOLIDATION block in
+// next.config.ts: one entry here per 301 source whose path starts /blog/.
+// ============================================================================
+const REDIRECTED_BLOG_SLUGS = new Set([
+  'white-label-ai-receptionist-platform',
+  'white-label-ai-voice-agent-platform-agencies',
+  'best-white-label-ai-receptionist-platforms-ranked',
+  'how-to-choose-white-label-ai-receptionist-platform',
+  'white-label-vs-build-ai-receptionist',
+  'what-is-ai-receptionist-how-it-works',
+  'how-to-start-ai-receptionist-agency',
+  'start-ai-receptionist-agency-from-india',
+  'voiceai-connect-vs-synthflow',
+  'ai-receptionist-agency-pricing-tiers',
+  'ai-agency-profit-margins-2026',
+]);
+
 function isPlatformHost(host) {
   if (!host) return true; // no host (e.g. build-time) -> platform sitemap
   return PLATFORM_HOSTS.has(host);
 }
 
 // ============================================================================
-// AGENCY SITEMAP — the public marketing pages an agency host actually serves.
+// AGENCY SITEMAP - the public marketing pages an agency host actually serves.
 // These are the routes middleware rewrites to /agency-site plus the signup
 // wizard that resolves agency context from the host. Uses the requested host
 // as the base so it is correct for both subdomains and custom domains, and for
@@ -46,7 +69,7 @@ function agencySitemap(host) {
 }
 
 // ============================================================================
-// PLATFORM SITEMAP — the full VoiceAI Connect marketing + blog sitemap.
+// PLATFORM SITEMAP - the full VoiceAI Connect marketing + blog sitemap.
 // ============================================================================
 async function platformSitemap() {
   const baseUrl = 'https://www.myvoiceaiconnect.com';
@@ -125,13 +148,16 @@ async function platformSitemap() {
     // Blog Index
     { url: `${baseUrl}/blog`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
 
-    // Blog Posts, all existing hardcoded
-    ...blogSlugs.map(slug => ({
-      url: `${baseUrl}/blog/${slug}`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: ['pricing-breakdown', 'platforms-ranked', 'resell'].some(k => slug.includes(k)) ? 0.7 : 0.6,
-    })),
+    // Blog Posts, all existing hardcoded (minus any now 301'd by the SEO
+    // consolidation; those must not appear in the sitemap).
+    ...blogSlugs
+      .filter(slug => !REDIRECTED_BLOG_SLUGS.has(slug))
+      .map(slug => ({
+        url: `${baseUrl}/blog/${slug}`,
+        lastModified: new Date(),
+        changeFrequency: 'monthly',
+        priority: ['pricing-breakdown', 'platforms-ranked', 'resell'].some(k => slug.includes(k)) ? 0.7 : 0.6,
+      })),
 
     // SEO Landing Pages
     ...['ai-receptionist-agency-pricing', 'ai-receptionist-answering-service-reseller',
@@ -144,10 +170,11 @@ async function platformSitemap() {
       url: `${baseUrl}/${slug}`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8,
     })),
 
-    // Auto-generated posts from blog-farm (deduplicated)
+    // Auto-generated posts from blog-farm (deduplicated, and with any 301'd
+    // slugs filtered out so the sitemap never advertises a redirecting URL).
     ...generatedEntries.filter(e => {
       const slug = e.url.split('/blog/')[1];
-      return slug && !hardcodedBlogSlugs.has(slug);
+      return slug && !hardcodedBlogSlugs.has(slug) && !REDIRECTED_BLOG_SLUGS.has(slug);
     }),
   ];
 }
