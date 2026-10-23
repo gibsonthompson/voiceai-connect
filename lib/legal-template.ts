@@ -24,8 +24,11 @@ export interface LegalFields {
   support_email?: string;
   business_name?: string;
   payment_processor?: string;
-  trial_terms?: string;   // terms only
-  refund_policy?: string; // terms only
+  trial_terms?: string;      // terms only
+  refund_policy?: string;    // terms only
+  governing_state?: string;  // terms only: governing-law state (blank = agency HQ state)
+  governing_venue?: string;  // terms only: court venue, e.g. "Wake County" (courts mode)
+  dispute_mode?: string;     // terms only: 'arbitration' (default) | 'courts'
 }
 
 export interface LegalAgencyFields {
@@ -65,7 +68,7 @@ export const LEGAL_FIELD_SCHEMA: Record<LegalType, Array<{
   key: keyof LegalFields;
   label: string;
   help: string;
-  kind: 'email' | 'text' | 'longtext' | 'refund';
+  kind: 'email' | 'text' | 'longtext' | 'refund' | 'disputemode';
 }>> = {
   terms: [
     { key: 'support_email', label: 'Contact email', help: 'Shown wherever the page says to contact or cancel. Fills every email reference.', kind: 'email' },
@@ -73,6 +76,9 @@ export const LEGAL_FIELD_SCHEMA: Record<LegalType, Array<{
     { key: 'payment_processor', label: 'Payment processor', help: 'Named in the billing section. Defaults to the provider you have connected.', kind: 'text' },
     { key: 'trial_terms', label: 'Free trial terms', help: 'The free-trial paragraph (Section 5).', kind: 'longtext' },
     { key: 'refund_policy', label: 'Refund policy', help: 'The refund paragraph (Section 6).', kind: 'refund' },
+    { key: 'dispute_mode', label: 'How disputes are resolved', help: 'Section 14. Arbitration (the default) sends disputes to binding AAA arbitration. Courts sends them to the courts in your venue below. The class-action waiver and liability protections stay either way.', kind: 'disputemode' },
+    { key: 'governing_state', label: 'Governing law state', help: 'The state whose law governs (Section 14.2). Leave blank to use the state where your business is headquartered.', kind: 'text' },
+    { key: 'governing_venue', label: 'Court venue', help: 'Used only when you pick Courts above, e.g. "Wake County, North Carolina". Leave blank to use the governing-law state.', kind: 'text' },
   ],
   privacy: [
     { key: 'support_email', label: 'Contact email', help: 'Shown wherever the page says to contact you or exercise data rights. Fills every email reference.', kind: 'email' },
@@ -304,16 +310,18 @@ Upon termination, your right to use the Service ceases immediately. Sections 9, 
 Before filing any formal claim, you agree to contact us at {{SUPPORT_EMAIL}} and attempt to resolve the dispute informally for at least 30 days.
 
 ### 14.2 Governing Law
-These Terms are governed by the laws of the state in which {{AGENCY_NAME}} is headquartered, without regard to conflict of law principles.
+{{GOVERNING_LAW}}
 
-### 14.3 Arbitration
-Any dispute that cannot be resolved informally shall be resolved by binding arbitration administered by the American Arbitration Association under its Commercial Arbitration Rules. The arbitration will be conducted in English and the arbitrator's decision will be final and binding.
+{{DISPUTE_RESOLUTION}}
 
 ### 14.4 Class Action Waiver
 You agree to resolve disputes with us on an individual basis. You waive any right to participate in a class action lawsuit or class-wide arbitration.
 
 ### 14.5 Small Claims Exception
 Either party may bring a claim in small claims court if the claim qualifies.
+
+### 14.6 Separately Signed Agreements
+If you and {{AGENCY_NAME}} have signed a separate written agreement that specifies a different governing law, venue, or dispute-resolution process, that signed agreement controls over this Section 14 to the extent of any conflict (see Section 16).
 
 ---
 
@@ -329,7 +337,7 @@ Your continued use of the Service after the effective date constitutes acceptanc
 
 ## 16. General Provisions
 
-- **Entire Agreement.** These Terms, together with our Privacy Policy, constitute the entire agreement between you and {{AGENCY_NAME}} regarding the Service.
+- **Entire Agreement; Signed Agreements Control.** These Terms, together with our Privacy Policy, constitute the entire agreement between you and {{AGENCY_NAME}} regarding the Service. If you and {{AGENCY_NAME}} have also entered into a separate written agreement signed by both parties, that signed agreement governs your relationship with {{AGENCY_NAME}} and controls over these Terms to the extent of any conflict, including the governing law, arbitration, and class action waiver provisions in Section 14. This does not limit or remove the rights of any third party expressly named as a beneficiary in these Terms, which continue to apply for that party's benefit.
 - **Severability.** If any provision of these Terms is found to be unenforceable, the remaining provisions remain in full force and effect.
 - **No Waiver.** Our failure to enforce any provision of these Terms does not constitute a waiver of that provision.
 - **Assignment.** You may not assign or transfer your rights under these Terms. We may assign our rights without restriction.
@@ -576,9 +584,34 @@ export function composeLegalDoc(type: LegalType, fields: LegalFields | null | un
   const trialTerms = (f.trial_terms && f.trial_terms.trim()) || DEFAULT_TRIAL_TERMS;
   const refundPolicy = (f.refund_policy && f.refund_policy.trim()) || DEFAULT_REFUND_POLICY;
 
+  // Governing law + dispute resolution (Section 14). The agency may set the
+  // state, a court venue, and whether disputes go to arbitration (default) or to
+  // the courts. The class-action waiver (14.4) and the liability / indemnity
+  // protections stay fixed regardless of this choice.
+  const govState = (f.governing_state && f.governing_state.trim()) || '';
+  const govVenue = (f.governing_venue && f.governing_venue.trim()) || '';
+  const governingLaw = govState
+    ? `These Terms are governed by the laws of the State of ${govState}, without regard to conflict of law principles.`
+    : `These Terms are governed by the laws of the state in which ${businessName} is headquartered, without regard to conflict of law principles.`;
+  let disputeResolution: string;
+  if (f.dispute_mode === 'courts') {
+    const venue = govVenue
+      ? (govState ? `${govVenue}, ${govState}` : govVenue)
+      : (govState ? `the State of ${govState}` : `the state in which ${businessName} is headquartered`);
+    disputeResolution =
+`### 14.3 Venue and Jurisdiction
+Any dispute that cannot be resolved informally shall be brought exclusively in the state or federal courts located in ${venue}. Each party consents to the personal jurisdiction and venue of those courts and waives any objection based on an inconvenient forum.`;
+  } else {
+    disputeResolution =
+`### 14.3 Arbitration
+Any dispute that cannot be resolved informally shall be resolved by binding arbitration administered by the American Arbitration Association under its Commercial Arbitration Rules. The arbitration will be conducted in English and the arbitrator's decision will be final and binding.`;
+  }
+
   return TEMPLATES[type]
     .replace(/\{\{TRIAL_TERMS\}\}/g, trialTerms)
     .replace(/\{\{REFUND_POLICY\}\}/g, refundPolicy)
+    .replace(/\{\{GOVERNING_LAW\}\}/g, governingLaw)
+    .replace(/\{\{DISPUTE_RESOLUTION\}\}/g, disputeResolution)
     .replace(/\{\{PAYMENT_PROCESSOR\}\}/g, processor)
     .replace(/\{\{AGENCY_NAME\}\}/g, businessName)
     .replace(/\{\{SUPPORT_EMAIL\}\}/g, supportEmail)
@@ -596,6 +629,9 @@ export function effectiveFieldValue(key: keyof LegalFields, fields: LegalFields 
     case 'payment_processor': return (f.payment_processor ?? '') || defaultPaymentProcessor(agency);
     case 'trial_terms': return (f.trial_terms ?? '') || DEFAULT_TRIAL_TERMS;
     case 'refund_policy': return (f.refund_policy ?? '') || DEFAULT_REFUND_POLICY;
+    case 'dispute_mode': return (f.dispute_mode ?? '') || 'arbitration';
+    case 'governing_state': return f.governing_state ?? '';
+    case 'governing_venue': return f.governing_venue ?? '';
     default: return '';
   }
 }

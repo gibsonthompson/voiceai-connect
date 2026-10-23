@@ -37,9 +37,9 @@ export default function ExportsFeaturePage() {
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-1.5 text-sm mb-6"><Download className="h-4 w-4 text-emerald-400" /><span className="text-emerald-300/90">All Plans</span></div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight leading-[1.1]">Export everything.<span className="block mt-2 text-[#fafaf9]/40">Your data, your way.</span></h1>
-              <p className="mt-6 text-lg sm:text-xl text-[#fafaf9]/60 leading-relaxed">Download call recordings, transcripts, analytics reports, and client data. Export as CSV, PDF, or MP3. Perfect for client reports, compliance, or CRM imports.</p>
+              <p className="mt-6 text-lg sm:text-xl text-[#fafaf9]/60 leading-relaxed">Download your call history, transcripts, summaries, and client lists as CSV, anytime. Perfect for client reports, record-keeping, or CRM imports. Recordings play in your dashboard, and the CSV includes their links.</p>
               <div className="mt-8 space-y-3">
-                {['Call recordings (MP3)', 'Transcripts (PDF, TXT)', 'Analytics reports (PDF)', 'Call data (CSV)'].map((item) => (
+                {['Call history (CSV)', 'Transcripts and summaries (CSV)', 'Client and contact lists (CSV)', 'Recording links included in the export'].map((item) => (
                   <div key={item} className="flex items-center gap-3"><div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10"><Check className="h-3 w-3 text-emerald-400" /></div><span className="text-[#fafaf9]/70">{item}</span></div>
                 ))}
               </div>
@@ -50,10 +50,10 @@ export default function ExportsFeaturePage() {
                 <h3 className="font-medium mb-4">Export Options</h3>
                 <div className="space-y-3">
                   {[
-                    { icon: FileText, name: 'Call Transcripts', format: 'PDF / TXT' },
-                    { icon: FileSpreadsheet, name: 'Analytics Report', format: 'PDF' },
-                    { icon: Table, name: 'Call Data', format: 'CSV' },
-                    { icon: Download, name: 'Audio Recordings', format: 'MP3' },
+                    { icon: Table, name: 'Call History', format: 'CSV' },
+                    { icon: FileText, name: 'Transcripts & Summaries', format: 'CSV' },
+                    { icon: FileSpreadsheet, name: 'Clients & Contacts', format: 'CSV' },
+                    { icon: Download, name: 'Recording Links', format: 'In CSV' },
                   ].map((item) => (
                     <div key={item.name} className="flex items-center justify-between p-4 rounded-lg bg-white/[0.03] hover:bg-white/[0.05] cursor-pointer transition-colors">
                       <div className="flex items-center gap-3"><item.icon className="h-5 w-5 text-emerald-400" /><span>{item.name}</span></div>
@@ -61,7 +61,7 @@ export default function ExportsFeaturePage() {
                     </div>
                   ))}
                 </div>
-                <button className="w-full mt-4 py-3 rounded-lg bg-emerald-500 text-[#050505] font-medium">Export Selected</button>
+                <button className="w-full mt-4 py-3 rounded-lg bg-emerald-500 text-[#050505] font-medium">Download CSV</button>
               </div>
             </div>
           </div>

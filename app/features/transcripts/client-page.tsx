@@ -39,7 +39,7 @@ export default function TranscriptsFeaturePage() {
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight leading-[1.1]">Word-for-word transcripts.<span className="block mt-2 text-[#fafaf9]/40">99% accuracy.</span></h1>
               <p className="mt-6 text-lg sm:text-xl text-[#fafaf9]/60 leading-relaxed">Every call is automatically transcribed with near-perfect accuracy. Search, export, or review any conversation in seconds.</p>
               <div className="mt-8 space-y-3">
-                {['Automatic transcription for every call', 'Full-text search across all calls', 'Export as TXT or PDF', 'Speaker identification (AI vs. caller)'].map((item) => (
+                {['Automatic transcription for every call', 'Full-text search across all calls', 'Export with your call history (CSV)', 'Speaker identification (AI vs. caller)'].map((item) => (
                   <div key={item} className="flex items-center gap-3"><div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10"><Check className="h-3 w-3 text-emerald-400" /></div><span className="text-[#fafaf9]/70">{item}</span></div>
                 ))}
               </div>

@@ -39,7 +39,7 @@ export default function PhoneNumbersFeaturePage() {
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight leading-[1.1]">Dedicated phone numbers.<span className="block mt-2 text-[#fafaf9]/40">Provisioned instantly.</span></h1>
               <p className="mt-6 text-lg sm:text-xl text-[#fafaf9]/60 leading-relaxed">Every client gets their own dedicated phone number. Choose local area codes or toll-free. Numbers are live in seconds—no paperwork, no waiting.</p>
               <div className="mt-8 space-y-3">
-                {['Local numbers in any US area code', 'Toll-free (800, 888, etc.) available', 'Numbers provisioned in under 60 seconds', 'Port existing numbers (Pro+)'].map((item) => (
+                {['Local numbers in any US area code', 'Toll-free (800, 888, etc.) available', 'Numbers provisioned in under 60 seconds', 'Keep your existing number via call forwarding'].map((item) => (
                   <div key={item} className="flex items-center gap-3"><div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10"><Check className="h-3 w-3 text-emerald-400" /></div><span className="text-[#fafaf9]/70">{item}</span></div>
                 ))}
               </div>
@@ -77,7 +77,7 @@ export default function PhoneNumbersFeaturePage() {
             {[
               { icon: MapPin, title: 'Local Numbers', desc: 'Match the client\'s area code for a local presence. Builds trust with callers.', badge: 'All Plans' },
               { icon: Globe, title: 'Toll-Free Numbers', desc: '800, 888, 877, and more. Professional nationwide presence.', badge: 'Pro+' },
-              { icon: Phone, title: 'Number Porting', desc: 'Keep existing numbers. We handle the transfer seamlessly.', badge: 'Pro+' },
+              { icon: Phone, title: 'Keep Your Number', desc: 'Forward your existing business number to the AI line. No porting, your number never changes.', badge: 'All Plans' },
             ].map((item) => (
               <div key={item.title} className="p-6 rounded-xl border border-white/[0.06] bg-white/[0.02]">
                 <div className="flex items-center justify-between mb-4">
@@ -111,7 +111,7 @@ export default function PhoneNumbersFeaturePage() {
       <section className="py-16 border-t border-white/[0.06]">
         <div className="mx-auto max-w-4xl px-4 text-center">
           <h2 className="text-2xl font-semibold">Phone numbers ready in seconds</h2>
-          <p className="mt-4 text-[#fafaf9]/50">Local numbers included. Toll-free and porting on Pro+ plans.</p>
+          <p className="mt-4 text-[#fafaf9]/50">Local numbers included. Toll-free on Pro+. Keep your existing number with call forwarding.</p>
           <div className="mt-8"><Link href="/signup" className="group inline-flex items-center gap-3 rounded-full bg-white px-8 py-4 font-medium text-[#050505]">Start Your Free Trial <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" /></Link></div>
         </div>
       </section>

@@ -34,7 +34,7 @@ export default function CallRecordingsFeaturePage() {
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight leading-[1.1]">Every call recorded.<span className="block mt-2 text-[#fafaf9]/40">Unlimited storage.</span></h1>
               <p className="mt-6 text-lg sm:text-xl text-[#fafaf9]/60">Every conversation is automatically recorded in crystal-clear audio. Play back, download, or share any call instantly from the dashboard.</p>
               <div className="mt-8 space-y-3">
-                {['Automatic recording for every call', 'Unlimited cloud storage', 'One-click playback', 'Download as MP3'].map((item) => (<div key={item} className="flex items-center gap-3"><div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10"><Check className="h-3 w-3 text-emerald-400" /></div><span className="text-[#fafaf9]/70">{item}</span></div>))}
+                {['Automatic recording for every call', 'Secure cloud storage', 'One-click playback in your dashboard', 'Recording links included in CSV export'].map((item) => (<div key={item} className="flex items-center gap-3"><div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10"><Check className="h-3 w-3 text-emerald-400" /></div><span className="text-[#fafaf9]/70">{item}</span></div>))}
               </div>
             </div>
             <div className="relative">

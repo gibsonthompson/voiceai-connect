@@ -197,6 +197,18 @@ export default function LegalEditor({ agencyId, backendUrl, theme, agency }: Leg
                   <input type="email" value={val} onChange={(e) => setField(field.key, e.target.value)} placeholder="name@example.com" className="w-full rounded-lg px-3 py-2 text-sm" style={inputStyle} />
                 ) : field.kind === 'text' ? (
                   <input type="text" value={val} onChange={(e) => setField(field.key, e.target.value)} className="w-full rounded-lg px-3 py-2 text-sm" style={inputStyle} />
+                ) : field.kind === 'disputemode' ? (
+                  <div className="flex gap-2">
+                    {([['arbitration', 'Arbitration'], ['courts', 'Courts']] as const).map(([mode, label]) => {
+                      const on = (val || 'arbitration') === mode;
+                      return (
+                        <button key={mode} type="button" onClick={() => setField(field.key, mode)} className="flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+                          style={on ? { backgroundColor: theme.primary, color: theme.primaryText } : { backgroundColor: theme.input, color: theme.textMuted, border: `1px solid ${theme.border}` }}>
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 ) : (
                   <textarea value={val} onChange={(e) => setField(field.key, e.target.value)} rows={field.kind === 'refund' ? 4 : 7} className="w-full rounded-lg px-3 py-2 text-sm leading-relaxed" style={{ ...inputStyle, resize: 'vertical' }} />
                 )}
@@ -211,7 +223,7 @@ export default function LegalEditor({ agencyId, backendUrl, theme, agency }: Leg
               <p className="text-sm font-medium mb-0.5" style={{ color: theme.text }}>The rest of this page is protected</p>
               <p className="text-[11px] sm:text-xs leading-relaxed" style={{ color: theme.textMuted }}>
                 {activeDoc === 'terms'
-                  ? 'Sections like liability, indemnification, acceptable use, intellectual property, termination, and dispute resolution are standard legal protections. They are always included and can’t be removed here. Use Preview to see the full page.'
+                  ? 'Sections like liability, indemnification, acceptable use, intellectual property, termination, and the class-action waiver are standard legal protections. They are always included and can’t be removed here. Use Preview to see the full page.'
                   : 'Your data-handling, recording-consent, retention, security, and user-rights sections are always included and can’t be removed here. Use Preview to see the full page.'}
               </p>
             </div>
