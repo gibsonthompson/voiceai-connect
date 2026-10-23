@@ -6,7 +6,6 @@ import { ArrowUpRight, Menu, X } from 'lucide-react';
 
 const NAV_LINKS: [string, string][] = [
   ['Platform', '/platform'],
-  ['How it works', '/how-it-works'],
   ['Demo', '/interactive-demo'],
   ['Pricing', '/#pricing'],
   ['FAQ', '/faq'],
