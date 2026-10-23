@@ -73,7 +73,7 @@ export default function BestWhiteLabelPlatformsRanked() {
       <ComparisonTable
         headers={['Rank', 'Platform', 'Starting Price', 'Best For', 'Biggest Strength']}
         rows={[
-          ['1', 'VoiceAI Connect', '$199/mo', 'Zero-fulfillment inbound agencies', 'Flat-fee pricing, no per-client costs'],
+          ['1', 'VoiceAI Connect', 'Free, then $99/mo', 'Zero-fulfillment inbound agencies', 'Flat-fee pricing, no per-client costs'],
           ['2', 'Trillet', '$99/mo', 'Agencies wanting inbound + outbound', 'Native outbound + HIPAA included'],
           ['3', 'Autocalls', '$419/mo', 'Omnichannel agencies', 'Voice + SMS + chat in one platform'],
           ['4', 'My AI Front Desk', '$45/mo + per-unit', 'Testing the market cheaply', 'Lowest entry cost, strong docs'],
@@ -103,7 +103,7 @@ export default function BestWhiteLabelPlatformsRanked() {
       <h3 id="voiceai-connect">1. VoiceAI Connect — Best for Zero-Fulfillment Agencies</h3>
 
       <p>
-        <strong>Price:</strong> $199/month (Starter), $299/month (Professional), $499/month (Enterprise). No per-client fees. No per-minute billing. Stripe Connect for direct payments.
+        <strong>Price:</strong> Free ($0/month), Pro ($99/month), Scale ($499/month). Stripe Connect for direct payments.
       </p>
 
       <p>
