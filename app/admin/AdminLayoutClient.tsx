@@ -15,6 +15,9 @@
 //          Messaging.
 // UPDATED: 2026-09-18: Added Concierge link (platform demo-line calls) under
 //          the Growth section, next to Demos.
+// UPDATED: 2026-10-22: Compacted the sidebar vertical rhythm so the full nav
+//          fits without scrolling, and removed the admin identity card
+//          (name + email) above Sign Out.
 // ============================================================================
 
 import './admin-theme.css';
@@ -108,6 +111,9 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
     return () => { document.body.style.overflow = ''; };
   }, [sidebarOpen, isMobile]);
 
+  // Keep admin referenced for the auth gate without rendering the identity card.
+  void admin;
+
   if (loading) {
     return (
       <div className="admin-scope min-h-screen flex items-center justify-center">
@@ -125,14 +131,14 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
       <Link
         key={item.href}
         href={item.href}
-        className="group flex items-center gap-3 rounded-[10px] px-3 py-2.5 text-[13px] font-medium transition-colors"
+        className="group flex items-center gap-3 rounded-[10px] px-3 py-[7px] text-[13px] font-medium transition-colors"
         style={active
           ? { background: 'var(--a-em)', color: '#04140D', fontWeight: 600 }
           : { color: 'rgba(255,255,255,0.66)' }}
         onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; }}
         onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = 'transparent'; }}
       >
-        <item.icon className="h-[17px] w-[17px]" style={{ color: active ? '#04140D' : 'rgba(255,255,255,0.7)' }} />
+        <item.icon className="h-4 w-4 shrink-0" style={{ color: active ? '#04140D' : 'rgba(255,255,255,0.7)' }} />
         {item.label}
       </Link>
     );
@@ -167,15 +173,15 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
           </button>
         </div>
 
-        <div className="flex items-center px-5 h-[76px] shrink-0">
-          <BrandLogo height={34} />
+        <div className="flex items-center px-5 h-[58px] shrink-0">
+          <BrandLogo height={30} />
         </div>
 
-        <nav className="px-3 pb-2 space-y-0.5 overflow-y-auto flex-1 min-h-0">
+        <nav className="px-3 pt-1 pb-2 space-y-0.5 overflow-y-auto flex-1 min-h-0">
           {NAV.map((group, gi) => (
             <div key={gi}>
               {group.section && (
-                <div className="px-3 pt-4 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.13em]" style={{ color: 'rgba(255,255,255,0.38)' }}>
+                <div className="px-3 pt-2.5 pb-1 text-[10px] font-semibold uppercase tracking-[0.13em]" style={{ color: 'rgba(255,255,255,0.38)' }}>
                   {group.section}
                 </div>
               )}
@@ -184,19 +190,8 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
           ))}
         </nav>
 
-        {/* User + sign out */}
-        <div className="p-3 space-y-2 shrink-0" style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 0.75rem)' : '0.75rem' }}>
-          <div className="rounded-[10px] p-3" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: 'var(--a-em)' }}>
-                <span className="text-xs font-semibold" style={{ color: '#04140D' }}>{admin?.name?.charAt(0) || admin?.email?.charAt(0)?.toUpperCase() || 'A'}</span>
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-white/85 truncate">{admin?.name || 'Admin'}</p>
-                <p className="text-[10px] text-white/45 truncate">{admin?.email}</p>
-              </div>
-            </div>
-          </div>
+        {/* Sign out */}
+        <div className="px-3 pt-2 shrink-0" style={{ paddingBottom: isMobile ? 'calc(env(safe-area-inset-bottom) + 0.75rem)' : '0.75rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
           <button onClick={handleSignOut} className="flex items-center gap-2.5 rounded-[10px] px-3 py-2 text-[13px] font-medium text-white/55 hover:bg-white/5 transition-colors w-full">
             <LogOut className="h-4 w-4" />Sign Out
           </button>

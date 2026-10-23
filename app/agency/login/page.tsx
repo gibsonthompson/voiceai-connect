@@ -210,21 +210,19 @@ export default function AgencyLoginPage() {
     divider: 'rgba(255,255,255,0.08)', autofillBg: '#17171a', autofillText: '#fafaf9',
     errorBg: 'rgba(239,68,68,0.12)', errorBorder: 'rgba(239,68,68,0.28)', errorText: '#fca5a5',
     googleBg: '#ffffff', googleText: '#1f2937', monoFallbackBg: 'rgba(255,255,255,0.06)',
-    card: 'rgba(22,22,26,0.66)', cardBorder: 'rgba(255,255,255,0.09)', shadow: '0 30px 80px rgba(0,0,0,0.55)',
-    vignette: 'rgba(0,0,0,0.55)', ringStroke: 'rgba(255,255,255,0.10)', pageGlow2: 'rgba(0,0,0,0.45)',
+    // Background field (shared behind both columns)
+    ring: 'rgba(255,255,255,0.07)', shade: 'rgba(0,0,0,0.5)', vignette: 'rgba(0,0,0,0.42)',
   } : {
     bg: '#fbfbfa', text: '#111827', muted: '#6b7280', subtle: '#9ca3af',
     label: '#374151', input: '#ffffff', inputBorder: '#e5e7eb',
     divider: '#ececec', autofillBg: '#ffffff', autofillText: '#111827',
     errorBg: '#fef2f2', errorBorder: '#fecaca', errorText: '#dc2626',
     googleBg: '#ffffff', googleText: '#1f2937', monoFallbackBg: '#ffffff',
-    card: '#ffffff', cardBorder: '#ececec', shadow: '0 24px 60px rgba(17,24,39,0.12)',
-    vignette: 'rgba(17,24,39,0.06)', ringStroke: 'rgba(17,24,39,0.07)', pageGlow2: 'rgba(17,24,39,0.03)',
+    ring: 'rgba(17,24,39,0.06)', shade: 'rgba(17,24,39,0.05)', vignette: 'rgba(17,24,39,0.05)',
   };
 
-  // Primary-tinted glows for the full-bleed background, stronger on dark.
-  const glow1 = `${primaryColor}${isDark ? '38' : '24'}`;
-  const glow3 = `${primaryColor}${isDark ? '20' : '14'}`;
+  // One primary-tinted glow, stronger on dark, for the shared full-bleed field.
+  const glowA = `${primaryColor}${isDark ? '2e' : '1c'}`;
 
   // CSS custom properties drive the stylesheet below, so the whole page restyles
   // from the resolved brand with no per-element inline overrides.
@@ -237,9 +235,7 @@ export default function AgencyLoginPage() {
     ['--divider' as any]: c.divider, ['--afBg' as any]: c.autofillBg, ['--afText' as any]: c.autofillText,
     ['--errBg' as any]: c.errorBg, ['--errBorder' as any]: c.errorBorder, ['--errText' as any]: c.errorText,
     ['--gBg' as any]: c.googleBg, ['--gText' as any]: c.googleText, ['--monoBg' as any]: c.monoFallbackBg,
-    ['--glow1' as any]: glow1, ['--glow2' as any]: c.pageGlow2, ['--glow3' as any]: glow3,
-    ['--card' as any]: c.card, ['--cardBorder' as any]: c.cardBorder, ['--shadow' as any]: c.shadow,
-    ['--vignette' as any]: c.vignette, ['--ringStroke' as any]: c.ringStroke,
+    ['--glowA' as any]: glowA, ['--shade' as any]: c.shade, ['--ring' as any]: c.ring, ['--vignette' as any]: c.vignette,
   } as React.CSSProperties;
 
   if (pageLoading) {
@@ -251,16 +247,18 @@ export default function AgencyLoginPage() {
   }
 
   const css = `
-  .al-wrap{min-height:100vh;position:relative;display:flex;align-items:center;justify-content:center;padding:40px 20px calc(40px + env(safe-area-inset-bottom));padding-top:calc(40px + env(safe-area-inset-top));background:var(--bg);color:var(--text);font-family:inherit;overflow:hidden}
-  .al-bg{position:fixed;inset:0;pointer-events:none;z-index:0}
+  .al-wrap{position:relative;min-height:100vh;display:grid;grid-template-columns:1fr;background:var(--bg);color:var(--text);font-family:inherit;overflow:hidden}
+  /* Shared background field: one continuous layer behind BOTH columns, fluid edge to edge */
+  .al-bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
   .al-bg>*{position:absolute;inset:0}
-  .al-bg-grad{background:radial-gradient(120% 95% at 6% 0%,var(--glow1),transparent 55%),radial-gradient(115% 100% at 100% 100%,var(--glow2),transparent 55%),radial-gradient(92% 78% at 50% 48%,var(--glow3),transparent 72%)}
-  .al-rings-bg{width:100%;height:100%}
-  .al-rings-bg circle{fill:none;stroke:var(--ringStroke)}
-  .al-grid{background-image:linear-gradient(var(--ringStroke) 1px,transparent 1px),linear-gradient(90deg,var(--ringStroke) 1px,transparent 1px);background-size:60px 60px;-webkit-mask-image:radial-gradient(circle at 50% 42%,#000,transparent 70%);mask-image:radial-gradient(circle at 50% 42%,#000,transparent 70%)}
-  .al-vignette{background:radial-gradient(135% 100% at 50% 42%,transparent 46%,var(--vignette) 100%)}
-  .al-card{position:relative;z-index:1;width:100%;max-width:416px;background:var(--card);border:1px solid var(--cardBorder);border-radius:22px;padding:34px 30px calc(30px + env(safe-area-inset-bottom));box-shadow:var(--shadow);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);text-align:center}
-  .al-brand{display:flex;align-items:center;justify-content:center;gap:11px;margin-bottom:22px}
+  .al-bg-grad{background-image:radial-gradient(70% 80% at 16% 18%,var(--glowA),transparent 60%),radial-gradient(75% 85% at 100% 100%,var(--shade),transparent 55%)}
+  .al-bg-rings{width:100%;height:100%}
+  .al-bg-rings circle{fill:none;stroke:var(--ring)}
+  .al-bg-vignette{background:radial-gradient(135% 105% at 28% 42%,transparent 50%,var(--vignette) 100%)}
+  .al-stage{display:none}
+  .al-side{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:40px 24px calc(40px + env(safe-area-inset-bottom));padding-top:calc(40px + env(safe-area-inset-top))}
+  .al-zone{max-width:372px;width:100%;margin:0 auto;text-align:center}
+  .al-brand{display:flex;align-items:center;justify-content:center;gap:11px;margin-bottom:34px}
   .al-mono{height:40px;width:40px;border-radius:12px;background:var(--primary);color:var(--primaryText);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex:0 0 auto}
   .al-logo-img{height:40px;width:auto;max-width:190px;object-fit:contain}
   .al-bn{font-size:17px;font-weight:600;letter-spacing:-.01em;color:var(--text)}
@@ -275,7 +273,7 @@ export default function AgencyLoginPage() {
   .al-form input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--pGlow)}
   .al-form input:-webkit-autofill,.al-form input:-webkit-autofill:hover,.al-form input:-webkit-autofill:focus{-webkit-box-shadow:0 0 0 9999px var(--afBg) inset !important;-webkit-text-fill-color:var(--afText) !important;border-color:var(--inputBorder) !important;transition:background-color 0s 600000s,color 0s 600000s !important}
   .al-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:0;color:var(--subtle);cursor:pointer;display:flex;padding:6px}
-  .al-row{display:flex;justify-content:center;margin-top:-5px}
+  .al-row{display:flex;justify-content:flex-end;margin-top:-5px}
   .al-link{font-size:13.5px;color:var(--primary);font-weight:550;text-decoration:none}
   .al-link:hover{text-decoration:underline;text-underline-offset:2px}
   .al-btn{height:52px;border:0;border-radius:12px;background:var(--primary);color:var(--primaryText);font-size:15.5px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:filter .15s,transform .05s;margin-top:3px}
@@ -296,7 +294,14 @@ export default function AgencyLoginPage() {
   .al-rise{animation:alRise .5s cubic-bezier(.16,.84,.44,1) both}
   @media (prefers-reduced-motion: reduce){.al-rise{animation:none}}
   @media(min-width:1024px){
-    .al-card{max-width:432px;padding:40px 38px calc(38px + env(safe-area-inset-bottom))}
+    .al-wrap{grid-template-columns:1.05fr 1fr}
+    .al-stage{position:relative;z-index:1;display:flex;flex-direction:column;justify-content:center;padding:56px;overflow:hidden;color:var(--text)}
+    .al-stage-center{position:relative;z-index:1;max-width:460px}
+    .al-stage-logo{height:52px;width:auto;max-width:300px;object-fit:contain;display:block}
+    .al-stage-name{font-size:44px;line-height:1.06;font-weight:600;letter-spacing:-.03em;color:var(--text)}
+    .al-stage-tag{margin-top:26px;font-size:16px;line-height:1.5;color:var(--muted);max-width:34ch}
+    .al-zone{text-align:left;max-width:384px}
+    .al-brand{display:none}
     .al-h1{font-size:27px}
   }
   `;
@@ -306,18 +311,28 @@ export default function AgencyLoginPage() {
       <style dangerouslySetInnerHTML={{ __html: css }} />
       <DynamicFavicon logoUrl={faviconSrc} primaryColor={primaryColor} appleIconUrl={appleIconSrc} />
 
-      {/* Full-bleed background, fluid edge to edge behind the card */}
+      {/* Shared full-bleed background, fluid edge to edge behind both columns */}
       <div className="al-bg" aria-hidden="true">
         <div className="al-bg-grad" />
-        <svg className="al-rings-bg" viewBox="0 0 1200 900" preserveAspectRatio="xMidYMid slice">
-          {[130, 250, 370, 490, 610, 730, 850].map((r) => <circle key={r} cx="600" cy="400" r={r} />)}
+        <svg className="al-bg-rings" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
+          {[140, 260, 380, 500, 620, 740, 860].map((r) => <circle key={r} cx="330" cy="380" r={r} />)}
         </svg>
-        <div className="al-grid" />
-        <div className="al-vignette" />
+        <div className="al-bg-vignette" />
       </div>
 
-      {/* Sign-in card */}
-      <div className="al-card al-rise">
+      {/* Brand stage (desktop) */}
+      <aside className="al-stage">
+        <div className="al-stage-center al-rise">
+          {brandLogo
+            ? <img src={brandLogo} alt={brandName} className="al-stage-logo" />
+            : <h2 className="al-stage-name">{brandName}</h2>}
+          <p className="al-stage-tag">{isBranded ? 'Sign in to pick up live calls, see every booking, and keep each business covered.' : 'Sign in to run your white-label AI receptionist agency. Your clients, calls, and revenue in one place.'}</p>
+        </div>
+      </aside>
+
+      {/* Sign-in column */}
+      <main className="al-side">
+        <div className="al-zone al-rise">
           <div className="al-brand">
             {brandLogo ? <img src={brandLogo} alt={brandName} className="al-logo-img" />
               : <><span className="al-mono">{initial}</span><span className="al-bn">{brandName}</span></>}
@@ -373,7 +388,8 @@ export default function AgencyLoginPage() {
           {!isBranded && (
             <p className="al-foot">New here? <Link href="/signup">Start your free trial</Link></p>
           )}
-      </div>
+        </div>
+      </main>
     </div>
   );
 }
