@@ -109,7 +109,7 @@ function TourLauncher({ theme }: { theme: any }) {
 function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { agency, branding, loading, effectivePlan, hasPermission, isAgent } = useAgency();
-  const { canUseMarketingSite, canUseDemoPhoneNumber, canUseAiLab, canUseLeadFinder, hasWhiteLabel, planName } = usePlanFeatures();
+  const { canUseMarketingSite, canUseDemoPhoneNumber, canUseAiLab, canUseLeadFinder, hasWhiteLabel, planName, isFree } = usePlanFeatures();
 
   // Brand fonts: load the agency's chosen display + body fonts and expose them as
   // CSS vars the .brand-shell / .brand-display rules (globals.css) apply. Best
@@ -164,6 +164,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     // Settings. Agents themselves get AGENT_NAV and never see this.
     ...(agency?.is_call_center ? [{ href: '/agency/agents', label: 'Agents', icon: Headset } as NavItem] : []),
     { href: '/agency/inbox', label: 'Inbox', icon: Inbox },
+    { href: '/agency/automations', label: 'Automations', icon: Zap, locked: isFree, upgradeRequired: 'Pro', permissionKey: 'workflows' },
     { href: '/agency/leads', label: 'Leads', icon: Target, locked: !canUseLeadFinder, upgradeRequired: 'Pro', permissionKey: 'leads' },
     { href: '/agency/outreach', label: 'Outreach', icon: Send, locked: !canUseLeadFinder, upgradeRequired: 'Pro', permissionKey: 'outreach' },
     { href: '/agency/analytics', label: 'Analytics', icon: BarChart3, permissionKey: 'analytics' },
