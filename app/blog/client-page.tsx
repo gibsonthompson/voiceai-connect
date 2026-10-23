@@ -322,7 +322,7 @@ export default function BlogPage({ generatedPosts = [] }: { generatedPosts?: Blo
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative">
           <div ref={r1} className="fade-up max-w-3xl">
             <p className="t-eyebrow text-em mb-7">The blog</p>
-            <h1 className="t-h1 text-white max-w-[14ch]">Field notes from the AI agency frontier.</h1>
+            <h1 className="t-h1 text-white max-w-[20ch]">Notes for agency owners.</h1>
             <p className="t-body mt-7 max-w-xl text-[1rem]">
               Guides, comparisons, and industry analysis for operators building white-label AI receptionist agencies. {allPosts.length} posts and counting.
             </p>
