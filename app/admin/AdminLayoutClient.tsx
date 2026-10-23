@@ -45,6 +45,7 @@ function BrandLogo({ height = 22, className = '' }: { height?: number; className
 const NAV: { section: string | null; items: { href: string; label: string; icon: any }[] }[] = [
   { section: null, items: [
     { href: '/admin', label: 'Overview', icon: LayoutDashboard },
+    { href: '/admin/inbox', label: 'Inbox', icon: MessageSquare },
     { href: '/admin/calls', label: 'Calls', icon: PhoneCall },
     { href: '/admin/agencies', label: 'Agencies', icon: Building2 },
     { href: '/admin/clients', label: 'Clients', icon: Users },
@@ -57,7 +58,6 @@ const NAV: { section: string | null; items: { href: string; label: string; icon:
     { href: '/admin/concierge', label: 'Concierge', icon: Headphones },
   ]},
   { section: null, items: [
-    { href: '/admin/inbox', label: 'Inbox', icon: MessageSquare },
     { href: '/admin/broadcast', label: 'Broadcast', icon: Megaphone },
     { href: '/admin/alerts', label: 'Alerts', icon: AlertTriangle },
   ]},
@@ -74,8 +74,33 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  // Live unread count for the Inbox nav badge. Reads the same unified-inbox
+  // total the inbox page uses, so it reflects agency messages, SMS, feedback and
+  // help-bot chats, and it clears on its own once a thread is read (the backend
+  // resets every watermark on open). Re-polled on each navigation so reading the
+  // inbox drops the badge immediately after you leave it.
+  const [inboxUnread, setInboxUnread] = useState(0);
 
   useEffect(() => { checkAuth(); }, []);
+
+  useEffect(() => {
+    let alive = true;
+    const fetchInboxUnread = async () => {
+      try {
+        const token = localStorage.getItem('admin_token');
+        if (!token) return;
+        const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
+        const res = await fetch(`${backendUrl}/api/admin/inbox`, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) return;
+        const data = await res.json();
+        const total = (data.conversations || []).reduce((n: number, c: { unread?: number }) => n + (c.unread || 0), 0);
+        if (alive) setInboxUnread(total);
+      } catch { /* non-blocking */ }
+    };
+    fetchInboxUnread();
+    const t = setInterval(fetchInboxUnread, 20000);
+    return () => { alive = false; clearInterval(t); };
+  }, [pathname]);
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
@@ -140,6 +165,12 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
       >
         <item.icon className="h-4 w-4 shrink-0" style={{ color: active ? '#04140D' : 'rgba(255,255,255,0.7)' }} />
         {item.label}
+        {item.href === '/admin/inbox' && inboxUnread > 0 && (
+          <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 leading-none"
+            style={active ? { background: '#04140D', color: 'var(--a-em)' } : { background: 'var(--a-em)', color: '#04140D' }}>
+            {inboxUnread > 99 ? '99+' : inboxUnread}
+          </span>
+        )}
       </Link>
     );
   };

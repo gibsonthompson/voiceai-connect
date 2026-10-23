@@ -167,6 +167,8 @@ export default function AdminInboxPage() {
   const prevKeyRef = useRef<string | null>(null);
   const prevCountRef = useRef(0);
   const replyRef = useRef<HTMLTextAreaElement | null>(null);
+  // Key of the thread currently open on screen, read inside the 15s poll.
+  const openKeyRef = useRef<string | null>(null);
 
   const currentDraft = selected ? (drafts[selected.key] ?? '') : '';
   const setDraft = (key: string, val: string) => setDrafts((prev) => ({ ...prev, [key]: val }));
@@ -187,8 +189,22 @@ export default function AdminInboxPage() {
       if (!res.ok) throw new Error('Failed to load');
       const data = await res.json();
       const convos: Conversation[] = data.conversations || [];
-      setConversations(convos);
-      setSelected((cur) => (cur ? convos.find((c) => c.key === cur.key) || cur : cur));
+      // Auto-clear the thread that is open on screen: if this poll brought in new
+      // unread for the conversation the admin is actively reading, mark it read
+      // now (server-side + locally) so the badge never lingers on a thread that is
+      // already in front of them.
+      const openKey = openKeyRef.current;
+      const openC = openKey ? convos.find((c) => c.key === openKey) : null;
+      let nextConvos = convos;
+      if (openC && openC.type === 'agency' && openC.agencyId && openC.unread > 0) {
+        fetch(`${backendUrl()}/api/admin/inbox/read`, {
+          method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ agencyId: openC.agencyId }),
+        }).catch(() => {});
+        nextConvos = convos.map((c) => (c.key === openKey ? { ...c, unread: 0 } : c));
+      }
+      setConversations(nextConvos);
+      setSelected((cur) => (cur ? nextConvos.find((c) => c.key === cur.key) || cur : cur));
       // Drop drafts for conversations that no longer exist, so storage stays
       // tidy. Guarded by a non-empty load so a transient empty/failed fetch
       // never wipes a draft you are in the middle of writing.
@@ -237,6 +253,7 @@ export default function AdminInboxPage() {
     }
     prevKeyRef.current = key;
     prevCountRef.current = count;
+    openKeyRef.current = key;
   }, [selected?.key, selected?.messages.length]);
   // Auto-grow the reply box as you type so the whole message stays visible.
   // The composer is shrink-0 and the thread above is flex-1, so as the box
