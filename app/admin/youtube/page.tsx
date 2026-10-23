@@ -1,37 +1,27 @@
 'use client';
 
 // ============================================================================
-// CONTENT (YouTube): reskinned to the emerald-on-white admin system.
-// The console surface (stats, generate panel, filters, idea list, inline edit)
-// uses the shared admin tokens. The teleprompter overlay is deliberately left
-// dark: it is a fullscreen recording surface where a white screen would glare
-// on camera, and it already reads on the emerald accent.
+// CONTENT (YouTube): a simple script workbench.
+// Paste a script, edit it, record against the teleprompter. No idea generation,
+// no hooks / talking-point structure, just the script you paste. The teleprompter
+// overlay is deliberately dark (a white screen glares on camera) and it strips
+// label noise ("Hook:", "Talking points:", screen directions, a duplicate title)
+// so whatever you paste reads straight through.
 // ============================================================================
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  Sparkles, ChevronDown, ChevronRight, Trash2, Check, Archive,
-  FileText, Copy, Loader2, Filter, RefreshCw, Lightbulb, Target, BookOpen,
-  Building2, ShieldQuestion, ArrowLeftRight, PenLine, X, Play, Pause,
-  Maximize2, Minus, Plus, RotateCcw, Type, Gauge, Monitor,
+  ChevronDown, ChevronRight, Trash2, Check, Archive, FileText, Copy, Loader2,
+  RefreshCw, X, Play, Pause, Maximize2, Minus, Plus, RotateCcw, Type, Gauge,
+  Monitor,
 } from 'lucide-react';
 
 const API = process.env.NEXT_PUBLIC_API_URL || '';
 
-// Accent hues tuned for a white background (mirrors the admin palette).
-const PILLAR_META: Record<string, { label: string; color: string; icon: any }> = {
-  opportunity:  { label: 'Opportunity',  color: '#0B9668', icon: Lightbulb },
-  proof:        { label: 'Proof',        color: '#0E9BB5', icon: Target },
-  howto:        { label: 'How-To',       color: '#7C4DEF', icon: BookOpen },
-  industry:     { label: 'Industry',     color: '#B8790A', icon: Building2 },
-  objection:    { label: 'Objection',    color: '#D33A3F', icon: ShieldQuestion },
-  comparison:   { label: 'Comparison',   color: '#5A6E62', icon: ArrowLeftRight },
-};
-
 const STATUS_META: Record<string, { label: string; color: string }> = {
-  idea:     { label: 'Idea',     color: '#5A6E62' },
-  approved: { label: 'Approved', color: '#0B9668' },
-  scripted: { label: 'Scripted', color: '#7C4DEF' },
+  idea:     { label: 'Draft',    color: '#5A6E62' },
+  approved: { label: 'Draft',    color: '#5A6E62' },
+  scripted: { label: 'Script',   color: '#0B9668' },
   recorded: { label: 'Recorded', color: '#0E9BB5' },
   archived: { label: 'Archived', color: '#93A69B' },
 };
@@ -42,25 +32,22 @@ const soft = (color: string, bg: string, line: string): React.CSSProperties => (
 });
 const SOFT = {
   em: soft('#0B9668', '#E7F8F0', '#BEEAD6'),
-  violet: soft('#7C4DEF', '#EEE7FB', '#DBCCF6'),
   cyan: soft('#0E9BB5', '#DBF1F6', '#BFE7F0'),
   red: soft('#D33A3F', '#FBE3E3', '#F3C9C9'),
   slate: soft('#5A6E62', '#EEF3EF', '#DDE7E0'),
 };
 
 interface Idea {
-  id: string; pillar: string; title: string; hook: string;
-  talking_points: string[]; script: string | null; target_length: string;
-  recording_mode: string; status: string; notes: string | null;
+  id: string; title: string; script: string | null; status: string;
   created_at: string; updated_at: string;
 }
 
 // ═══════════════════════════════════════════════════════════════════
 // INLINE EDITABLE TEXT
 // ═══════════════════════════════════════════════════════════════════
-function InlineEdit({ value, onSave, multiline = false, placeholder = 'Click to edit...', className = '', style = {} }: {
+function InlineEdit({ value, onSave, multiline = false, placeholder = 'Click to edit...', className = '', style = {}, minHeight = 80 }: {
   value: string; onSave: (v: string) => void; multiline?: boolean;
-  placeholder?: string; className?: string; style?: React.CSSProperties;
+  placeholder?: string; className?: string; style?: React.CSSProperties; minHeight?: number;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -76,7 +63,7 @@ function InlineEdit({ value, onSave, multiline = false, placeholder = 'Click to 
 
   if (!editing) {
     return (
-      <div onClick={() => setEditing(true)} className={`cursor-text rounded-lg px-2 py-1 -mx-2 -my-1 transition-colors hover:bg-[#F3F9F6] ${className}`} style={style}>
+      <div onClick={() => setEditing(true)} className={`cursor-text rounded-lg px-2 py-1 -mx-2 -my-1 transition-colors hover:bg-[#F3F9F6] whitespace-pre-wrap ${className}`} style={style}>
         {value || <span className="text-[var(--a-dim)] italic">{placeholder}</span>}
       </div>
     );
@@ -86,8 +73,8 @@ function InlineEdit({ value, onSave, multiline = false, placeholder = 'Click to 
     return (
       <textarea ref={ref as any} value={draft} onChange={e => setDraft(e.target.value)}
         onBlur={save} onKeyDown={e => { if (e.key === 'Escape') { setDraft(value); setEditing(false); } }}
-        className={`w-full rounded-lg px-2 py-1 -mx-2 -my-1 text-[var(--a-ink)] focus:outline-none resize-none ${className}`}
-        style={{ ...style, minHeight: '80px', background: 'var(--a-card)', border: '1px solid var(--a-em-line)' }} />
+        className={`w-full rounded-lg px-2 py-1 -mx-2 -my-1 text-[var(--a-ink)] focus:outline-none resize-y ${className}`}
+        style={{ ...style, minHeight, background: 'var(--a-card)', border: '1px solid var(--a-em-line)' }} />
     );
   }
 
@@ -100,25 +87,71 @@ function InlineEdit({ value, onSave, multiline = false, placeholder = 'Click to 
 }
 
 // ═══════════════════════════════════════════════════════════════════
+// SCRIPT CLEANUP (teleprompter): strip label noise so the plain spoken
+// script reads straight through, whatever format it was pasted in.
+// ═══════════════════════════════════════════════════════════════════
+// Line-start labels to strip ("Hook: ..." -> "...", a bare "Talking points:" -> dropped).
+const LABEL_PREFIX = /^\s*(hooks?|talking\s*points?|key\s*points?|context|payload|bridge|intro|outro|cta|call\s*to\s*action|segment\s*\d*|screen|visual|b-?roll|on-?screen|note|title)\s*:\s*/i;
+// Inline screen/visual directions like [SCREEN: ...] get removed entirely.
+const DIRECTION = /\[(?:screen|visual|b-?roll|on-?screen|cut|show)\s*:[^\]]*\]/gi;
+
+type TpWord = { text: string; trailing: string; globalIndex: number };
+
+function cleanScript(script: string, title?: string): TpWord[][] {
+  const titleNorm = (title || '').trim().toLowerCase().replace(/^\d+[.)]\s*/, '');
+  const lines = script.split('\n');
+  const cleaned: string[] = [];
+  for (const raw of lines) {
+    let line = raw.replace(DIRECTION, '').trim();
+    if (!line) { cleaned.push(''); continue; }           // blank = paragraph break
+    const noNum = line.replace(/^\d+[.)]\s*/, '').trim(); // leading "1. " numbering
+    if (titleNorm && noNum.toLowerCase() === titleNorm) continue; // drop a duplicated title line
+    const m = line.match(LABEL_PREFIX);
+    if (m) {
+      line = line.slice(m[0].length).trim();
+      if (!line) continue;                                // label-only line -> drop
+    }
+    cleaned.push(line);
+  }
+
+  let globalIdx = 0;
+  const blocks: TpWord[][] = [];
+  let cur: TpWord[] | null = null;
+  for (const line of cleaned) {
+    if (!line) { cur = null; continue; }
+    if (!cur) { cur = []; blocks.push(cur); }
+    const rawWords = line.split(/(\s+)/);
+    for (let i = 0; i < rawWords.length; i++) {
+      const token = rawWords[i];
+      if (!token || /^\s+$/.test(token)) continue;
+      const trailing = (i + 1 < rawWords.length && /^\s+$/.test(rawWords[i + 1])) ? ' ' : ' ';
+      cur.push({ text: token.replace(/[*_`#]/g, ''), trailing, globalIndex: globalIdx++ });
+    }
+  }
+  if (!blocks.length) {
+    blocks.push(script.split(/(\s+)/).filter(w => w.trim()).map((w, i) => ({ text: w, trailing: ' ', globalIndex: i })));
+  }
+  return blocks;
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // TELEPROMPTER OVERLAY (kept dark on purpose: recording surface)
 // ═══════════════════════════════════════════════════════════════════
 function Teleprompter({ script, title, onClose }: { script: string; title: string; onClose: () => void }) {
   const [playing, setPlaying] = useState(false);
   const [wpm, setWpm] = useState(130);
-  const [fontSize, setFontSize] = useState(32);
+  const [fontSize, setFontSize] = useState(34);
   const [wordIndex, setWordIndex] = useState(-1);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [mirrored, setMirrored] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Parse script into structured segments
-  const segments = parseScript(script);
-  const allWords = segments.flatMap(s => s.words.map(w => ({ ...w, segmentType: s.type })));
-  const totalWords = allWords.length;
+  const blocks = cleanScript(script, title);
+  const totalWords = blocks.reduce((n, b) => n + b.length, 0);
   const progress = totalWords > 0 ? ((wordIndex + 1) / totalWords) * 100 : 0;
 
-  // Auto-advance words
+  const ACCENT = '#27F4D2';
+
   useEffect(() => {
     if (playing && wordIndex < totalWords - 1) {
       const msPerWord = 60000 / wpm;
@@ -129,7 +162,6 @@ function Teleprompter({ script, title, onClose }: { script: string; title: strin
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [playing, wordIndex, wpm, totalWords]);
 
-  // Auto-scroll to keep current word centered
   useEffect(() => {
     if (wordIndex >= 0) {
       const el = document.getElementById(`tp-word-${wordIndex}`);
@@ -137,7 +169,20 @@ function Teleprompter({ script, title, onClose }: { script: string; title: strin
     }
   }, [wordIndex]);
 
-  // Keyboard controls
+  const handlePlayPause = useCallback(() => {
+    if (!playing && wordIndex === -1) {
+      setCountdown(3);
+      let c = 3;
+      const interval = setInterval(() => {
+        c--;
+        if (c <= 0) { clearInterval(interval); setCountdown(null); setWordIndex(0); setPlaying(true); }
+        else setCountdown(c);
+      }, 1000);
+    } else {
+      setPlaying(p => !p);
+    }
+  }, [playing, wordIndex]);
+
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.code === 'Space') { e.preventDefault(); handlePlayPause(); }
@@ -150,45 +195,16 @@ function Teleprompter({ script, title, onClose }: { script: string; title: strin
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [totalWords, playing]);
-
-  const handlePlayPause = () => {
-    if (!playing && wordIndex === -1) {
-      // Start countdown
-      setCountdown(3);
-      let c = 3;
-      const interval = setInterval(() => {
-        c--;
-        if (c <= 0) {
-          clearInterval(interval);
-          setCountdown(null);
-          setWordIndex(0);
-          setPlaying(true);
-        } else {
-          setCountdown(c);
-        }
-      }, 1000);
-    } else {
-      setPlaying(!playing);
-    }
-  };
+  }, [totalWords, handlePlayPause, onClose]);
 
   const restart = () => { setWordIndex(-1); setPlaying(false); };
-
-  // Mercedes-AMG Petronas palette: teal, bright teal, silver, graphite.
-  const TEAL = '#00D2BE';
-  const segmentColors: Record<string, string> = {
-    hook: '#00D2BE', context: '#9CA3AF', payload: '#27F4D2',
-    bridge: '#6B7280', default: '#C7C9CC',
-  };
 
   return (
     <div className="fixed inset-0 z-[200] flex flex-col" style={{ backgroundColor: '#0A0A0A', fontFamily: "'Rajdhani', system-ui, sans-serif" }}>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" />
-      {/* Countdown overlay */}
       {countdown !== null && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80">
-          <span className="text-[160px] font-bold animate-pulse" style={{ color: TEAL }}>{countdown}</span>
+          <span className="text-[160px] font-bold animate-pulse" style={{ color: ACCENT }}>{countdown}</span>
         </div>
       )}
 
@@ -199,19 +215,19 @@ function Teleprompter({ script, title, onClose }: { script: string; title: strin
             <X className="w-5 h-5" />
           </button>
           <div>
-            <p className="text-xs uppercase tracking-[0.25em] font-bold" style={{ color: TEAL }}>VoiceAI Connect<span className="text-white/25 ml-2.5 font-medium tracking-wider">TELEPROMPTER</span></p>
+            <p className="text-xs uppercase tracking-[0.25em] font-bold" style={{ color: ACCENT }}>VoiceAI Connect<span className="text-white/25 ml-2.5 font-medium tracking-wider">TELEPROMPTER</span></p>
             <p className="text-sm text-white/80 font-semibold truncate max-w-md">{title}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={() => setMirrored(!mirrored)} className="p-2 rounded-lg transition-colors text-white/30 hover:text-white/60 hover:bg-white/[0.06]" style={mirrored ? { backgroundColor: 'rgba(0,210,190,0.15)', color: TEAL } : undefined} title="Mirror mode">
+          <button onClick={() => setMirrored(!mirrored)} className="p-2 rounded-lg transition-colors text-white/30 hover:text-white/60 hover:bg-white/[0.06]" style={mirrored ? { backgroundColor: 'rgba(39,244,210,0.15)', color: ACCENT } : undefined} title="Mirror mode">
             <Monitor className="w-4 h-4" />
           </button>
           <div className="flex items-center gap-1.5 rounded-lg bg-white/[0.04] border border-white/[0.06] px-2 py-1">
             <Type className="w-3 h-3 text-white/30" />
             <button onClick={() => setFontSize(s => Math.max(18, s - 4))} className="text-white/40 hover:text-white p-0.5"><Minus className="w-3 h-3" /></button>
             <span className="text-[11px] text-white/50 font-mono w-8 text-center">{fontSize}</span>
-            <button onClick={() => setFontSize(s => Math.min(56, s + 4))} className="text-white/40 hover:text-white p-0.5"><Plus className="w-3 h-3" /></button>
+            <button onClick={() => setFontSize(s => Math.min(64, s + 4))} className="text-white/40 hover:text-white p-0.5"><Plus className="w-3 h-3" /></button>
           </div>
           <div className="flex items-center gap-1.5 rounded-lg bg-white/[0.04] border border-white/[0.06] px-2 py-1">
             <Gauge className="w-3 h-3 text-white/30" />
@@ -227,45 +243,33 @@ function Teleprompter({ script, title, onClose }: { script: string; title: strin
         <div className="h-full transition-all duration-300" style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #00D2BE, #27F4D2)' }} />
       </div>
 
-      {/* Script body */}
-      <div ref={containerRef} className="flex-1 overflow-y-auto px-8 lg:px-20 py-16"
-        style={{ transform: mirrored ? 'scaleX(-1)' : undefined }}>
+      {/* Script body: plain paragraphs, word-by-word highlight, no labels */}
+      <div className="flex-1 overflow-y-auto px-8 lg:px-20 py-16" style={{ transform: mirrored ? 'scaleX(-1)' : undefined }}>
         <div className="max-w-3xl mx-auto">
-          {segments.map((segment, si) => {
-            const segColor = segmentColors[segment.type] || segmentColors.default;
-            return (
-              <div key={si} className="mb-10">
-                {segment.label && (
-                  <div className="flex items-center gap-3 mb-4">
-                    <span className="text-[11px] font-mono uppercase tracking-[0.2em] font-semibold" style={{ color: segColor }}>{segment.label}</span>
-                    <span className="h-px flex-1" style={{ background: `${segColor}30` }} />
-                  </div>
-                )}
-                <div style={{ fontSize: `${fontSize}px`, lineHeight: 1.6 }} className="leading-relaxed">
-                  {segment.words.map(w => {
-                    const isActive = w.globalIndex === wordIndex;
-                    const isPast = w.globalIndex < wordIndex;
-                    const isNear = Math.abs(w.globalIndex - wordIndex) <= 3 && wordIndex >= 0;
-                    return (
-                      <span key={w.globalIndex} id={`tp-word-${w.globalIndex}`}
-                        className="transition-all duration-150 cursor-pointer"
-                        onClick={() => { setWordIndex(w.globalIndex); setPlaying(false); }}
-                        style={{
-                          color: isActive ? '#ffffff' : isPast ? 'rgba(255,255,255,0.25)' : isNear ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.45)',
-                          backgroundColor: isActive ? `${segColor}30` : 'transparent',
-                          borderRadius: isActive ? '4px' : undefined,
-                          padding: isActive ? '2px 4px' : '2px 0',
-                          fontWeight: isActive ? 700 : 400,
-                          textShadow: isActive ? `0 0 20px ${segColor}60` : 'none',
-                        }}>
-                        {w.text}{w.trailing}
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
+          {blocks.map((words, bi) => (
+            <p key={bi} className="mb-8" style={{ fontSize: `${fontSize}px`, lineHeight: 1.6 }}>
+              {words.map(w => {
+                const isActive = w.globalIndex === wordIndex;
+                const isPast = w.globalIndex < wordIndex;
+                const isNear = Math.abs(w.globalIndex - wordIndex) <= 3 && wordIndex >= 0;
+                return (
+                  <span key={w.globalIndex} id={`tp-word-${w.globalIndex}`}
+                    className="transition-all duration-150 cursor-pointer"
+                    onClick={() => { setWordIndex(w.globalIndex); setPlaying(false); }}
+                    style={{
+                      color: isActive ? '#ffffff' : isPast ? 'rgba(255,255,255,0.25)' : isNear ? 'rgba(255,255,255,0.72)' : 'rgba(255,255,255,0.46)',
+                      backgroundColor: isActive ? 'rgba(39,244,210,0.18)' : 'transparent',
+                      borderRadius: isActive ? '4px' : undefined,
+                      padding: isActive ? '2px 4px' : '2px 0',
+                      fontWeight: isActive ? 700 : 400,
+                      textShadow: isActive ? `0 0 20px ${ACCENT}60` : 'none',
+                    }}>
+                    {w.text}{w.trailing}
+                  </span>
+                );
+              })}
+            </p>
+          ))}
           <div className="h-[50vh]" />
         </div>
       </div>
@@ -277,7 +281,7 @@ function Teleprompter({ script, title, onClose }: { script: string; title: strin
         </button>
         <button onClick={handlePlayPause}
           className="w-14 h-14 rounded-full flex items-center justify-center transition-all"
-          style={{ backgroundColor: playing ? 'rgba(255,255,255,0.1)' : '#00D2BE', color: playing ? '#ffffff' : '#0A0A0A' }}>
+          style={{ backgroundColor: playing ? 'rgba(255,255,255,0.1)' : ACCENT, color: playing ? '#ffffff' : '#0A0A0A' }}>
           {playing ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-0.5" />}
         </button>
         <div className="text-[11px] font-mono text-white/30 w-24 text-center">
@@ -297,87 +301,13 @@ function Teleprompter({ script, title, onClose }: { script: string; title: strin
   );
 }
 
-// Parse script text into labeled segments with word indices
-function parseScript(text: string): { type: string; label: string; words: { text: string; trailing: string; globalIndex: number }[] }[] {
-  const lines = text.split('\n');
-  const segments: { type: string; label: string; words: { text: string; trailing: string; globalIndex: number }[] }[] = [];
-  let current: { type: string; label: string; words: { text: string; trailing: string; globalIndex: number }[] } | null = null;
-  let globalIdx = 0;
-
-  const sectionPattern = /^(#{1,3}\s+)?(HOOK|CONTEXT|PAYLOAD|BRIDGE|SEGMENT\s*\d*)/i;
-  const subSectionPattern = /^\*\*Segment\s+\d+/i;
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-
-    // Check for section headers
-    const sectionMatch = trimmed.match(sectionPattern);
-    if (sectionMatch) {
-      const label = trimmed.replace(/^#{1,3}\s+/, '').replace(/[*_#]/g, '').trim();
-      let type = 'default';
-      const lower = label.toLowerCase();
-      if (lower.includes('hook')) type = 'hook';
-      else if (lower.includes('context')) type = 'context';
-      else if (lower.includes('payload') || lower.includes('segment')) type = 'payload';
-      else if (lower.includes('bridge')) type = 'bridge';
-      current = { type, label, words: [] };
-      segments.push(current);
-      continue;
-    }
-
-    if (subSectionPattern.test(trimmed)) {
-      const label = trimmed.replace(/[*_#]/g, '').trim();
-      current = { type: 'payload', label, words: [] };
-      segments.push(current);
-      continue;
-    }
-
-    if (!current) {
-      current = { type: 'default', label: '', words: [] };
-      segments.push(current);
-    }
-
-    // Skip screen direction markers but keep them visible
-    const cleanLine = trimmed.replace(/^\[SCREEN:.*?\]\s*/i, '');
-    if (trimmed.startsWith('[SCREEN:')) {
-      const screenDir = trimmed;
-      current.words.push({ text: screenDir, trailing: ' ', globalIndex: globalIdx++ });
-      continue;
-    }
-
-    // Split line into words
-    const rawWords = cleanLine.split(/(\s+)/);
-    for (let i = 0; i < rawWords.length; i++) {
-      const token = rawWords[i];
-      if (!token || /^\s+$/.test(token)) continue;
-      const trailing = (i + 1 < rawWords.length && /^\s+$/.test(rawWords[i + 1])) ? rawWords[i + 1] : ' ';
-      current.words.push({ text: token.replace(/[*_]/g, ''), trailing, globalIndex: globalIdx++ });
-    }
-  }
-
-  return segments.length > 0 ? segments : [{ type: 'default', label: '', words: text.split(/(\s+)/).filter(w => w.trim()).map((w, i) => ({ text: w, trailing: ' ', globalIndex: i })) }];
-}
-
 // ═══════════════════════════════════════════════════════════════════
-// BADGES
+// BADGE
 // ═══════════════════════════════════════════════════════════════════
-function PillarBadge({ pillar }: { pillar: string }) {
-  if (!pillar) return null;
-  const meta = PILLAR_META[pillar] || { label: pillar, color: '#5A6E62', icon: Lightbulb };
-  return (
-    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-wider"
-      style={{ backgroundColor: `${meta.color}14`, color: meta.color, border: `1px solid ${meta.color}30` }}>
-      <meta.icon className="w-2.5 h-2.5" />{meta.label}
-    </span>
-  );
-}
-
-function StatusBadge({ status, onClick }: { status: string; onClick?: () => void }) {
+function StatusBadge({ status }: { status: string }) {
   const meta = STATUS_META[status] || { label: status, color: '#5A6E62' };
   return (
-    <span onClick={onClick}
-      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-wider ${onClick ? 'cursor-pointer hover:brightness-95' : ''}`}
+    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-wider shrink-0"
       style={{ backgroundColor: `${meta.color}18`, color: meta.color, border: `1px solid ${meta.color}30` }}>
       {meta.label}
     </span>
@@ -389,60 +319,26 @@ function StatusBadge({ status, onClick }: { status: string; onClick?: () => void
 // ═══════════════════════════════════════════════════════════════════
 export default function AdminYouTubePage() {
   const [ideas, setIdeas] = useState<Idea[]>([]);
-  const [stats, setStats] = useState<{ total: number; byStatus: Record<string, number>; byPillar: Record<string, number> }>({ total: 0, byStatus: {}, byPillar: {} });
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [teleprompterIdea, setTeleprompterIdea] = useState<Idea | null>(null);
   const [copiedScript, setCopiedScript] = useState<string | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
+
   const [showPaste, setShowPaste] = useState(false);
   const [pasteTitle, setPasteTitle] = useState('');
   const [pasteScript, setPasteScript] = useState('');
   const [creatingPaste, setCreatingPaste] = useState(false);
 
-  // Generate panel
-  const [genPillar, setGenPillar] = useState('mixed');
-  const [genCount, setGenCount] = useState(5);
-  const [genContext, setGenContext] = useState('');
-  const [generating, setGenerating] = useState(false);
-  const [filterStatus, setFilterStatus] = useState('');
-  const [filterPillar, setFilterPillar] = useState('');
-  const [scriptingId, setScriptingId] = useState<string | null>(null);
-
   const fetchIdeas = useCallback(async () => {
     try {
-      const params = new URLSearchParams();
-      if (filterStatus) params.set('status', filterStatus);
-      if (filterPillar) params.set('pillar', filterPillar);
-      params.set('limit', '100');
-      const res = await fetch(`${API}/api/yt/ideas?${params}`);
+      const res = await fetch(`${API}/api/yt/ideas?limit=200`);
       const data = await res.json();
       if (data.success) setIdeas(data.ideas || []);
-    } catch (err) { console.error('Failed to fetch ideas:', err); }
-  }, [filterStatus, filterPillar]);
-
-  const fetchStats = useCallback(async () => {
-    try {
-      const res = await fetch(`${API}/api/yt/ideas/stats/summary`);
-      const data = await res.json();
-      if (data.success) setStats({ total: data.total, byStatus: data.byStatus, byPillar: data.byPillar });
-    } catch (err) { console.error('Failed to fetch stats:', err); }
+    } catch (err) { console.error('Failed to fetch scripts:', err); }
   }, []);
 
-  useEffect(() => { Promise.all([fetchIdeas(), fetchStats()]).finally(() => setLoading(false)); }, [fetchIdeas, fetchStats]);
-
-  const handleGenerate = async () => {
-    setGenerating(true);
-    try {
-      const res = await fetch(`${API}/api/yt/ideas/generate`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pillar: genPillar, count: genCount, context: genContext }),
-      });
-      const data = await res.json();
-      if (data.success) { setGenContext(''); await Promise.all([fetchIdeas(), fetchStats()]); }
-      else alert(data.error || 'Generation failed');
-    } catch { alert('Generation failed'); }
-    finally { setGenerating(false); }
-  };
+  useEffect(() => { fetchIdeas().finally(() => setLoading(false)); }, [fetchIdeas]);
 
   const updateIdea = async (id: string, updates: Partial<Idea>) => {
     try {
@@ -451,17 +347,16 @@ export default function AdminYouTubePage() {
         body: JSON.stringify(updates),
       });
       const data = await res.json();
-      if (data.success) { setIdeas(prev => prev.map(i => i.id === id ? data.idea : i)); fetchStats(); }
+      if (data.success) setIdeas(prev => prev.map(i => i.id === id ? { ...i, ...data.idea } : i));
     } catch (err) { console.error('Update failed:', err); }
   };
 
   const deleteIdea = async (id: string) => {
-    if (!confirm('Delete this idea?')) return;
+    if (!confirm('Delete this script?')) return;
     try {
       await fetch(`${API}/api/yt/ideas/${id}`, { method: 'DELETE' });
       setIdeas(prev => prev.filter(i => i.id !== id));
       if (expandedId === id) setExpandedId(null);
-      fetchStats();
     } catch (err) { console.error('Delete failed:', err); }
   };
 
@@ -476,7 +371,8 @@ export default function AdminYouTubePage() {
       const data = await res.json();
       if (data.success) {
         setPasteTitle(''); setPasteScript(''); setShowPaste(false);
-        await Promise.all([fetchIdeas(), fetchStats()]);
+        await fetchIdeas();
+        if (data.idea?.id) setExpandedId(data.idea.id);
       } else {
         alert(data.error || 'Failed to create script');
       }
@@ -488,20 +384,7 @@ export default function AdminYouTubePage() {
     }
   };
 
-  const generateScript = async (id: string) => {
-    setScriptingId(id);
-    try {
-      const res = await fetch(`${API}/api/yt/ideas/${id}/script`, { method: 'POST' });
-      const data = await res.json();
-      if (data.success) { setIdeas(prev => prev.map(i => i.id === id ? data.idea : i)); setExpandedId(id); fetchStats(); }
-      else alert(data.error || 'Script generation failed');
-    } catch { alert('Script generation failed'); }
-    finally { setScriptingId(null); }
-  };
-
-  const modeLabels: Record<string, string> = {
-    figured_something_out: '💡 Discovery', showing_screen: '🖥️ Screen share', telling_friend: '💬 Friend mode',
-  };
+  const visible = ideas.filter(i => showArchived ? true : i.status !== 'archived');
 
   return (
     <div className="admin-scope min-h-screen p-5 lg:p-8">
@@ -511,7 +394,7 @@ export default function AdminYouTubePage() {
         <Teleprompter script={teleprompterIdea.script} title={teleprompterIdea.title} onClose={() => setTeleprompterIdea(null)} />
       )}
 
-      {/* Paste-a-script modal: + button -> paste text -> new script entry */}
+      {/* Paste-a-script modal */}
       {showPaste && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => !creatingPaste && setShowPaste(false)}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
@@ -535,95 +418,50 @@ export default function AdminYouTubePage() {
               <button onClick={handleCreateFromPaste} disabled={creatingPaste || !pasteScript.trim()}
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-40" style={SOFT.em}>
                 {creatingPaste ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                {creatingPaste ? 'Creating...' : 'Create script'}
+                {creatingPaste ? 'Saving...' : 'Save script'}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-8 flex items-start justify-between gap-4">
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-[var(--a-ink)]">YouTube Content</h1>
-            <p className="text-sm text-[var(--a-muted)] mt-1">Generate ideas, write scripts, record with the teleprompter</p>
+            <h1 className="text-2xl font-bold text-[var(--a-ink)]">YouTube Scripts</h1>
+            <p className="text-sm text-[var(--a-muted)] mt-1">Paste a script, edit it, and record with the teleprompter.</p>
           </div>
-          <button onClick={() => setShowPaste(true)}
+          <button onClick={() => { setPasteTitle(''); setPasteScript(''); setShowPaste(true); }}
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-colors shrink-0"
             style={SOFT.em}>
             <Plus className="w-4 h-4" />Paste script
           </button>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-6">
-          <div className="a-card p-3.5">
-            <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--a-dim)]">Total</p>
-            <p className="text-xl font-bold text-[var(--a-ink)] mt-1">{stats.total}</p>
-          </div>
-          {Object.entries(STATUS_META).filter(([k]) => k !== 'archived').map(([key, meta]) => (
-            <div key={key} className="a-card p-3.5 cursor-pointer hover:brightness-[0.99] transition-all"
-              onClick={() => { setFilterStatus(filterStatus === key ? '' : key); setTimeout(fetchIdeas, 0); }}
-              style={filterStatus === key ? { background: `${meta.color}12`, borderColor: `${meta.color}40` } : undefined}>
-              <p className="text-[10px] font-mono uppercase tracking-wider" style={{ color: meta.color }}>{meta.label}</p>
-              <p className="text-xl font-bold text-[var(--a-ink)] mt-1">{stats.byStatus[key] || 0}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Generate Panel */}
-        <div className="rounded-2xl p-5 mb-6" style={{ background: 'var(--a-em-soft)', border: '1px solid var(--a-em-line)' }}>
-          <div className="flex items-center gap-2 mb-4">
-            <Sparkles className="w-4 h-4" style={{ color: 'var(--a-em-deep)' }} />
-            <h2 className="text-sm font-semibold text-[var(--a-ink)]">Generate Ideas</h2>
-          </div>
-          <div className="grid sm:grid-cols-3 gap-3 mb-3">
-            <select value={genPillar} onChange={e => setGenPillar(e.target.value)} className="a-input">
-              <option value="mixed">Mixed (all pillars)</option>
-              {Object.entries(PILLAR_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-            </select>
-            <select value={genCount} onChange={e => setGenCount(Number(e.target.value))} className="a-input">
-              {[3, 5, 8, 10].map(n => <option key={n} value={n}>{n} ideas</option>)}
-            </select>
-            <button onClick={handleGenerate} disabled={generating} className="a-btn">
-              {generating ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Generating...</> : <><Sparkles className="w-3.5 h-3.5" />Generate</>}
-            </button>
-          </div>
-          <label className="block text-[11px] font-medium text-[var(--a-dim)] uppercase tracking-[0.1em] mb-1.5">Custom prompt (steers this batch)</label>
-          <textarea value={genContext} onChange={e => setGenContext(e.target.value)}
-            rows={3}
-            placeholder="Steer the generation: a niche to focus on (dental, HVAC, lawyers), an angle or trend to lean into, specific hooks to try, a tone, topics to avoid. Layered on top of the built-in content strategy, not a replacement."
-            className="a-input w-full resize-y" />
-        </div>
-
-        {/* Filters */}
+        {/* Toolbar */}
         <div className="flex items-center gap-3 mb-4">
-          <Filter className="w-3.5 h-3.5 text-[var(--a-dim)]" />
-          <select value={filterPillar} onChange={e => { setFilterPillar(e.target.value); setTimeout(fetchIdeas, 0); }}
-            className="a-input" style={{ maxWidth: 220, height: 36 }}>
-            <option value="">All pillars</option>
-            {Object.entries(PILLAR_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-          </select>
-          <button onClick={() => { fetchIdeas(); fetchStats(); }} className="ml-auto rounded-lg p-1.5 text-[var(--a-dim)] hover:text-[var(--a-em-deep)] transition-colors">
+          <span className="text-[11px] font-mono text-[var(--a-dim)]">{visible.length} {visible.length === 1 ? 'script' : 'scripts'}</span>
+          <label className="inline-flex items-center gap-1.5 text-[11px] text-[var(--a-dim)] cursor-pointer select-none">
+            <input type="checkbox" checked={showArchived} onChange={e => setShowArchived(e.target.checked)} className="accent-[var(--a-em)]" />
+            Show archived
+          </label>
+          <button onClick={() => fetchIdeas()} className="ml-auto rounded-lg p-1.5 text-[var(--a-dim)] hover:text-[var(--a-em-deep)] transition-colors" aria-label="Refresh">
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
-          <span className="text-[11px] font-mono text-[var(--a-dim)]">{ideas.length}</span>
         </div>
 
-        {/* Ideas */}
+        {/* List */}
         {loading ? (
           <div className="text-center py-20"><Loader2 className="w-6 h-6 animate-spin mx-auto text-[var(--a-em)]" /></div>
-        ) : ideas.length === 0 ? (
+        ) : visible.length === 0 ? (
           <div className="text-center py-20 a-card">
-            <Lightbulb className="w-8 h-8 mx-auto text-[var(--a-dim)] mb-3" />
-            <p className="text-sm text-[var(--a-muted)]">No ideas yet. Generate your first batch above.</p>
+            <FileText className="w-8 h-8 mx-auto text-[var(--a-dim)] mb-3" />
+            <p className="text-sm text-[var(--a-muted)]">No scripts yet. Hit <span className="font-semibold text-[var(--a-ink)]">Paste script</span> to add your first one.</p>
           </div>
         ) : (
           <div className="space-y-2">
-            {ideas.map(idea => {
+            {visible.map(idea => {
               const isExpanded = expandedId === idea.id;
-              const isScripting = scriptingId === idea.id;
-
               return (
                 <div key={idea.id} className="a-card overflow-hidden transition-all"
                   style={isExpanded ? { borderColor: 'var(--a-line-2)' } : undefined}>
@@ -631,116 +469,60 @@ export default function AdminYouTubePage() {
                   {/* Header row */}
                   <div className="flex items-center gap-3 px-4 py-3 cursor-pointer" onClick={() => setExpandedId(isExpanded ? null : idea.id)}>
                     {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-[var(--a-dim)] flex-shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 text-[var(--a-dim)] flex-shrink-0" />}
-                    <PillarBadge pillar={idea.pillar} />
-                    <p className="text-sm text-[var(--a-ink)] font-medium flex-1 truncate">{idea.title}</p>
-                    <span className="text-[11px] font-mono text-[var(--a-dim)] hidden sm:block">{idea.target_length}</span>
+                    <p className="text-sm text-[var(--a-ink)] font-medium flex-1 truncate">{idea.title || 'Untitled script'}</p>
+                    <span className="text-[11px] font-mono text-[var(--a-dim)] hidden sm:block">{new Date(idea.created_at).toLocaleDateString()}</span>
                     <StatusBadge status={idea.status} />
                   </div>
 
                   {/* Expanded */}
                   {isExpanded && (
-                    <div className="px-4 pb-5 pt-2 border-t border-[var(--a-line)] space-y-5">
+                    <div className="px-4 pb-5 pt-2 border-t border-[var(--a-line)] space-y-4">
 
-                      {/* Title (inline editable) */}
+                      {/* Title */}
                       <div>
                         <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--a-dim)] mb-1">Title</p>
                         <InlineEdit value={idea.title} onSave={v => updateIdea(idea.id, { title: v })}
                           className="text-base font-semibold text-[var(--a-ink)]" />
                       </div>
 
-                      {/* Hook (inline editable) */}
+                      {/* Script */}
                       <div>
-                        <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--a-dim)] mb-1">Hook</p>
-                        <InlineEdit value={idea.hook} onSave={v => updateIdea(idea.id, { hook: v })}
-                          multiline className="text-sm text-[var(--a-muted)] italic" />
-                      </div>
-
-                      {/* Talking points (inline editable) */}
-                      <div>
-                        <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--a-dim)] mb-2">Talking Points</p>
-                        <div className="space-y-1">
-                          {(idea.talking_points || []).map((tp, i) => (
-                            <div key={i} className="flex items-start gap-2">
-                              <span className="font-mono text-[10px] text-[var(--a-dim)] mt-2 w-5 flex-shrink-0">{String(i + 1).padStart(2, '0')}</span>
-                              <InlineEdit value={tp}
-                                onSave={v => {
-                                  const updated = [...idea.talking_points];
-                                  updated[i] = v;
-                                  updateIdea(idea.id, { talking_points: updated } as any);
-                                }}
-                                className="text-sm text-[var(--a-muted)] flex-1" />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Meta row */}
-                      <div className="flex flex-wrap gap-4 text-[11px] text-[var(--a-dim)]">
-                        <span>{modeLabels[idea.recording_mode] || idea.recording_mode}</span>
-                        <span>{idea.target_length}</span>
-                        <span>{new Date(idea.created_at).toLocaleDateString()}</span>
-                      </div>
-
-                      {/* Notes (inline editable) */}
-                      <div>
-                        <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--a-dim)] mb-1">Notes</p>
-                        <InlineEdit value={idea.notes || ''} onSave={v => updateIdea(idea.id, { notes: v || null })}
-                          multiline placeholder="Add notes..." className="text-sm text-[var(--a-muted)]" />
-                      </div>
-
-                      {/* Script (inline editable) */}
-                      {idea.script && (
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--a-dim)]">Script</p>
-                            <div className="flex items-center gap-2">
-                              <button onClick={() => { navigator.clipboard.writeText(idea.script || ''); setCopiedScript(idea.id); setTimeout(() => setCopiedScript(c => c === idea.id ? null : c), 2000); }}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
-                                style={SOFT.em}>
-                                {copiedScript === idea.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                                {copiedScript === idea.id ? 'Copied' : 'Copy script'}
-                              </button>
-                              <button onClick={() => setTeleprompterIdea(idea)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
-                                style={SOFT.em}>
-                                <Maximize2 className="w-3 h-3" />Teleprompter
-                              </button>
-                            </div>
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--a-dim)]">Script</p>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => { navigator.clipboard.writeText(idea.script || ''); setCopiedScript(idea.id); setTimeout(() => setCopiedScript(c => c === idea.id ? null : c), 2000); }}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors" style={SOFT.slate}>
+                              {copiedScript === idea.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                              {copiedScript === idea.id ? 'Copied' : 'Copy'}
+                            </button>
+                            <button onClick={() => idea.script && setTeleprompterIdea(idea)} disabled={!idea.script}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-40" style={SOFT.em}>
+                              <Maximize2 className="w-3 h-3" />Teleprompter
+                            </button>
                           </div>
-                          <InlineEdit value={idea.script} onSave={v => updateIdea(idea.id, { script: v })}
-                            multiline className="text-[13px] text-[var(--a-muted)] font-mono leading-relaxed"
-                            style={{ whiteSpace: 'pre-wrap' }} />
                         </div>
-                      )}
+                        <InlineEdit value={idea.script || ''} onSave={v => updateIdea(idea.id, { script: v })}
+                          multiline minHeight={240} placeholder="Click to add or edit the script..."
+                          className="text-[14px] text-[var(--a-ink)] leading-relaxed"
+                          style={{ whiteSpace: 'pre-wrap' }} />
+                      </div>
 
                       {/* Actions */}
                       <div className="flex flex-wrap gap-2 pt-1">
-                        {idea.status === 'idea' && (
-                          <button onClick={() => updateIdea(idea.id, { status: 'approved' })}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors" style={SOFT.em}>
-                            <Check className="w-3 h-3" />Approve
+                        {idea.status === 'archived' ? (
+                          <button onClick={() => updateIdea(idea.id, { status: 'scripted' })}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors" style={SOFT.slate}>
+                            <RotateCcw className="w-3 h-3" />Unarchive
+                          </button>
+                        ) : (
+                          <button onClick={() => updateIdea(idea.id, { status: 'archived' })}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors" style={SOFT.slate}>
+                            <Archive className="w-3 h-3" />Archive
                           </button>
                         )}
-                        {!idea.script && (
-                          <button onClick={() => generateScript(idea.id)} disabled={isScripting}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-40" style={SOFT.violet}>
-                            {isScripting ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileText className="w-3 h-3" />}
-                            {isScripting ? 'Writing...' : 'Generate Script'}
-                          </button>
-                        )}
-                        {idea.script && !teleprompterIdea && (
-                          <button onClick={() => setTeleprompterIdea(idea)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors" style={SOFT.em}>
-                            <Play className="w-3 h-3" />Record Mode
-                          </button>
-                        )}
-                        <button onClick={() => updateIdea(idea.id, { status: 'archived' })}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors" style={SOFT.slate}>
-                          <Archive className="w-3 h-3" />Archive
-                        </button>
                         <button onClick={() => deleteIdea(idea.id)}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ml-auto" style={SOFT.red}>
-                          <Trash2 className="w-3 h-3" />
+                          <Trash2 className="w-3 h-3" />Delete
                         </button>
                       </div>
                     </div>
