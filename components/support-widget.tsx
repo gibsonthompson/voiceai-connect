@@ -278,33 +278,27 @@ export default function SupportWidget() {
         </div>
       )}
 
-      {/* FAB: a literal green chat-message bubble (speech bubble shape + tail), glossy with a white reflection, floating */}
+      {/* FAB: an iMessage-style green message bubble with the classic tail. Flat green
+          with a whisper of a gradient (no heavy gloss), white message dots, floating. */}
       <button onClick={open} aria-label="Open support"
         style={{
-          position: 'fixed', bottom: 20, right: 20, width: 64, height: 62, padding: 0, border: 'none',
+          position: 'fixed', bottom: 20, right: 20, width: 62, height: 51, padding: 0, border: 'none',
           background: 'transparent', cursor: 'pointer', display: isOpen ? 'none' : 'block', lineHeight: 0, zIndex: 9999,
-          filter: 'drop-shadow(0 12px 22px rgba(16,185,129,0.45)) drop-shadow(0 4px 8px rgba(0,0,0,0.3))',
+          filter: 'drop-shadow(0 8px 16px rgba(16,185,129,0.35)) drop-shadow(0 2px 5px rgba(0,0,0,0.22))',
           transition: 'transform 0.2s cubic-bezier(0.16,1,0.3,1)', animation: 'wFloat 3.6s ease-in-out infinite',
         }}>
-        <svg width="64" height="62" viewBox="0 0 64 62" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg width="62" height="51" viewBox="0 0 66 54" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <linearGradient id="vacBubbleFill" x1="32" y1="4" x2="32" y2="56" gradientUnits="userSpaceOnUse">
-              <stop stopColor="#34d399" />
-              <stop offset="0.55" stopColor="#10b981" />
-              <stop offset="1" stopColor="#059669" />
+            <linearGradient id="vacMsgFill" x1="33" y1="3" x2="33" y2="49" gradientUnits="userSpaceOnUse">
+              <stop stopColor="#14cf96" />
+              <stop offset="1" stopColor="#0fa877" />
             </linearGradient>
-            <radialGradient id="vacBubbleGloss" cx="0.34" cy="0.24" r="0.62">
-              <stop stopColor="#ffffff" stopOpacity="0.72" />
-              <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
-            </radialGradient>
           </defs>
-          <path d="M16 6 H48 A12 12 0 0 1 60 18 V30 A12 12 0 0 1 48 42 L58 56 L34 42 H16 A12 12 0 0 1 4 30 V18 A12 12 0 0 1 16 6 Z"
-            fill="url(#vacBubbleFill)" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
-          <path d="M16 6 H48 A12 12 0 0 1 60 18 V30 A12 12 0 0 1 48 42 L58 56 L34 42 H16 A12 12 0 0 1 4 30 V18 A12 12 0 0 1 16 6 Z"
-            fill="url(#vacBubbleGloss)" />
-          <circle cx="23" cy="24" r="3.4" fill="#ffffff" />
-          <circle cx="32" cy="24" r="3.4" fill="#ffffff" />
-          <circle cx="41" cy="24" r="3.4" fill="#ffffff" />
+          <path d="M48.5 3H17.5C9.49187 3 3 9.49187 3 17.5V26.5C3 34.5081 9.49187 41 17.5 41H41.5C45 46 51 49 57 49C54 46 53 43 53.5 40.5C58 37.5 63 31.5 63 26.5V17.5C63 9.49187 56.5081 3 48.5 3Z"
+            fill="url(#vacMsgFill)" />
+          <circle cx="24" cy="22" r="3.3" fill="#ffffff" />
+          <circle cx="33" cy="22" r="3.3" fill="#ffffff" />
+          <circle cx="42" cy="22" r="3.3" fill="#ffffff" />
         </svg>
       </button>
 
