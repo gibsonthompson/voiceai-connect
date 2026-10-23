@@ -278,18 +278,34 @@ export default function SupportWidget() {
         </div>
       )}
 
-      {/* FAB: glossy green floating bubble with a white reflection and a white message icon */}
+      {/* FAB: a literal green chat-message bubble (speech bubble shape + tail), glossy with a white reflection, floating */}
       <button onClick={open} aria-label="Open support"
         style={{
-          position: 'fixed', bottom: 20, right: 20, width: 60, height: 60, borderRadius: '50%',
-          border: '1px solid rgba(255,255,255,0.4)',
-          background: 'radial-gradient(circle at 32% 24%, rgba(255,255,255,0.7), rgba(255,255,255,0) 46%), linear-gradient(150deg, #34d399 0%, #10b981 52%, #059669 100%)',
-          cursor: 'pointer', display: isOpen ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 16px 34px -8px rgba(16,185,129,0.6), 0 4px 12px -4px rgba(0,0,0,0.35), inset 0 1px 1px rgba(255,255,255,0.6)',
-          transition: 'box-shadow 0.25s cubic-bezier(0.16,1,0.3,1)', zIndex: 9999, color: '#ffffff',
-          animation: 'wFloat 3.6s ease-in-out infinite',
+          position: 'fixed', bottom: 20, right: 20, width: 64, height: 62, padding: 0, border: 'none',
+          background: 'transparent', cursor: 'pointer', display: isOpen ? 'none' : 'block', lineHeight: 0, zIndex: 9999,
+          filter: 'drop-shadow(0 12px 22px rgba(16,185,129,0.45)) drop-shadow(0 4px 8px rgba(0,0,0,0.3))',
+          transition: 'transform 0.2s cubic-bezier(0.16,1,0.3,1)', animation: 'wFloat 3.6s ease-in-out infinite',
         }}>
-        <span style={{ display: 'flex', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.28))' }}><WIcon type="chat" /></span>
+        <svg width="64" height="62" viewBox="0 0 64 62" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="vacBubbleFill" x1="32" y1="4" x2="32" y2="56" gradientUnits="userSpaceOnUse">
+              <stop stopColor="#34d399" />
+              <stop offset="0.55" stopColor="#10b981" />
+              <stop offset="1" stopColor="#059669" />
+            </linearGradient>
+            <radialGradient id="vacBubbleGloss" cx="0.34" cy="0.24" r="0.62">
+              <stop stopColor="#ffffff" stopOpacity="0.72" />
+              <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
+            </radialGradient>
+          </defs>
+          <path d="M16 6 H48 A12 12 0 0 1 60 18 V30 A12 12 0 0 1 48 42 L58 56 L34 42 H16 A12 12 0 0 1 4 30 V18 A12 12 0 0 1 16 6 Z"
+            fill="url(#vacBubbleFill)" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
+          <path d="M16 6 H48 A12 12 0 0 1 60 18 V30 A12 12 0 0 1 48 42 L58 56 L34 42 H16 A12 12 0 0 1 4 30 V18 A12 12 0 0 1 16 6 Z"
+            fill="url(#vacBubbleGloss)" />
+          <circle cx="23" cy="24" r="3.4" fill="#ffffff" />
+          <circle cx="32" cy="24" r="3.4" fill="#ffffff" />
+          <circle cx="41" cy="24" r="3.4" fill="#ffffff" />
+        </svg>
       </button>
 
       {/* Panel */}
