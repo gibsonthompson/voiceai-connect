@@ -934,8 +934,7 @@ function AgencySignupForm({ isEmbed }: { isEmbed: boolean }) {
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
               <div className="flex h-16 sm:h-20 items-center justify-between">
                 <a href="/" className="flex items-center gap-2.5 sm:gap-3 group">
-                  <img src="/icon-512x512.png" alt="VoiceAI Connect" className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl" />
-                  <span className="text-base sm:text-lg font-semibold tracking-tight">VoiceAI Connect</span>
+                  <img src="/voiceai-connect-logo.png" alt="VoiceAI Connect" className="h-8 sm:h-9 w-auto" />
                 </a>
                 <div className="flex items-center gap-4">
                   <a href="/" className="hidden sm:flex items-center gap-1.5 text-sm text-[#fafaf9]/60 hover:text-[#fafaf9] transition-colors">
