@@ -47,7 +47,22 @@ const TRIGGER_META = { label: 'Trigger', icon: Zap };
 const TRIGGER_TYPES = [
   { value: 'call.completed', label: 'After a call' },
   { value: 'appointment.booked', label: 'When an appointment is booked' },
+  { value: 'client.payment_failed', label: 'When a client payment fails' },
+  { value: 'client.canceled', label: 'When a client cancels' },
+  { value: 'client.subscription_activated', label: 'When a new client activates' },
+  { value: 'client.trial_expired', label: 'When a client trial ends' },
 ];
+// Account/billing triggers: the subject is the business, so a Send SMS texts the
+// owner, and the per-call outcome filter + stop-on-reply goals don't apply.
+const ACCOUNT_TRIGGERS = ['client.payment_failed', 'client.canceled', 'client.subscription_activated', 'client.trial_expired'];
+const TRIGGER_META_MAP: Record<string, { title: string; summary: string; icon: any }> = {
+  'call.completed': { title: 'Call finished', summary: 'After a call', icon: Phone },
+  'appointment.booked': { title: 'Appointment booked', summary: 'When a customer books', icon: CalendarCheck },
+  'client.payment_failed': { title: 'Payment failed', summary: 'When a client payment fails', icon: Bell },
+  'client.canceled': { title: 'Client canceled', summary: 'When a client cancels', icon: Bell },
+  'client.subscription_activated': { title: 'New client active', summary: 'When a client activates', icon: Bell },
+  'client.trial_expired': { title: 'Trial ended', summary: 'When a client trial ends', icon: Bell },
+};
 const OUTCOME_OPTIONS = [
   { value: 'callback_requested', label: 'Asked for a callback' },
   { value: 'unanswered', label: 'Had an unresolved question' },
@@ -291,14 +306,18 @@ function ConfigDrawer({ node, workflow, theme, plan, onPatchNode, onDeleteNode, 
                 </div>
               </Field>
             )}
-            <Field label="Stop automatically when the customer" theme={theme}>
-              <label className="flex items-center gap-2 text-sm cursor-pointer mb-1.5" style={{ color: theme.text }}>
-                <Checkbox on={!!workflow.stop_on?.reply} theme={theme} onClick={() => onPatchWorkflow({ stop_on: { ...workflow.stop_on, reply: !workflow.stop_on?.reply } })} /> Replies to a text
-              </label>
-              <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: theme.text }}>
-                <Checkbox on={!!workflow.stop_on?.booked} theme={theme} onClick={() => onPatchWorkflow({ stop_on: { ...workflow.stop_on, booked: !workflow.stop_on?.booked } })} /> Books an appointment
-              </label>
-            </Field>
+            {ACCOUNT_TRIGGERS.includes(workflow.trigger_type) ? (
+              <p className="text-xs" style={{ color: theme.textMuted }}>This runs on a billing event for the business. A Send SMS step texts the business owner. You can also branch, wait, or call a webhook.</p>
+            ) : (
+              <Field label="Stop automatically when the customer" theme={theme}>
+                <label className="flex items-center gap-2 text-sm cursor-pointer mb-1.5" style={{ color: theme.text }}>
+                  <Checkbox on={!!workflow.stop_on?.reply} theme={theme} onClick={() => onPatchWorkflow({ stop_on: { ...workflow.stop_on, reply: !workflow.stop_on?.reply } })} /> Replies to a text
+                </label>
+                <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: theme.text }}>
+                  <Checkbox on={!!workflow.stop_on?.booked} theme={theme} onClick={() => onPatchWorkflow({ stop_on: { ...workflow.stop_on, booked: !workflow.stop_on?.booked } })} /> Books an appointment
+                </label>
+              </Field>
+            )}
           </>
         )}
 
@@ -482,13 +501,15 @@ function Inner({ workflow, plan, saving, onSaveDraft, onActivate, onPause, onBac
 
 function triggerIcon(isTrig: boolean, n: GNode, wf: any) {
   if (!isTrig) return CATALOG[n.type]?.icon || Square;
-  return wf.trigger_type === 'appointment.booked' ? CalendarCheck : Phone;
+  return (TRIGGER_META_MAP[wf.trigger_type] || {}).icon || Zap;
 }
-function triggerTitle(wf: any) { return wf.trigger_type === 'appointment.booked' ? 'Appointment booked' : 'Call finished'; }
+function triggerTitle(wf: any) { return (TRIGGER_META_MAP[wf.trigger_type] || {}).title || 'Trigger'; }
 function triggerSummary(wf: any) {
-  if (wf.trigger_type === 'appointment.booked') return 'When a customer books';
-  const arr = wf.trigger_config?.followup_outcome_in || [];
-  return arr.length ? `${arr.length} outcome(s)` : 'Any real call';
+  if (wf.trigger_type === 'call.completed') {
+    const arr = wf.trigger_config?.followup_outcome_in || [];
+    return arr.length ? `${arr.length} outcome(s)` : 'Any real call';
+  }
+  return (TRIGGER_META_MAP[wf.trigger_type] || {}).summary || '';
 }
 
 export default function WorkflowBuilder(props: any) {
