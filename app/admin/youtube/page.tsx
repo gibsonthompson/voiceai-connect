@@ -96,42 +96,39 @@ const LABEL_PREFIX = /^\s*(hooks?|talking\s*points?|key\s*points?|context|payloa
 const DIRECTION = /\[(?:screen|visual|b-?roll|on-?screen|cut|show)\s*:[^\]]*\]/gi;
 
 type TpWord = { text: string; trailing: string; globalIndex: number };
+type TpLine = { words: TpWord[]; blank: boolean };
 
-function cleanScript(script: string, title?: string): TpWord[][] {
-  const titleNorm = (title || '').trim().toLowerCase().replace(/^\d+[.)]\s*/, '');
-  const lines = script.split('\n');
-  const cleaned: string[] = [];
-  for (const raw of lines) {
+// Preserve the script's own line breaks so the teleprompter reads line for line,
+// not as one continuous reflow. Each source line becomes its own display line;
+// blank lines become spacing. Label prefixes ("Hook:", "Talking points:") and
+// [SCREEN: ...] directions are stripped, but the first line is kept as-is.
+function cleanScript(script: string): TpLine[] {
+  const rawLines = script.split('\n');
+  const out: TpLine[] = [];
+  let globalIdx = 0;
+  for (const raw of rawLines) {
     let line = raw.replace(DIRECTION, '').trim();
-    if (!line) { cleaned.push(''); continue; }           // blank = paragraph break
-    const noNum = line.replace(/^\d+[.)]\s*/, '').trim(); // leading "1. " numbering
-    if (titleNorm && noNum.toLowerCase() === titleNorm) continue; // drop a duplicated title line
+    if (!line) {
+      if (out.length && out[out.length - 1].blank) continue; // collapse runs of blanks
+      out.push({ words: [], blank: true });
+      continue;
+    }
     const m = line.match(LABEL_PREFIX);
     if (m) {
       line = line.slice(m[0].length).trim();
-      if (!line) continue;                                // label-only line -> drop
+      if (!line) continue;                                   // a bare "Hook:" line -> drop
     }
-    cleaned.push(line);
-  }
-
-  let globalIdx = 0;
-  const blocks: TpWord[][] = [];
-  let cur: TpWord[] | null = null;
-  for (const line of cleaned) {
-    if (!line) { cur = null; continue; }
-    if (!cur) { cur = []; blocks.push(cur); }
-    const rawWords = line.split(/(\s+)/);
-    for (let i = 0; i < rawWords.length; i++) {
-      const token = rawWords[i];
-      if (!token || /^\s+$/.test(token)) continue;
-      const trailing = (i + 1 < rawWords.length && /^\s+$/.test(rawWords[i + 1])) ? ' ' : ' ';
-      cur.push({ text: token.replace(/[*_`#]/g, ''), trailing, globalIndex: globalIdx++ });
+    const words: TpWord[] = [];
+    for (const token of line.split(/\s+/)) {
+      if (!token) continue;
+      words.push({ text: token.replace(/[*_`#]/g, ''), trailing: ' ', globalIndex: globalIdx++ });
     }
+    if (words.length) out.push({ words, blank: false });
   }
-  if (!blocks.length) {
-    blocks.push(script.split(/(\s+)/).filter(w => w.trim()).map((w, i) => ({ text: w, trailing: ' ', globalIndex: i })));
+  if (!out.some(l => l.words.length)) {
+    return [{ words: script.split(/\s+/).filter(Boolean).map((w, i) => ({ text: w, trailing: ' ', globalIndex: i })), blank: false }];
   }
-  return blocks;
+  return out;
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -146,8 +143,8 @@ function Teleprompter({ script, title, onClose }: { script: string; title: strin
   const [mirrored, setMirrored] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const blocks = cleanScript(script, title);
-  const totalWords = blocks.reduce((n, b) => n + b.length, 0);
+  const lines = cleanScript(script);
+  const totalWords = lines.reduce((n, l) => n + l.words.length, 0);
   const progress = totalWords > 0 ? ((wordIndex + 1) / totalWords) * 100 : 0;
 
   const ACCENT = '#27F4D2';
@@ -246,9 +243,11 @@ function Teleprompter({ script, title, onClose }: { script: string; title: strin
       {/* Script body: plain paragraphs, word-by-word highlight, no labels */}
       <div className="flex-1 overflow-y-auto px-8 lg:px-20 py-16" style={{ transform: mirrored ? 'scaleX(-1)' : undefined }}>
         <div className="max-w-3xl mx-auto">
-          {blocks.map((words, bi) => (
-            <p key={bi} className="mb-8" style={{ fontSize: `${fontSize}px`, lineHeight: 1.6 }}>
-              {words.map(w => {
+          {lines.map((ln, li) => ln.blank ? (
+            <div key={li} style={{ height: `${fontSize * 0.7}px` }} />
+          ) : (
+            <p key={li} style={{ fontSize: `${fontSize}px`, lineHeight: 1.35, marginBottom: `${fontSize * 0.4}px` }}>
+              {ln.words.map(w => {
                 const isActive = w.globalIndex === wordIndex;
                 const isPast = w.globalIndex < wordIndex;
                 const isNear = Math.abs(w.globalIndex - wordIndex) <= 3 && wordIndex >= 0;
