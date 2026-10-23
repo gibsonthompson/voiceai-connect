@@ -37,6 +37,7 @@ interface TemplateCard {
   description: string;
   tier: string;
   trigger_type: string;
+  subject?: string;
   activated: boolean;
   workflow_id: string | null;
   workflow_status: string | null;
@@ -119,6 +120,9 @@ export default function AutomationsPage() {
   const [creating, setCreating] = useState(false);
   const [clients, setClients] = useState<{ id: string; business_name: string }[]>([]);
   const [scopeClientId, setScopeClientId] = useState<string | null>(null); // null = all clients
+  // Category split: customer-facing (runs for a client's callers) vs account/
+  // internal (runs on a client's billing + lifecycle events, agency-wide).
+  const [category, setCategory] = useState<'customer' | 'account'>('customer');
 
   useEffect(() => {
     if (!agencyId) return;
@@ -137,7 +141,7 @@ export default function AutomationsPage() {
     setCreating(true);
     try {
       const res = await fetch(`${backendUrl()}/api/agency/${agencyId}/workflows`, {
-        method: 'POST', headers: authHeaders(), body: JSON.stringify({ name: 'New automation', client_id: scopeClientId || undefined }),
+        method: 'POST', headers: authHeaders(), body: JSON.stringify({ name: 'New automation', client_id: category === 'account' ? undefined : (scopeClientId || undefined), trigger_type: category === 'account' ? 'client.payment_failed' : 'call.completed' }),
       });
       const data = await res.json();
       if (!res.ok) { setNotice({ kind: 'err', text: data.error || 'Could not create' }); return; }
@@ -151,7 +155,8 @@ export default function AutomationsPage() {
     if (!agencyId) return;
     setError(null);
     try {
-      const res = await fetch(`${backendUrl()}/api/agency/${agencyId}/workflows/templates${scopeClientId ? `?client_id=${scopeClientId}` : ''}`, { headers: authHeaders() });
+      const scopeParam = category === 'account' ? null : scopeClientId;
+      const res = await fetch(`${backendUrl()}/api/agency/${agencyId}/workflows/templates${scopeParam ? `?client_id=${scopeParam}` : ''}`, { headers: authHeaders() });
       if (!res.ok) throw new Error(`Failed to load (${res.status})`);
       const data = await res.json();
       const tpls: TemplateCard[] = data.templates || [];
@@ -175,7 +180,7 @@ export default function AutomationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [agencyId, scopeClientId]);
+  }, [agencyId, scopeClientId, category]);
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
@@ -186,6 +191,7 @@ export default function AutomationsPage() {
     return () => clearTimeout(id);
   }, [notice]);
 
+  const shownTemplates = templates.filter((t) => (t.subject || 'customer') === category);
   const activeCount = templates.filter((t) => t.workflow_status === 'active').length;
   const capReached = !!(ent && ent.max_workflows !== null && activeCount >= ent.max_workflows);
   const totalSent = Object.values(statsByWf).reduce((n, s) => n + (s.messages_sent || 0), 0);
@@ -204,7 +210,7 @@ export default function AutomationsPage() {
       // Create from template the first time.
       if (!t.activated || !workflowId) {
         const createRes = await fetch(`${backendUrl()}/api/agency/${agencyId}/workflows`, {
-          method: 'POST', headers: authHeaders(), body: JSON.stringify({ template_key: t.key, client_id: scopeClientId || undefined }),
+          method: 'POST', headers: authHeaders(), body: JSON.stringify({ template_key: t.key, client_id: category === 'account' ? undefined : (scopeClientId || undefined) }),
         });
         const created = await createRes.json();
         if (!createRes.ok) {
@@ -422,9 +428,11 @@ export default function AutomationsPage() {
             <Zap className="h-6 w-6" style={{ color: theme.primary }} /> Automations
           </h1>
           <p className="text-sm mt-1" style={{ color: theme.textMuted }}>
-            {scopeClientId
-              ? 'Automations for this one business. Its own automations override your agency-wide ones.'
-              : 'Automatic text follow-ups that run across all your clients. Pick a business to set up automations just for it.'}
+            {category === 'account'
+              ? "Automations that run on your clients' billing and account events. Internal to your agency, they text the business owner."
+              : scopeClientId
+                ? 'Customer follow-ups for this one business. Its own automations override your agency-wide ones.'
+                : "Customer follow-ups that run after your clients' calls. Pick a business to set up automations just for it."}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -437,11 +445,40 @@ export default function AutomationsPage() {
         </div>
       </div>
 
-      {/* scope: all clients vs one business */}
-      <div className="mb-6 flex items-center gap-3 flex-wrap">
-        <span className="text-sm font-medium" style={{ color: theme.text }}>Set up for</span>
-        <ScopeDropdown clients={clients} value={scopeClientId} onChange={setScopeClientId} theme={theme} />
+      {/* category: customer-facing vs account/internal (GHL-style split) */}
+      <div className="mb-5 inline-flex rounded-xl p-1 gap-1" style={{ backgroundColor: theme.hover }}>
+        {([
+          { id: 'customer', label: 'Customer follow-ups', icon: Phone },
+          { id: 'account', label: 'Account & billing', icon: Building2 },
+        ] as const).map((c) => {
+          const on = category === c.id;
+          const Icon = c.icon;
+          return (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => setCategory(c.id)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+              style={{ backgroundColor: on ? theme.card : 'transparent', color: on ? theme.text : theme.textMuted, border: `1px solid ${on ? theme.border : 'transparent'}` }}
+            >
+              <Icon className="h-4 w-4" /> {c.label}
+            </button>
+          );
+        })}
       </div>
+
+      {/* scope: customer automations target all clients or one business;
+          account automations are agency-wide. */}
+      {category === 'customer' ? (
+        <div className="mb-6 flex items-center gap-3 flex-wrap">
+          <span className="text-sm font-medium" style={{ color: theme.text }}>Set up for</span>
+          <ScopeDropdown clients={clients} value={scopeClientId} onChange={setScopeClientId} theme={theme} />
+        </div>
+      ) : (
+        <div className="mb-6 flex items-center gap-2 text-sm" style={{ color: theme.textMuted }}>
+          <Building2 className="h-4 w-4" /> Runs across your whole agency, on your clients&apos; billing events.
+        </div>
+      )}
 
       {notice && (
         <div className="mb-4 rounded-xl px-4 py-3 flex items-center gap-2 text-sm" style={{
@@ -492,9 +529,16 @@ export default function AutomationsPage() {
             </div>
           )}
 
-          <div className="grid sm:grid-cols-2 gap-4">
-            {templates.map((t) => renderCard(t, true))}
-          </div>
+          {shownTemplates.length === 0 ? (
+            <div className="rounded-2xl p-10 text-center" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+              <Zap className="h-8 w-8 mx-auto mb-3" style={{ color: theme.textMuted }} />
+              <p className="text-sm" style={{ color: theme.textMuted }}>No recipes in this category yet. Use Build your own to start from scratch.</p>
+            </div>
+          ) : (
+            <div className="grid sm:grid-cols-2 gap-4">
+              {shownTemplates.map((t) => renderCard(t, true))}
+            </div>
+          )}
         </>
       )}
     </div>
