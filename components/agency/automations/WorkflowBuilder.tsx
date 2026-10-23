@@ -447,7 +447,7 @@ function Inner({ workflow, plan, saving, onSaveDraft, onActivate, onPause, onBac
   const isActive = workflow.status === 'active';
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)]">
+    <div className="flex flex-col h-screen">
       {/* toolbar */}
       <div className="flex items-center justify-between gap-3 px-4 py-3" style={{ borderBottom: `1px solid ${theme.border}` }}>
         <div className="flex items-center gap-3 min-w-0">
@@ -471,7 +471,7 @@ function Inner({ workflow, plan, saving, onSaveDraft, onActivate, onPause, onBac
       </div>
 
       {/* canvas */}
-      <div className="relative flex-1">
+      <div className="relative flex-1 min-h-0">
         <ReactFlow
           nodes={rfNodes} edges={rfEdges} nodeTypes={nodeTypes}
           nodesDraggable={false} nodesConnectable={false} elementsSelectable
