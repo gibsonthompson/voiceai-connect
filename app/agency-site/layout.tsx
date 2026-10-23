@@ -25,6 +25,49 @@ async function getAgencyByHost(host: string) {
 }
 
 // ============================================================================
+// EXTRACT <meta> TAGS FROM THE AGENCY'S CUSTOM HEAD SCRIPTS
+// The dashboard's Website -> Tracking -> Custom Head Scripts field is injected
+// as a <script> in the BODY by the marketing page, so a verification <meta>
+// pasted there (e.g. Google Search Console's HTML-tag method) never reaches the
+// real <head> and crawlers cannot see it ("meta tag is not in the <head>").
+// Pull any <meta name= content=> tags out here so they can be emitted
+// server-side into the <head> via Next's Metadata API. google-site-verification
+// is collected separately (as an array, since an agency may need to verify more
+// than one Search Console property) and maps to verification.google; everything
+// else (bing msvalidate.01, facebook-domain-verification, p:domain_verify, etc.)
+// goes to `other`. Attribute order and single/double quotes are both handled.
+// Reserved names Next already manages are skipped so we never emit a duplicate
+// or conflicting viewport/charset/description tag.
+// ============================================================================
+const RESERVED_META_NAMES = new Set(['viewport', 'charset', 'description']);
+
+function extractHeadMeta(raw: string | null | undefined): {
+  googleVerification: string[];
+  other: Record<string, string>;
+} {
+  const result = { googleVerification: [] as string[], other: {} as Record<string, string> };
+  if (!raw || typeof raw !== 'string') return result;
+  const metaTagRe = /<meta\b[^>]*>/gi;
+  const nameRe = /\bname\s*=\s*["']([^"']+)["']/i;
+  const contentRe = /\bcontent\s*=\s*["']([^"']*)["']/i;
+  let match: RegExpExecArray | null;
+  while ((match = metaTagRe.exec(raw)) !== null) {
+    const tag = match[0];
+    const name = (tag.match(nameRe) || [])[1];
+    const contentMatch = tag.match(contentRe);
+    if (!name || !contentMatch) continue;
+    const content = contentMatch[1];
+    const lname = name.toLowerCase();
+    if (lname === 'google-site-verification') {
+      if (content && !result.googleVerification.includes(content)) result.googleVerification.push(content);
+    } else if (!RESERVED_META_NAMES.has(lname)) {
+      result.other[name] = content;
+    }
+  }
+  return result;
+}
+
+// ============================================================================
 // GENERATE METADATA (server-side, crawlers can read these)
 // ============================================================================
 export async function generateMetadata(): Promise<Metadata> {
@@ -52,6 +95,12 @@ export async function generateMetadata(): Promise<Metadata> {
     agency.og_description ||
     agency.company_tagline ||
     'Professional AI receptionist that answers every call 24/7. Never miss another customer.';
+
+  // Surface any verification / meta tags the agency pasted into Custom Head
+  // Scripts as REAL <meta> tags in the server-rendered <head>, so Search Console
+  // (and Bing, etc.) can actually detect them.
+  const { googleVerification, other: otherMeta } = extractHeadMeta(agency.custom_head_scripts);
+  const googleVerify = googleVerification.length === 1 ? googleVerification[0] : googleVerification;
 
   return {
     ...base,
@@ -81,6 +130,8 @@ export async function generateMetadata(): Promise<Metadata> {
           },
         }
       : {}),
+    ...(googleVerification.length ? { verification: { google: googleVerify } } : {}),
+    ...(Object.keys(otherMeta).length ? { other: otherMeta } : {}),
   };
 }
 

@@ -1,7 +1,54 @@
 // app/sitemap.js
+import { headers } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 
-export default async function sitemap() {
+// ============================================================================
+// HOST-AWARE SITEMAP
+// /sitemap.xml is served by this one route for every host (middleware skips
+// paths with a dot, so it is NOT rewritten to /agency-site on agency hosts).
+// We branch on the requesting host: the platform domain gets the full VoiceAI
+// marketing + blog sitemap; an agency subdomain or custom marketing domain gets
+// a sitemap of ITS OWN pages, based on the host it was requested from, so each
+// agency can submit https://<their-domain>/sitemap.xml to Search Console and
+// get their real pages indexed (not the platform's).
+// ============================================================================
+const PLATFORM_DOMAIN = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
+const PLATFORM_HOSTS = new Set([
+  PLATFORM_DOMAIN,
+  `www.${PLATFORM_DOMAIN}`,
+  'localhost:3000',
+  'localhost',
+]);
+
+function isPlatformHost(host) {
+  if (!host) return true; // no host (e.g. build-time) -> platform sitemap
+  return PLATFORM_HOSTS.has(host);
+}
+
+// ============================================================================
+// AGENCY SITEMAP — the public marketing pages an agency host actually serves.
+// These are the routes middleware rewrites to /agency-site plus the signup
+// wizard that resolves agency context from the host. Uses the requested host
+// as the base so it is correct for both subdomains and custom domains, and for
+// www vs apex (whatever host Google fetched the sitemap from).
+// ============================================================================
+function agencySitemap(host) {
+  const base = `https://${host}`;
+  const now = new Date();
+  return [
+    { url: base, lastModified: now, changeFrequency: 'weekly', priority: 1 },
+    { url: `${base}/signup`, lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${base}/faq`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
+    { url: `${base}/demo`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${base}/terms`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${base}/privacy`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
+  ];
+}
+
+// ============================================================================
+// PLATFORM SITEMAP — the full VoiceAI Connect marketing + blog sitemap.
+// ============================================================================
+async function platformSitemap() {
   const baseUrl = 'https://www.myvoiceaiconnect.com';
 
   // Fetch auto-generated blog posts from Supabase
@@ -103,4 +150,19 @@ export default async function sitemap() {
       return slug && !hardcodedBlogSlugs.has(slug);
     }),
   ];
+}
+
+export default async function sitemap() {
+  // Read the host this sitemap was requested from. Awaited so it works whether
+  // headers() is sync (Next 14) or a promise (Next 15).
+  let host = '';
+  try {
+    const h = await headers();
+    host = h.get('host') || h.get('x-forwarded-host') || '';
+  } catch (e) { /* no request context -> platform sitemap */ }
+
+  if (!isPlatformHost(host)) {
+    return agencySitemap(host);
+  }
+  return platformSitemap();
 }

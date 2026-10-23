@@ -10,6 +10,7 @@
 // ============================================================================
 'use client';
 import { openAgencySupport, visibleFooterLinks, isSupportLink } from '@/lib/marketing-links';
+import CustomScripts from './CustomScripts';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MarketingConfig, defaultMarketingConfig } from '@/types/marketing';
@@ -132,7 +133,7 @@ function AnalyticsScripts({ analytics }: { analytics?: MarketingConfig['analytic
   if (analytics.gtmId) { scripts.push(`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${analytics.gtmId}');`); }
   if (analytics.googleAnalyticsId) { scripts.push(`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${analytics.googleAnalyticsId}');`); }
   if (analytics.fbPixelId) { scripts.push(`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${analytics.fbPixelId}');fbq('track','PageView');`); }
-  return (<>{analytics.googleAnalyticsId && <script async src={`https://www.googletagmanager.com/gtag/js?id=${analytics.googleAnalyticsId}`} />}{scripts.length > 0 && <script dangerouslySetInnerHTML={{ __html: scripts.join('\n') }} />}{analytics.customHeadScripts && <script dangerouslySetInnerHTML={{ __html: analytics.customHeadScripts }} />}</>);
+  return (<>{analytics.googleAnalyticsId && <script async src={`https://www.googletagmanager.com/gtag/js?id=${analytics.googleAnalyticsId}`} />}{scripts.length > 0 && <script dangerouslySetInnerHTML={{ __html: scripts.join('\n') }} />}<CustomScripts html={analytics.customHeadScripts} target="head" /></>);
 }
 
 // ============================================================================
@@ -901,7 +902,7 @@ export default function MarketingPageBeside({ config: partialConfig }: Marketing
       <Footer config={config} />
       <StickyCTA config={config} />
       <ExitIntentModal config={config} />
-      {config.analytics?.customBodyScripts && <script dangerouslySetInnerHTML={{ __html: config.analytics.customBodyScripts }} />}
+      <CustomScripts html={config.analytics?.customBodyScripts} target="body" />
     </div>
   );
 }
