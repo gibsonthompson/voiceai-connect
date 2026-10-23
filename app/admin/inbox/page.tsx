@@ -15,6 +15,7 @@ import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
 import {
   MessageSquare, Send, ArrowLeft, Loader2, RefreshCw, Phone, Building2, Bot,
   ExternalLink, Mail, LifeBuoy, CheckCircle2, RotateCcw, ChevronDown,
+  Archive, ArchiveRestore,
 } from 'lucide-react';
 
 type SupportStatus = 'none' | 'support' | 'resolved';
@@ -57,6 +58,7 @@ interface Conversation {
   readOnly?: boolean;
   escalated?: boolean;
   supportStatus?: SupportStatus;
+  archived?: boolean;
   faqOrigin?: { userType: string | null; source: string | null; agencyName: string | null; tag: string; visitorName?: string | null; visitorContact?: string | null } | null;
   facts?: AgencyFacts | null;
 }
@@ -160,7 +162,7 @@ export default function AdminInboxPage() {
   const [error, setError] = useState('');
   // One inbox, filterable. 'all' shows everything; the rest narrow it so the
   // old separate Support / FAQ-chats / Replies views are just views of this list.
-  const [filter, setFilter] = useState<'all' | 'unread' | 'support' | 'bot'>('all');
+  const [filter, setFilter] = useState<'all' | 'unread' | 'support' | 'bot' | 'archived'>('all');
   const threadEndRef = useRef<HTMLDivElement | null>(null);
   const threadScrollRef = useRef<HTMLDivElement | null>(null);
   const stickRef = useRef(true);           // is the reader near the bottom?
@@ -295,6 +297,20 @@ export default function AdminInboxPage() {
     } catch { setError('Could not update status.'); }
   };
 
+  // Archive hides a conversation from the inbox but keeps the full history. If the
+  // person messages again, the backend auto-unarchives it with everything intact.
+  const setArchived = async (c: Conversation, archived: boolean) => {
+    setConversations((prev) => prev.map((x) => (x.key === c.key ? { ...x, archived } : x)));
+    setSelected((prev) => (prev && prev.key === c.key ? { ...prev, archived } : prev));
+    if (archived) setSelected(null); // close it; it drops out of the active list
+    try {
+      await fetch(`${backendUrl()}/api/admin/inbox/${archived ? 'archive' : 'unarchive'}`, {
+        method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ threadKey: c.key }),
+      });
+    } catch { setError('Could not update.'); }
+  };
+
   const send = async () => {
     if (!selected || selected.type !== 'agency' || !selected.agencyId || sending) return;
     const key = selected.key;
@@ -321,7 +337,9 @@ export default function AdminInboxPage() {
 
   const totalUnread = conversations.reduce((n, c) => n + (c.unread || 0), 0);
   const shown = conversations.filter((c) => {
-    if (filter === 'unread') return c.unread > 0 || c.needsReply;
+    if (filter === 'archived') return !!c.archived;
+    if (c.archived) return false; // archived threads stay out of every other view
+    if (filter === 'unread') return c.unread > 0;
     if (filter === 'support') return c.supportStatus === 'support';
     if (filter === 'bot') return c.type === 'faq' || c.lastInboundKind === 'help';
     return true;
@@ -352,14 +370,14 @@ export default function AdminInboxPage() {
           <div className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" style={{ color: 'var(--a-em-deep)' }} />
             <h1 className="text-sm font-semibold">Inbox</h1>
-            {totalUnread > 0 && (<span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'var(--a-em)', color: 'var(--a-em-ink)' }}>{totalUnread}</span>)}
+            {totalUnread > 0 && (<span className="w-2.5 h-2.5 rounded-full" style={{ background: 'var(--a-em)' }} />)}
           </div>
           <button onClick={load} className="p-1.5 rounded-lg hover:bg-black/5" aria-label="Refresh"><RefreshCw className="h-3.5 w-3.5" style={{ color: 'var(--a-dim)' }} /></button>
         </div>
 
         {/* Filter chips: the whole inbox in one place, narrowed on demand. */}
         <div className="flex items-center gap-1.5 px-3 py-2 border-b overflow-x-auto" style={{ borderColor: 'var(--a-line)' }}>
-          {([['all', 'All'], ['unread', 'Needs reply'], ['support', 'Support'], ['bot', 'Bot chats']] as const).map(([k, label]) => {
+          {([['all', 'All'], ['unread', 'Unread'], ['support', 'Support'], ['bot', 'Bot chats'], ['archived', 'Archived']] as const).map(([k, label]) => {
             const on = filter === k;
             return (
               <button key={k} onClick={() => setFilter(k)} className="text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap transition-colors"
@@ -388,15 +406,15 @@ export default function AdminInboxPage() {
                   <span className="text-[10px] shrink-0" style={{ color: 'var(--a-dim)' }}>{fmtTime(c.lastAt)}</span>
                 </div>
                 <div className="flex items-center justify-between gap-2 mt-0.5">
-                  <span className="text-xs truncate" style={{ color: (c.unread > 0 || c.needsReply) ? 'var(--a-ink)' : 'var(--a-dim)' }}>
+                  <span className="text-xs truncate" style={{ color: c.unread > 0 ? 'var(--a-ink)' : 'var(--a-dim)' }}>
                     {c.lastDirection === 'out' ? 'You: ' : ''}{c.lastPreview}
                   </span>
                   <div className="flex items-center gap-1.5 shrink-0">
+                    {c.archived && <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full shrink-0" style={{ background: 'var(--a-bg)', color: 'var(--a-dim)', border: '1px solid var(--a-line)' }}>Archived</span>}
                     <StatusChip status={c.supportStatus} />
+                    {/* New-message dot: shows only while unread, clears the moment the thread is read. */}
                     {c.unread > 0 ? (
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center" style={{ background: 'var(--a-em)', color: 'var(--a-em-ink)' }}>{c.unread > 99 ? '99+' : c.unread}</span>
-                    ) : c.needsReply ? (
-                      <span className="w-2 h-2 rounded-full" style={{ background: 'var(--a-em)' }} />
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ background: 'var(--a-em)' }} />
                     ) : null}
                   </div>
                 </div>
@@ -449,6 +467,15 @@ export default function AdminInboxPage() {
                 ) : (
                   <button onClick={() => setThreadStatus(selected, 'mark-support')} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors hover:bg-black/5" style={{ border: '1px solid var(--a-line)', color: 'var(--a-ink)' }} title="Mark as a support item">
                     <LifeBuoy className="h-3 w-3" /> Mark support
+                  </button>
+                )}
+                {selected.archived ? (
+                  <button onClick={() => setArchived(selected, false)} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors hover:bg-black/5" style={{ border: '1px solid var(--a-line)', color: 'var(--a-ink)' }} title="Unarchive this conversation">
+                    <ArchiveRestore className="h-3 w-3" /> Unarchive
+                  </button>
+                ) : (
+                  <button onClick={() => setArchived(selected, true)} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors hover:bg-black/5" style={{ border: '1px solid var(--a-line)', color: 'var(--a-ink)' }} title="Archive this conversation (comes back in full if they message again)">
+                    <Archive className="h-3 w-3" /> Archive
                   </button>
                 )}
                 {selected.type === 'agency' && selected.agencyId && (

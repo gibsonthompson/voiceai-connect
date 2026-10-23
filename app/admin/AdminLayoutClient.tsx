@@ -166,10 +166,7 @@ function AdminDashboardLayout({ children }: { children: ReactNode }) {
         <item.icon className="h-4 w-4 shrink-0" style={{ color: active ? '#04140D' : 'rgba(255,255,255,0.7)' }} />
         {item.label}
         {item.href === '/admin/inbox' && inboxUnread > 0 && (
-          <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 leading-none"
-            style={active ? { background: '#04140D', color: 'var(--a-em)' } : { background: 'var(--a-em)', color: '#04140D' }}>
-            {inboxUnread > 99 ? '99+' : inboxUnread}
-          </span>
+          <span className="ml-auto w-2 h-2 rounded-full shrink-0" style={{ background: active ? '#04140D' : 'var(--a-em)' }} />
         )}
       </Link>
     );
