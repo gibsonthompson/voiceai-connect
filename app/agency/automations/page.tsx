@@ -19,13 +19,13 @@ import LockedFeature from '@/components/LockedFeature';
 import {
   Phone, MessageSquare, CalendarCheck, Star, Loader2, Activity,
   ChevronDown, CheckCircle2, AlertCircle, Zap, Send, Clock, RefreshCw, Sparkles,
-  Plus, SlidersHorizontal,
+  Plus, SlidersHorizontal, Building2, Check,
 } from 'lucide-react';
 
 const backendUrl = () => process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
 const authHeaders = (): Record<string, string> => ({
   'Content-Type': 'application/json',
-  Authorization: `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('admin_token') || '' : ''}`,
+  Authorization: `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('auth_token') || '' : ''}`,
 });
 
 // ---------------------------------------------------------------------------
@@ -67,6 +67,37 @@ function fmtWhen(iso: string): string {
   catch { return ''; }
 }
 
+// Scope picker: "All clients" or one business (custom, no native select).
+function ScopeDropdown({ clients, value, onChange, theme }: { clients: { id: string; business_name: string }[]; value: string | null; onChange: (v: string | null) => void; theme: any }) {
+  const [open, setOpen] = useState(false);
+  const label = value ? (clients.find((c) => c.id === value)?.business_name || 'Business') : 'All clients';
+  return (
+    <div className="relative">
+      <button type="button" onClick={() => setOpen((o) => !o)} className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, color: theme.text }}>
+        <Building2 className="h-4 w-4" style={{ color: theme.textMuted }} />
+        <span className="font-medium truncate max-w-[200px]">{label}</span>
+        <ChevronDown className="h-4 w-4" style={{ color: theme.textMuted }} />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute z-20 mt-1 w-64 max-h-72 overflow-y-auto rounded-xl shadow-lg" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+            <button type="button" onClick={() => { onChange(null); setOpen(false); }} className="w-full text-left px-3 py-2 text-sm flex items-center justify-between" style={{ color: theme.text, backgroundColor: value === null ? theme.hover : 'transparent' }}>
+              All clients {value === null && <Check className="h-3.5 w-3.5" style={{ color: theme.primary }} />}
+            </button>
+            {clients.length === 0 && <div className="px-3 py-2 text-xs" style={{ color: theme.textMuted }}>No businesses yet.</div>}
+            {clients.map((c) => (
+              <button key={c.id} type="button" onClick={() => { onChange(c.id); setOpen(false); }} className="w-full text-left px-3 py-2 text-sm flex items-center justify-between gap-2" style={{ color: theme.text, backgroundColor: value === c.id ? theme.hover : 'transparent' }}>
+                <span className="truncate">{c.business_name}</span>{value === c.id && <Check className="h-3.5 w-3.5 shrink-0" style={{ color: theme.primary }} />}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function AutomationsPage() {
   const { agency } = useAgency();
   const theme = useTheme();
@@ -86,13 +117,27 @@ export default function AutomationsPage() {
   const agencyId = agency?.id;
   const router = useRouter();
   const [creating, setCreating] = useState(false);
+  const [clients, setClients] = useState<{ id: string; business_name: string }[]>([]);
+  const [scopeClientId, setScopeClientId] = useState<string | null>(null); // null = all clients
+
+  useEffect(() => {
+    if (!agencyId) return;
+    (async () => {
+      try {
+        const r = await fetch(`${backendUrl()}/api/agency/${agencyId}/clients`, { headers: authHeaders() });
+        if (!r.ok) return;
+        const d = await r.json();
+        setClients((d.clients || []).map((c: any) => ({ id: c.id, business_name: c.business_name || 'Unnamed business' })));
+      } catch { /* ignore */ }
+    })();
+  }, [agencyId]);
 
   async function createBlank() {
     if (!agencyId || creating) return;
     setCreating(true);
     try {
       const res = await fetch(`${backendUrl()}/api/agency/${agencyId}/workflows`, {
-        method: 'POST', headers: authHeaders(), body: JSON.stringify({ name: 'New automation' }),
+        method: 'POST', headers: authHeaders(), body: JSON.stringify({ name: 'New automation', client_id: scopeClientId || undefined }),
       });
       const data = await res.json();
       if (!res.ok) { setNotice({ kind: 'err', text: data.error || 'Could not create' }); return; }
@@ -106,7 +151,7 @@ export default function AutomationsPage() {
     if (!agencyId) return;
     setError(null);
     try {
-      const res = await fetch(`${backendUrl()}/api/agency/${agencyId}/workflows/templates`, { headers: authHeaders() });
+      const res = await fetch(`${backendUrl()}/api/agency/${agencyId}/workflows/templates${scopeClientId ? `?client_id=${scopeClientId}` : ''}`, { headers: authHeaders() });
       if (!res.ok) throw new Error(`Failed to load (${res.status})`);
       const data = await res.json();
       const tpls: TemplateCard[] = data.templates || [];
@@ -130,7 +175,7 @@ export default function AutomationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [agencyId]);
+  }, [agencyId, scopeClientId]);
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
@@ -159,7 +204,7 @@ export default function AutomationsPage() {
       // Create from template the first time.
       if (!t.activated || !workflowId) {
         const createRes = await fetch(`${backendUrl()}/api/agency/${agencyId}/workflows`, {
-          method: 'POST', headers: authHeaders(), body: JSON.stringify({ template_key: t.key }),
+          method: 'POST', headers: authHeaders(), body: JSON.stringify({ template_key: t.key, client_id: scopeClientId || undefined }),
         });
         const created = await createRes.json();
         if (!createRes.ok) {
@@ -377,7 +422,9 @@ export default function AutomationsPage() {
             <Zap className="h-6 w-6" style={{ color: theme.primary }} /> Automations
           </h1>
           <p className="text-sm mt-1" style={{ color: theme.textMuted }}>
-            Turn on automatic text follow-ups. They run across all your clients, no setup per business.
+            {scopeClientId
+              ? 'Automations for this one business. Its own automations override your agency-wide ones.'
+              : 'Automatic text follow-ups that run across all your clients. Pick a business to set up automations just for it.'}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -388,6 +435,12 @@ export default function AutomationsPage() {
             {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Build your own
           </button>
         </div>
+      </div>
+
+      {/* scope: all clients vs one business */}
+      <div className="mb-6 flex items-center gap-3 flex-wrap">
+        <span className="text-sm font-medium" style={{ color: theme.text }}>Set up for</span>
+        <ScopeDropdown clients={clients} value={scopeClientId} onChange={setScopeClientId} theme={theme} />
       </div>
 
       {notice && (

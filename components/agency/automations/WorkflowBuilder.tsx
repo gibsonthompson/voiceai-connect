@@ -19,7 +19,7 @@ import { useTheme } from '../../../hooks/useTheme';
 import {
   Zap, MessageSquare, Clock, GitBranch, Tag, TagsIcon, UserCog, Globe, Flag,
   Square, Sparkles, Bell, Phone, CalendarCheck, X, Plus, Trash2, Lock, Check,
-  ChevronDown, Save, Power, PauseCircle, ArrowLeft, Loader2,
+  ChevronDown, Save, Power, PauseCircle, ArrowLeft, Loader2, Building2,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -434,6 +434,9 @@ function Inner({ workflow, plan, saving, onSaveDraft, onActivate, onPause, onBac
         <div className="flex items-center gap-3 min-w-0">
           <button type="button" onClick={onBack} className="p-2 rounded-lg" style={{ color: theme.textMuted }}><ArrowLeft className="h-5 w-5" /></button>
           <input value={wf.name} onChange={(e) => patchWorkflow({ name: e.target.value })} className="font-semibold text-lg bg-transparent outline-none min-w-0" style={{ color: theme.text }} />
+          <span className="text-xs px-2 py-0.5 rounded-full shrink-0 inline-flex items-center gap-1" style={{ background: theme.hover, color: theme.textMuted }}>
+            <Building2 className="h-3 w-3" /> {workflow.client_name || 'All clients'}
+          </span>
           {dirty && <span className="text-xs px-2 py-0.5 rounded-full shrink-0" style={{ background: theme.hover, color: theme.textMuted }}>Unsaved</span>}
         </div>
         <div className="flex items-center gap-2 shrink-0">
