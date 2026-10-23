@@ -161,7 +161,28 @@ function ClientLoginContent() {
     try {
       const r = await fetch(`${getBackendUrl()}/api/auth/client/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) });
       const d = await r.json();
-      if (!r.ok) throw new Error(d.error || d.message || 'Invalid credentials');
+      if (!r.ok) {
+        // Account created but the password was never set (the set-password tab
+        // was lost and there is no welcome email anymore). Instead of a dead-end
+        // "Password not set" that points at an email we do not send, mint a fresh
+        // set-password token via recover-setup and send them straight to
+        // /auth/set-password to finish. Mirrors the agency login recovery. Any
+        // other error falls through to the normal message.
+        if (d.error === 'Password not set' && formData.email) {
+          try {
+            const rec = await fetch(`${getBackendUrl()}/api/auth/recover-setup`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: formData.email, scope: 'client' }),
+            });
+            const rd = await rec.json().catch(() => ({}));
+            if (rec.ok && rd.needsSetup && rd.token) {
+              window.location.href = `/auth/set-password?token=${encodeURIComponent(rd.token)}&returnTo=${encodeURIComponent('/client/dashboard')}`;
+              return;
+            }
+          } catch (_) { /* fall through to the normal error */ }
+        }
+        throw new Error(d.error || d.message || 'Invalid credentials');
+      }
       if (!d.token) throw new Error('No token received');
       localStorage.setItem('auth_token', d.token);
       localStorage.setItem('user', JSON.stringify(d.user));

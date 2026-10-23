@@ -407,7 +407,34 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || data.error || data.errors?.join(', ') || 'Failed to create account');
+        const msg = data.message || data.error || data.errors?.join(', ') || 'Failed to create account';
+        // Re-signup recovery: a client account that already exists but never had
+        // a password set (the one-time set-password tab was closed/lost) would
+        // otherwise dead-end on "account already exists" with only a Sign In link
+        // they can't use. Mint a fresh set-password token via recover-setup and
+        // send them straight to /auth/set-password to finish, mirroring the
+        // agency signup flow. If the account already HAS a password, recover-setup
+        // returns needsSetup:false and we fall through to the normal error + Sign
+        // In link.
+        if (response.status === 409 || /already exists/i.test(msg)) {
+          try {
+            const recoverRes = await fetch(`${backendUrl}/api/auth/recover-setup`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: signupData.email, scope: 'client' }),
+            });
+            const recoverData = await recoverRes.json().catch(() => ({}));
+            if (recoverRes.ok && recoverData.needsSetup && recoverData.token) {
+              const setPasswordUrl = buildEmbedAwareUrl('/auth/set-password', isEmbed, {
+                token: recoverData.token,
+                returnTo: '/client/dashboard',
+              });
+              safeRedirect(setPasswordUrl);
+              return;
+            }
+          } catch (_) { /* fall through to the normal error below */ }
+        }
+        throw new Error(msg);
       }
 
       // NOTE: client_signup_data is intentionally NOT cleared here. The client
