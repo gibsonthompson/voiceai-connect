@@ -192,7 +192,7 @@ export default function AgencyLoginPage() {
   // host (no agency) we show VoiceAI Connect, Google, and the Sign Up link.
   const isBranded = !!agency;
   const brandName = agency?.name || 'VoiceAI Connect';
-  const brandLogo = agency?.logo_url || (isBranded ? null : '/icon-512x512.png');
+  const brandLogo = agency?.logo_url || (isBranded ? null : '/voiceai-connect-logo.png');
   // Tab + home-screen icon: the real VoiceAI Connect product icon on the platform
   // (never a generated mark), the agency's own on a branded host.
   const faviconSrc = agency?.logo_url || (isBranded ? null : '/icon-512x512.png');
