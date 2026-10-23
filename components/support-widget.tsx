@@ -36,6 +36,8 @@ interface ChatMessage { role: 'user' | 'assistant'; content: string; }
 const font = "'Geist', system-ui, sans-serif";
 const mono = "'Geist Mono', ui-monospace, monospace";
 const em = '#10b981';
+// Shared text treatment for solid green buttons: bold white with a crisp black outline.
+const greenBtnText = { color: '#ffffff', fontWeight: 800, WebkitTextStroke: '0.9px #000', paintOrder: 'stroke fill', textShadow: '0 1px 1px rgba(0,0,0,0.3)' } as React.CSSProperties;
 
 function WIcon({ type }: { type: string }) {
   const p = { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
@@ -98,6 +100,7 @@ const css = `
 @keyframes wBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-3px)}}
 @keyframes wSlide{from{transform:translateY(12px) scale(0.97);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
 @keyframes wPulse{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,0.25)}50%{box-shadow:0 0 0 8px rgba(16,185,129,0)}}
+@keyframes wFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 `;
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -275,17 +278,18 @@ export default function SupportWidget() {
         </div>
       )}
 
-      {/* FAB: solid dark base so the button is clearly visible on both dark and light sections */}
+      {/* FAB: glossy green floating bubble with a white reflection and a white message icon */}
       <button onClick={open} aria-label="Open support"
         style={{
-          position: 'fixed', bottom: 20, right: 20, width: 54, height: 54, borderRadius: 16,
-          border: '1px solid rgba(16,185,129,0.45)', background: 'linear-gradient(135deg, #0c0c0c, #050505)',
+          position: 'fixed', bottom: 20, right: 20, width: 60, height: 60, borderRadius: '50%',
+          border: '1px solid rgba(255,255,255,0.4)',
+          background: 'radial-gradient(circle at 32% 24%, rgba(255,255,255,0.7), rgba(255,255,255,0) 46%), linear-gradient(150deg, #34d399 0%, #10b981 52%, #059669 100%)',
           cursor: 'pointer', display: isOpen ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 8px 24px -6px rgba(0,0,0,0.5), 0 0 0 1px rgba(16,185,129,0.15)',
-          transition: 'all 0.25s cubic-bezier(0.16,1,0.3,1)', zIndex: 9999, color: em,
-          animation: 'wPulse 3s ease-in-out 2',
+          boxShadow: '0 16px 34px -8px rgba(16,185,129,0.6), 0 4px 12px -4px rgba(0,0,0,0.35), inset 0 1px 1px rgba(255,255,255,0.6)',
+          transition: 'box-shadow 0.25s cubic-bezier(0.16,1,0.3,1)', zIndex: 9999, color: '#ffffff',
+          animation: 'wFloat 3.6s ease-in-out infinite',
         }}>
-        <WIcon type="chat" />
+        <span style={{ display: 'flex', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.28))' }}><WIcon type="chat" /></span>
       </button>
 
       {/* Panel */}
@@ -376,7 +380,7 @@ export default function SupportWidget() {
                   <p style={{ fontSize: 12, lineHeight: 1.5, color: '#f87171', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '10px 12px', margin: 0, fontFamily: font }}>{leadErr}</p>
                 )}
                 <button onClick={submitGate} disabled={!leadName.trim() || !leadEmail.trim()}
-                  style={{ padding: 11, borderRadius: 10, border: 'none', fontSize: 13, fontWeight: 500, cursor: leadName.trim() && leadEmail.trim() ? 'pointer' : 'default', fontFamily: font, transition: 'all 0.15s', background: leadName.trim() && leadEmail.trim() ? em : 'rgba(255,255,255,0.04)', color: leadName.trim() && leadEmail.trim() ? '#050505' : 'rgba(255,255,255,0.15)' }}>
+                  style={{ padding: 11, borderRadius: 10, border: 'none', fontSize: 13, fontWeight: 500, cursor: leadName.trim() && leadEmail.trim() ? 'pointer' : 'default', fontFamily: font, transition: 'all 0.15s', background: leadName.trim() && leadEmail.trim() ? em : 'rgba(255,255,255,0.04)', color: leadName.trim() && leadEmail.trim() ? '#050505' : 'rgba(255,255,255,0.15)', ...(leadName.trim() && leadEmail.trim() ? greenBtnText : {}) }}>
                   Start chat
                 </button>
               </div>
@@ -453,7 +457,7 @@ export default function SupportWidget() {
                       <p style={{ fontSize: 12, lineHeight: 1.5, color: '#f87171', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '10px 12px', margin: 0, fontFamily: font }}>{escErr}</p>
                     )}
                     <button onClick={doEsc} disabled={!escName.trim() || !escContact.trim() || escBusy}
-                      style={{ padding: 11, borderRadius: 10, border: 'none', fontSize: 13, fontWeight: 500, cursor: escName.trim() && escContact.trim() ? 'pointer' : 'default', fontFamily: font, transition: 'all 0.15s', background: escName.trim() && escContact.trim() ? em : 'rgba(255,255,255,0.04)', color: escName.trim() && escContact.trim() ? '#050505' : 'rgba(255,255,255,0.15)' }}>
+                      style={{ padding: 11, borderRadius: 10, border: 'none', fontSize: 13, fontWeight: 500, cursor: escName.trim() && escContact.trim() ? 'pointer' : 'default', fontFamily: font, transition: 'all 0.15s', background: escName.trim() && escContact.trim() ? em : 'rgba(255,255,255,0.04)', color: escName.trim() && escContact.trim() ? '#050505' : 'rgba(255,255,255,0.15)', ...(escName.trim() && escContact.trim() ? greenBtnText : {}) }}>
                       {escBusy ? 'Sending...' : escErr ? 'Try again' : 'Send message'}
                     </button>
                   </div>
@@ -475,7 +479,7 @@ export default function SupportWidget() {
                 onFocus={e => { (e.target as HTMLInputElement).style.borderColor = 'rgba(16,185,129,0.25)'; if (view === 'landing') goChat(); }}
                 onBlur={e => { (e.target as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.08)'; }} />
               <button onClick={() => send()} disabled={!input.trim() || streaming}
-                style={{ width: 34, height: 34, borderRadius: 10, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: input.trim() ? 'pointer' : 'default', transition: 'all 0.15s', background: input.trim() ? em : 'rgba(255,255,255,0.04)', color: input.trim() ? '#050505' : 'rgba(255,255,255,0.15)' }}>
+                style={{ width: 34, height: 34, borderRadius: 10, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: input.trim() ? 'pointer' : 'default', transition: 'all 0.15s', background: input.trim() ? em : 'rgba(255,255,255,0.04)', color: input.trim() ? '#ffffff' : 'rgba(255,255,255,0.15)' }}>
                 <WIcon type="up" />
               </button>
             </div>

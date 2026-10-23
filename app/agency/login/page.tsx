@@ -276,7 +276,7 @@ export default function AgencyLoginPage() {
   .al-row{display:flex;justify-content:flex-start;margin-top:-5px}
   .al-link{font-size:13.5px;color:var(--primary);font-weight:550;text-decoration:none}
   .al-link:hover{text-decoration:underline;text-underline-offset:2px}
-  .al-btn{height:52px;border:0;border-radius:12px;background:var(--primary);color:var(--primaryText);font-size:15.5px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:filter .15s,transform .05s;margin-top:3px}
+  .al-btn{height:52px;border:0;border-radius:12px;background:var(--primary);color:#ffffff;font-size:15.5px;font-weight:800;-webkit-text-stroke:1px #000;paint-order:stroke fill;text-shadow:0 1px 1px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:filter .15s,transform .05s;margin-top:3px}
   .al-btn:hover{filter:brightness(1.05)} .al-btn:active{transform:scale(.99)} .al-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;filter:none}
   .al-g{height:52px;border:1px solid var(--inputBorder);background:var(--gBg);color:var(--gText);border-radius:12px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:15px;font-weight:550;cursor:pointer;width:100%}
   .al-g:disabled{opacity:.5;cursor:not-allowed}

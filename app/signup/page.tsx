@@ -634,7 +634,7 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
 
               <button type="submit" disabled={loading}
                 className="group relative w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-4 text-base font-medium transition-all hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] disabled:opacity-50"
-                style={{ backgroundColor: primaryColor, color: primaryLight ? '#050505' : '#fafaf9', boxShadow: isDark ? `0 0 40px ${primaryColor}30` : `0 4px 14px ${primaryColor}40` }}>
+                style={{ backgroundColor: primaryColor, color: '#ffffff', fontWeight: 800, WebkitTextStroke: '1px #000', paintOrder: 'stroke fill', textShadow: '0 1px 1px rgba(0,0,0,0.3)', boxShadow: isDark ? `0 0 40px ${primaryColor}30` : `0 4px 14px ${primaryColor}40` }}>
                 {loading ? (<><Loader2 className="h-5 w-5 animate-spin" />Please wait...</>) : (<>Continue to Plans<ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" /></>)}
               </button>
             </form>
