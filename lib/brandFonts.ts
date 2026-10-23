@@ -99,8 +99,8 @@ export const BRAND_FONTS: BrandFont[] = [
 
 // Fallback stacks appended after the brand family, so text still renders if the
 // webfont is slow or blocked.
-export const DISPLAY_FALLBACK = "'Geist', system-ui, -apple-system, sans-serif";
-export const BODY_FALLBACK = "'Geist', 'Inter', system-ui, -apple-system, sans-serif";
+export const DISPLAY_FALLBACK = "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif";
+export const BODY_FALLBACK = "'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif";
 
 // Nav icon sets live in components/cc/navIcons.tsx (they pull real icon packages
 // via react-icons). This file is fonts-only.

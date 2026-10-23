@@ -1,9 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
 /* ============================================================================
    VOICEAI CONNECT - homepage v3
-   Geist sans + mono. No italics. Tighter scale. Engineered, not decorative.
+   Plus Jakarta Sans + Geist Mono. No italics. Tighter scale. Engineered, not decorative.
    ============================================================================ */
 
 @theme {
@@ -76,7 +76,7 @@ html {
 body {
   background: #050505;
   color: #fafaf9;
-  font-family: 'Geist', 'Inter', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
   font-weight: 400;
   font-feature-settings: "ss01", "cv11";
   overflow-x: hidden;
@@ -95,7 +95,7 @@ body {
 
 /* ----- Typography ----- */
 
-.font-display { font-family: 'Geist', system-ui, sans-serif; }
+.font-display { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
 .font-mono { font-family: 'Geist Mono', ui-monospace, "SF Mono", Menlo, monospace; }
 
 /* ----- AI brand fonts (white-label) -----
@@ -107,7 +107,7 @@ body {
    if no brand font is set or the webfont is slow. */
 .cc-shell,
 .brand-shell {
-  font-family: var(--brand-body, 'Geist', 'Inter', system-ui, -apple-system, sans-serif);
+  font-family: var(--brand-body, 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif);
 }
 .cc-shell h1,
 .cc-shell h2,
@@ -117,7 +117,7 @@ body {
 .brand-shell h2,
 .brand-shell h3,
 .brand-display {
-  font-family: var(--brand-display, 'Geist', system-ui, sans-serif);
+  font-family: var(--brand-display, 'Plus Jakarta Sans', system-ui, sans-serif);
 }
 
 .t-eyebrow {
@@ -129,7 +129,7 @@ body {
 }
 
 .t-h1 {
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   font-weight: 500;
   font-size: clamp(2.5rem, 7.5vw, 6.5rem);
   line-height: 0.96;
@@ -137,7 +137,7 @@ body {
 }
 
 .t-h2 {
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   font-weight: 500;
   font-size: clamp(1.875rem, 4.2vw, 3.5rem);
   line-height: 1;
@@ -145,7 +145,7 @@ body {
 }
 
 .t-h3 {
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   font-weight: 500;
   font-size: clamp(1.375rem, 2.4vw, 2rem);
   line-height: 1.1;
@@ -162,7 +162,7 @@ body {
 .bg-paper .t-body, .bg-paper-soft .t-body { color: rgba(0, 0, 0, 0.62); }
 
 .t-stat {
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   font-weight: 500;
   font-size: clamp(2.75rem, 5.5vw, 5rem);
   line-height: 0.92;
@@ -193,7 +193,7 @@ body {
   gap: 0.5rem;
   padding: 0.78rem 1.4rem;
   border-radius: 10px;
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   font-size: 0.8125rem;
   font-weight: 500;
   letter-spacing: -0.01em;
@@ -299,7 +299,7 @@ body {
 }
 
 .trust-item-name {
-  font-family: 'Geist', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-weight: 500;
   font-size: 14px;
   letter-spacing: -0.01em;
@@ -455,7 +455,7 @@ input[type="range"].calc-range::-moz-range-thumb {
 }
 
 .arch-tier-title {
-  font-family: 'Geist', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: clamp(1.125rem, 1.7vw, 1.4rem);
   font-weight: 500;
   color: #fff;
@@ -464,7 +464,7 @@ input[type="range"].calc-range::-moz-range-thumb {
 }
 
 .arch-tier-sub {
-  font-family: 'Geist', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 13px;
   color: rgba(255, 255, 255, 0.55);
   line-height: 1.55;
@@ -551,7 +551,7 @@ input[type="range"].calc-range::-moz-range-thumb {
 }
 
 .arch-vendor-name {
-  font-family: 'Geist', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 12.5px;
   font-weight: 500;
   color: #fafaf9;
@@ -733,7 +733,7 @@ input[type="range"].calc-range::-moz-range-thumb {
 }
 
 .tower-floor-title {
-  font-family: 'Geist', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 13.5px;
   font-weight: 500;
   color: #fafaf9;
@@ -754,7 +754,7 @@ input[type="range"].calc-range::-moz-range-thumb {
 }
 
 .tower-floor-sub {
-  font-family: 'Geist', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 11.5px;
   color: rgba(255, 255, 255, 0.42);
   font-weight: 400;
@@ -962,7 +962,7 @@ input[type="range"].calc-range::-moz-range-thumb {
   letter-spacing: 0.04em;
 }
 .tower-counter strong {
-  font-family: 'Geist', sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 18px;
   font-weight: 500;
   color: #fafaf9;

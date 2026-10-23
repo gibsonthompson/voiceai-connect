@@ -113,7 +113,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
 
   // Brand fonts: load the agency's chosen display + body fonts and expose them as
   // CSS vars the .brand-shell / .brand-display rules (globals.css) apply. Best
-  // effort; a missing/unknown font falls back to Geist.
+  // effort; a missing/unknown font falls back to Plus Jakarta Sans.
   const brandDisplayFont = agency?.display_font || null;
   const brandBodyFont = agency?.body_font || null;
   useEffect(() => {

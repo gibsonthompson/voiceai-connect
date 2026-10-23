@@ -9,7 +9,7 @@
 
 /* ── BASE WRAPPER ── */
 .article-content div {
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   font-size: 1.0625rem;
   line-height: 1.75;
   color: rgba(0, 0, 0, 0.72);
@@ -34,7 +34,7 @@
 
 /* ── H2 ── */
 .article-content div > h2 {
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   font-size: 1.75rem;
   font-weight: 500;
   letter-spacing: -0.022em;
@@ -54,7 +54,7 @@
 
 /* ── H3 ── */
 .article-content div > h3 {
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   font-size: 1.3125rem;
   font-weight: 500;
   letter-spacing: -0.018em;
@@ -67,7 +67,7 @@
 
 /* ── H4 ── */
 .article-content div h4 {
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   font-size: 1.125rem;
   font-weight: 500;
   letter-spacing: -0.014em;
@@ -220,7 +220,7 @@
   border-radius: 0;
 }
 .article-content div th {
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   font-weight: 500;
   text-align: left;
   padding: 0.85rem 1rem;
@@ -284,7 +284,7 @@
   border: 1px solid #0a0a0a;
   padding: 0.6rem 1.25rem;
   border-radius: 999px;
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   font-weight: 500;
   font-size: 0.8125rem;
   letter-spacing: -0.01em;
@@ -348,7 +348,7 @@
 }
 .article-content div .faq-item h3,
 .article-content div .faq-item h4 {
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   font-size: 1.0625rem;
   font-weight: 500;
   letter-spacing: -0.012em;
@@ -392,7 +392,7 @@
 }
 .article-content div .quick-answer strong {
   display: inline;
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   font-weight: 600;
   color: #0a5a54;
   letter-spacing: -0.01em;
@@ -414,7 +414,7 @@
 }
 .article-content div .key-takeaways > strong {
   display: block;
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   font-weight: 600;
   font-size: 1.0625rem;
   letter-spacing: -0.012em;

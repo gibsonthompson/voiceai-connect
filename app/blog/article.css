@@ -1,8 +1,8 @@
 /* app/blog/article.css */
-/* Blog article content — light/paper background, Geist typography */
+/* Blog article content — light/paper background, Plus Jakarta Sans typography */
 
 .article-content {
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   font-size: 1.0625rem;
   line-height: 1.75;
   color: rgba(0, 0, 0, 0.72);
@@ -29,7 +29,7 @@
 
 /* H2 — major sections */
 .article-content > h2 {
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   font-size: 1.75rem;
   font-weight: 500;
   letter-spacing: -0.022em;
@@ -50,7 +50,7 @@
 
 /* H3 — sub sections */
 .article-content > h3 {
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   font-size: 1.3125rem;
   font-weight: 500;
   letter-spacing: -0.018em;
@@ -63,7 +63,7 @@
 
 /* H4 — FAQ headings, sub-sub sections */
 .article-content h4 {
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   font-size: 1.125rem;
   font-weight: 500;
   letter-spacing: -0.014em;
@@ -224,7 +224,7 @@
   font-size: 0.9375rem;
 }
 .article-content thead th {
-  font-family: 'Geist', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   font-weight: 500;
   text-align: left;
   padding: 0.85rem 1rem;

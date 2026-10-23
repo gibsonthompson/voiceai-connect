@@ -135,7 +135,7 @@ function CallCenterShell({ children }: { children: ReactNode }) {
   // AI brand fonts: load the agency's chosen display + body fonts from Google
   // Fonts and expose them as CSS vars the .cc-shell rules (globals.css) apply.
   // Scoped to the cc dashboard, cleaned up on unmount, and all best-effort so a
-  // missing/unknown font just falls back to Geist.
+  // missing/unknown font just falls back to Plus Jakarta Sans.
   const displayFont = agency?.display_font || null;
   const bodyFont = agency?.body_font || null;
   useEffect(() => {
