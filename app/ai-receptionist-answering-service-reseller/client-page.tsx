@@ -41,15 +41,7 @@ export default function AnsweringServiceResellerPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 sm:h-20 items-center justify-between">
             <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
-              <div className="relative">
-                <div className="absolute inset-0 bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="relative h-8 w-8 sm:h-10 sm:w-10 rounded-xl overflow-hidden border border-white/10">
-                  <div className="w-full h-full bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center">
-                    <WaveformIcon className="w-5 h-5 sm:w-6 sm:h-6" />
-                  </div>
-                </div>
-              </div>
-              <span className="text-base sm:text-lg font-semibold tracking-tight">VoiceAI Connect</span>
+              <img src="/voiceai-connect-logo.png" alt="VoiceAI Connect" className="h-8 sm:h-9 w-auto" />
             </Link>
 
             <div className="hidden lg:flex items-center gap-1">

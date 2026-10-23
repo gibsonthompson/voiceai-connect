@@ -34,8 +34,7 @@ export default function MarketingNav() {
       <nav className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${scrolled ? 'bg-black/85 backdrop-blur-xl border-b border-white/[0.05]' : ''}`}>
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
           <a href="/" className="flex items-center gap-2.5">
-            <img src="/icon-512x512.png" alt="VoiceAI Connect" className="w-8 h-8 rounded-md" />
-            <span className="font-display font-medium text-[15px] text-white tracking-tight">VoiceAI Connect</span>
+            <img src="/voiceai-connect-logo.png" alt="VoiceAI Connect" className="h-8 w-auto" />
           </a>
           <div className="hidden lg:flex items-center gap-9 text-[13px] text-white/60">
             {NAV_LINKS.map(([n, h]) => (
@@ -61,8 +60,7 @@ export default function MarketingNav() {
         >
           <div className="flex items-center justify-between px-6 h-16 border-b border-white/5">
             <div className="flex items-center gap-2.5">
-              <img src="/icon-512x512.png" alt="VoiceAI Connect" className="w-7 h-7 rounded-md" />
-              <span className="font-display font-medium text-white">VoiceAI Connect</span>
+              <img src="/voiceai-connect-logo.png" alt="VoiceAI Connect" className="h-7 w-auto" />
             </div>
             <button onClick={() => setMenuOpen(false)} className="text-white" aria-label="Close">
               <X className="w-5 h-5" />

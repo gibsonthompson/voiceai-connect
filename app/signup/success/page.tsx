@@ -133,14 +133,7 @@ function ClientSuccessPage({ agency, isEmbed }: { agency: Agency | null; isEmbed
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex h-16 sm:h-20 items-center justify-between">
               <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
-                {agency?.logo_url ? (
-                  <img src={agency.logo_url} alt={agency.name} className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl object-contain border border-white/10" />
-                ) : (
-                  <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl border border-white/10" style={{ backgroundColor: primaryColor }}>
-                    <Phone className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: primaryLight ? '#050505' : '#fafaf9' }} />
-                  </div>
-                )}
-                <span className="text-base sm:text-lg font-semibold tracking-tight">{agency?.name || 'AI Receptionist'}</span>
+              <img src="/voiceai-connect-logo.png" alt="VoiceAI Connect" className="h-8 sm:h-9 w-auto" />
               </Link>
             </div>
           </div>
