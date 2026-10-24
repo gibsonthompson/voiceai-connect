@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, Check, Search } from 'lucide-react';
 
@@ -23,7 +23,7 @@ export type Country = { code: string; name: string; flag: string };
 // Custom single-select dropdown. Replaces the native <select> (which renders as
 // an OS picker on iOS and is unstyleable) with a themed panel: keyboard nav,
 // click-outside, disabled state, and a checkmark on the selected row.
-export function CustomSelect({ value, onChange, options, placeholder, disabled, ui, size = 'md' }: {
+export function CustomSelect({ value, onChange, options, placeholder, disabled, ui, size = 'md', leftIcon }: {
   value: string;
   onChange: (v: string) => void;
   options: Option[];
@@ -31,6 +31,10 @@ export function CustomSelect({ value, onChange, options, placeholder, disabled, 
   disabled?: boolean;
   ui: DropdownUI;
   size?: 'sm' | 'md';
+  // Optional decorative icon the host positions absolutely inside the trigger
+  // (e.g. a leading filter/sort glyph). Pair it with inputStyle paddingLeft to
+  // make room. Purely additive: existing callers pass nothing and are unchanged.
+  leftIcon?: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
@@ -97,6 +101,7 @@ export function CustomSelect({ value, onChange, options, placeholder, disabled, 
 
   return (
     <div ref={ref} className="relative">
+      {leftIcon}
       <button
         ref={btnRef}
         type="button"

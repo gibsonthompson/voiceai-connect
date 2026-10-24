@@ -32,6 +32,34 @@ import {
 import {
   getStatusBadge, getPlanBadge, getPlanDisplayName, getSmsTypeLabel, deriveCallOutcome, getTrialInfo,
 } from '@/lib/admin/status';
+import { CustomSelect, type DropdownUI } from '@/components/ui/custom-select';
+
+// Themed dropdown palette for the admin (emerald-on-white) surface, passed to
+// the shared CustomSelect so these filters render as custom panels, never a
+// native iOS/OS picker. paddingLeft leaves room for the leading icon.
+const ADMIN_SELECT_UI: DropdownUI = {
+  inputStyle: { background: 'var(--a-card)', color: 'var(--a-ink)', border: '1px solid var(--a-line-2)', borderRadius: '11px', paddingLeft: '2.5rem' },
+  text: 'var(--a-ink)',
+  muted: 'var(--a-dim)',
+  panelBg: 'var(--a-card)',
+  panelBorder: 'var(--a-line)',
+  hover: 'var(--a-em-soft)',
+  accent: 'var(--a-em-deep)',
+  isDark: false,
+};
+const STATUS_OPTIONS = [
+  { value: '', label: 'All Status' },
+  { value: 'active', label: 'Active' },
+  { value: 'trialing', label: 'Trial' },
+  { value: 'past_due', label: 'Past Due' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'canceled', label: 'Canceled' },
+];
+const SORT_OPTIONS = [
+  { value: 'recent', label: 'Sort: Newest' },
+  { value: 'oldest', label: 'Sort: Oldest' },
+  { value: 'plan', label: 'Sort: Plan type' },
+];
 import CallDrawer from '@/components/admin/CallDrawer';
 
 class PanelBoundary extends Component<{ children: any }, { err: string | null }> {
@@ -239,7 +267,7 @@ export default function AdminAgenciesPage() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [sortBy, setSortBy] = useState<'recent' | 'plan'>('recent');
+  const [sortBy, setSortBy] = useState<'recent' | 'plan' | 'oldest'>('recent');
   const [tierFilter, setTierFilter] = useState<'all' | 'free' | 'pro' | 'scale'>('all');
   const [exporting, setExporting] = useState(false);
   const [actionMenu, setActionMenu] = useState<string | null>(null);
@@ -478,6 +506,10 @@ export default function AdminAgenciesPage() {
         const d = planRank(a.plan_type) - planRank(b.plan_type);
         return d !== 0 ? d : (a.name || '').localeCompare(b.name || '');
       }
+      if (sortBy === 'oldest') {
+        // Oldest signups first.
+        return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
+      }
       // 'recent': newest signups first (don't depend on server order)
       return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
     });
@@ -634,28 +666,26 @@ export default function AdminAgenciesPage() {
           )}
         </div>
 
-        {/* Status filter: leading filter icon + trailing chevron (native arrow is hidden) */}
-        <div className="relative">
-          <Filter className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--a-dim)] z-[1]" />
-          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--a-dim)] z-[1]" />
-          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setLoading(true); }} className="a-input !pl-10 !pr-9 appearance-none cursor-pointer">
-            <option value="">All Status</option>
-            <option value="active">Active</option>
-            <option value="trialing">Trial</option>
-            <option value="past_due">Past Due</option>
-            <option value="pending">Pending</option>
-            <option value="canceled">Canceled</option>
-          </select>
+        {/* Status filter (custom themed dropdown, never a native OS picker) */}
+        <div className="relative w-full sm:w-[160px]">
+          <CustomSelect
+            value={statusFilter}
+            onChange={(v) => { setStatusFilter(v); setLoading(true); }}
+            options={STATUS_OPTIONS}
+            ui={ADMIN_SELECT_UI}
+            leftIcon={<Filter className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--a-dim)] z-[1]" />}
+          />
         </div>
 
-        {/* Sort */}
-        <div className="relative">
-          <ArrowUpDown className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--a-dim)] z-[1]" />
-          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--a-dim)] z-[1]" />
-          <select value={sortBy} onChange={(e) => setSortBy(e.target.value as 'recent' | 'plan')} className="a-input !pl-10 !pr-9 appearance-none cursor-pointer">
-            <option value="recent">Sort: Newest</option>
-            <option value="plan">Sort: Plan type</option>
-          </select>
+        {/* Sort (custom themed dropdown) */}
+        <div className="relative w-full sm:w-[180px]">
+          <CustomSelect
+            value={sortBy}
+            onChange={(v) => setSortBy(v as 'recent' | 'plan' | 'oldest')}
+            options={SORT_OPTIONS}
+            ui={ADMIN_SELECT_UI}
+            leftIcon={<ArrowUpDown className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--a-dim)] z-[1]" />}
+          />
         </div>
 
         {/* Export the current view (status + search + tier) to CSV */}
