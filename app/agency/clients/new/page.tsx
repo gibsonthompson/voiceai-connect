@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, CheckCircle, AlertCircle, Building2, User, Mail, Phone, MapPin, Globe, Sparkles, Lock, RefreshCw, Eye, EyeOff, DollarSign } from 'lucide-react';
+import { ArrowLeft, Loader2, CheckCircle, AlertCircle, Building2, User, Mail, Phone, MapPin, Globe, Sparkles, Lock, RefreshCw, Eye, EyeOff, DollarSign, ChevronDown, HelpCircle } from 'lucide-react';
 import { useAgency } from '../../context';
 import { countries as SUPPORTED_COUNTRIES, getCurrencyForCountry, formatPrice } from '@/lib/currency';
 import { PLAN_RATES, normalizePlanType } from '@/lib/plan-limits';
@@ -206,6 +206,8 @@ export default function AddClientPage() {
   // connect client it is the no-card trial length. Empty = use the agency
   // default (clientTrialDays) above.
   const [cTrialDays, setCTrialDays] = useState('');
+  // Toggles the "What happens after the trial ends?" explainer under the field.
+  const [showTrialInfo, setShowTrialInfo] = useState(false);
   const effectiveTrialDays = (() => {
     const n = Number(cTrialDays);
     return cTrialDays.trim() !== '' && Number.isFinite(n) ? Math.max(0, Math.min(365, Math.floor(n))) : clientTrialDays;
@@ -828,6 +830,31 @@ export default function AddClientPage() {
                       : 'No trial, the client must upgrade to activate. Enter a number of days to add a free trial.')}
                 {' '}Leave blank to use your account default ({clientTrialDays} day{clientTrialDays === 1 ? '' : 's'}).
               </p>
+
+              {/* Plain-language explainer of exactly what happens when the window
+                  or trial ends, mode-aware and day-count-aware, so the agent is
+                  never guessing what the client experiences after it runs out. */}
+              <button
+                type="button"
+                onClick={() => setShowTrialInfo((v) => !v)}
+                className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-medium transition-colors"
+                style={{ color: primaryColor }}
+              >
+                <HelpCircle className="h-3.5 w-3.5" />
+                What happens after the {isManualBilling ? 'free access window' : 'free trial'} is over?
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showTrialInfo ? 'rotate-180' : ''}`} />
+              </button>
+              {showTrialInfo && (
+                <div className="mt-2 rounded-lg p-3 text-[11px] leading-relaxed" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${borderColor}`, color: mutedTextColor }}>
+                  {isManualBilling
+                    ? (effectiveTrialDays > 0
+                        ? <>While the free access window runs, this client&apos;s receptionist is fully live and you keep paying the platform for them as usual. On day {effectiveTrialDays} it automatically pauses and their phone number is held, nothing is charged to anyone. It stays paused until you open the client from <span style={{ color: textColor, fontWeight: 500 }}>Clients</span> and hit <span style={{ color: textColor, fontWeight: 500 }}>Mark as paid</span>, which puts them live again on your own billing. You can mark them paid before day {effectiveTrialDays} too, that just ends the window early and keeps them live.</>
+                        : <>There is no free window, so this client goes live the moment you add them and stays live. You invoice them directly on whatever schedule you set, there is no countdown and nothing auto-pauses. You keep paying the platform for them the whole time.</>)
+                    : (effectiveTrialDays > 0
+                        ? <>During the free trial the receptionist is fully live with no card on file. When the trial ends on day {effectiveTrialDays}, it pauses until the client adds a payment method and starts their subscription, which is billed through <span style={{ color: textColor, fontWeight: 500 }}>Stripe Connect</span> straight to you (you keep your margin). It stays paused until they do, so give them a window long enough to decide.</>
+                        : <>There is no trial, so the client has to add a payment method and start their subscription before the receptionist goes live. Once they do, they are billed through <span style={{ color: textColor, fontWeight: 500 }}>Stripe Connect</span> straight to you and the receptionist activates. Until then it stays inactive.</>)}
+                </div>
+              )}
             </div>
 
             {/* Country Picker */}
