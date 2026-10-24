@@ -610,7 +610,7 @@ function Inner({ workflow, plan, saving, onSaveDraft, onActivate, onPause, onBac
           <Controls showInteractive={false} />
         </ReactFlow>
 
-        <div className="absolute bottom-3 right-3 text-xs px-3 py-1.5 rounded-full pointer-events-none whitespace-nowrap" style={{ background: theme.card, border: `1px solid ${theme.border}`, color: theme.textMuted }}>
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 text-xs px-3 py-1.5 rounded-full pointer-events-none whitespace-nowrap" style={{ background: theme.card, border: `1px solid ${theme.border}`, color: theme.textMuted }}>
           Click a step to edit, or a <span style={{ color: theme.primary, fontWeight: 600 }}>+</span> to add one
         </div>
 
