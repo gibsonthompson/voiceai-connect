@@ -664,6 +664,8 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
               consent is captured for every signup; for card-required agencies
               the text also carries the auto-renew disclosure. The stored
               consent_text mirrors this wording (links rendered as plain text). */}
+{/* Agency toggle (show_client_discount_code, default true): hide the client-facing discount field when off. */}
+          {(agency as any)?.show_client_discount_code !== false && (
           <div className="max-w-sm mx-auto mt-14 mb-3">
             <label className="block text-sm font-medium mb-1.5" style={{ color: mutedTextColor }}>Discount code (optional)</label>
             <div className="flex gap-2">
@@ -676,6 +678,7 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
             {discountStatus === 'valid' && <p className="text-xs mt-1.5" style={{ color: primaryColor }}>{discountMsg}</p>}
             {discountStatus === 'invalid' && <p className="text-xs mt-1.5" style={{ color: '#dc2626' }}>{discountMsg}</p>}
           </div>
+          )}
 
           <div className="max-w-sm mx-auto mb-8">
             <label className="flex items-start gap-2.5 rounded-xl border p-3.5 cursor-pointer transition-colors"
