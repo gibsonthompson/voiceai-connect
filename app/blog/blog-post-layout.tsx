@@ -95,6 +95,62 @@ function TableOfContents({ items }: { items: TableOfContentsItem[] }) {
 }
 
 // ============================================================================
+// RELATED LINKS (internal linking to the consolidated owner / pillar pages)
+// Flows topical authority from every post up to the pages that own the
+// commercial terms, which is the payoff of the cannibalization consolidation.
+// Category-aware so the set is not identical boilerplate on every post; the
+// /platform pillar is always included. Every target is a live canonical page,
+// never a URL that 301s.
+// ============================================================================
+const RELATED_POOL = {
+  platform: { href: '/platform', text: 'White-label AI receptionist platform' },
+  start: { href: '/how-to-start-ai-receptionist-agency', text: 'How to start an AI receptionist agency' },
+  best: { href: '/best-white-label-ai-receptionist-platforms', text: 'Best white-label AI receptionist platforms' },
+  pricing: { href: '/ai-receptionist-agency-pricing', text: 'AI receptionist agency pricing' },
+  howItWorks: { href: '/how-it-works', text: 'How an AI receptionist works' },
+  vsBuild: { href: '/white-label-vs-build-your-own', text: 'White-label vs build your own' },
+  reseller: { href: '/ai-receptionist-answering-service-reseller', text: 'AI answering service reseller program' },
+  earnings: { href: '/how-much-can-you-make-ai-receptionist-reseller', text: 'How much AI receptionist resellers make' },
+};
+
+function RelatedLinks({ category }: { category: string }) {
+  const base = [RELATED_POOL.platform, RELATED_POOL.start];
+  const byCategory: Record<string, { href: string; text: string }[]> = {
+    industry: [RELATED_POOL.best, RELATED_POOL.vsBuild],
+    guides: [RELATED_POOL.pricing, RELATED_POOL.howItWorks],
+    product: [RELATED_POOL.howItWorks, RELATED_POOL.best],
+    'case-studies': [RELATED_POOL.earnings, RELATED_POOL.reseller],
+  };
+  const extra = byCategory[category] || [RELATED_POOL.best, RELATED_POOL.pricing];
+
+  // De-dupe by href while preserving order; cap at 4 for a balanced 2x2 grid.
+  const seen = new Set<string>();
+  const links = [...base, ...extra].filter((l) => {
+    if (seen.has(l.href)) return false;
+    seen.add(l.href);
+    return true;
+  }).slice(0, 4);
+
+  return (
+    <div className="mt-12 pt-8 border-t border-black/[0.06]">
+      <p className="font-mono text-[10px] tracking-[0.16em] uppercase text-black/40 mb-4">Related reading</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {links.map((l) => (
+          <Link
+            key={l.href}
+            href={l.href}
+            className="group flex items-center justify-between gap-3 rounded-[14px] border border-black/[0.06] bg-white px-5 py-4 transition-colors hover:border-black/[0.16]"
+          >
+            <span className="font-display text-[14px] font-medium text-black tracking-tight leading-snug">{l.text}</span>
+            <ArrowUpRight className="w-3.5 h-3.5 text-black/35 group-hover:text-black transition-colors shrink-0" />
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
 // CTA BOX (light variant for paper article body)
 // ============================================================================
 function CTABox() {
@@ -267,6 +323,9 @@ export default function BlogPostLayout({
               <div className="article-content">
                 {children}
               </div>
+
+              {/* Related reading, internal links up to the pillar/owner pages */}
+              <RelatedLinks category={meta.category} />
 
               {/* Tags */}
               {meta.tags && meta.tags.length > 0 && (
