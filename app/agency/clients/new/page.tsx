@@ -821,7 +821,7 @@ export default function AddClientPage() {
               <p className="text-[11px] mt-1" style={{ color: labelColor, opacity: 0.7 }}>
                 {isManualBilling
                   ? (effectiveTrialDays > 0
-                      ? `Client goes live now and auto-suspends after ${effectiveTrialDays} day${effectiveTrialDays === 1 ? '' : 's'} (keeping their number) until you mark them paid. Set 0 to keep them live permanently.`
+                      ? `Client goes live now and auto-suspends after ${effectiveTrialDays} day${effectiveTrialDays === 1 ? '' : 's'} (keeping their number) until you mark them paid on their own client page (open the client from Clients, then hit Mark as paid). Set 0 to keep them live permanently.`
                       : 'Client goes live permanently with no free window. Enter a number of days to add one.')
                   : (effectiveTrialDays > 0
                       ? `No-card free trial of ${effectiveTrialDays} day${effectiveTrialDays === 1 ? '' : 's'}. Set 0 for no trial (they must upgrade to activate).`
