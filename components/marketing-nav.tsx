@@ -30,7 +30,7 @@ export default function MarketingNav() {
 
   return (
     <>
-      <nav className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${scrolled ? 'bg-black/85 backdrop-blur-xl border-b border-white/[0.05]' : ''}`}>
+      <nav className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${scrolled ? 'bg-black/85 backdrop-blur-xl border-b border-[rgba(1,245,209,0.3)]' : ''}`}>
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
           <a href="/" className="flex items-center gap-2.5">
             <img src="/voiceai-connect-logo.png" alt="VoiceAI Connect" className="h-8 w-auto" />
