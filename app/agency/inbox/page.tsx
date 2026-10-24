@@ -199,7 +199,11 @@ export default function AdminInboxPage() {
   };
 
   return (
-    <div className="flex h-[calc(100dvh-4rem)] md:h-[100dvh] overflow-hidden" style={{ color: 'var(--a-ink)' }}>
+    // The agency shell wraps everything in zoom:0.8, so dvh (which resolves to the
+    // real viewport) renders at 80% and leaves a ~20% gray strip at the bottom.
+    // 125dvh = 100dvh / 0.8 cancels the zoom so the inbox covers the full screen;
+    // the -4rem accounts for the mobile-only header (gone on md+).
+    <div className="flex h-[calc(125dvh_-_4rem)] md:h-[125dvh] overflow-hidden" style={{ color: 'var(--a-ink)' }}>
       {/* Conversation list */}
       <aside className={`${selected ? 'hidden sm:flex' : 'flex'} w-full sm:w-80 shrink-0 flex-col border-r`} style={{ borderColor: 'var(--a-line)', background: 'white' }}>
         <div className="flex items-center justify-between px-4 h-14 border-b" style={{ borderColor: 'var(--a-line)' }}>
