@@ -16,13 +16,13 @@ import { detectBrowserTimezone } from '@/lib/timezones';
 import { TimezoneSelect } from '@/components/ui/timezone-select';
 
 interface BusinessHours {
-  monday: { open: string; close: string; closed: boolean };
-  tuesday: { open: string; close: string; closed: boolean };
-  wednesday: { open: string; close: string; closed: boolean };
-  thursday: { open: string; close: string; closed: boolean };
-  friday: { open: string; close: string; closed: boolean };
-  saturday: { open: string; close: string; closed: boolean };
-  sunday: { open: string; close: string; closed: boolean };
+  monday: { open: string; close: string; closed: boolean; open24?: boolean };
+  tuesday: { open: string; close: string; closed: boolean; open24?: boolean };
+  wednesday: { open: string; close: string; closed: boolean; open24?: boolean };
+  thursday: { open: string; close: string; closed: boolean; open24?: boolean };
+  friday: { open: string; close: string; closed: boolean; open24?: boolean };
+  saturday: { open: string; close: string; closed: boolean; open24?: boolean };
+  sunday: { open: string; close: string; closed: boolean; open24?: boolean };
 }
 interface FAQ { id: string; question: string; answer: string; }
 
@@ -289,8 +289,9 @@ export default function MyBusinessPage() {
       const lo = l.toLowerCase();
       Object.keys(nh).forEach(day => {
         if (lo.includes(day)) {
-          if (lo.includes('closed')) { nh[day as keyof BusinessHours].closed = true; }
-          else { const m = l.match(/(\d{1,2}:\d{2}\s*[AP]M)\s*-\s*(\d{1,2}:\d{2}\s*[AP]M)/i); if (m) { nh[day as keyof BusinessHours].open = m[1]; nh[day as keyof BusinessHours].close = m[2]; nh[day as keyof BusinessHours].closed = false; } }
+          if (lo.includes('24 hour') || lo.includes('24/7') || lo.includes('open 24') || lo.includes('all day')) { nh[day as keyof BusinessHours] = { open: '12:00 AM', close: '11:59 PM', closed: false, open24: true }; }
+          else if (lo.includes('closed')) { nh[day as keyof BusinessHours].closed = true; nh[day as keyof BusinessHours].open24 = false; }
+          else { const m = l.match(/(\d{1,2}:\d{2}\s*[AP]M)\s*-\s*(\d{1,2}:\d{2}\s*[AP]M)/i); if (m) { nh[day as keyof BusinessHours].open = m[1]; nh[day as keyof BusinessHours].close = m[2]; nh[day as keyof BusinessHours].closed = false; nh[day as keyof BusinessHours].open24 = false; } }
         }
       });
     });
@@ -298,7 +299,7 @@ export default function MyBusinessPage() {
   };
 
   const formatFAQs = (): string => faqs.filter(f => f.question.trim() && f.answer.trim()).map(f => `Q: ${f.question}\nA: ${f.answer}`).join('\n\n');
-  const formatBusinessHoursForSave = (): string => ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].map(d => { const day = businessHours[d as keyof BusinessHours]; return day.closed ? `${d.charAt(0).toUpperCase() + d.slice(1)}: Closed` : `${d.charAt(0).toUpperCase() + d.slice(1)}: ${day.open} - ${day.close}`; }).join('\n');
+  const formatBusinessHoursForSave = (): string => ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].map(d => { const day = businessHours[d as keyof BusinessHours]; return day.closed ? `${d.charAt(0).toUpperCase() + d.slice(1)}: Closed` : day.open24 ? `${d.charAt(0).toUpperCase() + d.slice(1)}: Open 24 hours` : `${d.charAt(0).toUpperCase() + d.slice(1)}: ${day.open} - ${day.close}`; }).join('\n');
 
   const showMsg = (text: string, isError = false) => { setMessage(text); setMessageIsError(isError); setTimeout(() => setMessage(''), 3000); };
   const scrollToKb = () => document.getElementById('kb-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -311,7 +312,7 @@ export default function MyBusinessPage() {
     const out: Record<string, unknown> = {};
     days.forEach(d => {
       const day = businessHours[d as keyof BusinessHours];
-      out[d] = day.closed ? { closed: true } : { open: day.open, close: day.close, closed: false };
+      out[d] = day.closed ? { closed: true } : day.open24 ? { open: '12:00 AM', close: '11:59 PM', closed: false, open24: true } : { open: day.open, close: day.close, closed: false };
     });
     return out;
   };
@@ -391,7 +392,9 @@ export default function MyBusinessPage() {
     finally { setSavingAreas(false); }
   };
 
-  const updateBusinessHoursField = (day: keyof BusinessHours, field: 'open' | 'close' | 'closed', value: string | boolean) => { setBusinessHours(p => ({ ...p, [day]: { ...p[day], [field]: value } })); };
+  const updateBusinessHoursField = (day: keyof BusinessHours, field: 'open' | 'close' | 'closed', value: string | boolean) => { setBusinessHours(p => ({ ...p, [day]: { ...p[day], [field]: value, ...((field === 'open' || field === 'close') ? { open24: false } : {}) } })); };
+  // Toggle a day to Open 24 hours (full-day sentinel + flag) or back to a 9-5 range.
+  const setDayOpen24 = (day: keyof BusinessHours, on: boolean) => { setBusinessHours(p => ({ ...p, [day]: on ? { open: '12:00 AM', close: '11:59 PM', closed: false, open24: true } : { open: '9:00 AM', close: '5:00 PM', closed: false, open24: false } })); };
   const addFAQ = () => setFaqs(p => [...p, { id: Date.now().toString(), question: '', answer: '' }]);
   const removeFAQ = (id: string) => { if (faqs.length > 1) setFaqs(p => p.filter(f => f.id !== id)); };
   const updateFAQ = (id: string, f: keyof FAQ, v: string) => setFaqs(p => p.map(fq => fq.id === id ? { ...fq, [f]: v } : fq));
@@ -400,11 +403,11 @@ export default function MyBusinessPage() {
     const days = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
     const wd = days.slice(0,5);
     const same = wd.every(d => { const day = businessHours[d as keyof BusinessHours]; const m = businessHours.monday; return day.closed === m.closed && day.open === m.open && day.close === m.close; });
-    if (same && !businessHours.monday.closed) return [`M-F: ${businessHours.monday.open.replace(' ','')}-${businessHours.monday.close.replace(' ','')}`, businessHours.saturday.closed ? 'Sat: Closed' : `Sat: ${businessHours.saturday.open.replace(' ','')}-${businessHours.saturday.close.replace(' ','')}`, businessHours.sunday.closed ? 'Sun: Closed' : `Sun: ${businessHours.sunday.open.replace(' ','')}-${businessHours.sunday.close.replace(' ','')}`];
-    return days.map(d => { const day = businessHours[d as keyof BusinessHours]; const n = d.charAt(0).toUpperCase() + d.slice(1,3); return day.closed ? `${n}: Closed` : `${n}: ${day.open.replace(' ','')}-${day.close.replace(' ','')}`; });
+    if (same && !businessHours.monday.closed) return [businessHours.monday.open24 ? 'M-F: 24h' : `M-F: ${businessHours.monday.open.replace(' ','')}-${businessHours.monday.close.replace(' ','')}`, businessHours.saturday.closed ? 'Sat: Closed' : businessHours.saturday.open24 ? 'Sat: 24h' : `Sat: ${businessHours.saturday.open.replace(' ','')}-${businessHours.saturday.close.replace(' ','')}`, businessHours.sunday.closed ? 'Sun: Closed' : businessHours.sunday.open24 ? 'Sun: 24h' : `Sun: ${businessHours.sunday.open.replace(' ','')}-${businessHours.sunday.close.replace(' ','')}`];
+    return days.map(d => { const day = businessHours[d as keyof BusinessHours]; const n = d.charAt(0).toUpperCase() + d.slice(1,3); return day.closed ? `${n}: Closed` : day.open24 ? `${n}: 24h` : `${n}: ${day.open.replace(' ','')}-${day.close.replace(' ','')}`; });
   };
 
-  const fmtDayHours = (d: { open: string; close: string; closed: boolean }) => d.closed ? 'Closed' : `${d.open.replace(' ', '')} - ${d.close.replace(' ', '')}`;
+  const fmtDayHours = (d: { open: string; close: string; closed: boolean; open24?: boolean }) => d.closed ? 'Closed' : d.open24 ? 'Open 24 hours' : `${d.open.replace(' ', '')} - ${d.close.replace(' ', '')}`;
   const DAY_KEYS: (keyof BusinessHours)[] = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
 
   const glass = { backgroundColor: theme.card, border: `1px solid ${theme.border}` };
@@ -576,30 +579,42 @@ export default function MyBusinessPage() {
               </button>
             </div>
             {hoursExpanded && (
-              <div className="mt-4 space-y-2">
+              <div className="mt-4 space-y-1.5">
                 {DAY_KEYS.map(day => {
                   const d = businessHours[day];
                   const dayName = day.charAt(0).toUpperCase() + day.slice(1);
+                  // One compact row per day: name, Open/Closed, 24h, then the time
+                  // range on the right. Fits all seven days without scrolling; the
+                  // range wraps below on very narrow screens.
                   return (
-                    <div key={day} className="rounded-xl p-3" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.05)' : '#eef0f2'}` }}>
-                      {/* Day name + Open/Closed toggle */}
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[13px] font-semibold" style={{ color: theme.text }}>{dayName}</span>
-                        <button type="button" onClick={() => updateBusinessHoursField(day, 'closed', !d.closed)}
-                          className="px-2.5 py-1 rounded-full text-[11px] font-semibold transition"
-                          style={d.closed
-                            ? { backgroundColor: hexToRgba('#ef4444', theme.isDark ? 0.16 : 0.1), color: '#ef4444' }
-                            : { backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.16 : 0.1), color: primaryColor }}>
-                          {d.closed ? 'Closed' : 'Open'}
-                        </button>
-                      </div>
-                      {/* Time range: full-width selects so the time is never cut off */}
+                    <div key={day} className="flex items-center gap-2 rounded-lg px-3 py-2 flex-wrap"
+                      style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.05)' : '#eef0f2'}` }}>
+                      <span className="text-[13px] font-semibold w-20 flex-shrink-0" style={{ color: theme.text }}>{dayName}</span>
+                      <button type="button" onClick={() => updateBusinessHoursField(day, 'closed', !d.closed)}
+                        className="px-2.5 py-1 rounded-full text-[11px] font-semibold transition flex-shrink-0"
+                        style={d.closed
+                          ? { backgroundColor: hexToRgba('#ef4444', theme.isDark ? 0.16 : 0.1), color: '#ef4444' }
+                          : { backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.16 : 0.1), color: primaryColor }}>
+                        {d.closed ? 'Closed' : 'Open'}
+                      </button>
                       {!d.closed && (
-                        <div className="flex items-center gap-2 mt-2.5">
-                          <div className="flex-1 min-w-0"><CustomSelect size="sm" value={d.open} onChange={v => updateBusinessHoursField(day, 'open', v)} options={timeOptions} ui={dropdownUi} /></div>
-                          <span className="text-[11px] flex-shrink-0" style={{ color: theme.textMuted }}>to</span>
-                          <div className="flex-1 min-w-0"><CustomSelect size="sm" value={d.close} onChange={v => updateBusinessHoursField(day, 'close', v)} options={timeOptions} ui={dropdownUi} /></div>
+                        <button type="button" onClick={() => setDayOpen24(day, !d.open24)}
+                          className="px-2.5 py-1 rounded-full text-[11px] font-semibold transition flex-shrink-0"
+                          style={d.open24
+                            ? { backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.16 : 0.1), color: primaryColor }
+                            : { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : '#eef0f2', color: theme.textMuted }}>
+                          24 hours
+                        </button>
+                      )}
+                      {!d.closed && !d.open24 && (
+                        <div className="flex items-center gap-1.5 ml-auto flex-shrink-0">
+                          <div className="w-24"><CustomSelect size="sm" value={d.open} onChange={v => updateBusinessHoursField(day, 'open', v)} options={timeOptions} ui={dropdownUi} /></div>
+                          <span className="text-[11px]" style={{ color: theme.textMuted }}>to</span>
+                          <div className="w-24"><CustomSelect size="sm" value={d.close} onChange={v => updateBusinessHoursField(day, 'close', v)} options={timeOptions} ui={dropdownUi} /></div>
                         </div>
+                      )}
+                      {!d.closed && d.open24 && (
+                        <span className="ml-auto text-[12px] font-medium" style={{ color: primaryColor }}>Open 24 hours</span>
                       )}
                     </div>
                   );

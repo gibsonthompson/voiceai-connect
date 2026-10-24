@@ -16,7 +16,7 @@ import ClientServicesSection from './ClientServicesSection';
 // ============================================================================
 
 interface BusinessHours {
-  [key: string]: { open: string; close: string; closed: boolean };
+  [key: string]: { open: string; close: string; closed: boolean; open24?: boolean };
 }
 
 interface FAQ { id: string; question: string; answer: string; }
@@ -156,7 +156,7 @@ function formatHoursText(hours: BusinessHours): string {
   return DAY_NAMES.map(d => {
     const day = hours[d];
     const label = d.charAt(0).toUpperCase() + d.slice(1);
-    return day.closed ? `${label}: Closed` : `${label}: ${day.open} - ${day.close}`;
+    return day.closed ? `${label}: Closed` : day.open24 ? `${label}: Open 24 hours` : `${label}: ${day.open} - ${day.close}`;
   }).join('\n');
 }
 
@@ -167,6 +167,10 @@ function formatHoursJSON(hours: BusinessHours): Record<string, any> {
     const day = hours[d];
     if (day.closed) {
       result[d] = { open: null, close: null };
+    } else if (day.open24) {
+      // Open 24 hours: full-day sentinel + explicit flag so the AI treats the day
+      // as always open (never after-hours) and recites "Open 24 hours".
+      result[d] = { open: '00:00', close: '23:59', open24: true };
     } else {
       result[d] = { open: convertTo24h(day.open), close: convertTo24h(day.close) };
     }
@@ -319,7 +323,9 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
       const lo = l.toLowerCase();
       DAY_NAMES.forEach(day => {
         if (lo.includes(day)) {
-          if (lo.includes('closed')) {
+          if (lo.includes('24 hour') || lo.includes('24/7') || lo.includes('open 24') || lo.includes('all day')) {
+            h[day] = { open: '12:00 AM', close: '11:59 PM', closed: false, open24: true };
+          } else if (lo.includes('closed')) {
             h[day] = { ...h[day], closed: true };
           } else {
             const m = l.match(/(\d{1,2}:\d{2}\s*[AP]M)\s*-\s*(\d{1,2}:\d{2}\s*[AP]M)/i);
@@ -768,22 +774,51 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
       });
     };
 
-    // Same-hours mode: write one value to every open day at once.
+    // Same-hours mode: write one value to every open day at once. Picking a
+    // specific time turns off that day's 24-hour flag.
     const setSharedTime = (field: 'open' | 'close', value: string) => {
       setHours(prev => {
         const next: BusinessHours = { ...prev };
-        DAY_NAMES.forEach(d => { if (!next[d].closed) next[d] = { ...next[d], [field]: value }; });
+        DAY_NAMES.forEach(d => { if (!next[d].closed) next[d] = { ...next[d], [field]: value, open24: false }; });
         return next;
       });
     };
 
-    // Per-day mode: write to a single day.
+    // Per-day mode: write to a single day (also clears that day's 24-hour flag).
     const setDayTime = (day: string, field: 'open' | 'close', value: string) => {
-      setHours(prev => ({ ...prev, [day]: { ...prev[day], [field]: value } }));
+      setHours(prev => ({ ...prev, [day]: { ...prev[day], [field]: value, open24: false } }));
     };
 
-    const applyPreset = (preset: 'weekdays' | 'everyday') => {
+    // 24-hour helpers. On → full-day sentinel + flag; off → a normal 9-5 range.
+    const setDayOpen24 = (day: string, on: boolean) => {
+      setHours(prev => ({ ...prev, [day]: on
+        ? { open: '12:00 AM', close: '11:59 PM', closed: false, open24: true }
+        : { open: '9:00 AM', close: '5:00 PM', closed: false, open24: false } }));
+    };
+    const setSharedOpen24 = (on: boolean) => {
+      setHours(prev => {
+        const next: BusinessHours = { ...prev };
+        DAY_NAMES.forEach(d => {
+          if (!next[d].closed) next[d] = on
+            ? { open: '12:00 AM', close: '11:59 PM', closed: false, open24: true }
+            : { open: '9:00 AM', close: '5:00 PM', closed: false, open24: false };
+        });
+        return next;
+      });
+    };
+    const sharedOpen24 = openDays.length > 0 && openDays.every(d => hours[d].open24);
+
+    const applyPreset = (preset: 'weekdays' | 'everyday' | 'always') => {
       const nine = () => ({ open: '9:00 AM', close: '5:00 PM', closed: false });
+      const allday = () => ({ open: '12:00 AM', close: '11:59 PM', closed: false, open24: true });
+      if (preset === 'always') {
+        setHours({
+          monday: allday(), tuesday: allday(), wednesday: allday(), thursday: allday(),
+          friday: allday(), saturday: allday(), sunday: allday(),
+        });
+        setSameHours(true);
+        return;
+      }
       if (preset === 'weekdays') {
         setHours({
           monday: nine(), tuesday: nine(), wednesday: nine(), thursday: nine(), friday: nine(),
@@ -813,6 +848,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
           {[
             { key: 'weekdays' as const, label: 'Weekdays 9 to 5' },
             { key: 'everyday' as const, label: 'Every day 9 to 5' },
+            { key: 'always' as const, label: 'Open 24/7' },
           ].map(p => (
             <button key={p.key} onClick={() => applyPreset(p.key)}
               className="px-3 py-1.5 rounded-lg text-xs font-medium transition hover:scale-[1.02] active:scale-[0.98]"
@@ -865,19 +901,32 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
             </div>
 
             {sameHours ? (
-              <div className="flex items-center gap-2 p-3 rounded-xl ob-fi" style={glass}>
-                <span className="text-xs font-semibold flex-shrink-0" style={{ color: theme.textMuted }}>Hours</span>
-                <div className="flex items-center gap-2 ml-auto">
-                  <select value={shared.open} onChange={e => setSharedTime('open', e.target.value)}
-                    className="px-3 py-2 text-sm rounded-lg focus:outline-none" style={inputStyle}>
-                    {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                  <span className="text-xs" style={{ color: theme.textMuted }}>to</span>
-                  <select value={shared.close} onChange={e => setSharedTime('close', e.target.value)}
-                    className="px-3 py-2 text-sm rounded-lg focus:outline-none" style={inputStyle}>
-                    {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                </div>
+              <div className="space-y-2 ob-fi">
+                <button type="button" onClick={() => setSharedOpen24(!sharedOpen24)}
+                  className="w-full flex items-center justify-between p-3 rounded-xl" style={glass}>
+                  <span className="text-xs font-semibold" style={{ color: theme.text }}>Open 24 hours</span>
+                  <span className="relative w-11 h-6 rounded-full transition-colors flex-shrink-0"
+                    style={{ backgroundColor: sharedOpen24 ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.12)' : '#d1d5db') }}>
+                    <span className="absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform"
+                      style={{ transform: sharedOpen24 ? 'translateX(20px)' : 'translateX(0)' }} />
+                  </span>
+                </button>
+                {!sharedOpen24 && (
+                  <div className="flex items-center gap-2 p-3 rounded-xl" style={glass}>
+                    <span className="text-xs font-semibold flex-shrink-0" style={{ color: theme.textMuted }}>Hours</span>
+                    <div className="flex items-center gap-2 ml-auto">
+                      <select value={shared.open} onChange={e => setSharedTime('open', e.target.value)}
+                        className="px-3 py-2 text-sm rounded-lg focus:outline-none" style={inputStyle}>
+                        {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                      <span className="text-xs" style={{ color: theme.textMuted }}>to</span>
+                      <select value={shared.close} onChange={e => setSharedTime('close', e.target.value)}
+                        className="px-3 py-2 text-sm rounded-lg focus:outline-none" style={inputStyle}>
+                        {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-2 ob-fi">
@@ -887,15 +936,28 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
                       {DAY_LABELS[day]}
                     </span>
                     <div className="flex items-center gap-2 ml-auto">
-                      <select value={hours[day].open} onChange={e => setDayTime(day, 'open', e.target.value)}
-                        className="px-3 py-2 text-sm rounded-lg focus:outline-none" style={inputStyle}>
-                        {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
-                      </select>
-                      <span className="text-xs" style={{ color: theme.textMuted }}>to</span>
-                      <select value={hours[day].close} onChange={e => setDayTime(day, 'close', e.target.value)}
-                        className="px-3 py-2 text-sm rounded-lg focus:outline-none" style={inputStyle}>
-                        {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
-                      </select>
+                      {hours[day].open24 ? (
+                        <span className="text-xs font-medium" style={{ color: theme.primary }}>Open 24 hours</span>
+                      ) : (
+                        <>
+                          <select value={hours[day].open} onChange={e => setDayTime(day, 'open', e.target.value)}
+                            className="px-3 py-2 text-sm rounded-lg focus:outline-none" style={inputStyle}>
+                            {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                          </select>
+                          <span className="text-xs" style={{ color: theme.textMuted }}>to</span>
+                          <select value={hours[day].close} onChange={e => setDayTime(day, 'close', e.target.value)}
+                            className="px-3 py-2 text-sm rounded-lg focus:outline-none" style={inputStyle}>
+                            {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                          </select>
+                        </>
+                      )}
+                      <button type="button" onClick={() => setDayOpen24(day, !hours[day].open24)}
+                        className="px-2 py-1.5 rounded-lg text-[11px] font-semibold flex-shrink-0 transition"
+                        style={hours[day].open24
+                          ? { backgroundColor: theme.primary, color: theme.primaryText }
+                          : { ...glass, color: theme.textMuted }}>
+                        24h
+                      </button>
                     </div>
                   </div>
                 ))}

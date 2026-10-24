@@ -43,7 +43,7 @@ interface Cfg {
   transferPhone: string;
   timezone: string;
   greeting: string;
-  businessHours: Record<string, { open: string; close: string; closed: boolean }> | null;
+  businessHours: Record<string, { open: string; close: string; closed: boolean; open24?: boolean }> | null;
   forwardingMode: 'all' | 'missed';
   humanHandoff: 'transfer' | 'message';
   overflowAction: 'message' | 'callback' | 'ring_business';
@@ -115,8 +115,10 @@ function normalizeHours(raw: any): NonNullable<Cfg['businessHours']> {
   const hasAny = raw && typeof raw === 'object' && !Array.isArray(raw) && Object.keys(raw).length > 0;
   for (const d of DAYS) {
     const v = hasAny ? raw[d.key] : undefined;
-    if (v && typeof v === 'object' && v.open && v.close && v.closed !== true) {
-      out[d.key] = { open: v.open, close: v.close, closed: false };
+    if (v && typeof v === 'object' && v.closed !== true && (v.open24 === true || (v.open && v.close))) {
+      out[d.key] = v.open24 === true
+        ? { open: '00:00', close: '23:59', closed: false, open24: true }
+        : { open: v.open, close: v.close, closed: false };
     } else if (hasAny) {
       out[d.key] = { open: (v && v.open) || '09:00', close: (v && v.close) || '17:00', closed: true };
     } else {
@@ -198,7 +200,7 @@ export default function BusinessConfig() {
   const addSnippet = () => setCfg((c) => (c ? { ...c, smsSnippets: [ ...(c.smsSnippets || []), { label: '', value: '' } ] } : c));
   const updateSnippet = (i: number, patch: Partial<{ label: string; value: string }>) => setCfg((c) => { if (!c) return c; const sn = [...(c.smsSnippets || [])]; sn[i] = { ...sn[i], ...patch }; return { ...c, smsSnippets: sn }; });
   const removeSnippet = (i: number) => setCfg((c) => (c ? { ...c, smsSnippets: (c.smsSnippets || []).filter((_, j) => j !== i) } : c));
-  const setDay = (day: string, patch: Partial<{ open: string; close: string; closed: boolean }>) =>
+  const setDay = (day: string, patch: Partial<{ open: string; close: string; closed: boolean; open24: boolean }>) =>
     setCfg((c) => (c && c.businessHours ? { ...c, businessHours: { ...c.businessHours, [day]: { ...c.businessHours[day], ...patch } } } : c));
 
   const addArea = () => {
@@ -435,11 +437,21 @@ export default function BusinessConfig() {
                     {h.closed ? 'Closed' : 'Open'}
                   </button>
                   {!h.closed && (
+                    <button onClick={() => setDay(d.key, h.open24 ? { open24: false, open: '09:00', close: '17:00' } : { open24: true, open: '00:00', close: '23:59', closed: false })}
+                      className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium flex-shrink-0 justify-center"
+                      style={h.open24 ? { backgroundColor: theme.primary15, color: theme.primary } : { backgroundColor: theme.hover, color: theme.textMuted }}>
+                      24 hours
+                    </button>
+                  )}
+                  {!h.closed && !h.open24 && (
                     <div className="flex items-center gap-1.5">
-                      <input type="time" value={h.open} onChange={(e) => setDay(d.key, { open: e.target.value })} className="rounded-lg px-2 py-1.5 text-[13px] outline-none" style={field} />
+                      <input type="time" value={h.open} onChange={(e) => setDay(d.key, { open: e.target.value, open24: false })} className="rounded-lg px-2 py-1.5 text-[13px] outline-none" style={field} />
                       <span style={{ color: theme.textSubtle }}>to</span>
-                      <input type="time" value={h.close} onChange={(e) => setDay(d.key, { close: e.target.value })} className="rounded-lg px-2 py-1.5 text-[13px] outline-none" style={field} />
+                      <input type="time" value={h.close} onChange={(e) => setDay(d.key, { close: e.target.value, open24: false })} className="rounded-lg px-2 py-1.5 text-[13px] outline-none" style={field} />
                     </div>
+                  )}
+                  {!h.closed && h.open24 && (
+                    <span className="text-[13px] font-medium" style={{ color: theme.primary }}>Open 24 hours</span>
                   )}
                 </div>
               );
