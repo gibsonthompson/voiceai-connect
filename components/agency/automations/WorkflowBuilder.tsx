@@ -10,10 +10,10 @@
 // shape the engine runs, plus a position on each node (which the engine ignores).
 // ============================================================================
 
-import { useMemo, useState, useCallback, memo } from 'react';
+import { useMemo, useState, useCallback, useEffect, useRef, memo } from 'react';
 import {
   ReactFlow, ReactFlowProvider, Background, Controls, Handle, Position, MarkerType,
-  BaseEdge, EdgeLabelRenderer, getSmoothStepPath,
+  BaseEdge, EdgeLabelRenderer, getSmoothStepPath, useReactFlow,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useTheme } from '../../../hooks/useTheme';
@@ -512,6 +512,25 @@ function Inner({ workflow, plan, saving, onSaveDraft, onActivate, onPause, onBac
   const [addEdge, setAddEdge] = useState<GEdge | null>(null);
   const [dirty, setDirty] = useState(false);
 
+  // Refit the view once the canvas actually has its height. With a flex layout
+  // the first fitView can run against a too-short box, which strands the bottom
+  // node off-screen; a ResizeObserver re-fits as soon as the real size lands (and
+  // on any later resize) so the whole flow always sits centered and in view.
+  const rf = useReactFlow();
+  const canvasRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = canvasRef.current;
+    if (!el) return;
+    let raf = 0;
+    const refit = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => { try { rf.fitView({ padding: 0.28, maxZoom: 1 }); } catch { /* flow not ready yet */ } });
+    };
+    const ro = new ResizeObserver(refit);
+    ro.observe(el);
+    return () => { ro.disconnect(); cancelAnimationFrame(raf); };
+  }, [rf]);
+
   const mutate = (g: Graph) => { setGraph(g); setDirty(true); };
   const patchWorkflow = (patch: any) => { setWf((p) => ({ ...p, ...patch })); setDirty(true); };
 
@@ -578,21 +597,21 @@ function Inner({ workflow, plan, saving, onSaveDraft, onActivate, onPause, onBac
       </div>
 
       {/* canvas */}
-      <div className="relative flex-1 min-h-0">
+      <div className="relative flex-1 min-h-0" ref={canvasRef}>
         <ReactFlow
           nodes={rfNodes} edges={rfEdges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
           nodesDraggable={false} nodesConnectable={false} elementsSelectable
           onNodeClick={(_: any, n: any) => { setSelectedId(n.id); setAddEdge(null); }}
           onEdgeClick={(_: any, e: any) => { const [source, target, b] = [e.source, e.target, e.id.split('-').pop()]; setAddEdge({ source, target, branch: b === 'x' ? undefined : (b as string) }); }}
           onPaneClick={() => { setSelectedId(null); }}
-          fitView fitViewOptions={{ padding: 0.35, maxZoom: 1 }} proOptions={{ hideAttribution: true }} minZoom={0.3} maxZoom={1.5}
+          fitView fitViewOptions={{ padding: 0.28, maxZoom: 1 }} proOptions={{ hideAttribution: true }} minZoom={0.3} maxZoom={1.5}
         >
           <Background color={theme.border} gap={20} />
           <Controls showInteractive={false} />
         </ReactFlow>
 
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 text-xs px-3 py-1.5 rounded-full pointer-events-none" style={{ background: theme.card, border: `1px solid ${theme.border}`, color: theme.textMuted }}>
-          Click a step to edit it · click the <span style={{ color: theme.primary, fontWeight: 600 }}>+</span> on a line to add one
+        <div className="absolute bottom-3 right-3 text-xs px-3 py-1.5 rounded-full pointer-events-none whitespace-nowrap" style={{ background: theme.card, border: `1px solid ${theme.border}`, color: theme.textMuted }}>
+          Click a step to edit, or a <span style={{ color: theme.primary, fontWeight: 600 }}>+</span> to add one
         </div>
 
         {selectedNode && (
