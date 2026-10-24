@@ -39,6 +39,7 @@ const SOFT = {
 
 interface Idea {
   id: string; title: string; script: string | null; status: string;
+  posted_at?: string | null; caption?: string | null;
   created_at: string; updated_at: string;
 }
 
@@ -470,6 +471,10 @@ export default function AdminYouTubePage() {
                     {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-[var(--a-dim)] flex-shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 text-[var(--a-dim)] flex-shrink-0" />}
                     <p className="text-sm text-[var(--a-ink)] font-medium flex-1 truncate">{idea.title || 'Untitled script'}</p>
                     <span className="text-[11px] font-mono text-[var(--a-dim)] hidden sm:block">{new Date(idea.created_at).toLocaleDateString()}</span>
+                    <label onClick={e => e.stopPropagation()} className="inline-flex items-center gap-1.5 cursor-pointer select-none shrink-0" title={idea.posted_at ? `Posted ${new Date(idea.posted_at).toLocaleDateString()}` : 'Mark as posted'}>
+                      <input type="checkbox" checked={!!idea.posted_at} onChange={e => updateIdea(idea.id, { posted_at: e.target.checked ? new Date().toISOString() : null })} className="accent-[var(--a-em)]" />
+                      <span className="text-[11px] font-mono hidden sm:block" style={{ color: idea.posted_at ? 'var(--a-em-deep)' : 'var(--a-dim)' }}>{idea.posted_at ? `Posted ${new Date(idea.posted_at).toLocaleDateString()}` : 'Posted?'}</span>
+                    </label>
                     <StatusBadge status={idea.status} />
                   </div>
 
@@ -483,6 +488,22 @@ export default function AdminYouTubePage() {
                         <InlineEdit value={idea.title} onSave={v => updateIdea(idea.id, { title: v })}
                           className="text-base font-semibold text-[var(--a-ink)]" />
                       </div>
+
+                      {/* Caption: the title + caption to publish with this post */}
+                      <div>
+                        <p className="text-[10px] font-mono uppercase tracking-wider text-[var(--a-dim)] mb-1">Caption</p>
+                        <InlineEdit value={idea.caption || ''} onSave={v => updateIdea(idea.id, { caption: v })}
+                          multiline minHeight={100} placeholder="Paste the title + caption you'll post with..."
+                          className="text-[13px] text-[var(--a-ink)] leading-relaxed"
+                          style={{ whiteSpace: 'pre-wrap' }} />
+                      </div>
+
+                      {/* Posted check-off + the date it was posted */}
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input type="checkbox" checked={!!idea.posted_at} onChange={e => updateIdea(idea.id, { posted_at: e.target.checked ? new Date().toISOString() : null })} className="accent-[var(--a-em)] w-4 h-4" />
+                        <span className="text-[13px] text-[var(--a-ink)] font-medium">Posted</span>
+                        {idea.posted_at && <span className="text-[11px] font-mono text-[var(--a-em-deep)]">on {new Date(idea.posted_at).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</span>}
+                      </label>
 
                       {/* Script */}
                       <div>
