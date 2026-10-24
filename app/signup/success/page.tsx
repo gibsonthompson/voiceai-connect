@@ -103,8 +103,8 @@ function ClientSuccessPage({ agency, isEmbed }: { agency: Agency | null; isEmbed
   const primaryLight = isLightColor(primaryColor);
 
   const nextSteps = [
-    { icon: MessageSquare, title: 'Check your phone', description: 'We sent you a text with login instructions' },
-    { icon: PhoneForwarded, title: 'Forward your calls', description: 'Set up call forwarding to your AI number' },
+    { icon: Sparkles, title: 'Activate your AI number', description: 'Log in and hit Activate to get your number and go live' },
+    { icon: PhoneForwarded, title: 'Forward your calls', description: 'Once active, forward your business calls to your AI number' },
     { icon: LayoutDashboard, title: 'Explore your dashboard', description: 'View calls, transcripts, and analytics' },
   ];
 
@@ -152,8 +152,8 @@ function ClientSuccessPage({ agency, isEmbed }: { agency: Agency | null; isEmbed
               <PartyPopper className="h-4 w-4" style={{ color: primaryColor }} />
               <span style={{ color: primaryColor }}>Setup Complete</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-2">You&apos;re All Set!</h1>
-            <p className="text-[#fafaf9]/50 mb-6 sm:mb-8">{businessName ? `Your AI receptionist for ${businessName} is ready to take calls.` : 'Your AI receptionist is ready to take calls.'}</p>
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-2">Account Created!</h1>
+            <p className="text-[#fafaf9]/50 mb-6 sm:mb-8">{businessName ? `Your account for ${businessName} is ready. Log in and activate your AI number to go live.` : 'Your account is ready. Log in and activate your AI number to go live.'}</p>
             {phoneNumber && (
               <div className="mb-6 sm:mb-8">
                 <p className="text-sm text-[#fafaf9]/50 mb-3">Your AI Phone Number</p>
