@@ -328,6 +328,7 @@ export default function AdminYouTubePage() {
   const [showPaste, setShowPaste] = useState(false);
   const [pasteTitle, setPasteTitle] = useState('');
   const [pasteScript, setPasteScript] = useState('');
+  const [pasteCaption, setPasteCaption] = useState('');
   const [creatingPaste, setCreatingPaste] = useState(false);
 
   const fetchIdeas = useCallback(async () => {
@@ -366,11 +367,11 @@ export default function AdminYouTubePage() {
     try {
       const res = await fetch(`${API}/api/yt/ideas`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: pasteTitle.trim() || undefined, script: pasteScript }),
+        body: JSON.stringify({ title: pasteTitle.trim() || undefined, script: pasteScript, caption: pasteCaption.trim() || undefined }),
       });
       const data = await res.json();
       if (data.success) {
-        setPasteTitle(''); setPasteScript(''); setShowPaste(false);
+        setPasteTitle(''); setPasteScript(''); setPasteCaption(''); setShowPaste(false);
         await fetchIdeas();
         if (data.idea?.id) setExpandedId(data.idea.id);
       } else {
@@ -407,6 +408,11 @@ export default function AdminYouTubePage() {
               <input type="text" value={pasteTitle} onChange={e => setPasteTitle(e.target.value)}
                 placeholder="Title (optional, uses the first line if left blank)"
                 className="a-input w-full shrink-0" />
+              <textarea value={pasteCaption} onChange={e => setPasteCaption(e.target.value)}
+                placeholder="Caption to post with (optional)"
+                className="a-input w-full shrink-0 resize-none text-sm leading-relaxed"
+                rows={3}
+                style={{ whiteSpace: 'pre-wrap' }} />
               <textarea value={pasteScript} onChange={e => setPasteScript(e.target.value)}
                 placeholder="Paste your script here..."
                 className="a-input w-full flex-1 resize-none font-mono text-sm leading-relaxed min-h-0"
@@ -431,7 +437,7 @@ export default function AdminYouTubePage() {
             <h1 className="text-2xl font-bold text-[var(--a-ink)]">YouTube Scripts</h1>
             <p className="text-sm text-[var(--a-muted)] mt-1">Paste a script, edit it, and record with the teleprompter.</p>
           </div>
-          <button onClick={() => { setPasteTitle(''); setPasteScript(''); setShowPaste(true); }}
+          <button onClick={() => { setPasteTitle(''); setPasteScript(''); setPasteCaption(''); setShowPaste(true); }}
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-colors shrink-0"
             style={SOFT.em}>
             <Plus className="w-4 h-4" />Paste script
