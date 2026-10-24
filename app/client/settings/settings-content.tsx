@@ -251,6 +251,9 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
   const hideBilling = !!(client.agency as any)?.hide_client_billing;
   // Granular agency toggles (independent of the master hide_client_billing).
   const showSubscription = !hideBilling && (client.agency as any)?.show_client_subscription !== false;
+  // Agency can hide the client-dashboard cancel option (default: shown). The
+  // backend cancel-subscription endpoint enforces the same flag server-side.
+  const allowClientCancel = (client.agency as any)?.allow_client_cancel !== false;
   const showCallUsage = !hideBilling && (client.agency as any)?.show_client_call_usage !== false;
   // Self-billed providers (Paystack / Flutterwave): the platform owns the billing
   // schedule, so both share one set of management UI driven by these helpers.
@@ -527,7 +530,9 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
                     <div className="p-3 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
                       <div className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>Billed monthly via {sbProviderLabel}{sbNextChargeAt ? `. Next charge ${formatDate(sbNextChargeAt)}` : ''}.{canChangePlan ? ' Plan changes take effect on your next billing date.' : ''}</div>
                     </div>
+                    {allowClientCancel && (
                     <button onClick={handleCancelSubscription} disabled={canceling} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: 'transparent', color: '#ef4444', border: '1px solid #ef4444' }}>{canceling ? 'Cancelling\u2026' : 'Cancel subscription'}</button>
+                    )}
                     {cancelMsg && <p className="text-xs text-center" style={{ color: theme.textMuted }}>{cancelMsg}</p>}
                   </>
                 )
@@ -554,7 +559,9 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
                     </>
                   )}
                   <button onClick={handleManageSubscription} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90" style={{ backgroundColor: canChangePlan ? theme.bg : theme.primary, color: canChangePlan ? theme.textMuted : theme.primaryText, border: canChangePlan ? `1px solid ${theme.border}` : 'none' }}>Manage Subscription</button>
+                  {allowClientCancel && (
                   <button onClick={handleCancelSubscription} disabled={canceling} className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: 'transparent', color: '#ef4444', border: '1px solid #ef4444' }}>{canceling ? 'Cancelling\u2026' : 'Cancel subscription'}</button>
+                  )}
                   {cancelMsg && <p className="text-xs text-center" style={{ color: theme.textMuted }}>{cancelMsg}</p>}
                 </>
               )

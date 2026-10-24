@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Check, Loader2, AlertTriangle, Phone, Clock, Zap, X } from 'lucide-react';
+import { Check, Loader2, AlertTriangle, Clock, Zap, X } from 'lucide-react';
 import { buildClientPlans, type ClientPlanTile } from '@/lib/plan-features-meta';
 
 function getContrastColor(hex: string): string {
@@ -43,6 +43,14 @@ interface Agency {
   plan_pro_description?: string | null;
   plan_growth_description?: string | null;
   plan_features?: Record<string, Record<string, boolean | number>> | null;
+  // When false (default) the page hides plans priced below the client's current
+  // plan; when true it shows them (lets the client downgrade).
+  show_lower_plans_on_upgrade?: boolean;
+  // Agency-configurable reassurance badges under the plan tiles. null => app
+  // default; '' => hide that slot.
+  plan_badge_1?: string | null;
+  plan_badge_2?: string | null;
+  plan_badge_3?: string | null;
 }
 interface Client { id: string; business_name: string; email: string; subscription_status: string; plan_type: string | null; agency_id: string; stripe_connected_subscription_id?: string | null; }
 
@@ -113,6 +121,37 @@ function ClientUpgradeContent() {
     () => (agency ? buildClientPlans(agency) : []),
     [agency]
   );
+
+  // Lower-plan gating. For an ACTIVE client the page hides plans priced below
+  // their current plan unless the agency opts in (show_lower_plans_on_upgrade).
+  // Expired / canceled / never-subscribed clients (no current plan) always see
+  // every plan so they can pick anything.
+  const currentPlanPrice = useMemo(() => {
+    if (!isActive || !client?.plan_type) return null;
+    const cur = plans.find(p => p.id === client.plan_type);
+    return cur ? cur.price : null;
+  }, [plans, isActive, client?.plan_type]);
+  const showLowerPlans = !!(agency as any)?.show_lower_plans_on_upgrade;
+  const visiblePlans = useMemo(() => {
+    if (showLowerPlans || currentPlanPrice == null) return plans;
+    return plans.filter(p => p.price >= currentPlanPrice);
+  }, [plans, showLowerPlans, currentPlanPrice]);
+  // Keep the row balanced (no single tile marooned in a 3-up grid).
+  const gridColsClass = visiblePlans.length <= 1
+    ? 'md:grid-cols-1 max-w-sm'
+    : visiblePlans.length === 2
+      ? 'md:grid-cols-2 max-w-3xl'
+      : 'md:grid-cols-3';
+
+  // Reassurance badges under the tiles. If the agency has configured any badge,
+  // render exactly the non-empty ones it set; otherwise fall back to neutral
+  // defaults. (Replaces the old hardcoded "Cancel anytime / No setup fees".)
+  const planBadges = useMemo(() => {
+    const raw = [(agency as any)?.plan_badge_1, (agency as any)?.plan_badge_2, (agency as any)?.plan_badge_3];
+    const configured = raw.some(v => v != null);
+    const source = configured ? raw : ['Instant activation', 'Secure checkout', null];
+    return source.map(v => (typeof v === 'string' ? v.trim() : '')).filter(Boolean);
+  }, [agency]);
 
   const theme = useMemo(() => ({
     bg: isDark ? '#050505' : '#f9fafb', text: isDark ? '#fafaf9' : '#111827', textMuted: isDark ? 'rgba(250,250,249,0.6)' : '#6b7280',
@@ -341,8 +380,8 @@ function ClientUpgradeContent() {
           </div>
         )}
 
-        <div className="grid md:grid-cols-3 gap-5 fu fu2">
-          {plans.map(plan => (
+        <div className={`grid ${gridColsClass} gap-5 fu fu2 mx-auto`}>
+          {visiblePlans.map(plan => (
             <div key={plan.id} className="relative rounded-2xl p-6 transition-all"
               style={{ ...glass, borderColor: plan.popular ? primaryColor : theme.border, borderWidth: plan.popular ? '2px' : '1px', boxShadow: plan.popular ? `0 0 0 1px ${primaryColor}, 0 8px 30px ${hexToRgba(primaryColor, 0.12)}` : 'none' }}>
               {plan.popular && <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[11px] font-bold" style={{ backgroundColor: primaryColor, color: primaryText }}>Most Popular</div>}
@@ -408,13 +447,15 @@ function ClientUpgradeContent() {
           ))}
         </div>
 
-        <div className="mt-12 text-center fu fu3">
-          <div className="flex flex-wrap items-center justify-center gap-6">
-            {[{ icon: Phone, label: 'Cancel anytime' }, { icon: Check, label: 'No setup fees' }, { icon: Clock, label: 'Instant activation' }].map(({ icon: Icon, label }) => (
-              <div key={label} className="flex items-center gap-2" style={{ color: theme.textMuted4 }}><Icon className="h-4 w-4" /><span className="text-sm">{label}</span></div>
-            ))}
+        {planBadges.length > 0 && (
+          <div className="mt-12 text-center fu fu3">
+            <div className="flex flex-wrap items-center justify-center gap-6">
+              {planBadges.map(label => (
+                <div key={label} className="flex items-center gap-2" style={{ color: theme.textMuted4 }}><Check className="h-4 w-4" /><span className="text-sm">{label}</span></div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="mt-8 text-center"><a href="/client/dashboard" className="text-sm hover:underline" style={{ color: theme.textMuted4 }}>← Back to Dashboard</a></div>
       </div>

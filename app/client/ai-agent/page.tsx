@@ -247,7 +247,7 @@ export default function ClientAIAgentPage() {
     const g = greetingMessage.trim();
     if (g.length >= 5) return g.slice(0, 500);
     const bn = client?.business_name || branding?.businessName || 'our office';
-    return `Hi, thanks for calling ${bn}. How can I help you today?`;
+    return `Hey, thanks for calling ${bn}. This call may be recorded. How can we help you today?`;
   };
 
   const playFromUrl = (voiceId: string, url: string) => {
@@ -293,7 +293,7 @@ export default function ClientAIAgentPage() {
   };
   const handleSaveVoice = async () => { if (selectedVoiceId === currentVoiceId || !client) return; setSavingVoice(true); setVoiceSaved(false); try { const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/voice`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` }, body: JSON.stringify({ voice_id: selectedVoiceId }) }); const d = await r.json(); if (d.success) { setCurrentVoiceId(selectedVoiceId); setVoiceSaved(true); setTimeout(() => setVoiceSaved(false), 6000); showMessage('Voice saved. Callers will hear it on the next call.'); } else { showMessage('Failed to save voice. Please try again.', true); setSelectedVoiceId(currentVoiceId); } } catch { showMessage('Error saving voice. Please try again.', true); setSelectedVoiceId(currentVoiceId); } finally { setSavingVoice(false); } };
   const handleSaveGreeting = async () => { if (greetingMessage === originalGreeting || !client) return; setSavingGreeting(true); setGreetingSaved(false); try { const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/greeting`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` }, body: JSON.stringify({ greeting_message: greetingMessage }) }); const d = await r.json(); if (d.success) { setOriginalGreeting(greetingMessage); setGreetingSaved(true); setTimeout(() => setGreetingSaved(false), 6000); showMessage('Greeting saved. Callers will hear it on the next call.'); } else { showMessage(d.error || 'Failed to save greeting. Please try again.', true); } } catch { showMessage('Error saving greeting. Please try again.', true); } finally { setSavingGreeting(false); } };
-  const handleResetGreeting = () => { if (!client?.business_name) return; setGreetingMessage(`Hi, you've reached ${client.business_name}. This call may be recorded for quality and training purposes. How can I help you today?`); };
+  const handleResetGreeting = () => { if (!client?.business_name) return; setGreetingMessage(`Hey, thanks for calling ${client.business_name}. This call may be recorded. How can we help you today?`); };
   const handleTestCall = () => { if (client?.vapi_phone_number) window.location.href = `tel:${client.vapi_phone_number}`; };
   const showMessage = (text: string, isError = false) => { setMessage(text); setMessageError(isError); setTimeout(() => setMessage(''), 5000); };
 
@@ -549,7 +549,7 @@ export default function ClientAIAgentPage() {
             <SectionCard icon={MessageSquare} title="Greeting Message" subtitle="What your AI says first" live theme={theme} primaryColor={primaryColor} glass={glass}>
               {greetingLoading ? <div className="flex items-center justify-center py-6"><Loader2 className="w-5 h-5 animate-spin" style={{ color: primaryColor }} /></div> : (<>
                 <textarea value={greetingMessage} onChange={(e) => setGreetingMessage(e.target.value)} rows={3} maxLength={500}
-                  className="w-full px-4 py-3 rounded-xl text-sm resize-none focus:outline-none transition" style={inputStyle} placeholder="Hi, you've reached [Business Name]..." />
+                  className="w-full px-4 py-3 rounded-xl text-sm resize-none focus:outline-none transition" style={inputStyle} placeholder="Hey, thanks for calling [Business Name]. This call may be recorded. How can we help you today?" />
                 <div className="flex items-center justify-between mt-2">
                   <button onClick={handleResetGreeting} className="flex items-center gap-1 text-[11px]" style={{ color: theme.textMuted4 }}><RotateCcw className="w-3 h-3" /> Reset</button>
                   <span className="text-[11px]" style={{ color: theme.textMuted4 }}>{greetingMessage.length}/500</span>

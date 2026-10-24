@@ -405,6 +405,17 @@ function AgencySettingsContent() {
   const [showClientCallUsage, setShowClientCallUsage] = useState(true);
   const [showClientDiscountCode, setShowClientDiscountCode] = useState(true);
   const [discountCodeToggleSaving, setDiscountCodeToggleSaving] = useState(false);
+  // Client upgrade-page controls: show lower plans, allow client cancel, and the
+  // agency-configurable reassurance badges shown under the plan tiles.
+  const [showLowerPlans, setShowLowerPlans] = useState(false);
+  const [lowerPlansToggleSaving, setLowerPlansToggleSaving] = useState(false);
+  const [allowClientCancel, setAllowClientCancel] = useState(true);
+  const [cancelToggleSaving, setCancelToggleSaving] = useState(false);
+  const [planBadge1, setPlanBadge1] = useState('');
+  const [planBadge2, setPlanBadge2] = useState('');
+  const [planBadge3, setPlanBadge3] = useState('');
+  const [badgesSaving, setBadgesSaving] = useState(false);
+  const [badgesSaved, setBadgesSaved] = useState(false);
   const [showClientSubscription, setShowClientSubscription] = useState(true);
   const [callUsageToggleSaving, setCallUsageToggleSaving] = useState(false);
   const [subscriptionToggleSaving, setSubscriptionToggleSaving] = useState(false);
@@ -490,6 +501,16 @@ function AgencySettingsContent() {
   const slugFormatOk = isSlugFormatValid(slugNormalized);
 
   useEffect(() => { if (agency) { setBillingMethod((agency as any).billing_method || ''); setCustomFeatures(Array.isArray((agency as any).custom_features) ? (agency as any).custom_features : []); setFeatureOverrides(((agency as any).feature_overrides && typeof (agency as any).feature_overrides === 'object') ? (agency as any).feature_overrides : {}); setAgencyName(agency.name || ''); setAgencyPhone((agency as any).phone || ''); setSlugInput(agency.slug || ''); setLogoUrl(agency.logo_url || ''); setLogoPreview(agency.logo_url); setAppName((agency as any).app_name || ''); setAppIconUrl((agency as any).app_icon_url || ''); setAppIconPreview((agency as any).app_icon_url || null); setPriceStarter(agency.price_starter != null ? (agency.price_starter / 100).toString() : ''); setPricePro(agency.price_pro != null ? (agency.price_pro / 100).toString() : ''); setPriceGrowth(agency.price_growth != null ? (agency.price_growth / 100).toString() : ''); const _legacyFee = Number((agency as any).setup_fee_cents) || 0; const _sfS = (agency as any).setup_fee_starter_cents; const _sfP = (agency as any).setup_fee_pro_cents; const _sfG = (agency as any).setup_fee_growth_cents; const _hasPerPlanFee = _sfS != null || _sfP != null || _sfG != null; const _seedFee = (v: any): { on: boolean; amt: string } => { const n = Number(v); if (n > 0) return { on: true, amt: (n / 100).toString() }; if (!_hasPerPlanFee && _legacyFee > 0) return { on: true, amt: (_legacyFee / 100).toString() }; return { on: false, amt: '' }; }; const _fs = _seedFee(_sfS); setSetupOnStarter(_fs.on); setSetupStarter(_fs.amt); const _fp = _seedFee(_sfP); setSetupOnPro(_fp.on); setSetupPro(_fp.amt); const _fg = _seedFee(_sfG); setSetupOnGrowth(_fg.on); setSetupGrowth(_fg.amt); const ls = agency.limit_starter; const lp = agency.limit_pro; const lg = agency.limit_growth; setUnlimitedStarter(ls === -1); setUnlimitedPro(lp === -1); setUnlimitedGrowth(lg === -1); setLimitStarter(ls === -1 ? '50' : (ls || 50).toString()); setLimitPro(lp === -1 ? '150' : (lp || 150).toString()); setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString()); setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES); setBrandColors({ primary: agency.primary_color || '#00a19b', secondary: agency.secondary_color || '#007e77', accent: agency.accent_color || '#01f5d1' }); setAllowClientBranding((agency as any).allow_client_branding || false); setPlanStarterName((agency as any).plan_starter_name || 'Starter'); setPlanProName((agency as any).plan_pro_name || 'Professional'); setPlanGrowthName((agency as any).plan_growth_name || 'Growth'); setPlanStarterDescription((agency as any).plan_starter_description || ''); setPlanProDescription((agency as any).plan_pro_description || ''); setPlanGrowthDescription((agency as any).plan_growth_description || ''); setRequireCardForTrial((agency as any).require_card_for_trial === true); setSetupFeeTiming((agency as any).setup_fee_timing === 'after_trial' ? 'after_trial' : 'upfront'); const _ctd0 = Number((agency as any).client_trial_days); const _ctd = Number.isFinite(_ctd0) && _ctd0 >= 0 ? Math.min(Math.floor(_ctd0), 365) : 7; setClientTrialDays(_ctd); setTrialCustomActive(![0, 7, 14, 30].includes(_ctd)); setMinutePassThrough((agency as any).minute_pass_through === true); setBillMinutesDuringTrial((agency as any).bill_minutes_during_trial === true); const _rc = Number((agency as any).client_minute_rate_cents); setClientMinuteRate(_rc > 0 ? (_rc / 100).toString() : ''); setClientBillingMode((agency as any).client_billing_mode === 'manual' ? 'manual' : 'connect'); setAllowClientPlanChanges((agency as any).allow_client_plan_changes === true); setHideClientBilling((agency as any).hide_client_billing === true); setShowClientCallUsage((agency as any).show_client_call_usage !== false); setShowClientDiscountCode((agency as any).show_client_discount_code !== false); setShowClientSubscription((agency as any).show_client_subscription !== false); setPaystackConnected((agency as any).paystack_connected === true); setPaystackCurrency((agency as any).paystack_currency || null); setFlutterwaveConnected((agency as any).flutterwave_connected === true); setFlutterwaveCurrency((agency as any).flutterwave_currency || null); setPlans((((agency as any).plans) || []).map((p: any) => ({ _uid: 'p_' + (p.key || Math.random().toString(36).slice(2, 8)), key: p.key || '', name: p.name || '', price: p.price_cents != null ? (p.price_cents / 100).toString() : '', call_limit: p.call_limit === -1 ? '50' : String(p.call_limit != null ? p.call_limit : 50), unlimited: p.call_limit === -1, description: p.description || '', setupOn: p.setup_fee_cents != null && p.setup_fee_cents > 0, setupFee: (p.setup_fee_cents != null && p.setup_fee_cents > 0) ? (p.setup_fee_cents / 100).toString() : '', included_minutes: String((p.included_minutes != null && p.included_minutes > 0) ? p.included_minutes : optimalMinutes(p.call_limit)), features: p.features || {}, visible: p.visible !== false }))); } }, [agency?.branding_overrides]);
+
+  // Seed the client-experience controls (lower plans, cancel, plan badges).
+  useEffect(() => {
+    if (!agency) return;
+    setShowLowerPlans((agency as any).show_lower_plans_on_upgrade === true);
+    setAllowClientCancel((agency as any).allow_client_cancel !== false);
+    setPlanBadge1((agency as any).plan_badge_1 ?? '');
+    setPlanBadge2((agency as any).plan_badge_2 ?? '');
+    setPlanBadge3((agency as any).plan_badge_3 ?? '');
+  }, [agency]);
   useEffect(() => { if (activeTab === 'payments' && agency?.id) fetchStripeStatus(); }, [activeTab, agency?.id]);
   useEffect(() => { const onFocus = () => { if (activeTab === 'payments' && agency?.id) fetchStripeStatus(); }; window.addEventListener('focus', onFocus); return () => window.removeEventListener('focus', onFocus); }, [activeTab, agency?.id]);
   useEffect(() => { if (agency) setConnectCountry(((((agency as any).country as string) || 'US')).toUpperCase()); }, [agency?.id]);
@@ -915,6 +936,55 @@ function AgencySettingsContent() {
       if (!res.ok) setShowClientDiscountCode(!next);
     } catch (e) { setShowClientDiscountCode(!next); }
     finally { setDiscountCodeToggleSaving(false); }
+  };
+
+  const handleToggleShowLowerPlans = async () => {
+    if (!agency) return;
+    const next = !showLowerPlans;
+    setLowerPlansToggleSaving(true);
+    setShowLowerPlans(next); // optimistic
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ show_lower_plans_on_upgrade: next }),
+      });
+      if (!res.ok) setShowLowerPlans(!next);
+    } catch (e) { setShowLowerPlans(!next); }
+    finally { setLowerPlansToggleSaving(false); }
+  };
+
+  const handleToggleAllowClientCancel = async () => {
+    if (!agency) return;
+    const next = !allowClientCancel;
+    setCancelToggleSaving(true);
+    setAllowClientCancel(next); // optimistic
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ allow_client_cancel: next }),
+      });
+      if (!res.ok) setAllowClientCancel(!next);
+    } catch (e) { setAllowClientCancel(!next); }
+    finally { setCancelToggleSaving(false); }
+  };
+
+  const handleSavePlanBadges = async () => {
+    if (!agency) return;
+    setBadgesSaving(true); setBadgesSaved(false);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ plan_badge_1: planBadge1.trim(), plan_badge_2: planBadge2.trim(), plan_badge_3: planBadge3.trim() }),
+      });
+      if (res.ok) { setBadgesSaved(true); setTimeout(() => setBadgesSaved(false), 3000); }
+    } catch (e) { /* non-blocking */ }
+    finally { setBadgesSaving(false); }
   };
 
   const handleToggleMinutePassThrough = async () => {
@@ -1436,6 +1506,47 @@ function AgencySettingsContent() {
                     <button type="button" onClick={handleToggleShowCallUsage} disabled={callUsageToggleSaving} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50" style={{ backgroundColor: showClientCallUsage ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
                       <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out" style={{ transform: showClientCallUsage ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
                     </button>
+                  </div>
+                </div>
+
+                {/* Client upgrade page: show lower plans than the client's current one. */}
+                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-sm sm:text-base mb-1">Show lower plans on the upgrade page</h4>
+                      <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>When on, a client on a paid plan can see and switch to plans priced below their current one. When off (default), the upgrade page shows only their current plan and higher, so clients upgrade rather than quietly downgrade.</p>
+                    </div>
+                    <button type="button" onClick={handleToggleShowLowerPlans} disabled={lowerPlansToggleSaving} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50" style={{ backgroundColor: showLowerPlans ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
+                      <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out" style={{ transform: showLowerPlans ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Let clients cancel their subscription from the client dashboard. */}
+                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-sm sm:text-base mb-1">Let clients cancel from their dashboard</h4>
+                      <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>When on, clients can cancel their subscription from their own dashboard. When off, the cancel option is hidden and they are pointed to you instead (the cancel is also blocked on the server, not just hidden).</p>
+                    </div>
+                    <button type="button" onClick={handleToggleAllowClientCancel} disabled={cancelToggleSaving} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50" style={{ backgroundColor: allowClientCancel ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
+                      <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out" style={{ transform: allowClientCancel ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Agency-configurable reassurance badges under the plan tiles (client upgrade + signup pages). */}
+                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                  <h4 className="font-medium text-sm sm:text-base mb-1">Plan page badges</h4>
+                  <p className="text-xs sm:text-sm leading-relaxed mb-3" style={{ color: theme.textMuted }}>The short reassurance lines shown under your plans on the client upgrade and signup pages (they replace the old &quot;Cancel anytime / No setup fees&quot;). Leave one blank to hide it; leave all three blank to use the defaults. Keep each short, e.g. &quot;Instant activation&quot;, &quot;Secure checkout&quot;.</p>
+                  <div className="space-y-2">
+                    <input type="text" maxLength={40} value={planBadge1} onChange={e => setPlanBadge1(e.target.value)} placeholder="Instant activation" className="w-full rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                    <input type="text" maxLength={40} value={planBadge2} onChange={e => setPlanBadge2(e.target.value)} placeholder="Secure checkout" className="w-full rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                    <input type="text" maxLength={40} value={planBadge3} onChange={e => setPlanBadge3(e.target.value)} placeholder="Optional third badge" className="w-full rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                  </div>
+                  <div className="flex items-center gap-3 mt-3">
+                    <button type="button" onClick={handleSavePlanBadges} disabled={badgesSaving} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{badgesSaving ? 'Saving…' : 'Save badges'}</button>
+                    {badgesSaved && <span className="text-xs" style={{ color: theme.primary }}>Saved</span>}
                   </div>
                 </div>
 

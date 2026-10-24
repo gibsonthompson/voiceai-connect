@@ -285,6 +285,15 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
   const minuteRate = agency.client_minute_rate_cents != null ? (agency.client_minute_rate_cents / 100).toFixed(2) : null;
   const trialDays = (agency.client_trial_days ?? 7) as number;
   const trialLabel = trialDays > 0 ? `${trialDays}-day free trial` : 'free trial';
+  // Agency-configurable reassurance badges shown next to the trial label. If the
+  // agency set any, show exactly the non-empty ones; otherwise neutral defaults.
+  // (Replaces the old hardcoded "Cancel anytime / Setup in minutes".)
+  const planBadges = (() => {
+    const raw = [(agency as any).plan_badge_1, (agency as any).plan_badge_2, (agency as any).plan_badge_3];
+    const configured = raw.some(v => v != null);
+    const source = configured ? raw : ['Instant activation', 'Secure checkout', null];
+    return source.map(v => (typeof v === 'string' ? v.trim() : '')).filter(Boolean);
+  })();
 
   // The exact string recorded as consent (stored verbatim server-side via
   // consent_text). The rendered label below shows the same wording with
@@ -705,8 +714,9 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
           <div className="mt-10 sm:mt-12 text-center">
             <div className="inline-flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm" style={{ color: isDark ? 'rgba(250,250,249,0.4)' : '#9ca3af' }}>
               <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-400" />{trialLabel}</span>
-              <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-400" />Cancel anytime</span>
-              <span className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-400" />Setup in minutes</span>
+              {planBadges.map(label => (
+                <span key={label} className="flex items-center gap-1.5"><Check className="h-4 w-4 text-emerald-400" />{label}</span>
+              ))}
             </div>
           </div>
         </div>
