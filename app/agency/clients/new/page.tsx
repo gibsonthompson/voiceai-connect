@@ -176,7 +176,7 @@ export default function AddClientPage() {
   const [billingLoading, setBillingLoading] = useState(false);
 
   const isDark = agency?.website_theme !== 'light';
-  const primaryColor = branding.primaryColor || '#00a19b';
+  const primaryColor = branding.primaryColor || '#10b981';
   const buttonTextColor = getContrastColor(primaryColor);
 
   const textColor = isDark ? '#fafaf9' : '#111827';
@@ -227,6 +227,16 @@ export default function AddClientPage() {
   // Per-client cost for the agency (from their platform plan)
   const agencyPlanRates = PLAN_RATES[normalizePlanType(agency?.plan_type)];
   const perClientCost = agencyPlanRates?.perClient ?? 0;
+
+  // Is the AGENCY itself on its platform free trial? While it is, the platform
+  // subscription is in a Stripe trial, so adding clients charges nothing until
+  // the trial ends (prorations roll into the first post-trial invoice). Trial
+  // agencies often hesitate to add clients for fear of an instant charge, so the
+  // cost note leads with that reassurance and names when billing actually starts.
+  const agencyOnTrial = ['trial', 'trialing'].includes(String(agency?.subscription_status || '').toLowerCase());
+  const agencyTrialEndStr = agency?.trial_ends_at
+    ? new Date(agency.trial_ends_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })
+    : '';
 
   // Agency's own display currency, derived from its country. This labels the
   // client-facing plan prices (price_starter / price_pro / price_growth), which
@@ -1067,7 +1077,15 @@ export default function AddClientPage() {
             >
               <DollarSign className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: primaryColor }} />
               <p className="text-xs leading-relaxed" style={{ color: mutedTextColor }}>
-                Adding this client adds <strong style={{ color: isDark ? '#fafaf9' : '#111827' }}>{formatPlatformCost(perClientCost)}/mo</strong> to your platform bill, plus voice usage at your plan rate.{' '}
+                {agencyOnTrial ? (
+                  <>
+                    You&apos;re on a free trial, so adding this client <strong style={{ color: isDark ? '#fafaf9' : '#111827' }}>won&apos;t charge you anything now</strong>. Once your trial ends{agencyTrialEndStr ? ` on ${agencyTrialEndStr}` : ''}, it adds {formatPlatformCost(perClientCost)}/mo to your platform bill, plus voice usage at your plan rate.{' '}
+                  </>
+                ) : (
+                  <>
+                    Adding this client adds <strong style={{ color: isDark ? '#fafaf9' : '#111827' }}>{formatPlatformCost(perClientCost)}/mo</strong> to your platform bill, plus voice usage at your plan rate.{' '}
+                  </>
+                )}
                 <a href="/agency/settings?tab=billing" className="underline" style={{ color: primaryColor }}>View billing</a>
               </p>
             </div>
