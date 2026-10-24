@@ -137,7 +137,7 @@ export default function AgencyReactivatePage() {
   const agencyName = agency?.name || 'Your Agency';
 
   const t = {
-    bg: isDark ? '#050505' : '#f9fafb',
+    bg: isDark ? '#141414' : '#f9fafb',
     card: isDark
       ? 'linear-gradient(180deg, rgba(255,255,255,0.024), rgba(255,255,255,0.006))'
       : '#ffffff',
@@ -208,7 +208,7 @@ export default function AgencyReactivatePage() {
   // ── Loading ─────────────────────────────────────────────────────────
   if (mode === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#050505' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#141414' }}>
         <Loader2 className="h-7 w-7 animate-spin" style={{ color: '#00a19b' }} />
       </div>
     );

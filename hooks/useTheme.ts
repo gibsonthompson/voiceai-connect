@@ -181,12 +181,15 @@ export interface Theme {
 // DARK THEME GENERATOR
 // ============================================================================
 function buildDarkTheme(primary: string, overrides?: BrandingOverrides): Theme {
-  const baseBg = '#050505';
+  // Base dark surfaces. Lifted off pure near-black (#050505) to a comfortable
+  // dark gray so the default dashboard is easier on the eyes and surfaces read.
+  // Agency branding_overrides (page_bg / nav_bg) and light mode are unaffected.
+  const baseBg = '#141414';
   const baseText = '#fafaf9';
   const baseTextMuted = 'rgba(250,250,249,0.5)';
   const baseCard = 'rgba(255,255,255,0.02)';
   const baseBorder = 'rgba(255,255,255,0.06)';
-  const baseSidebarBg = '#050505';
+  const baseSidebarBg = '#141414';
 
   // Structural overrides are gated by mode brightness so a LIGHT override never
   // bleeds into dark mode (and vice versa in buildLightTheme). Without this, an
