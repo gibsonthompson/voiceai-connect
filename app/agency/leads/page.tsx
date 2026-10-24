@@ -7,7 +7,7 @@ import {
   Users, Search, Plus, ChevronDown, Loader2,
   Target, Phone, PhoneCall, Mail, MessageSquare, Calendar, Clock,
   AlertCircle, X, Check, Info, Filter, FileSpreadsheet, SkipForward,
-  ExternalLink, Sparkles, MapPin, Globe, FileText,
+  ExternalLink, Sparkles, MapPin, Globe, FileText, Trash2,
 } from 'lucide-react';
 import { useAgency } from '../context';
 import LockedFeatureOverlay from '@/components/LockedFeature';
@@ -18,6 +18,7 @@ import { getDemoLeads } from '../demoData';
 import CSVImportModal from '@/components/CSVImportModal';
 import ComposerModal from '@/components/ComposerModal';
 import CallScriptModal from '@/components/CallScriptModal';
+import LeadsManagerModal from '@/components/agency/LeadsManagerModal';
 
 interface FollowUpItem {
   lead_id: string;
@@ -303,6 +304,7 @@ export default function AgencyLeadsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('priority');
   const [showCSVImport, setShowCSVImport] = useState(false);
+  const [showManage, setShowManage] = useState(false);
 
   // Focus-station state
   const [currentId, setCurrentId] = useState<string | null>(null);
@@ -541,6 +543,11 @@ export default function AgencyLeadsPage() {
             <Link href="/agency/leads/new" prefetch={false} className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors bg-[var(--lp-input)] border border-[var(--lp-input-border)] text-[var(--lp-muted)] hover:bg-[var(--lp-hover)]">
               <Plus className="h-4 w-4" />Add Lead
             </Link>
+            {!readOnly && (
+              <button onClick={() => setShowManage(true)} className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors bg-[var(--lp-input)] border border-[var(--lp-input-border)] text-[var(--lp-muted)] hover:bg-[var(--lp-hover)]">
+                <Trash2 className="h-4 w-4" />Manage
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -650,6 +657,16 @@ export default function AgencyLeadsPage() {
           agencyId={agency.id}
           onImportComplete={() => { fetchLeads(); fetchFollowUpQueue(); }}
           theme={theme}
+        />
+      )}
+
+      {/* Bulk lead management (filter + select + delete). Paid, non-demo only. */}
+      {!readOnly && agency && (
+        <LeadsManagerModal
+          agencyId={agency.id}
+          open={showManage}
+          onClose={() => setShowManage(false)}
+          onChanged={() => { fetchLeads(); fetchFollowUpQueue(); }}
         />
       )}
 
