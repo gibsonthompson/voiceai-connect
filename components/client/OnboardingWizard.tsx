@@ -5,7 +5,7 @@ import {
   Clock, Briefcase, HelpCircle, Users, Mic, Rocket,
   ChevronRight, ChevronLeft, Loader2, Phone, Play, Pause,
   Check, Plus, Trash2, Copy, CheckCircle, Sparkles, ArrowRight,
-  RotateCcw, Globe, FileText, X, Smartphone, UserPlus
+  RotateCcw, Globe, FileText, X, Smartphone, UserPlus, ChevronUp, ChevronDown
 } from 'lucide-react';
 import { useClientTheme } from '@/hooks/useClientTheme';
 import StaffMembersSection from './StaffMembersSection';
@@ -33,14 +33,105 @@ const STEP_META = [
   { key: 'golive', label: 'Go Live', icon: Rocket },
 ];
 
-const TIME_OPTIONS = [
-  '6:00 AM','6:30 AM','7:00 AM','7:30 AM','8:00 AM','8:30 AM',
-  '9:00 AM','9:30 AM','10:00 AM','10:30 AM','11:00 AM','11:30 AM',
-  '12:00 PM','12:30 PM','1:00 PM','1:30 PM','2:00 PM','2:30 PM',
-  '3:00 PM','3:30 PM','4:00 PM','4:30 PM','5:00 PM','5:30 PM',
-  '6:00 PM','6:30 PM','7:00 PM','7:30 PM','8:00 PM','8:30 PM',
-  '9:00 PM','9:30 PM','10:00 PM','10:30 PM','11:00 PM',
-];
+// ── Time field ────────────────────────────────────────────────────────
+// A typed time field with up/down "notches" that step by 30 minutes, snapping
+// to the half-hour grid. No dropdown. Accepts flexible typed input ("9", "9am",
+// "9:15 PM", "930", "17:00") and normalizes to the "H:MM AM/PM" string the rest
+// of the hours code (formatHoursText / formatHoursJSON / parseHoursFromText) uses.
+const TIME_STEP_MIN = 30;
+
+function parseClockToMinutes(raw: string): number | null {
+  const s = String(raw || '').trim().toUpperCase();
+  if (!s) return null;
+  let m = s.match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?$/);
+  if (m) {
+    let hr = parseInt(m[1], 10);
+    const min = m[2] ? parseInt(m[2], 10) : 0;
+    if (min > 59) return null;
+    const ap = m[3];
+    if (ap) {
+      if (hr < 1 || hr > 12) return null;
+      hr = ap === 'AM' ? (hr === 12 ? 0 : hr) : (hr === 12 ? 12 : hr + 12);
+    } else if (hr > 23) {
+      return null;
+    }
+    return hr * 60 + min;
+  }
+  m = s.match(/^(\d{3,4})$/); // 930 -> 9:30, 1730 -> 17:30
+  if (m) {
+    const n = m[1];
+    const hr = parseInt(n.slice(0, n.length - 2), 10);
+    const min = parseInt(n.slice(-2), 10);
+    if (hr > 23 || min > 59) return null;
+    return hr * 60 + min;
+  }
+  return null;
+}
+
+function minutesToClockLabel(mins: number): string {
+  const m = ((mins % 1440) + 1440) % 1440;
+  const hr = Math.floor(m / 60);
+  const min = m % 60;
+  const ap = hr >= 12 ? 'PM' : 'AM';
+  let h12 = hr % 12;
+  if (h12 === 0) h12 = 12;
+  return `${h12}:${String(min).padStart(2, '0')} ${ap}`;
+}
+
+function TimeStepper({ value, onChange, ui }: {
+  value: string;
+  onChange: (v: string) => void;
+  ui: { bg: string; border: string; text: string; muted: string };
+}) {
+  const [draft, setDraft] = useState(value);
+  useEffect(() => { setDraft(value); }, [value]);
+
+  // Normalize a typed value on blur/Enter. Unparseable input reverts to the
+  // last valid time so the field can never hold garbage.
+  const commit = (raw: string) => {
+    const mins = parseClockToMinutes(raw);
+    if (mins == null) { setDraft(value); return; }
+    const label = minutesToClockLabel(mins);
+    setDraft(label);
+    if (label !== value) onChange(label);
+  };
+  // Notch up/down: snap to the next/previous half-hour boundary.
+  const step = (dir: 1 | -1) => {
+    const base = parseClockToMinutes(draft);
+    const b = base == null ? 540 : base; // 9:00 AM fallback
+    const next = dir === 1
+      ? Math.floor(b / TIME_STEP_MIN) * TIME_STEP_MIN + TIME_STEP_MIN
+      : Math.ceil(b / TIME_STEP_MIN) * TIME_STEP_MIN - TIME_STEP_MIN;
+    const label = minutesToClockLabel(next);
+    setDraft(label);
+    onChange(label);
+  };
+
+  return (
+    <div className="flex items-stretch rounded-lg overflow-hidden"
+      style={{ backgroundColor: ui.bg, border: `1px solid ${ui.border}` }}>
+      <input
+        type="text" value={draft}
+        onChange={e => setDraft(e.target.value)}
+        onBlur={e => commit(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+        className="w-[72px] px-2 py-1.5 text-sm bg-transparent focus:outline-none text-center"
+        style={{ color: ui.text }}
+        aria-label="Time" />
+      <div className="flex flex-col flex-shrink-0" style={{ borderLeft: `1px solid ${ui.border}` }}>
+        <button type="button" onClick={() => step(1)} aria-label="Later"
+          className="flex-1 px-1.5 flex items-center justify-center transition hover:opacity-60" style={{ color: ui.muted }}>
+          <ChevronUp className="w-3 h-3" />
+        </button>
+        <button type="button" onClick={() => step(-1)} aria-label="Earlier"
+          className="flex-1 px-1.5 flex items-center justify-center transition hover:opacity-60"
+          style={{ color: ui.muted, borderTop: `1px solid ${ui.border}` }}>
+          <ChevronDown className="w-3 h-3" />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 const DEFAULT_HOURS: BusinessHours = {
   monday:    { open: '9:00 AM', close: '5:00 PM', closed: false },
@@ -708,6 +799,12 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
     border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
     color: theme.text,
   };
+  const stepperUi = {
+    bg: theme.isDark ? 'rgba(255,255,255,0.04)' : '#ffffff',
+    border: theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb',
+    text: theme.text,
+    muted: theme.textMuted,
+  };
 
   // ====================================================================
   // STEP RENDERERS
@@ -839,12 +936,12 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
         <h2 className="text-xl sm:text-2xl font-bold tracking-tight mb-1" style={{ color: theme.text }}>
           When are you open?
         </h2>
-        <p className="text-sm mb-6" style={{ color: theme.textMuted }}>
+        <p className="text-sm mb-5" style={{ color: theme.textMuted }}>
           Tap the days you are open, then set your hours. Your AI uses this to tell callers when you are open.
         </p>
 
         {/* Presets — one tap fills a typical week */}
-        <div className="flex flex-wrap gap-2 mb-6">
+        <div className="flex flex-wrap gap-2 mb-4">
           {[
             { key: 'weekdays' as const, label: 'Weekdays 9 to 5' },
             { key: 'everyday' as const, label: 'Every day 9 to 5' },
@@ -862,12 +959,12 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
         <label className="text-xs font-semibold uppercase tracking-wider mb-2 block" style={{ color: theme.textMuted }}>
           Days open
         </label>
-        <div className="flex gap-1.5 mb-6">
+        <div className="flex gap-1.5 mb-4">
           {DAY_NAMES.map(day => {
             const open = !hours[day].closed;
             return (
               <button key={day} onClick={() => toggleDay(day)}
-                className="flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all hover:scale-[1.03] active:scale-[0.97]"
+                className="flex-1 py-2 rounded-xl text-xs font-semibold transition-all hover:scale-[1.03] active:scale-[0.97]"
                 style={open
                   ? { backgroundColor: theme.primary, color: theme.primaryText }
                   : { ...glass, color: theme.textMuted }}>
@@ -884,7 +981,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
         ) : (
           <>
             {/* Same hours every day switch */}
-            <div className="flex items-center justify-between p-3 rounded-xl mb-3" style={glass}>
+            <div className="flex items-center justify-between px-3 py-2.5 rounded-xl mb-2.5" style={glass}>
               <div>
                 <p className="text-sm font-medium" style={{ color: theme.text }}>Same hours every day</p>
                 <p className="text-[11px]" style={{ color: theme.textMuted }}>
@@ -901,9 +998,9 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
             </div>
 
             {sameHours ? (
-              <div className="space-y-2 ob-fi">
+              <div className="space-y-1.5 ob-fi">
                 <button type="button" onClick={() => setSharedOpen24(!sharedOpen24)}
-                  className="w-full flex items-center justify-between p-3 rounded-xl" style={glass}>
+                  className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl" style={glass}>
                   <span className="text-xs font-semibold" style={{ color: theme.text }}>Open 24 hours</span>
                   <span className="relative w-11 h-6 rounded-full transition-colors flex-shrink-0"
                     style={{ backgroundColor: sharedOpen24 ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.12)' : '#d1d5db') }}>
@@ -912,26 +1009,20 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
                   </span>
                 </button>
                 {!sharedOpen24 && (
-                  <div className="flex items-center gap-2 p-3 rounded-xl" style={glass}>
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={glass}>
                     <span className="text-xs font-semibold flex-shrink-0" style={{ color: theme.textMuted }}>Hours</span>
                     <div className="flex items-center gap-2 ml-auto">
-                      <select value={shared.open} onChange={e => setSharedTime('open', e.target.value)}
-                        className="px-3 py-2 text-sm rounded-lg focus:outline-none" style={inputStyle}>
-                        {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
-                      </select>
+                      <TimeStepper value={shared.open} onChange={v => setSharedTime('open', v)} ui={stepperUi} />
                       <span className="text-xs" style={{ color: theme.textMuted }}>to</span>
-                      <select value={shared.close} onChange={e => setSharedTime('close', e.target.value)}
-                        className="px-3 py-2 text-sm rounded-lg focus:outline-none" style={inputStyle}>
-                        {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
-                      </select>
+                      <TimeStepper value={shared.close} onChange={v => setSharedTime('close', v)} ui={stepperUi} />
                     </div>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="space-y-2 ob-fi">
+              <div className="space-y-1.5 ob-fi">
                 {openDays.map(day => (
-                  <div key={day} className="flex items-center gap-2 p-2.5 rounded-xl" style={glass}>
+                  <div key={day} className="flex items-center gap-2 px-3 py-1.5 rounded-xl" style={glass}>
                     <span className="w-10 text-xs font-semibold flex-shrink-0" style={{ color: theme.text }}>
                       {DAY_LABELS[day]}
                     </span>
@@ -940,15 +1031,9 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
                         <span className="text-xs font-medium" style={{ color: theme.primary }}>Open 24 hours</span>
                       ) : (
                         <>
-                          <select value={hours[day].open} onChange={e => setDayTime(day, 'open', e.target.value)}
-                            className="px-3 py-2 text-sm rounded-lg focus:outline-none" style={inputStyle}>
-                            {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
-                          </select>
+                          <TimeStepper value={hours[day].open} onChange={v => setDayTime(day, 'open', v)} ui={stepperUi} />
                           <span className="text-xs" style={{ color: theme.textMuted }}>to</span>
-                          <select value={hours[day].close} onChange={e => setDayTime(day, 'close', e.target.value)}
-                            className="px-3 py-2 text-sm rounded-lg focus:outline-none" style={inputStyle}>
-                            {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
-                          </select>
+                          <TimeStepper value={hours[day].close} onChange={v => setDayTime(day, 'close', v)} ui={stepperUi} />
                         </>
                       )}
                       <button type="button" onClick={() => setDayOpen24(day, !hours[day].open24)}
