@@ -253,9 +253,10 @@ export default function SupportWidget() {
   // Hide on dashboard routes
   if (pathname.startsWith('/agency') || pathname.startsWith('/client') || pathname.startsWith('/cc') || pathname.startsWith('/dashboard') || pathname.startsWith('/admin') || pathname.startsWith('/live')) return null;
 
-  // Hide the FAB on the interactive demo in mobile view. The demo has its own
-  // in-frame controls on phones and the floating button overlaps them.
-  if (pathname.startsWith('/signup')) return null;
+  // Hide on focused sign-up / onboarding / auth flows. These are single-purpose
+  // steps (pick a plan, name your agency, set a password) where a floating help
+  // chat only clutters the screen; support lives on the marketing site instead.
+  if (pathname.startsWith('/signup') || pathname.startsWith('/onboarding') || pathname.startsWith('/auth')) return null;
   if (pathname === '/interactive-demo' && isNarrow) return null;
 
   // Never leak into the embedded widget or a client-scoped signup/auth surface

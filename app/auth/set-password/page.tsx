@@ -74,7 +74,7 @@ function SetPasswordContent() {
   const agencyParam = searchParams.get('agency');
 
   useEmbedMessaging(isEmbed);
-  
+
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -82,7 +82,7 @@ function SetPasswordContent() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [redirectTarget, setRedirectTarget] = useState<string | null>(null);
-  
+
   const [agency, setAgency] = useState<Agency | null>(null);
   const [isAgencySubdomain, setIsAgencySubdomain] = useState(false);
   const [contextLoading, setContextLoading] = useState(true);
@@ -130,9 +130,9 @@ function SetPasswordContent() {
           setContextLoading(false);
           return;
         }
-        
+
         const response = await fetch(`${backendUrl}/api/agency/by-host?host=${host}`);
-        
+
         if (response.ok) {
           const data = await response.json();
           setAgency(data.agency);
@@ -295,44 +295,82 @@ function SetPasswordContent() {
   const inputBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
   const inputText = isDark ? '#fafaf9' : '#111827';
 
-  const wrapperStyle: React.CSSProperties = isEmbed
-    ? { backgroundColor: bgColor, color: textColor }
-    : { backgroundColor: bgColor, color: textColor };
+  const wrapperStyle: React.CSSProperties = { backgroundColor: bgColor, color: textColor };
 
-  // Match the rest of the signup flow (app/signup + app/signup/plan): desktop
-  // renders at zoom 0.8 so this page is the SAME scale as the pages around it
-  // (it was rendering ~25% larger at zoom 1). Mobile ignores CSS zoom, so it
-  // uses transform:scale like the other steps.
+  // Shared signup-flow scaling. This is the SAME wrapper the rest of the flow
+  // uses (app/signup and app/signup/plan): desktop renders at zoom 0.8 and
+  // mobile at transform:scale(0.9), so set-password sits at the exact scale of
+  // the plan step that precedes it. The page is otherwise built at full,
+  // natural sizes (nav h-16 sm:h-20, real logo, full-size card) that mirror the
+  // plan and onboarding chrome, so nothing here is force-shrunk to compensate.
   const ZOOM_STYLE = '@media (min-width:768px){.signup-mobile-zoom{zoom:0.8}}@media (max-width:767px){html,body{overflow-x:hidden}.signup-mobile-zoom{transform:scale(0.9);transform-origin:top left;width:111.111%;min-height:111.111vh}}';
+
+  // Header matches the plan + onboarding chrome exactly: fixed bar, h-16 sm:h-20
+  // row, max-w-7xl gutter, blurred translucent background. Platform shows the
+  // VoiceAI Connect wordmark; an agency host shows its own logo (or a branded
+  // initial tile), honoring the agency's signup_logo_align.
+  const renderHeader = () => (
+    <header className="fixed top-0 left-0 right-0 z-40 border-b backdrop-blur-xl"
+      style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)', backgroundColor: isDark ? 'rgba(5,5,5,0.8)' : 'rgba(255,255,255,0.8)' }}>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 sm:h-20 items-center" style={{ justifyContent: logoAlign === 'center' ? 'center' : logoAlign === 'right' ? 'flex-end' : 'flex-start' }}>
+          <a href="/" className="flex items-center gap-2.5 sm:gap-3 group min-w-0">
+            {agency?.logo_url ? (
+              <img src={agency.logo_url} alt={agency.name} className="h-12 sm:h-14 w-auto max-w-[220px] object-contain" />
+            ) : !isAgencySubdomain ? (
+              <img src="/voiceai-connect-logo.png" alt="VoiceAI Connect" className="h-9 sm:h-10 w-auto object-contain" />
+            ) : (
+              <>
+                <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl" style={{ backgroundColor: primaryColor, border: isDark ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
+                  <Lock className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: primaryLight ? '#050505' : '#fafaf9' }} />
+                </div>
+                <span className="text-base sm:text-lg font-semibold tracking-tight">{brandName}</span>
+              </>
+            )}
+          </a>
+        </div>
+      </div>
+    </header>
+  );
+
+  const noiseOverlay = (
+    <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
+      style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
+  );
+
+  const glow = (
+    <div className="fixed inset-0 pointer-events-none overflow-hidden">
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] rounded-full blur-[128px] opacity-[0.07]" style={{ backgroundColor: primaryColor }} />
+    </div>
+  );
 
   // ============================================================================
   // SUCCESS STATE: honest message, link to sign in
   // ============================================================================
   if (success) {
     return (
-      <div className={isEmbed ? 'flex items-center justify-center py-6 px-2 sm:px-4' : 'min-h-screen flex items-center justify-center px-4 sm:px-6 signup-mobile-zoom'} style={wrapperStyle}>
+      <div className={isEmbed ? 'flex items-center justify-center py-6 px-2 sm:px-4' : 'min-h-screen flex items-center justify-center px-4 sm:px-6 py-28 sm:py-32 signup-mobile-zoom'} style={wrapperStyle}>
         {!isEmbed && <style>{`html,body{background-color:${bgColor} !important;}${ZOOM_STYLE}`}</style>}
         {!isEmbed && <DynamicFavicon logoUrl={faviconLogo} primaryColor={primaryColor} />}
-        {isDark && !isEmbed && (
-          <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
-            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
-        )}
-        <div className="w-full max-w-md">
-          <div className="rounded-2xl p-7 text-center"
+        {isDark && !isEmbed && noiseOverlay}
+        {isDark && !isEmbed && glow}
+        {!isEmbed && renderHeader()}
+        <div className="relative w-full max-w-md">
+          <div className="rounded-2xl p-8 sm:p-10 text-center"
             style={{ backgroundColor: cardBg, border: `1px solid ${cardBorder}`, boxShadow: isEmbed ? 'none' : (isDark ? '0 25px 50px -12px rgba(0,0,0,0.5)' : '0 25px 50px -12px rgba(0,0,0,0.1)') }}>
-            <div className="mx-auto w-14 h-14 rounded-full flex items-center justify-center mb-5" style={{ backgroundColor: `${primaryColor}1A` }}>
-              <CheckCircle2 className="h-7 w-7" style={{ color: primaryColor }} />
+            <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-6" style={{ backgroundColor: `${primaryColor}1A` }}>
+              <CheckCircle2 className="h-8 w-8" style={{ color: primaryColor }} />
             </div>
-            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight mb-2">Password Set Successfully!</h1>
-            <p className="mb-6" style={{ color: mutedTextColor }}>
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-3">Password Set Successfully!</h1>
+            <p className="mb-7 text-base" style={{ color: mutedTextColor }}>
               {isEmbed
                 ? 'Your account is ready. Taking you to sign in...'
-                : 'Taking you to your dashboard. If you\u2019re not redirected, you may need to sign in.'}
+                : 'Taking you to your dashboard. If you’re not redirected, you may need to sign in.'}
             </p>
             {!isEmbed && (
               <a
                 href={loginUrl}
-                className="inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium transition-all hover:scale-[1.02] active:scale-[0.98]"
+                className="inline-flex items-center justify-center gap-2 rounded-full px-7 py-3.5 text-base font-medium transition-all hover:scale-[1.02] active:scale-[0.98]"
                 style={{ backgroundColor: primaryColor, color: primaryLight ? '#050505' : '#fafaf9' }}
               >
                 Go to Sign In
@@ -349,53 +387,23 @@ function SetPasswordContent() {
       {!isEmbed && <style>{`html,body{background-color:${bgColor} !important;}${ZOOM_STYLE}`}</style>}
       {!isEmbed && <DynamicFavicon logoUrl={faviconLogo} primaryColor={primaryColor} />}
 
-      {isDark && !isEmbed && (
-        <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
-          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />
-      )}
-
-      {isDark && !isEmbed && (
-        <div className="fixed inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full blur-[128px] opacity-[0.07]" style={{ backgroundColor: primaryColor }} />
-        </div>
-      )}
+      {isDark && !isEmbed && noiseOverlay}
+      {isDark && !isEmbed && glow}
 
       {/* Header, only outside of embed mode */}
-      {!isEmbed && (
-        <header className="fixed top-0 left-0 right-0 z-40 border-b backdrop-blur-xl"
-          style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)', backgroundColor: isDark ? 'rgba(5,5,5,0.9)' : 'rgba(255,255,255,0.9)' }}>
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="flex h-14 sm:h-16 items-center" style={{ justifyContent: logoAlign === 'center' ? 'center' : logoAlign === 'right' ? 'flex-end' : 'flex-start' }}>
-              <a href="/" className="flex items-center gap-2.5 sm:gap-3 group min-w-0">
-                {agency?.logo_url ? (
-                  <img src={agency.logo_url} alt={agency.name} className="h-10 sm:h-12 w-auto max-w-[200px] object-contain" />
-                ) : !isAgencySubdomain ? (
-                  <img src="/voiceai-connect-logo.png" alt="VoiceAI Connect" className="h-8 w-auto" />
-                ) : (
-                  <>
-                    <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl" style={{ backgroundColor: primaryColor, border: isDark ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
-                      <Lock className="h-3.5 w-3.5 sm:h-4 sm:w-4" style={{ color: primaryLight ? '#050505' : '#fafaf9' }} />
-                    </div>
-                    <span className="text-sm sm:text-base font-semibold tracking-tight">{brandName}</span>
-                  </>
-                )}
-              </a>
-            </div>
-          </div>
-        </header>
-      )}
+      {!isEmbed && renderHeader()}
 
       {/* Main Content */}
-      <main className={isEmbed ? 'relative min-h-0 py-2 px-2 sm:px-4' : 'relative min-h-screen flex items-center justify-center px-4 sm:px-6 py-32'}>
+      <main className={isEmbed ? 'relative min-h-0 py-2 px-2 sm:px-4' : 'relative min-h-screen flex items-center justify-center px-4 sm:px-6 py-28 sm:py-32'}>
         <div className="relative w-full max-w-md mx-auto">
-          <div className="rounded-2xl p-6 sm:p-7"
+          <div className="rounded-2xl p-8 sm:p-10"
             style={{ backgroundColor: cardBg, border: `1px solid ${cardBorder}`, boxShadow: isEmbed ? 'none' : (isDark ? '0 25px 50px -12px rgba(0,0,0,0.5)' : '0 25px 50px -12px rgba(0,0,0,0.1)') }}>
-            <div className="text-center mb-6">
-              <div className="mx-auto w-12 h-12 rounded-2xl flex items-center justify-center mb-4" style={{ backgroundColor: `${primaryColor}15` }}>
-                <Lock className="h-5 w-5" style={{ color: primaryColor }} />
+            <div className="text-center mb-7">
+              <div className="mx-auto w-14 h-14 rounded-2xl flex items-center justify-center mb-5" style={{ backgroundColor: `${primaryColor}15` }}>
+                <Lock className="h-6 w-6" style={{ color: primaryColor }} />
               </div>
-              <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Set Your Password</h1>
-              <p className="mt-2" style={{ color: mutedTextColor }}>Create a secure password to access your dashboard</p>
+              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Set Your Password</h1>
+              <p className="mt-3 text-base" style={{ color: mutedTextColor }}>Create a secure password to access your dashboard</p>
             </div>
 
             {!token ? (
@@ -404,13 +412,13 @@ function SetPasswordContent() {
                 {error}
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
                   <label className="block text-sm font-medium mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>New Password</label>
                   <div className="relative">
                     <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••" required minLength={8}
-                      className="w-full rounded-xl px-4 py-3 pr-12 focus:outline-none focus:ring-2 transition-all"
+                      className="w-full rounded-xl px-4 py-3.5 pr-12 text-base focus:outline-none focus:ring-2 transition-all"
                       style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: inputText, '--tw-ring-color': `${primaryColor}50` } as React.CSSProperties} />
                     <button type="button" onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors" style={{ color: isDark ? 'rgba(250,250,249,0.4)' : '#9ca3af' }}>
@@ -424,7 +432,7 @@ function SetPasswordContent() {
                   <label className="block text-sm font-medium mb-2" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Confirm Password</label>
                   <input type={showPassword ? 'text' : 'password'} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="••••••••" required minLength={8}
-                    className="w-full rounded-xl px-4 py-3 focus:outline-none focus:ring-2 transition-all"
+                    className="w-full rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 transition-all"
                     style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: inputText, '--tw-ring-color': `${primaryColor}50` } as React.CSSProperties} />
                 </div>
 
@@ -436,7 +444,7 @@ function SetPasswordContent() {
                 )}
 
                 <button type="submit" disabled={loading}
-                  className="group w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-sm font-medium transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  className="group w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-4 text-base font-medium transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                   style={{ backgroundColor: primaryColor, color: primaryLight ? '#050505' : '#fafaf9', boxShadow: isDark ? `0 0 30px ${primaryColor}30` : `0 4px 14px ${primaryColor}40` }}>
                   {loading ? (<><Loader2 className="h-4 w-4 animate-spin" />Setting password...</>) : 'Set Password & Continue'}
                 </button>
