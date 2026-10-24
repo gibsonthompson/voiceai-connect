@@ -12,6 +12,7 @@ import LegalEditor from '@/components/agency/LegalEditor';
 import LockedFeature from '@/components/LockedFeature';
 import { useAgency } from '../context';
 import { usePlanFeatures } from '../../../hooks/usePlanFeatures';
+import { useTheme } from '../../../hooks/useTheme';
 import MarketingContentEditor from '@/components/agency/MarketingContentEditor';
 
 type ActiveTab = 'overview' | 'template' | 'sections' | 'content' | 'colors' | 'domain' | 'tracking' | 'seo' | 'navigation' | 'legal';
@@ -143,6 +144,12 @@ function CurrencySelect({ value, onChange, theme }: { value: string; onChange: (
 export default function MarketingWebsitePage() {
   const router = useRouter();
   const { agency, branding, loading: agencyLoading, refreshAgency, demoMode } = useAgency();
+  // Follow the real dashboard theme so this page matches the shell. Previously
+  // isDark was hard-coded false, so on a dark-themed agency the cards rendered
+  // white while the unstyled section headers inherited the shell's light text,
+  // leaving them ghosted/invisible on white. Resolving from useTheme() keeps
+  // the whole page in step with every other dashboard page, light or dark.
+  const dashTheme = useTheme();
   const { canUseMarketingSite, planName } = usePlanFeatures();
   const [copied, setCopied] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
@@ -203,7 +210,7 @@ export default function MarketingWebsitePage() {
   // DNS
   const [dnsConfig, setDnsConfig] = useState<{ aRecord: string; cname: string; misconfigured?: boolean; isSubdomain?: boolean; subdomainPrefix?: string | null } | null>(null);
 
-  const isDark = false;
+  const isDark = dashTheme.isDark;
   const agencyPrimaryColor = branding.primaryColor || '#00a19b';
   const textColor = isDark ? '#fafaf9' : '#111827';
   const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
@@ -405,7 +412,7 @@ export default function MarketingWebsitePage() {
   // Full marketing page UI, used as the LockedFeature children when on
   // Free plan, and as the direct return for Pro/Scale agencies.
   const pageContent = (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8" style={{ color: textColor }}>
       <div className="flex items-center gap-3 mb-6 sm:mb-8"><div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: agencyPrimaryColor + '15' }}><Globe className="h-5 w-5" style={{ color: agencyPrimaryColor }} /></div><div><h1 data-tour="tour-marketing" className="text-xl sm:text-2xl font-semibold">Marketing Website</h1><p className="mt-0.5 text-sm" style={{ color: mutedTextColor }}>Your public website where clients learn about your service</p></div></div>
 
       {/* Quick Actions */}
