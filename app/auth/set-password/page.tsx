@@ -271,7 +271,7 @@ function SetPasswordContent() {
   // Theme detection
   const theme: 'light' | 'dark' = agency?.website_theme === 'dark' ? 'dark' : (isAgencySubdomain ? 'light' : 'dark');
   const isDark = theme === 'dark';
-  const primaryColor = agency?.primary_color || '#00a19b';
+  const primaryColor = agency?.primary_color || '#01f5d1';
   const primaryLight = isLightColor(primaryColor);
   const brandName = agency?.name || 'VoiceAI Connect';
   const logoAlign = agency?.signup_logo_align || 'left';
@@ -297,15 +297,21 @@ function SetPasswordContent() {
 
   const wrapperStyle: React.CSSProperties = isEmbed
     ? { backgroundColor: bgColor, color: textColor }
-    : { backgroundColor: bgColor, color: textColor, zoom: 1 };
+    : { backgroundColor: bgColor, color: textColor };
+
+  // Match the rest of the signup flow (app/signup + app/signup/plan): desktop
+  // renders at zoom 0.8 so this page is the SAME scale as the pages around it
+  // (it was rendering ~25% larger at zoom 1). Mobile ignores CSS zoom, so it
+  // uses transform:scale like the other steps.
+  const ZOOM_STYLE = '@media (min-width:768px){.signup-mobile-zoom{zoom:0.8}}@media (max-width:767px){html,body{overflow-x:hidden}.signup-mobile-zoom{transform:scale(0.9);transform-origin:top left;width:111.111%;min-height:111.111vh}}';
 
   // ============================================================================
   // SUCCESS STATE: honest message, link to sign in
   // ============================================================================
   if (success) {
     return (
-      <div className={isEmbed ? 'flex items-center justify-center py-6 px-2 sm:px-4' : 'min-h-screen flex items-center justify-center px-4 sm:px-6'} style={wrapperStyle}>
-        {!isEmbed && <style>{`html,body{background-color:${bgColor} !important;}`}</style>}
+      <div className={isEmbed ? 'flex items-center justify-center py-6 px-2 sm:px-4' : 'min-h-screen flex items-center justify-center px-4 sm:px-6 signup-mobile-zoom'} style={wrapperStyle}>
+        {!isEmbed && <style>{`html,body{background-color:${bgColor} !important;}${ZOOM_STYLE}`}</style>}
         {!isEmbed && <DynamicFavicon logoUrl={faviconLogo} primaryColor={primaryColor} />}
         {isDark && !isEmbed && (
           <div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50"
@@ -339,8 +345,8 @@ function SetPasswordContent() {
   }
 
   return (
-    <div className={isEmbed ? 'overflow-hidden' : 'min-h-screen overflow-hidden'} style={wrapperStyle}>
-      {!isEmbed && <style>{`html,body{background-color:${bgColor} !important;}`}</style>}
+    <div className={isEmbed ? 'overflow-hidden' : 'min-h-screen overflow-hidden signup-mobile-zoom'} style={wrapperStyle}>
+      {!isEmbed && <style>{`html,body{background-color:${bgColor} !important;}${ZOOM_STYLE}`}</style>}
       {!isEmbed && <DynamicFavicon logoUrl={faviconLogo} primaryColor={primaryColor} />}
 
       {isDark && !isEmbed && (
@@ -364,10 +370,7 @@ function SetPasswordContent() {
                 {agency?.logo_url ? (
                   <img src={agency.logo_url} alt={agency.name} className="h-10 sm:h-12 w-auto max-w-[200px] object-contain" />
                 ) : !isAgencySubdomain ? (
-                  <>
-                    <img src="/icon-512x512.png" alt="VoiceAI Connect" className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl object-contain" />
-                    <span className="text-sm sm:text-base font-semibold tracking-tight">{brandName}</span>
-                  </>
+                  <img src="/voiceai-connect-logo.png" alt="VoiceAI Connect" className="h-8 w-auto" />
                 ) : (
                   <>
                     <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl" style={{ backgroundColor: primaryColor, border: isDark ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>

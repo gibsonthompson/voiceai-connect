@@ -43,7 +43,7 @@ function WaveformIcon({ className }: { className?: string }) {
   );
 }
 
-function ProgressSteps({ currentStep, totalSteps = 3, accentColor = '#00a19b' }: { currentStep: number; totalSteps?: number; accentColor?: string }) {
+function ProgressSteps({ currentStep, totalSteps = 3, accentColor = '#01f5d1' }: { currentStep: number; totalSteps?: number; accentColor?: string }) {
   return (
     <div className="flex items-center justify-center gap-2">
       {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => (
@@ -61,7 +61,7 @@ function ConfettiEffect() {
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
       {[...Array(20)].map((_, i) => (
         <div key={i} className="absolute w-2 h-2 rounded-full animate-confetti"
-          style={{ left: `${Math.random() * 100}%`, top: '-10px', backgroundColor: ['#00a19b', '#f59e0b', '#3b82f6', '#ec4899', '#8b5cf6'][i % 5], animationDelay: `${Math.random() * 2}s`, animationDuration: `${2 + Math.random() * 2}s` }} />
+          style={{ left: `${Math.random() * 100}%`, top: '-10px', backgroundColor: ['#01f5d1', '#f59e0b', '#3b82f6', '#ec4899', '#8b5cf6'][i % 5], animationDelay: `${Math.random() * 2}s`, animationDuration: `${2 + Math.random() * 2}s` }} />
       ))}
     </div>
   );
@@ -98,7 +98,7 @@ function ClientSuccessPage({ agency, isEmbed }: { agency: Agency | null; isEmbed
 
   const handleCopyPhone = () => { if (phoneNumber) { navigator.clipboard.writeText(phoneNumber); setCopied(true); setTimeout(() => setCopied(false), 2000); } };
 
-  const primaryColor = agency?.primary_color || '#00a19b';
+  const primaryColor = agency?.primary_color || '#01f5d1';
   const accentColor = agency?.accent_color || primaryColor;
   const primaryLight = isLightColor(primaryColor);
 
@@ -293,7 +293,7 @@ function AgencySuccessPage({ isEmbed }: { isEmbed: boolean }) {
 
       <main className={mainPaddingClass}>
         <div className="relative w-full max-w-lg">
-          <div className="mb-8"><ProgressSteps currentStep={3} accentColor="#00a19b" /></div>
+          <div className="mb-8"><ProgressSteps currentStep={3} accentColor="#01f5d1" /></div>
 
           <div className="rounded-2xl sm:rounded-3xl border border-white/[0.08] bg-[#0a0a0a]/50 backdrop-blur-xl p-6 sm:p-8 shadow-2xl shadow-black/20 text-center">
             <div className="mx-auto w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center mb-6 bg-emerald-500/15 relative">

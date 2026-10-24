@@ -202,7 +202,7 @@ function ThemedLoading({ theme, message = 'Loading plans...' }: { theme: 'light'
 // ============================================================================
 // SHARED COMPONENTS
 // ============================================================================
-function ProgressSteps({ currentStep, totalSteps = 3, accentColor = '#00a19b' }: { 
+function ProgressSteps({ currentStep, totalSteps = 3, accentColor = '#01f5d1' }: { 
   currentStep: number; 
   totalSteps?: number;
   accentColor?: string;
@@ -259,7 +259,7 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
 
   const theme: 'light' | 'dark' = agency.website_theme === 'dark' ? 'dark' : 'light';
   const isDark = theme === 'dark';
-  const primaryColor = agency.primary_color || '#00a19b';
+  const primaryColor = agency.primary_color || '#01f5d1';
   const logoAlign = agency.signup_logo_align || 'left';
   const accentColor = agency.accent_color || primaryColor;
   const primaryLight = isLightColor(primaryColor);
@@ -834,7 +834,7 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
           </a>
 
           <div className="mb-8 sm:mb-10">
-            <ProgressSteps currentStep={2} accentColor="#00a19b" />
+            <ProgressSteps currentStep={2} accentColor="#01f5d1" />
           </div>
 
           <div className="text-center mb-10 sm:mb-12">

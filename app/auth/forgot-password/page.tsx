@@ -626,7 +626,7 @@ function ForgotPasswordContent() {
   // page: #050505 canvas, #fafaf9 ink, emerald accent). An agency subdomain
   // respects that agency's own brand color and light/dark preference.
 
-  const primaryColor = agency?.primary_color || (isAgencySubdomain ? '#2563eb' : '#00a19b');
+  const primaryColor = agency?.primary_color || (isAgencySubdomain ? '#2563eb' : '#01f5d1');
   const primaryLight = isLightColor(primaryColor);
 
   // On platform domain -> dark theme (agency login style)
@@ -746,9 +746,9 @@ function ForgotPasswordContent() {
                   </div>
                 )
               ) : (
-                <img src="/icon-512x512.png" alt="VoiceAI Connect" className="h-9 w-9 rounded-xl" />
+                <img src="/voiceai-connect-logo.png" alt="VoiceAI Connect" className="h-8 w-auto" />
               )}
-              <span className="text-base font-semibold tracking-tight">{brandName}</span>
+              {isAgencySubdomain && <span className="text-base font-semibold tracking-tight">{brandName}</span>}
             </Link>
             <Link
               href={loginUrl}

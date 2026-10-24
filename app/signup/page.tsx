@@ -212,7 +212,7 @@ function clearReferralCode() {
 function ThemedFormInput({
   label, name, type = 'text', placeholder, value, onChange,
   required = false, icon: Icon, className = '', isDark = true,
-  primaryColor = '#00a19b', maxLength,
+  primaryColor = '#01f5d1', maxLength,
 }: {
   label: string; name: string; type?: string; placeholder: string;
   value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -251,7 +251,7 @@ const orderedCountries = [
 
 function ThemedSelect({
   label, name, value, onChange, required = false, icon: Icon,
-  children, isDark = true, primaryColor = '#00a19b',
+  children, isDark = true, primaryColor = '#01f5d1',
 }: {
   label: string; name: string; value: string;
   onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
@@ -438,7 +438,7 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
   const useMask = phoneConfig.mask && (formData.country === 'US' || formData.country === 'CA');
 
   const isDark = agency.website_theme === 'dark';
-  const primaryColor = agency.primary_color || '#00a19b';
+  const primaryColor = agency.primary_color || '#01f5d1';
   const logoAlign = agency.signup_logo_align || 'left';
   const accentColor = agency.accent_color || primaryColor;
   const primaryLight = isLightColor(primaryColor);
