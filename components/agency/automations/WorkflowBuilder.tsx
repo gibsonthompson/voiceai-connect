@@ -573,7 +573,7 @@ function Inner({ workflow, plan, saving, onSaveDraft, onActivate, onPause, onBac
   const isActive = workflow.status === 'active';
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-[calc(125dvh_-_4rem)] md:h-[125dvh]">
       {/* toolbar */}
       <div className="flex items-center justify-between gap-3 px-4 py-3" style={{ borderBottom: `1px solid ${theme.border}` }}>
         <div className="flex items-center gap-3 min-w-0">
