@@ -13,6 +13,7 @@
 import { useMemo, useState, useCallback, memo } from 'react';
 import {
   ReactFlow, ReactFlowProvider, Background, Controls, Handle, Position, MarkerType,
+  BaseEdge, EdgeLabelRenderer, getSmoothStepPath,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useTheme } from '../../../hooks/useTheme';
@@ -20,6 +21,7 @@ import {
   Zap, MessageSquare, Clock, GitBranch, Tag, TagsIcon, UserCog, Globe, Flag,
   Square, Sparkles, Bell, Phone, CalendarCheck, X, Plus, Trash2, Lock, Check,
   ChevronDown, Save, Power, PauseCircle, ArrowLeft, Loader2, Building2,
+  PhoneForwarded, Voicemail, AlertCircle, Frown, CreditCard, UserMinus, UserPlus,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -59,29 +61,29 @@ const ACCOUNT_TRIGGERS = ['client.payment_failed', 'client.canceled', 'client.su
 const TRIGGER_META_MAP: Record<string, { title: string; summary: string; icon: any }> = {
   'call.completed': { title: 'Call finished', summary: 'After a call', icon: Phone },
   'appointment.booked': { title: 'Appointment booked', summary: 'When a customer books', icon: CalendarCheck },
-  'client.payment_failed': { title: 'Payment failed', summary: 'When a client payment fails', icon: Bell },
-  'client.canceled': { title: 'Client canceled', summary: 'When a client cancels', icon: Bell },
-  'client.subscription_activated': { title: 'New client active', summary: 'When a client activates', icon: Bell },
-  'client.trial_expired': { title: 'Trial ended', summary: 'When a client trial ends', icon: Bell },
+  'client.payment_failed': { title: 'Payment failed', summary: 'When a client payment fails', icon: CreditCard },
+  'client.canceled': { title: 'Client canceled', summary: 'When a client cancels', icon: UserMinus },
+  'client.subscription_activated': { title: 'New client active', summary: 'When a client activates', icon: UserPlus },
+  'client.trial_expired': { title: 'Trial ended', summary: 'When a client trial ends', icon: Clock },
   'call.transferred': { title: 'Call transferred', summary: 'When a call is sent to you', icon: Phone },
 };
 
 // Trigger presets: the "pick one" list a user sees. Each maps to a real engine
 // event plus a preset filter, so one click = a specific, familiar trigger
 // (GoHighLevel-style) instead of a bare event type plus checkboxes.
-type TriggerPreset = { id: string; group: 'customer' | 'account'; label: string; trigger_type: string; trigger_config: Record<string, any> };
+type TriggerPreset = { id: string; group: 'customer' | 'account'; label: string; short: string; icon: any; trigger_type: string; trigger_config: Record<string, any> };
 const TRIGGER_PRESETS: TriggerPreset[] = [
-  { id: 'call_any', group: 'customer', label: 'After any call', trigger_type: 'call.completed', trigger_config: { require_caller_spoke: true, exclude_spam: true } },
-  { id: 'call_callback', group: 'customer', label: 'When a caller asks for a callback', trigger_type: 'call.completed', trigger_config: { followup_outcome_in: ['callback_requested'], exclude_spam: true } },
-  { id: 'call_message', group: 'customer', label: 'When a caller leaves a message', trigger_type: 'call.completed', trigger_config: { followup_outcome_in: ['message'], exclude_spam: true } },
-  { id: 'call_unresolved', group: 'customer', label: "When a call isn't resolved", trigger_type: 'call.completed', trigger_config: { followup_outcome_in: ['unanswered', 'abandoned'], exclude_spam: true } },
-  { id: 'call_unhappy', group: 'customer', label: 'When a caller is unhappy', trigger_type: 'call.completed', trigger_config: { followup_outcome_in: ['complaint'], exclude_spam: true } },
-  { id: 'appt_booked', group: 'customer', label: 'When an appointment is booked', trigger_type: 'appointment.booked', trigger_config: {} },
-  { id: 'call_transferred', group: 'customer', label: 'When a call is transferred to you', trigger_type: 'call.transferred', trigger_config: {} },
-  { id: 'payment_failed', group: 'account', label: 'When a client payment fails', trigger_type: 'client.payment_failed', trigger_config: {} },
-  { id: 'client_canceled', group: 'account', label: 'When a client cancels', trigger_type: 'client.canceled', trigger_config: {} },
-  { id: 'client_activated', group: 'account', label: 'When a new client activates', trigger_type: 'client.subscription_activated', trigger_config: {} },
-  { id: 'trial_ended', group: 'account', label: 'When a client trial ends', trigger_type: 'client.trial_expired', trigger_config: {} },
+  { id: 'call_any', group: 'customer', label: 'After any call', short: 'Any call', icon: Phone, trigger_type: 'call.completed', trigger_config: { require_caller_spoke: true, exclude_spam: true } },
+  { id: 'call_callback', group: 'customer', label: 'Caller asks for a callback', short: 'Callback asked', icon: PhoneForwarded, trigger_type: 'call.completed', trigger_config: { followup_outcome_in: ['callback_requested'], exclude_spam: true } },
+  { id: 'call_message', group: 'customer', label: 'Caller leaves a message', short: 'Message left', icon: Voicemail, trigger_type: 'call.completed', trigger_config: { followup_outcome_in: ['message'], exclude_spam: true } },
+  { id: 'call_unresolved', group: 'customer', label: "Call isn't resolved", short: 'Unresolved call', icon: AlertCircle, trigger_type: 'call.completed', trigger_config: { followup_outcome_in: ['unanswered', 'abandoned'], exclude_spam: true } },
+  { id: 'call_unhappy', group: 'customer', label: 'Caller is unhappy', short: 'Unhappy caller', icon: Frown, trigger_type: 'call.completed', trigger_config: { followup_outcome_in: ['complaint'], exclude_spam: true } },
+  { id: 'appt_booked', group: 'customer', label: 'Appointment is booked', short: 'Appt booked', icon: CalendarCheck, trigger_type: 'appointment.booked', trigger_config: {} },
+  { id: 'call_transferred', group: 'customer', label: 'Call transferred to you', short: 'Call transferred', icon: PhoneForwarded, trigger_type: 'call.transferred', trigger_config: {} },
+  { id: 'payment_failed', group: 'account', label: 'A client payment fails', short: 'Payment failed', icon: CreditCard, trigger_type: 'client.payment_failed', trigger_config: {} },
+  { id: 'client_canceled', group: 'account', label: 'A client cancels', short: 'Client cancels', icon: UserMinus, trigger_type: 'client.canceled', trigger_config: {} },
+  { id: 'client_activated', group: 'account', label: 'A new client activates', short: 'New client', icon: UserPlus, trigger_type: 'client.subscription_activated', trigger_config: {} },
+  { id: 'trial_ended', group: 'account', label: 'A client trial ends', short: 'Trial ends', icon: Clock, trigger_type: 'client.trial_expired', trigger_config: {} },
 ];
 function currentPresetId(wf: any): string {
   if (wf.trigger_config && wf.trigger_config._preset) return wf.trigger_config._preset;
@@ -251,6 +253,44 @@ WfNode.displayName = 'WfNode';
 const nodeTypes = { wf: WfNode };
 
 // ---------------------------------------------------------------------------
+// custom edge: the connector line between steps, with a visible + to add one.
+// data: { onAdd(), theme, branchLabel }
+// ---------------------------------------------------------------------------
+const AddEdge = memo(({ sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, markerEnd, data }: any) => {
+  const [path, labelX, labelY] = getSmoothStepPath({ sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition });
+  const t = data?.theme || {};
+  return (
+    <>
+      <BaseEdge path={path} markerEnd={markerEnd} style={{ stroke: t.border, strokeWidth: 2 }} />
+      <EdgeLabelRenderer>
+        <div
+          className="nodrag nopan"
+          style={{ position: 'absolute', transform: `translate(-50%,-50%) translate(${labelX}px,${labelY}px)`, pointerEvents: 'all', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}
+        >
+          {data?.branchLabel && (
+            <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 999, background: t.card, border: `1px solid ${t.border}`, color: t.textMuted }}>{data.branchLabel}</span>
+          )}
+          <button
+            type="button"
+            title="Add a step"
+            onClick={(e) => { e.stopPropagation(); data?.onAdd?.(); }}
+            style={{
+              height: 24, width: 24, borderRadius: 999, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: t.card, border: `2px solid ${t.primary || '#10b981'}`, color: t.primary || '#10b981',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.12)', cursor: 'pointer', lineHeight: 0,
+            }}
+          >
+            <Plus style={{ height: 14, width: 14 }} />
+          </button>
+        </div>
+      </EdgeLabelRenderer>
+    </>
+  );
+});
+AddEdge.displayName = 'AddEdge';
+const edgeTypes = { add: AddEdge };
+
+// ---------------------------------------------------------------------------
 // add-step menu (opens on edge click)
 // ---------------------------------------------------------------------------
 function AddStepMenu({ plan, theme, onPick, onClose }: { plan: string; theme: any; onPick: (type: string) => void; onClose: () => void }) {
@@ -312,13 +352,38 @@ function ConfigDrawer({ node, workflow, theme, plan, onPatchNode, onDeleteNode, 
       <div className="p-4 space-y-4">
         {node.type === 'trigger' && (
           <>
-            <Field label="This automation runs" theme={theme}>
-              <Select
-                theme={theme}
-                value={currentPresetId(workflow)}
-                options={TRIGGER_PRESETS.map((p) => ({ value: p.id, label: p.label }))}
-                onChange={(id) => { const p = TRIGGER_PRESETS.find((x) => x.id === id); if (p) onPatchWorkflow({ trigger_type: p.trigger_type, trigger_config: { ...p.trigger_config, _preset: p.id } }); }}
-              />
+            <Field label="Start this automation when…" theme={theme}>
+              <div className="space-y-3">
+                {(['customer', 'account'] as const).map((grp) => (
+                  <div key={grp}>
+                    <div className="text-[11px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: theme.textMuted }}>
+                      {grp === 'customer' ? 'A customer does something' : 'A client account changes'}
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {TRIGGER_PRESETS.filter((p) => p.group === grp).map((p) => {
+                        const on = currentPresetId(workflow) === p.id;
+                        const Icon = p.icon;
+                        return (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => onPatchWorkflow({ trigger_type: p.trigger_type, trigger_config: { ...p.trigger_config, _preset: p.id } })}
+                            className="text-left p-2.5 rounded-xl flex items-start gap-2 transition-colors"
+                            style={{
+                              background: on ? theme.primary : theme.hover,
+                              border: `1px solid ${on ? theme.primary : theme.border}`,
+                              color: on ? theme.primaryText : theme.text,
+                            }}
+                          >
+                            <Icon className="h-4 w-4 mt-0.5 shrink-0" style={{ color: on ? theme.primaryText : theme.primary }} />
+                            <span className="text-xs font-medium leading-tight">{p.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </Field>
             {ACCOUNT_TRIGGERS.includes(workflow.trigger_type) ? (
               <p className="text-xs" style={{ color: theme.textMuted }}>This runs on a billing event for the business. A Send SMS step texts the business owner. You can also branch, wait, or call a webhook.</p>
@@ -365,7 +430,7 @@ function ConfigDrawer({ node, workflow, theme, plan, onPatchNode, onDeleteNode, 
             {(d.op === 'eq' || d.op === 'ne') && (
               <Field label="Value" theme={theme}><input value={d.value || ''} onChange={(e) => set({ value: e.target.value })} className="w-full px-3 py-2 rounded-xl text-sm" style={{ background: theme.inputBg || theme.card, border: `1px solid ${theme.inputBorder || theme.border}`, color: theme.text }} placeholder="e.g. true" /></Field>
             )}
-            <p className="text-xs" style={{ color: theme.textMuted }}>The Yes branch continues; the No branch ends. Click a connector line to add steps to either branch.</p>
+            <p className="text-xs" style={{ color: theme.textMuted }}>The Yes branch continues; the No branch ends. Click the + on either branch to add steps.</p>
           </>
         )}
 
@@ -426,10 +491,22 @@ function ReminderEditor({ d, set, theme }: any) {
 // ---------------------------------------------------------------------------
 function Inner({ workflow, plan, saving, onSaveDraft, onActivate, onPause, onBack }: any) {
   const theme = useTheme();
-  const [graph, setGraph] = useState<Graph>(() => ({
-    nodes: workflow.graph?.nodes?.length ? workflow.graph.nodes : [{ id: 'trigger', type: 'trigger', data: {} }],
-    edges: workflow.graph?.edges || [],
-  }));
+  const [graph, setGraph] = useState<Graph>(() => {
+    const g: Graph = {
+      nodes: workflow.graph?.nodes?.length ? workflow.graph.nodes : [],
+      edges: workflow.graph?.edges ? [...workflow.graph.edges] : [],
+    };
+    // A blank (or trigger-only) workflow must still show a trigger AND a place to
+    // add the first step. Seed trigger -> end so there's always a connector "+".
+    if (!g.nodes.length) {
+      g.nodes = [{ id: 'trigger', type: 'trigger', data: {} }, { id: 'end_0', type: 'end', data: {} }];
+      g.edges = [{ source: 'trigger', target: 'end_0' }];
+    } else if (g.nodes.length === 1 && g.nodes[0].type === 'trigger' && !g.edges.length) {
+      g.nodes = [...g.nodes, { id: 'end_0', type: 'end', data: {} }];
+      g.edges = [{ source: g.nodes[0].id, target: 'end_0' }];
+    }
+    return g;
+  });
   const [wf, setWf] = useState({ trigger_type: workflow.trigger_type, trigger_config: workflow.trigger_config || {}, stop_on: workflow.stop_on || {}, name: workflow.name });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [addEdge, setAddEdge] = useState<GEdge | null>(null);
@@ -457,9 +534,12 @@ function Inner({ workflow, plan, saving, onSaveDraft, onActivate, onPause, onBac
 
   const rfEdges = useMemo(() => graph.edges.map((e) => ({
     id: `${e.source}-${e.target}-${e.branch || 'x'}`, source: e.source, target: e.target,
-    label: e.branch === 'true' ? 'Yes' : e.branch === 'false' ? 'No' : undefined,
-    type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed }, style: { stroke: theme.border, strokeWidth: 2 },
-    labelStyle: { fill: theme.textMuted, fontSize: 11 }, labelBgStyle: { fill: theme.card },
+    type: 'add', markerEnd: { type: MarkerType.ArrowClosed, color: theme.border },
+    data: {
+      theme,
+      branchLabel: e.branch === 'true' ? 'Yes' : e.branch === 'false' ? 'No' : undefined,
+      onAdd: () => { setAddEdge({ source: e.source, target: e.target, branch: e.branch }); setSelectedId(null); },
+    },
   })), [graph, theme]);
 
   const selectedNode = selectedId ? graph.nodes.find((n) => n.id === selectedId) : null;
@@ -500,19 +580,19 @@ function Inner({ workflow, plan, saving, onSaveDraft, onActivate, onPause, onBac
       {/* canvas */}
       <div className="relative flex-1 min-h-0">
         <ReactFlow
-          nodes={rfNodes} edges={rfEdges} nodeTypes={nodeTypes}
+          nodes={rfNodes} edges={rfEdges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
           nodesDraggable={false} nodesConnectable={false} elementsSelectable
           onNodeClick={(_: any, n: any) => { setSelectedId(n.id); setAddEdge(null); }}
           onEdgeClick={(_: any, e: any) => { const [source, target, b] = [e.source, e.target, e.id.split('-').pop()]; setAddEdge({ source, target, branch: b === 'x' ? undefined : (b as string) }); }}
           onPaneClick={() => { setSelectedId(null); }}
-          fitView fitViewOptions={{ padding: 0.25, maxZoom: 0.65 }} proOptions={{ hideAttribution: true }} minZoom={0.2}
+          fitView fitViewOptions={{ padding: 0.35, maxZoom: 1 }} proOptions={{ hideAttribution: true }} minZoom={0.3} maxZoom={1.5}
         >
           <Background color={theme.border} gap={20} />
           <Controls showInteractive={false} />
         </ReactFlow>
 
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 text-xs px-3 py-1.5 rounded-full pointer-events-none" style={{ background: theme.card, border: `1px solid ${theme.border}`, color: theme.textMuted }}>
-          Click a step to edit it, or a connector line to add one
+          Click a step to edit it · click the <span style={{ color: theme.primary, fontWeight: 600 }}>+</span> on a line to add one
         </div>
 
         {selectedNode && (
