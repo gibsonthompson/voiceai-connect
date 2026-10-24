@@ -39,6 +39,7 @@ const CATALOG: Record<string, CatalogEntry> = {
   set_status:   { label: 'Set status', group: 'Actions', tier: 'basic', icon: UserCog, blurb: 'Change the contact status', defaultData: () => ({ status: '' }) },
   webhook:      { label: 'Webhook', group: 'Actions', tier: 'advanced', icon: Globe, blurb: 'Send data to another system', defaultData: () => ({ url: '' }) },
   wait:         { label: 'Wait', group: 'Logic', tier: 'basic', icon: Clock, blurb: 'Pause before the next step', defaultData: () => ({ minutes: 1440 }) },
+  reminder:     { label: 'Appointment reminder', group: 'Logic', tier: 'basic', icon: Bell, blurb: 'Wait until before or after the appointment', defaultData: () => ({ anchor: 'appointment_time', direction: 'before', amount: 1, unit: 'days' }) },
   condition:    { label: 'If / Else', group: 'Logic', tier: 'basic', icon: GitBranch, blurb: 'Branch on the call or contact', defaultData: () => ({ field: 'appointment_booked', op: 'eq', value: 'true' }) },
   end:          { label: 'End', group: 'Finish', tier: 'basic', icon: Square, blurb: 'Stop here', defaultData: () => ({}) },
 };
@@ -62,7 +63,31 @@ const TRIGGER_META_MAP: Record<string, { title: string; summary: string; icon: a
   'client.canceled': { title: 'Client canceled', summary: 'When a client cancels', icon: Bell },
   'client.subscription_activated': { title: 'New client active', summary: 'When a client activates', icon: Bell },
   'client.trial_expired': { title: 'Trial ended', summary: 'When a client trial ends', icon: Bell },
+  'call.transferred': { title: 'Call transferred', summary: 'When a call is sent to you', icon: Phone },
 };
+
+// Trigger presets: the "pick one" list a user sees. Each maps to a real engine
+// event plus a preset filter, so one click = a specific, familiar trigger
+// (GoHighLevel-style) instead of a bare event type plus checkboxes.
+type TriggerPreset = { id: string; group: 'customer' | 'account'; label: string; trigger_type: string; trigger_config: Record<string, any> };
+const TRIGGER_PRESETS: TriggerPreset[] = [
+  { id: 'call_any', group: 'customer', label: 'After any call', trigger_type: 'call.completed', trigger_config: { require_caller_spoke: true, exclude_spam: true } },
+  { id: 'call_callback', group: 'customer', label: 'When a caller asks for a callback', trigger_type: 'call.completed', trigger_config: { followup_outcome_in: ['callback_requested'], exclude_spam: true } },
+  { id: 'call_message', group: 'customer', label: 'When a caller leaves a message', trigger_type: 'call.completed', trigger_config: { followup_outcome_in: ['message'], exclude_spam: true } },
+  { id: 'call_unresolved', group: 'customer', label: "When a call isn't resolved", trigger_type: 'call.completed', trigger_config: { followup_outcome_in: ['unanswered', 'abandoned'], exclude_spam: true } },
+  { id: 'call_unhappy', group: 'customer', label: 'When a caller is unhappy', trigger_type: 'call.completed', trigger_config: { followup_outcome_in: ['complaint'], exclude_spam: true } },
+  { id: 'appt_booked', group: 'customer', label: 'When an appointment is booked', trigger_type: 'appointment.booked', trigger_config: {} },
+  { id: 'call_transferred', group: 'customer', label: 'When a call is transferred to you', trigger_type: 'call.transferred', trigger_config: {} },
+  { id: 'payment_failed', group: 'account', label: 'When a client payment fails', trigger_type: 'client.payment_failed', trigger_config: {} },
+  { id: 'client_canceled', group: 'account', label: 'When a client cancels', trigger_type: 'client.canceled', trigger_config: {} },
+  { id: 'client_activated', group: 'account', label: 'When a new client activates', trigger_type: 'client.subscription_activated', trigger_config: {} },
+  { id: 'trial_ended', group: 'account', label: 'When a client trial ends', trigger_type: 'client.trial_expired', trigger_config: {} },
+];
+function currentPresetId(wf: any): string {
+  if (wf.trigger_config && wf.trigger_config._preset) return wf.trigger_config._preset;
+  const p = TRIGGER_PRESETS.find((x) => x.trigger_type === wf.trigger_type);
+  return p ? p.id : 'call_any';
+}
 const OUTCOME_OPTIONS = [
   { value: 'callback_requested', label: 'Asked for a callback' },
   { value: 'unanswered', label: 'Had an unresolved question' },
@@ -100,6 +125,7 @@ function nodeSummary(n: GNode): string {
     case 'send_sms': case 'notify_owner': return (d.message || '').slice(0, 60) || 'No message yet';
     case 'ai_sms': return 'AI-written message';
     case 'wait': { const m = Number(d.minutes) || 0; if (m % 1440 === 0) return `Wait ${m / 1440} day(s)`; if (m % 60 === 0) return `Wait ${m / 60} hour(s)`; return `Wait ${m} min`; }
+    case 'reminder': return `${d.amount ?? 1} ${d.unit || 'days'} ${d.direction || 'before'} appointment`;
     case 'condition': { const f = CONDITION_FIELDS.find((x) => x.value === d.field); const o = CONDITION_OPS.find((x) => x.value === d.op); return `${f ? f.label : d.field} ${o ? o.label : d.op}${d.op === 'eq' || d.op === 'ne' ? ' ' + d.value : ''}`; }
     case 'add_tag': return d.tag ? `Add "${d.tag}"` : 'Pick a tag';
     case 'remove_tag': return d.tag ? `Remove "${d.tag}"` : 'Pick a tag';
@@ -286,26 +312,14 @@ function ConfigDrawer({ node, workflow, theme, plan, onPatchNode, onDeleteNode, 
       <div className="p-4 space-y-4">
         {node.type === 'trigger' && (
           <>
-            <Field label="Starts" theme={theme}>
-              <Select theme={theme} value={workflow.trigger_type} options={TRIGGER_TYPES} onChange={(v) => onPatchWorkflow({ trigger_type: v, trigger_config: {} })} />
+            <Field label="This automation runs" theme={theme}>
+              <Select
+                theme={theme}
+                value={currentPresetId(workflow)}
+                options={TRIGGER_PRESETS.map((p) => ({ value: p.id, label: p.label }))}
+                onChange={(id) => { const p = TRIGGER_PRESETS.find((x) => x.id === id); if (p) onPatchWorkflow({ trigger_type: p.trigger_type, trigger_config: { ...p.trigger_config, _preset: p.id } }); }}
+              />
             </Field>
-            {workflow.trigger_type === 'call.completed' && (
-              <Field label="Only for calls where the caller" theme={theme}>
-                <div className="space-y-1.5">
-                  {OUTCOME_OPTIONS.map((o) => {
-                    const arr: string[] = workflow.trigger_config?.followup_outcome_in || [];
-                    const on = arr.includes(o.value);
-                    return (
-                      <label key={o.value} className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: theme.text }}>
-                        <Checkbox on={on} theme={theme} onClick={() => { const next = on ? arr.filter((x) => x !== o.value) : [...arr, o.value]; onPatchWorkflow({ trigger_config: { ...workflow.trigger_config, followup_outcome_in: next } }); }} />
-                        {o.label}
-                      </label>
-                    );
-                  })}
-                  <p className="text-xs pt-1" style={{ color: theme.textMuted }}>Leave all unchecked to run after every real call.</p>
-                </div>
-              </Field>
-            )}
             {ACCOUNT_TRIGGERS.includes(workflow.trigger_type) ? (
               <p className="text-xs" style={{ color: theme.textMuted }}>This runs on a billing event for the business. A Send SMS step texts the business owner. You can also branch, wait, or call a webhook.</p>
             ) : (
@@ -342,6 +356,7 @@ function ConfigDrawer({ node, workflow, theme, plan, onPatchNode, onDeleteNode, 
         )}
 
         {node.type === 'wait' && <WaitEditor d={d} set={set} theme={theme} />}
+        {node.type === 'reminder' && <ReminderEditor d={d} set={set} theme={theme} />}
 
         {node.type === 'condition' && (
           <>
@@ -390,6 +405,18 @@ function WaitEditor({ d, set, theme }: any) {
     <div className="flex gap-2">
       <input type="number" min={1} value={amount} onChange={(e) => apply(Number(e.target.value), unit)} className="w-24 px-3 py-2 rounded-xl text-sm" style={{ background: theme.inputBg || theme.card, border: `1px solid ${theme.inputBorder || theme.border}`, color: theme.text }} />
       <div className="flex-1"><Select theme={theme} value={unit} options={[{ value: 'minutes', label: 'minutes' }, { value: 'hours', label: 'hours' }, { value: 'days', label: 'days' }]} onChange={(u) => apply(amount, u)} /></div>
+    </div>
+  );
+}
+function ReminderEditor({ d, set, theme }: any) {
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <input type="number" min={0} value={d.amount ?? 1} onChange={(e) => set({ amount: Math.max(0, Number(e.target.value)) })} className="w-20 px-3 py-2 rounded-xl text-sm" style={{ background: theme.inputBg || theme.card, border: `1px solid ${theme.inputBorder || theme.border}`, color: theme.text }} />
+        <div className="flex-1"><Select theme={theme} value={d.unit || 'days'} options={[{ value: 'minutes', label: 'minutes' }, { value: 'hours', label: 'hours' }, { value: 'days', label: 'days' }]} onChange={(u) => set({ unit: u })} /></div>
+      </div>
+      <Select theme={theme} value={d.direction || 'before'} options={[{ value: 'before', label: 'before the appointment' }, { value: 'after', label: 'after the appointment' }]} onChange={(dir) => set({ direction: dir })} />
+      <p className="text-xs" style={{ color: theme.textMuted }}>Uses the real appointment time from the booking. If the appointment is sooner than this, the next step runs right away.</p>
     </div>
   );
 }
@@ -478,7 +505,7 @@ function Inner({ workflow, plan, saving, onSaveDraft, onActivate, onPause, onBac
           onNodeClick={(_: any, n: any) => { setSelectedId(n.id); setAddEdge(null); }}
           onEdgeClick={(_: any, e: any) => { const [source, target, b] = [e.source, e.target, e.id.split('-').pop()]; setAddEdge({ source, target, branch: b === 'x' ? undefined : (b as string) }); }}
           onPaneClick={() => { setSelectedId(null); }}
-          fitView proOptions={{ hideAttribution: true }} minZoom={0.3}
+          fitView fitViewOptions={{ padding: 0.25, maxZoom: 0.65 }} proOptions={{ hideAttribution: true }} minZoom={0.2}
         >
           <Background color={theme.border} gap={20} />
           <Controls showInteractive={false} />
