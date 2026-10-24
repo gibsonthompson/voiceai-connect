@@ -14,7 +14,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import type { Lead } from '@/types/lead';
-import { X, Trash2, Search, Loader2, Check, AlertTriangle } from 'lucide-react';
+import { X, Trash2, Search, Loader2, Check, AlertTriangle, Download } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { CustomSelect } from '@/components/ui/custom-select';
 
@@ -127,6 +127,34 @@ export default function LeadsManagerModal({
     }
   };
 
+  // Export to CSV. Exports the selected leads when any are checked, otherwise
+  // the current filtered view (so "filter then export" works like Delete does).
+  const exportCsv = () => {
+    const rows = selected.size ? leads.filter((l) => selected.has(l.id)) : filtered;
+    if (!rows.length) return;
+    const esc = (v: unknown) => { if (v == null) return ''; const s = String(v); return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+    const cols: Array<[string, (l: Lead) => unknown]> = [
+      ['Business', (l) => l.business_name],
+      ['Contact', (l) => l.contact_name],
+      ['Email', (l) => l.email],
+      ['Phone', (l) => l.phone],
+      ['Website', (l) => l.website || ''],
+      ['Industry', (l) => l.industry],
+      ['Source', (l) => l.source],
+      ['Status', (l) => l.status],
+      ['Estimated Value', (l) => (l.estimated_value ?? '')],
+      ['Created', (l) => (l.created_at ? new Date(l.created_at).toISOString() : '')],
+      ['Notes', (l) => l.notes || ''],
+    ];
+    const lines = [cols.map((c) => esc(c[0])).join(','), ...rows.map((l) => cols.map((c) => esc(c[1](l))).join(','))];
+    const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `leads-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
   if (!open) return null;
 
   const fmtDate = (iso?: string) => { if (!iso) return ''; try { return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }); } catch { return ''; } };
@@ -140,7 +168,7 @@ export default function LeadsManagerModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={onClose}>
-      <div className="relative w-full sm:max-w-3xl rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[92vh]" style={{ background: theme.card, border: `1px solid ${theme.border}` }} onClick={(e) => e.stopPropagation()}>
+      <div className="relative w-full sm:max-w-3xl rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[92vh]" style={{ background: theme.bg, border: `1px solid ${theme.border}` }} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 shrink-0" style={{ borderBottom: `1px solid ${theme.border}` }}>
           <div>
@@ -184,8 +212,16 @@ export default function LeadsManagerModal({
             <Box on={allFilteredSelected} />
             Select all ({filtered.length})
           </button>
-          <div className="flex items-center gap-3">
-            {selected.size > 0 && <span className="text-xs" style={{ color: theme.textMuted }}>{selected.size} selected</span>}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {selected.size > 0 && <span className="text-xs hidden sm:inline" style={{ color: theme.textMuted }}>{selected.size} selected</span>}
+            <button
+              onClick={exportCsv}
+              disabled={!filtered.length}
+              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium"
+              style={{ color: theme.text, border: `1px solid ${theme.border}`, opacity: filtered.length ? 1 : 0.5 }}
+            >
+              <Download className="h-4 w-4" /> Export{selected.size ? ` (${selected.size})` : ' CSV'}
+            </button>
             <button
               onClick={() => setPendingDelete(Array.from(selected))}
               disabled={selected.size === 0}
@@ -238,7 +274,7 @@ export default function LeadsManagerModal({
         {/* Confirm overlay */}
         {pendingDelete && (
           <div className="absolute inset-0 z-10 flex items-center justify-center p-5" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={() => !deleting && setPendingDelete(null)}>
-            <div className="w-full max-w-sm rounded-2xl p-5" style={{ background: theme.card, border: `1px solid ${theme.border}` }} onClick={(e) => e.stopPropagation()}>
+            <div className="w-full max-w-sm rounded-2xl p-5" style={{ background: theme.bg, border: `1px solid ${theme.border}` }} onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center gap-2.5 mb-2">
                 <AlertTriangle className="h-5 w-5" style={{ color: errRed }} />
                 <h3 className="text-sm font-semibold" style={{ color: theme.text }}>Delete {pendingDelete.length} lead{pendingDelete.length === 1 ? '' : 's'}?</h3>
