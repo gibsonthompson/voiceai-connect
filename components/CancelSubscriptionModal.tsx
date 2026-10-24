@@ -5,13 +5,13 @@
 // Destination: components/CancelSubscriptionModal.tsx
 //
 // Two steps:
-//   1. Confirm - warning + a single optional free-text box (no reason dropdown).
-//      POSTs { agency_id, feedback } to /api/agency/cancel. The backend logs
-//      its owner SMS as message type 'agency_cancellation'.
-//   2. Post-cancel - confirmation + optional reason-category chips. Tapping a
-//      chip POSTs { agency_id, category } to /api/agency/cancel-category, which
-//      records the reason and texts a short follow-up ('agency_cancellation_reason').
-//      "Done" clears the session and returns to login.
+//   1. Confirm - warning + a single REQUIRED free-text box (no reason dropdown).
+//      Confirm Cancellation is disabled until it is filled. POSTs
+//      { agency_id, feedback } to /api/agency/cancel. The backend logs its owner
+//      SMS as message type 'agency_cancellation'.
+//   2. Post-cancel - confirmation only. "Done" clears the session and returns to
+//      login. (The old optional reason-category step was removed: the required
+//      feedback above already captures the reason, so we don't ask twice.)
 //
 // Self-contained: manages its own state and API calls so the settings page only
 // needs to render it. Session is cleared only on finish (Done / backdrop on the
@@ -20,17 +20,6 @@
 
 import { useState } from 'react';
 import { AlertTriangle, Loader2, Check } from 'lucide-react';
-
-const CANCEL_REASONS: Array<{ value: string; label: string }> = [
-  { value: 'too_expensive',    label: 'Too expensive' },
-  { value: 'missing_features', label: 'Missing features I need' },
-  { value: 'switched_service', label: 'Switching to another service' },
-  { value: 'unused',           label: "I'm not using it enough" },
-  { value: 'too_complex',      label: 'Too complex to use' },
-  { value: 'customer_service', label: 'Customer service issues' },
-  { value: 'low_quality',      label: 'Quality issues' },
-  { value: 'other',            label: 'Other' },
-];
 
 interface CancelSubscriptionModalProps {
   open: boolean;
@@ -53,13 +42,15 @@ export default function CancelSubscriptionModal({
   const [feedback, setFeedback] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [category, setCategory] = useState<string | null>(null);
-  const [submittingCategory, setSubmittingCategory] = useState(false);
 
   if (!open) return null;
 
   const handleCancel = async () => {
     if (!agencyId) return;
+    if (!feedback.trim()) {
+      setError('Please let us know why you are canceling before you confirm.');
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -67,7 +58,7 @@ export default function CancelSubscriptionModal({
       const res = await fetch(`${backendUrl}/api/agency/cancel`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ agency_id: agencyId, feedback: feedback.trim() || null }),
+        body: JSON.stringify({ agency_id: agencyId, feedback: feedback.trim() }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -78,24 +69,6 @@ export default function CancelSubscriptionModal({
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to cancel');
       setLoading(false);
-    }
-  };
-
-  const submitCategory = async (value: string) => {
-    if (!agencyId || submittingCategory) return;
-    setCategory(value);
-    setSubmittingCategory(true);
-    try {
-      const token = localStorage.getItem('auth_token');
-      await fetch(`${backendUrl}/api/agency/cancel-category`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ agency_id: agencyId, category: value }),
-      });
-    } catch {
-      // Non-blocking: the cancellation already happened.
-    } finally {
-      setSubmittingCategory(false);
     }
   };
 
@@ -151,10 +124,10 @@ export default function CancelSubscriptionModal({
               </div>
             )}
 
-            {/* Single optional free-text box. No reason dropdown. */}
+            {/* Single REQUIRED free-text box. No reason dropdown. */}
             <div className="mb-6">
               <label className="block text-sm font-medium mb-2" style={{ color: theme.text }}>
-                Anything you want us to know? <span style={{ color: theme.textMuted }}>(optional)</span>
+                Anything you want us to know? <span style={{ color: theme.errorText }}>(required)</span>
               </label>
               <textarea
                 value={feedback}
@@ -180,8 +153,8 @@ export default function CancelSubscriptionModal({
               </button>
               <button
                 onClick={handleCancel}
-                disabled={loading}
-                className="flex-1 rounded-xl px-4 py-2.5 text-sm font-medium text-white transition-colors bg-red-600 hover:bg-red-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                disabled={loading || !feedback.trim()}
+                className="flex-1 rounded-xl px-4 py-2.5 text-sm font-medium text-white transition-colors bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (<><Loader2 className="h-4 w-4 animate-spin" />Canceling...</>) : ('Confirm Cancellation')}
               </button>
@@ -203,39 +176,6 @@ export default function CancelSubscriptionModal({
               <p className="text-sm mt-1" style={{ color: theme.textMuted }}>
                 You won&apos;t be charged. Your access ends now.
               </p>
-            </div>
-
-            {/* Optional reason grading */}
-            <div className="mb-6">
-              <p className="text-sm font-medium mb-3 text-center" style={{ color: theme.text }}>
-                Mind sharing the main reason? <span style={{ color: theme.textMuted }}>(optional)</span>
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                {CANCEL_REASONS.map((r) => {
-                  const active = category === r.value;
-                  return (
-                    <button
-                      key={r.value}
-                      onClick={() => submitCategory(r.value)}
-                      disabled={submittingCategory && !active}
-                      className="rounded-xl px-3 py-2.5 text-xs font-medium text-left transition-colors"
-                      style={{
-                        backgroundColor: active ? theme.primary15 : theme.input,
-                        border: `1px solid ${active ? theme.primary : theme.inputBorder}`,
-                        color: active ? theme.primary : theme.text,
-                      }}
-                    >
-                      <span className="flex items-center gap-1.5">
-                        {active && <Check className="h-3.5 w-3.5 flex-shrink-0" />}
-                        {r.label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-              {category && (
-                <p className="text-xs text-center mt-3" style={{ color: theme.primary }}>Thanks for the feedback.</p>
-              )}
             </div>
 
             <button

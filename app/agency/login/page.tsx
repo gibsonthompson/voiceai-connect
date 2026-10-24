@@ -34,9 +34,10 @@ function getContrastColor(hex: string): string {
 }
 
 const getBackendUrl = () => process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'https://urchin-app-bqb4i.ondigitalocean.app';
-// VoiceAI Connect brand color (emerald). Used on the platform (unbranded) login
-// so it renders as true VoiceAI Connect, not a generic default.
-const VAC_PRIMARY = '#00a19b';
+// VoiceAI Connect brand accent. Matches the marketing site's --color-em-400
+// (#01f5d1) exactly, so the platform (unbranded) login reads as true VoiceAI
+// Connect mint, not the old too-teal default.
+const VAC_PRIMARY = '#01f5d1';
 
 // Seed the theme from the last visit so a light-themed agency never flashes dark
 // before the host lookup resolves. Read after mount (not in a useState init) so
@@ -284,12 +285,9 @@ export default function AgencyLoginPage() {
   .al-div:before,.al-div:after{content:"";flex:1;height:1px;background:var(--divider)}
   .al-div span{font-size:13px;color:var(--subtle)}
   .al-err{border-radius:12px;padding:12px;font-size:14px;background:var(--errBg);border:1px solid var(--errBorder);color:var(--errText);text-align:left}
-  .al-foot{margin-top:28px;font-size:14.5px;color:var(--muted)}
+  .al-foot{margin-top:28px;font-size:14.5px;color:var(--muted);text-align:center}
   .al-foot a{color:var(--primary);font-weight:600;text-decoration:none}
   .al-foot a:hover{text-decoration:underline;text-underline-offset:2px}
-  .al-topright{position:absolute;top:calc(20px + env(safe-area-inset-top));right:26px;z-index:2;font-size:14px;color:var(--muted);font-family:inherit}
-  .al-topright a{color:var(--primary);font-weight:600;text-decoration:none}
-  .al-topright a:hover{text-decoration:underline;text-underline-offset:2px}
   .al-switch{margin-top:16px;padding:11px 13px;border-radius:12px;font-size:13px;line-height:1.45;background:var(--monoBg);border:1px solid var(--inputBorder);color:var(--muted);text-align:left}
   .al-switch strong{color:var(--text);font-weight:600}
   .al-wrap ::selection{background:var(--primary);color:var(--primaryText)}
@@ -304,6 +302,7 @@ export default function AgencyLoginPage() {
     .al-stage-name{font-size:44px;line-height:1.06;font-weight:600;letter-spacing:-.03em;color:var(--text)}
     .al-stage-tag{margin-top:26px;font-size:16px;line-height:1.5;color:var(--muted);max-width:34ch}
     .al-zone{text-align:left;max-width:384px}
+    .al-foot{text-align:left}
     .al-brand{display:none}
     .al-h1{font-size:27px}
   }
@@ -322,11 +321,6 @@ export default function AgencyLoginPage() {
         </svg>
         <div className="al-bg-vignette" />
       </div>
-
-      {/* Sign-up prompt, pinned to the top-right corner of the page */}
-      {!isBranded && (
-        <div className="al-topright">New here? <Link href="/signup">Start your free trial</Link></div>
-      )}
 
       {/* Brand stage (desktop) */}
       <aside className="al-stage">
@@ -392,6 +386,11 @@ export default function AgencyLoginPage() {
               {loading ? <><Loader2 className="h-4 w-4 animate-spin" />Signing in...</> : <>Sign in<ArrowRight className="h-[18px] w-[18px]" /></>}
             </button>
           </form>
+
+          {/* Sign-up prompt, inline with the form (platform host only) */}
+          {!isBranded && (
+            <p className="al-foot">New here? <Link href="/signup">Start your free trial</Link></p>
+          )}
 
         </div>
       </main>
