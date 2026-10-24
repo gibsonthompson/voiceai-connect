@@ -37,19 +37,14 @@ import { CustomSelect, type DropdownUI } from '@/components/ui/custom-select';
 // Themed dropdown palette for the admin (emerald-on-white) surface, passed to
 // the shared CustomSelect so these filters render as custom panels, never a
 // native iOS/OS picker. paddingLeft leaves room for the leading icon.
-//
-// RESOLVED HEX, not var(--a-*): the CustomSelect panel renders in a
-// document.body portal, which is OUTSIDE .admin-scope where the admin tokens are
-// defined, so the variables collapse to nothing there (transparent panel +
-// invisible text). The literal values below mirror admin-theme.css.
 const ADMIN_SELECT_UI: DropdownUI = {
-  inputStyle: { background: '#FFFFFF', color: '#0E1512', border: '1px solid #DBE0DE', borderRadius: '11px', paddingLeft: '2.5rem' },
-  text: '#0E1512',       // --a-ink
-  muted: '#9AA3A0',      // --a-dim
-  panelBg: '#FFFFFF',    // --a-card
-  panelBorder: '#E8EBEA',// --a-line
-  hover: '#E3F7F0',      // --a-em-soft
-  accent: '#0A7D60',     // --a-em-deep
+  inputStyle: { background: 'var(--a-card)', color: 'var(--a-ink)', border: '1px solid var(--a-line-2)', borderRadius: '11px', paddingLeft: '2.5rem' },
+  text: 'var(--a-ink)',
+  muted: 'var(--a-dim)',
+  panelBg: 'var(--a-card)',
+  panelBorder: 'var(--a-line)',
+  hover: 'var(--a-em-soft)',
+  accent: 'var(--a-em-deep)',
   isDark: false,
 };
 const STATUS_OPTIONS = [
@@ -65,6 +60,35 @@ const SORT_OPTIONS = [
   { value: 'oldest', label: 'Sort: Oldest' },
   { value: 'plan', label: 'Sort: Plan type' },
 ];
+// Smart segments for the free-agency outreach workflow. All are derived from
+// fields the list endpoint already returns (no extra fetch), and combine with
+// the tier chips + status filter (e.g. Free tier + "Not contacted").
+const SEGMENT_OPTIONS = [
+  { value: 'all', label: 'Segment: All' },
+  { value: 'uncontacted', label: 'Not contacted' },
+  { value: 'contacted', label: 'Contacted' },
+  { value: 'has_client', label: 'Has a client' },
+  { value: 'client_no_stripe', label: 'Client, no Stripe' },
+  { value: 'no_client', label: 'No client yet' },
+  { value: 'active_7d', label: 'Active last 7 days' },
+  { value: 'never_active', label: 'Never active' },
+];
+const SEGMENT_DAY = 86400000;
+function segmentMatch(a: Agency, seg: string): boolean {
+  if (seg === 'all') return true;
+  const hasClient = (a.client_count || 0) > 0;
+  const activeAt = a.last_active_at ? new Date(a.last_active_at).getTime() : 0;
+  switch (seg) {
+    case 'uncontacted': return !a.last_admin_outreach_at;
+    case 'contacted': return !!a.last_admin_outreach_at;
+    case 'has_client': return hasClient;
+    case 'client_no_stripe': return hasClient && !a.stripe_charges_enabled;
+    case 'no_client': return !hasClient;
+    case 'active_7d': return !!activeAt && (Date.now() - activeAt) < 7 * SEGMENT_DAY;
+    case 'never_active': return !activeAt;
+    default: return true;
+  }
+}
 import CallDrawer from '@/components/admin/CallDrawer';
 
 class PanelBoundary extends Component<{ children: any }, { err: string | null }> {
@@ -77,7 +101,7 @@ class PanelBoundary extends Component<{ children: any }, { err: string | null }>
   }
 }
 
-interface Agency { id: string; name: string; email: string; slug: string; phone: string | null; plan_type: string; access_plan: string | null; subscription_status: string; status: string; stripe_charges_enabled: boolean; stripe_payouts_enabled: boolean; stripe_account_id: string | null; stripe_customer_id: string | null; stripe_subscription_id: string | null; stripe_onboarding_complete: boolean; onboarding_completed: boolean; onboarding_step: number | null; marketing_domain: string | null; domain_verified: boolean; primary_color: string | null; country: string | null; currency: string | null; timezone: string | null; trial_ends_at: string | null; current_period_end: string | null; last_login_at: string | null; last_active_at: string | null; created_at: string; referral_code: string | null; referred_by: string | null; referral_earnings_cents: number | null; referral_source: string | null; demo_phone_number: string | null; byot_enabled: boolean; abandoned_cart_step: number | null; abandoned_cart_last_sent_at: string | null; price_starter: number | null; price_pro: number | null; price_growth: number | null; limit_starter: number | null; limit_pro: number | null; limit_growth: number | null; client_count: number; call_count: number; lead_count: number; total_revenue: number; payment_count: number; user_count: number; }
+interface Agency { id: string; name: string; email: string; slug: string; phone: string | null; plan_type: string; access_plan: string | null; subscription_status: string; status: string; stripe_charges_enabled: boolean; stripe_payouts_enabled: boolean; stripe_account_id: string | null; stripe_customer_id: string | null; stripe_subscription_id: string | null; stripe_onboarding_complete: boolean; onboarding_completed: boolean; onboarding_step: number | null; marketing_domain: string | null; domain_verified: boolean; primary_color: string | null; country: string | null; currency: string | null; timezone: string | null; trial_ends_at: string | null; current_period_end: string | null; last_login_at: string | null; last_active_at: string | null; created_at: string; referral_code: string | null; referred_by: string | null; referral_earnings_cents: number | null; referral_source: string | null; last_admin_outreach_at: string | null; admin_tags: string[] | null; demo_phone_number: string | null; byot_enabled: boolean; abandoned_cart_step: number | null; abandoned_cart_last_sent_at: string | null; price_starter: number | null; price_pro: number | null; price_growth: number | null; limit_starter: number | null; limit_pro: number | null; limit_growth: number | null; client_count: number; call_count: number; lead_count: number; total_revenue: number; payment_count: number; user_count: number; }
 interface Summary { total_agencies: number; active: number; trialing: number; past_due: number; canceled: number; pending: number; total_clients: number; total_calls: number; total_leads: number; total_revenue: number; stripe_connected: number; }
 interface ExpandedData { clients: any[]; support_requests?: any[]; feedback?: any[]; support_bot_log?: any[]; billable_client_count: number; sms_history: any[]; checklist: { items: Record<string, { done: boolean; label: string }>; done: number; total: number; complete: boolean }; test_client: { id: string; phone: string; calls_used: number; call_limit: number; status: string } | null; referral_chain: { referred_by: string | null; referred_agencies: any[]; earnings_cents: number }; activation: { step: number; last_sent: string | null; onboarding_completed_at: string | null }; onboarding_email: { step: number; last_sent: string | null }; email_history?: any[] }
 
@@ -285,6 +309,10 @@ export default function AdminAgenciesPage() {
   const [openMsgs, setOpenMsgs] = useState<Set<string>>(new Set());
   const [searchFocused, setSearchFocused] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(-1);
+  const [segment, setSegment] = useState<string>('all');
+  const [savingTags, setSavingTags] = useState<string | null>(null);
+  const [tagDraft, setTagDraft] = useState('');
+  const [bulkTagging, setBulkTagging] = useState(false);
   const rowRefs = useRef<Record<string, HTMLTableRowElement | null>>({});
   const searchBoxRef = useRef<HTMLDivElement | null>(null);
   // Per-agency recent calls (fetched when a row expands) + the shared call
@@ -506,6 +534,7 @@ export default function AdminAgenciesPage() {
   const filteredAgencies = agencies
     .filter(a => matchAgency(a, search))
     .filter(a => tierFilter === 'all' || tierOf(a) === tierFilter)
+    .filter(a => segmentMatch(a, segment))
     .sort((a, b) => {
       if (sortBy === 'plan') {
         const d = planRank(a.plan_type) - planRank(b.plan_type);
@@ -585,6 +614,46 @@ export default function AdminAgenciesPage() {
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } finally {
       setExporting(false);
+    }
+  };
+
+  // Persist an agency's admin tags, then patch local state so chips update in the
+  // row + expanded panel without a refetch. Best-effort: failures leave UI as-is.
+  const saveTags = async (agencyId: string, tags: string[]) => {
+    setSavingTags(agencyId);
+    try {
+      const token = localStorage.getItem('admin_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
+      const res = await fetch(`${backendUrl}/api/admin/agencies/${agencyId}/tags`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ tags }),
+      });
+      const data = await res.json().catch(() => ({}));
+      const saved: string[] = (res.ok && Array.isArray(data?.agency?.admin_tags)) ? data.agency.admin_tags : tags;
+      setAgencies(prev => prev.map(a => (a.id === agencyId ? { ...a, admin_tags: saved } : a)));
+    } catch {
+      /* best-effort */
+    } finally {
+      setSavingTags(null);
+    }
+  };
+
+  // Apply one tag to every agency currently shown (after tier/status/segment/
+  // search). Lets you categorize a whole segment at once. Confirms the count.
+  const tagAllShown = async () => {
+    const list = filteredAgencies;
+    if (!list.length) return;
+    const tag = (window.prompt(`Tag all ${list.length} shown agencies with:`) || '').trim().toLowerCase();
+    if (!tag) return;
+    setBulkTagging(true);
+    try {
+      for (const a of list) {
+        if ((a.admin_tags || []).includes(tag)) continue;
+        await saveTags(a.id, [...(a.admin_tags || []), tag]);
+      }
+    } finally {
+      setBulkTagging(false);
     }
   };
 
@@ -741,6 +810,26 @@ export default function AdminAgenciesPage() {
             </button>
           );
         })}
+        <div className="ml-auto flex items-center gap-2">
+          <div className="relative w-full sm:w-[190px]">
+            <CustomSelect
+              value={segment}
+              onChange={setSegment}
+              options={SEGMENT_OPTIONS}
+              ui={ADMIN_SELECT_UI}
+              leftIcon={<Filter className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--a-dim)] z-[1]" />}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={tagAllShown}
+            disabled={bulkTagging || filteredAgencies.length === 0}
+            title="Apply a tag to every agency currently shown"
+            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[12px] font-semibold border border-[var(--a-line-2)] text-[var(--a-muted)] hover:bg-[#F6FCF9] disabled:opacity-50 shrink-0"
+          >
+            <Target className="h-3.5 w-3.5" />{bulkTagging ? 'Tagging...' : `Tag all ${filteredAgencies.length}`}
+          </button>
+        </div>
       </div>
 
       <div className="a-panel">
@@ -750,7 +839,7 @@ export default function AdminAgenciesPage() {
               {filteredAgencies.map((agency) => (
                 <>
                 <tr key={agency.id} ref={(el) => { rowRefs.current[agency.id] = el; }} className={`transition-colors cursor-pointer ${expandedRow === agency.id ? 'bg-[#F6FCF9]' : 'hover:bg-[#F6FCF9]'}`} onClick={() => handleExpand(agency.id)}>
-                  <td className="px-6 py-3.5"><div className="flex items-center gap-3"><div className="flex h-9 w-9 items-center justify-center rounded-lg shrink-0 border border-[var(--a-line)] bg-white">{agency.primary_color ? (<div className="h-4 w-4 rounded" style={{ backgroundColor: agency.primary_color }} />) : (<Building2 className="h-4 w-4 text-[var(--a-dim)]" />)}</div><div className="min-w-0"><div className="flex items-center gap-1.5"><p className="text-[13px] font-semibold text-[var(--a-ink)] truncate">{agency.name}</p><ChevronDown className={`h-3 w-3 text-[var(--a-dim)] transition-transform shrink-0 ${expandedRow === agency.id ? 'rotate-180' : ''}`} /></div><button onClick={(e) => { e.stopPropagation(); copyToClipboard(agency.email, `email-${agency.id}`); }} className="flex items-center gap-1 max-w-full text-[11px] text-[var(--a-dim)] hover:text-[var(--a-muted)] transition-colors"><span className="truncate">{agency.email}</span>{copiedId === `email-${agency.id}` ? <Check className="h-2.5 w-2.5 shrink-0" style={{ color: 'var(--a-em-deep)' }} /> : <Copy className="h-2.5 w-2.5 shrink-0" />}</button>{!agency.onboarding_completed && (<span className="inline-flex items-center gap-1 mt-1 text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(245,158,11,0.12)', color: '#b45309', border: '1px solid rgba(245,158,11,0.35)' }}>Onboarding{agency.onboarding_step ? ` \u00b7 step ${agency.onboarding_step}` : ''}</span>)}<div className="md:hidden flex flex-wrap items-center gap-1.5 mt-1.5">{planBadge(agency.access_plan || agency.plan_type)}{agency.access_plan ? <span className="ml-1 text-[9px] px-1.5 py-0.5 rounded-full border" style={{ color: 'var(--a-em-deep)', background: 'var(--a-em-soft)', borderColor: 'var(--a-em-line)' }}>Comped</span> : null}{statusBadge(agency.subscription_status || agency.status)}{trialBadge(agency)}</div></div></div></td>
+                  <td className="px-6 py-3.5"><div className="flex items-center gap-3"><div className="flex h-9 w-9 items-center justify-center rounded-lg shrink-0 border border-[var(--a-line)] bg-white">{agency.primary_color ? (<div className="h-4 w-4 rounded" style={{ backgroundColor: agency.primary_color }} />) : (<Building2 className="h-4 w-4 text-[var(--a-dim)]" />)}</div><div className="min-w-0"><div className="flex items-center gap-1.5"><p className="text-[13px] font-semibold text-[var(--a-ink)] truncate">{agency.name}</p><ChevronDown className={`h-3 w-3 text-[var(--a-dim)] transition-transform shrink-0 ${expandedRow === agency.id ? 'rotate-180' : ''}`} /></div><button onClick={(e) => { e.stopPropagation(); copyToClipboard(agency.email, `email-${agency.id}`); }} className="flex items-center gap-1 max-w-full text-[11px] text-[var(--a-dim)] hover:text-[var(--a-muted)] transition-colors"><span className="truncate">{agency.email}</span>{copiedId === `email-${agency.id}` ? <Check className="h-2.5 w-2.5 shrink-0" style={{ color: 'var(--a-em-deep)' }} /> : <Copy className="h-2.5 w-2.5 shrink-0" />}</button>{!agency.onboarding_completed && (<span className="inline-flex items-center gap-1 mt-1 text-[9px] px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(245,158,11,0.12)', color: '#b45309', border: '1px solid rgba(245,158,11,0.35)' }}>Onboarding{agency.onboarding_step ? ` \u00b7 step ${agency.onboarding_step}` : ''}</span>)}{(agency.admin_tags && agency.admin_tags.length > 0) ? (<div className="flex flex-wrap items-center gap-1 mt-1">{agency.admin_tags.map(tg => (<span key={tg} className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-medium" style={{ background: 'var(--a-em-soft)', color: 'var(--a-em-deep)', border: '1px solid var(--a-em-line)' }}>{tg}</span>))}</div>) : null}<div className="mt-0.5 text-[9px]" style={{ color: agency.last_admin_outreach_at ? 'var(--a-dim)' : 'var(--a-amber)' }}>{agency.last_admin_outreach_at ? `Emailed ${timeAgo(agency.last_admin_outreach_at)}` : 'Not contacted'}</div><div className="md:hidden flex flex-wrap items-center gap-1.5 mt-1.5">{planBadge(agency.access_plan || agency.plan_type)}{agency.access_plan ? <span className="ml-1 text-[9px] px-1.5 py-0.5 rounded-full border" style={{ color: 'var(--a-em-deep)', background: 'var(--a-em-soft)', borderColor: 'var(--a-em-line)' }}>Comped</span> : null}{statusBadge(agency.subscription_status || agency.status)}{trialBadge(agency)}</div></div></div></td>
                   <td className="px-4 py-3.5 hidden md:table-cell">{planBadge(agency.access_plan || agency.plan_type)}{agency.access_plan ? <span className="ml-1 text-[9px] px-1.5 py-0.5 rounded-full border" style={{ color: 'var(--a-em-deep)', background: 'var(--a-em-soft)', borderColor: 'var(--a-em-line)' }}>Comped</span> : null}</td>
                   <td className="px-4 py-3.5 hidden md:table-cell"><div className="flex flex-col items-start gap-1">{statusBadge(agency.subscription_status || agency.status)}{trialBadge(agency)}</div></td>
                   <td className="px-3 py-3.5 text-center hidden md:table-cell"><span className="text-xs text-[var(--a-muted)] a-num">{agency.client_count}</span></td>
@@ -760,6 +849,8 @@ export default function AdminAgenciesPage() {
                   <td className="px-4 py-3.5 hidden md:table-cell"><span className="text-xs text-[var(--a-dim)]">{agency.last_login_at ? timeAgo(agency.last_login_at) : 'Never'}</span></td>
                   <td className="px-4 py-3.5 hidden md:table-cell"><span className="text-xs text-[var(--a-dim)]">{agency.last_active_at ? timeAgo(agency.last_active_at) : 'Never'}</span></td>
                   <td className="px-6 py-3.5 text-right" onClick={(e) => e.stopPropagation()}>
+                    <div className="inline-flex items-center gap-1">
+                    <button onClick={() => setComposeAgency({ id: agency.id, email: agency.email || '', name: agency.name || 'there' })} title="Compose email" className="p-1.5 hover:bg-[var(--a-em-soft)] rounded-lg transition-colors"><Mail className="h-4 w-4 text-[var(--a-em-deep)]" /></button>
                     <div className="relative inline-block"><button onClick={() => setActionMenu(actionMenu === agency.id ? null : agency.id)} className="p-1.5 hover:bg-[var(--a-em-soft)] rounded-lg transition-colors"><MoreVertical className="h-4 w-4 text-[var(--a-dim)]" /></button>
                       {actionMenu === agency.id && (<><div className="fixed inset-0 z-10" onClick={() => setActionMenu(null)} /><div className="absolute right-0 mt-1 w-44 rounded-xl bg-white border border-[var(--a-line-2)] shadow-xl z-20 overflow-hidden">
                         <button onClick={() => { handleExpand(agency.id); setActionMenu(null); }} className="flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] text-[var(--a-muted)] hover:bg-[#F6FCF9] w-full text-left"><ChevronDown className={`h-3.5 w-3.5 transition-transform ${expandedRow === agency.id ? 'rotate-180' : ''}`} />{expandedRow === agency.id ? 'Collapse Details' : 'View Details'}</button>
@@ -768,6 +859,7 @@ export default function AdminAgenciesPage() {
                         <div className="mx-2 border-t border-[var(--a-line)]" />
                         {agency.status !== 'suspended' ? (<button onClick={() => handleStatusUpdate(agency.id, 'suspended', 'canceled')} className="flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] w-full text-left" style={{ color: 'var(--a-red)' }}><Ban className="h-3.5 w-3.5" />Suspend Agency</button>) : (<button onClick={() => handleStatusUpdate(agency.id, 'active', 'active')} className="flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] w-full text-left" style={{ color: 'var(--a-em-deep)' }}><UserCheck className="h-3.5 w-3.5" />Activate Agency</button>)}
                       </div></>)}
+                    </div>
                     </div>
                   </td>
                 </tr>
@@ -913,6 +1005,37 @@ export default function AdminAgenciesPage() {
                           </div>
                         );
                       })()}
+
+                      {/* Tags (admin categorization for the outreach workflow) */}
+                      <div className="mb-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Target className="h-3.5 w-3.5" style={{ color: 'var(--a-em-deep)' }} />
+                          <h4 className={label}>Tags</h4>
+                          {savingTags === agency.id && <Loader2 className="h-3 w-3 animate-spin text-[var(--a-dim)]" />}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {(agency.admin_tags || []).map(tg => (
+                            <span key={tg} className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium" style={{ background: 'var(--a-em-soft)', color: 'var(--a-em-deep)', border: '1px solid var(--a-em-line)' }}>
+                              {tg}
+                              <button onClick={() => saveTags(agency.id, (agency.admin_tags || []).filter(x => x !== tg))} className="hover:opacity-70" title="Remove tag"><X className="h-2.5 w-2.5" /></button>
+                            </span>
+                          ))}
+                          <input
+                            value={tagDraft}
+                            onChange={(e) => setTagDraft(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const v = tagDraft.trim().toLowerCase();
+                                if (v && !(agency.admin_tags || []).includes(v)) saveTags(agency.id, [...(agency.admin_tags || []), v]);
+                                setTagDraft('');
+                              }
+                            }}
+                            placeholder="Add tag + Enter"
+                            className="rounded-full px-2.5 py-0.5 text-[11px] border border-[var(--a-line-2)] bg-white text-[var(--a-ink)] outline-none focus:border-[var(--a-em)] w-[130px]"
+                          />
+                        </div>
+                      </div>
 
                       {/* Emails (composed here, sent from Gmail as support@, logged) */}
                       <div>
