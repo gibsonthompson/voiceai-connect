@@ -37,14 +37,19 @@ import { CustomSelect, type DropdownUI } from '@/components/ui/custom-select';
 // Themed dropdown palette for the admin (emerald-on-white) surface, passed to
 // the shared CustomSelect so these filters render as custom panels, never a
 // native iOS/OS picker. paddingLeft leaves room for the leading icon.
+//
+// RESOLVED HEX, not var(--a-*): the CustomSelect panel renders in a
+// document.body portal, which is OUTSIDE .admin-scope where the admin tokens are
+// defined, so the variables collapse to nothing there (transparent panel +
+// invisible text). The literal values below mirror admin-theme.css.
 const ADMIN_SELECT_UI: DropdownUI = {
-  inputStyle: { background: 'var(--a-card)', color: 'var(--a-ink)', border: '1px solid var(--a-line-2)', borderRadius: '11px', paddingLeft: '2.5rem' },
-  text: 'var(--a-ink)',
-  muted: 'var(--a-dim)',
-  panelBg: 'var(--a-card)',
-  panelBorder: 'var(--a-line)',
-  hover: 'var(--a-em-soft)',
-  accent: 'var(--a-em-deep)',
+  inputStyle: { background: '#FFFFFF', color: '#0E1512', border: '1px solid #DBE0DE', borderRadius: '11px', paddingLeft: '2.5rem' },
+  text: '#0E1512',       // --a-ink
+  muted: '#9AA3A0',      // --a-dim
+  panelBg: '#FFFFFF',    // --a-card
+  panelBorder: '#E8EBEA',// --a-line
+  hover: '#E3F7F0',      // --a-em-soft
+  accent: '#0A7D60',     // --a-em-deep
   isDark: false,
 };
 const STATUS_OPTIONS = [
