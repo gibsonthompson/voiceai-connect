@@ -24,6 +24,7 @@ interface VoiceOption { id: string; name: string; gender: string; accent: string
 
 const STEP_META = [
   { key: 'welcome', label: 'Welcome', icon: Sparkles },
+  { key: 'website', label: 'Website', icon: Globe },
   { key: 'hours', label: 'Hours', icon: Clock },
   { key: 'services', label: 'Services', icon: Briefcase },
   { key: 'faqs', label: 'Knowledge', icon: HelpCircle },
@@ -251,6 +252,13 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
   // ── Go Live ─────────────────────────────────────────────────────────
   const [copied, setCopied] = useState(false);
 
+  // ── Website scan (onboarding) ───────────────────────
+  const [scanning, setScanning] = useState(false);
+  const [scanDone, setScanDone] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const [scanSummary, setScanSummary] = useState<{ services: number; staff: number; faqs: number; areas: number; hours: boolean } | null>(null);
+  const scrapePrefillRan = useRef(false);
+
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
   const getToken = () => localStorage.getItem('auth_token');
   const totalSteps = STEP_META.length;
@@ -367,6 +375,83 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
       setFaqs(templates.map((t, i) => ({ id: `t${i}`, question: t.q, answer: t.a })));
     }
   };
+
+  // ── Website scrape → prefill (onboarding) ───────────────────────────
+  // Pull the stored "found on your website" suggestions (from the signup/
+  // activation scrape, or a fresh scan on the Website step) and fill in Hours
+  // and FAQs. Services and Staff suggestions surface inside their own sections
+  // ("Found on your website"), so they need no wiring here. Returns a small
+  // summary for the Website step's success panel.
+  const applyScrapeSuggestions = async (): Promise<{ faqs: number; areas: number; hours: boolean } | null> => {
+    try {
+      const res = await fetch(`${backendUrl}/api/client/${client.id}/scrape-suggestions`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (data.hours && typeof data.hours === 'object') {
+        setHours(prev => ({ ...prev, ...data.hours }));
+      }
+      let faqCount = 0;
+      if (Array.isArray(data.faqs) && data.faqs.length) {
+        const scrapedQ = new Set(data.faqs.map((f: any) => String(f.question || '').trim().toLowerCase()));
+        setFaqs(prev => {
+          const scraped = data.faqs
+            .filter((f: any) => f && f.question && f.answer)
+            .map((f: any, i: number) => ({ id: `sg${i}_${Date.now()}`, question: String(f.question), answer: String(f.answer) }));
+          // Keep the client's own answered FAQs; drop empty industry templates so
+          // the scraped, answered FAQs lead.
+          const kept = prev.filter(f => f.answer.trim() && !scrapedQ.has(f.question.trim().toLowerCase()));
+          return [...scraped, ...kept].slice(0, 20);
+        });
+        faqCount = data.faqs.length;
+      }
+      return { faqs: faqCount, areas: Array.isArray(data.areas) ? data.areas.length : 0, hours: !!data.hours };
+    } catch { return null; }
+  };
+
+  const handleScanWebsite = async () => {
+    const url = websiteUrl.trim();
+    if (!url) { setScanError('Add your website address first.'); return; }
+    setScanning(true); setScanError(null); setScanDone(false); setScanSummary(null);
+    try {
+      // Reuses the "Learn from website" action: scrapes the site, rebuilds the
+      // knowledge base, and stores services/staff/area/hours/FAQ suggestions.
+      const res = await fetch(`${backendUrl}/api/knowledge-base/update`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ clientId: client.id, websiteUrl: url, scrapeWebsite: true }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || 'We could not read that website. Check the address and try again.');
+      const sugg = await applyScrapeSuggestions();
+      // Count service + staff suggestions from their own endpoints for the summary.
+      let services = 0, staff = 0;
+      try {
+        const [sv, st] = await Promise.all([
+          fetch(`${backendUrl}/api/client/${client.id}/services`, { headers: { Authorization: `Bearer ${getToken()}` } }).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(`${backendUrl}/api/client/${client.id}/staff`, { headers: { Authorization: `Bearer ${getToken()}` } }).then(r => r.ok ? r.json() : null).catch(() => null),
+        ]);
+        services = Array.isArray(sv?.suggestions) ? sv.suggestions.length : 0;
+        staff = Array.isArray(st?.suggestions) ? st.suggestions.length : 0;
+      } catch {}
+      setScanSummary({ services, staff, faqs: sugg?.faqs || 0, areas: sugg?.areas || 0, hours: !!sugg?.hours });
+      setScanDone(true);
+    } catch (e) {
+      setScanError(e instanceof Error ? e.message : 'Something went wrong scanning your website.');
+    } finally { setScanning(false); }
+  };
+
+  // When Hours + KB have loaded, apply any suggestions the signup/activation
+  // scrape already stored, so a client who gave their website at signup sees
+  // Hours and FAQs pre-filled even before touching the Website step. Runs once.
+  useEffect(() => {
+    if (kbLoaded && hoursLoaded && !scrapePrefillRan.current) {
+      scrapePrefillRan.current = true;
+      applyScrapeSuggestions();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kbLoaded, hoursLoaded]);
 
   const loadVoicesAndGreeting = async () => {
     try {
@@ -525,14 +610,17 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
   // ====================================================================
 
   const handleNext = async () => {
-    // Save current step data before advancing. If a save fails, stay on the
-    // step so the user can fix it, the inline error is already shown.
-    if (step === 1) { if (!(await saveHours())) return; }
-    else if (step === 3) { if (!(await saveKB())) return; }
-    else if (step === 5) { if (!(await saveVoiceAndGreeting())) return; }
-    // Steps 2 (services) and 4 (staff) save via their own components
-    if (step === 2) setCompletedSteps(prev => [...prev.filter(s => s !== 'services'), 'services']);
-    if (step === 4) setCompletedSteps(prev => [...prev.filter(s => s !== 'staff'), 'staff']);
+    // Save current step data before advancing. If a save fails, stay on the step
+    // so the user can fix it (the inline error is already shown). Keyed off the
+    // step's key, not its index, so inserting steps (e.g. Website) never
+    // misroutes a save.
+    const key = STEP_META[step]?.key;
+    if (key === 'hours') { if (!(await saveHours())) return; }
+    else if (key === 'faqs') { if (!(await saveKB())) return; }
+    else if (key === 'voice') { if (!(await saveVoiceAndGreeting())) return; }
+    // Services and Staff save via their own embedded sections.
+    if (key === 'services') setCompletedSteps(prev => [...prev.filter(s => s !== 'services'), 'services']);
+    if (key === 'staff') setCompletedSteps(prev => [...prev.filter(s => s !== 'staff'), 'staff']);
 
     if (step < totalSteps - 1) setStep(step + 1);
   };
@@ -1123,8 +1211,82 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
   // RENDER
   // ====================================================================
 
+  // ── STEP: WEBSITE (scan + prefill) ──────────────────────────────────
+  const renderWebsite = () => (
+    <div className="max-w-lg mx-auto ob-fu">
+      <div className="flex items-center justify-center w-14 h-14 rounded-2xl mb-5 mx-auto" style={{ backgroundColor: hexToRgba(theme.primary, 0.12) }}>
+        <Globe className="w-7 h-7" style={{ color: theme.primary }} />
+      </div>
+      <h2 className="text-xl sm:text-2xl font-bold tracking-tight mb-1 text-center" style={{ color: theme.text }}>
+        Start with your website
+      </h2>
+      <p className="text-sm mb-6 text-center" style={{ color: theme.textMuted }}>
+        Paste your website and we&apos;ll scan it to fill in your services, hours, FAQs and team automatically. You can review and edit everything in the next steps.
+      </p>
+
+      <label className="block text-xs font-medium mb-2" style={{ color: theme.text }}>Website address</label>
+      <div className="flex flex-col sm:flex-row gap-2">
+        <input type="url" value={websiteUrl} onChange={e => { setWebsiteUrl(e.target.value); setScanError(null); }}
+          placeholder="https://yourbusiness.com" disabled={scanning}
+          className="flex-1 px-4 py-2.5 rounded-xl text-sm focus:outline-none" style={inputStyle} />
+        <button onClick={handleScanWebsite} disabled={scanning || !websiteUrl.trim()}
+          className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+          style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+          {scanning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+          {scanning ? 'Scanning...' : 'Scan my website'}
+        </button>
+      </div>
+
+      {scanError && (
+        <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl text-xs" style={{ backgroundColor: hexToRgba('#ef4444', 0.1), color: '#ef4444', border: `1px solid ${hexToRgba('#ef4444', 0.2)}` }}>
+          <X className="w-3.5 h-3.5 flex-shrink-0" /><span>{scanError}</span>
+        </div>
+      )}
+
+      {scanning && (
+        <p className="mt-3 text-xs text-center" style={{ color: theme.textMuted }}>
+          Reading your site. This can take up to a minute.
+        </p>
+      )}
+
+      {scanDone && scanSummary && (
+        <div className="mt-4 rounded-xl p-4" style={{ backgroundColor: hexToRgba(theme.primary, 0.08), border: `1px solid ${hexToRgba(theme.primary, 0.18)}` }}>
+          <div className="flex items-center gap-1.5 mb-2">
+            <CheckCircle className="w-4 h-4" style={{ color: theme.primary }} />
+            <span className="text-sm font-semibold" style={{ color: theme.text }}>We scanned your website</span>
+          </div>
+          {(scanSummary.hours || scanSummary.services > 0 || scanSummary.staff > 0 || scanSummary.faqs > 0) ? (
+            <>
+              <p className="text-xs mb-2" style={{ color: theme.textMuted }}>Here&apos;s what we found and filled in. Review and edit it in the next steps.</p>
+              <div className="flex flex-wrap gap-1.5">
+                {scanSummary.hours && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium" style={{ backgroundColor: hexToRgba(theme.primary, 0.12), color: theme.primary }}>Hours found</span>
+                )}
+                {scanSummary.services > 0 && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium" style={{ backgroundColor: hexToRgba(theme.primary, 0.12), color: theme.primary }}>{scanSummary.services} {scanSummary.services === 1 ? 'service' : 'services'}</span>
+                )}
+                {scanSummary.staff > 0 && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium" style={{ backgroundColor: hexToRgba(theme.primary, 0.12), color: theme.primary }}>{scanSummary.staff} {scanSummary.staff === 1 ? 'team member' : 'team members'}</span>
+                )}
+                {scanSummary.faqs > 0 && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium" style={{ backgroundColor: hexToRgba(theme.primary, 0.12), color: theme.primary }}>{scanSummary.faqs} {scanSummary.faqs === 1 ? 'FAQ' : 'FAQs'}</span>
+                )}
+              </div>
+            </>
+          ) : (
+            <p className="text-xs" style={{ color: theme.textMuted }}>We couldn&apos;t pull structured details from this site, but your knowledge base was still updated. You can add services, hours and FAQs manually in the next steps.</p>
+          )}
+        </div>
+      )}
+
+      <p className="mt-5 text-xs text-center" style={{ color: theme.textMuted }}>
+        No website? Tap <span style={{ color: theme.text }}>Skip for now</span> and add everything manually.
+      </p>
+    </div>
+  );
+
   const stepRenderers = [
-    renderWelcome, renderHours, renderServices, renderFAQs,
+    renderWelcome, renderWebsite, renderHours, renderServices, renderFAQs,
     renderStaff, renderVoice, renderGoLive,
   ];
 
@@ -1132,7 +1294,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
   const isLastStep = step === totalSteps - 1;
   const showNav = step > 0 && step < totalSteps - 1;
   // Steps that can be skipped (not welcome, not go-live)
-  const canSkip = step >= 1 && step <= 5;
+  const canSkip = step >= 1 && step <= totalSteps - 2;
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col" style={{ backgroundColor: theme.bg }}>
