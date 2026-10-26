@@ -7,6 +7,7 @@ import {
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
 import DiscountCodesManager from '@/components/agency/DiscountCodesManager';
+import EmailDomainCard from '@/components/agency/EmailDomainCard';
 import { PLAN_NAMES } from '@/lib/plan-limits';
 import { FEATURE_LABELS, FEATURE_ORDER, CORE_CLIENT_FEATURES } from '@/lib/plan-features-meta';
 import BYOTSettings from '@/components/BYOTSettings';
@@ -1699,6 +1700,10 @@ function AgencySettingsContent() {
                 </div>
 
                 <DiscountCodesManager theme={theme} agencyId={agency?.id} isPaid={!isFreePlan} />
+
+                <div className="mt-4 sm:mt-5">
+                  <EmailDomainCard theme={theme} agencyId={agency?.id} />
+                </div>
 
               </div>
             )}
