@@ -206,8 +206,6 @@ export default function AddClientPage() {
   // connect client it is the no-card trial length. Empty = use the agency
   // default (clientTrialDays) above.
   const [cTrialDays, setCTrialDays] = useState('');
-  // Toggles the "What happens after the trial ends?" explainer under the field.
-  const [showTrialInfo, setShowTrialInfo] = useState(false);
   const effectiveTrialDays = (() => {
     const n = Number(cTrialDays);
     return cTrialDays.trim() !== '' && Number.isFinite(n) ? Math.max(0, Math.min(365, Math.floor(n))) : clientTrialDays;
@@ -771,7 +769,7 @@ export default function AddClientPage() {
                 </label>
                 <div className="inline-flex rounded-lg p-0.5 mb-2" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
                   {(['plan', 'custom'] as const).map((m) => (
-                    <button key={m} type="button" onClick={() => setCPricingMode(m)} disabled={submitting} className="px-3 py-1 rounded-md text-xs font-medium transition-colors" style={cPricingMode === m ? { backgroundColor: primaryColor, color: buttonTextColor } : { color: labelColor }}>{m === 'plan' ? 'Use a plan' : 'Custom'}</button>
+                    <button key={m} type="button" onClick={() => { setCPricingMode(m); if (m === 'custom' && cLimit === '') setCLimit('-1'); }} disabled={submitting} className="px-3 py-1 rounded-md text-xs font-medium transition-colors" style={cPricingMode === m ? { backgroundColor: primaryColor, color: buttonTextColor } : { color: labelColor }}>{m === 'plan' ? 'Use a plan' : 'Custom'}</button>
                   ))}
                 </div>
                 {cPricingMode === 'plan' ? (
@@ -783,31 +781,62 @@ export default function AddClientPage() {
                     ui={ui}
                   />
                 ) : (
-                  <div className="space-y-2">
-                    <div className="grid grid-cols-2 gap-2">
-                      {[
-                        { label: 'Monthly ($)', val: cMonthly, set: setCMonthly, ph: '499' },
-                        { label: 'Setup ($)', val: cSetup, set: setCSetup, ph: '1000' },
-                        { label: 'Included min', val: cIncluded, set: setCIncluded, ph: '2000' },
-                        { label: 'Per-min after ($)', val: cRate, set: setCRate, ph: '0.15' },
-                        { label: 'Call limit', val: cLimit, set: setCLimit, ph: '-1 = unlimited' },
-                      ].map((f) => (
-                        <div key={f.label}>
-                          <label className="block text-[11px] mb-0.5" style={{ color: labelColor }}>{f.label}</label>
-                          <input value={f.val} onChange={(e) => f.set(e.target.value)} placeholder={f.ph} inputMode="decimal" disabled={submitting} className="w-full rounded-lg px-2.5 py-2 text-sm focus:outline-none" style={inputStyle} />
-                        </div>
-                      ))}
-                    </div>
-                    <p className="text-[11px]" style={{ color: labelColor, opacity: 0.7 }}>This client is billed exactly these amounts and never sees your standard plans.</p>
-                  </div>
+                  <p className="text-xs mt-1 py-2.5" style={{ color: labelColor, opacity: 0.7 }}>Set the exact amounts in the panel below.</p>
                 )}
               </div>
             </div>
 
-            {/* Trial / free-access window length (per client, overrides the agency default) */}
+            {/* Custom pricing panel — full width so the amounts have room, with
+                plain labels, inline hints, and a call cap that reads in words
+                instead of a -1 magic number. */}
+            {cPricingMode === 'custom' && (
+              <div className="rounded-xl p-4" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${borderColor}` }}>
+                <p className="text-sm font-semibold mb-3" style={{ color: textColor }}>Custom pricing for this client</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+                  {[
+                    { label: 'Monthly price', prefix: '$', val: cMonthly, set: setCMonthly, ph: '499', hint: 'What they pay you every month' },
+                    { label: 'One-time setup fee', prefix: '$', val: cSetup, set: setCSetup, ph: '1000', hint: 'Charged once at signup (optional)' },
+                    { label: 'Included minutes / mo', prefix: '', val: cIncluded, set: setCIncluded, ph: '2000', hint: 'Talk minutes bundled before overage' },
+                    { label: 'Overage per minute', prefix: '$', val: cRate, set: setCRate, ph: '0.15', hint: 'Charged per minute past the included minutes' },
+                  ].map((f) => (
+                    <div key={f.label}>
+                      <label className="block text-xs font-medium mb-1" style={{ color: labelColor }}>{f.label}</label>
+                      <div className="relative">
+                        {f.prefix && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none" style={{ color: mutedTextColor }}>{f.prefix}</span>}
+                        <input value={f.val} onChange={(e) => f.set(e.target.value)} placeholder={f.ph} inputMode="decimal" disabled={submitting} className={`w-full rounded-lg ${f.prefix ? 'pl-7' : 'pl-3'} pr-3 py-2 text-sm focus:outline-none`} style={inputStyle} />
+                      </div>
+                      <p className="text-[10px] mt-0.5" style={{ color: labelColor, opacity: 0.6 }}>{f.hint}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Call cap: a hard ceiling on NUMBER of calls, separate from included MINUTES. */}
+                <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${borderColor}` }}>
+                  <label className="block text-xs font-medium mb-1" style={{ color: labelColor }}>Monthly call cap</label>
+                  <div className={`grid grid-cols-1 gap-3 ${cLimit !== '-1' ? 'sm:grid-cols-2' : ''}`}>
+                    <CustomSelect
+                      value={cLimit === '-1' ? 'unlimited' : 'limited'}
+                      onChange={(v) => setCLimit(v === 'unlimited' ? '-1' : '')}
+                      options={[{ value: 'unlimited', label: 'Unlimited calls' }, { value: 'limited', label: 'Cap the number of calls' }]}
+                      disabled={submitting}
+                      ui={ui}
+                    />
+                    {cLimit !== '-1' && (
+                      <input value={cLimit} onChange={(e) => setCLimit(e.target.value.replace(/[^0-9]/g, ''))} placeholder="e.g. 500 calls / month" inputMode="numeric" disabled={submitting} className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none" style={inputStyle} />
+                    )}
+                  </div>
+                  <p className="text-[10px] mt-1" style={{ color: labelColor, opacity: 0.6 }}>A hard limit on how many calls the AI answers each month. This is separate from included minutes (that is about billing). Most leave this on Unlimited.</p>
+                </div>
+
+                <p className="text-[11px] mt-3" style={{ color: labelColor, opacity: 0.7 }}>This client is billed exactly these amounts and never sees your standard plans.</p>
+              </div>
+            )}
+
+            {/* Trial / free-access window + an always-visible, mode-aware explainer
+                of what happens when it ends, so the key outcome is never buried. */}
             <div>
               <label className="block text-sm font-medium mb-1.5" style={{ color: labelColor }}>
-                {isManualBilling ? 'Free access window (days)' : 'Trial length (days)'}
+                {isManualBilling ? 'Free access window (days)' : 'Free trial (days)'}
               </label>
               <input
                 type="number"
@@ -817,44 +846,32 @@ export default function AddClientPage() {
                 onChange={(e) => setCTrialDays(e.target.value)}
                 placeholder={String(clientTrialDays)}
                 disabled={submitting}
-                className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-colors"
+                className="w-full max-w-[220px] rounded-xl px-4 py-2.5 text-sm focus:outline-none transition-colors"
                 style={inputStyle}
               />
-              <p className="text-[11px] mt-1" style={{ color: labelColor, opacity: 0.7 }}>
-                {isManualBilling
-                  ? (effectiveTrialDays > 0
-                      ? `Client goes live now and auto-suspends after ${effectiveTrialDays} day${effectiveTrialDays === 1 ? '' : 's'} (keeping their number) until you mark them paid on their own client page (open the client from Clients, then hit Mark as paid). Set 0 to keep them live permanently.`
-                      : 'Client goes live permanently with no free window. Enter a number of days to add one.')
-                  : (effectiveTrialDays > 0
-                      ? `No-card free trial of ${effectiveTrialDays} day${effectiveTrialDays === 1 ? '' : 's'}. Set 0 for no trial (they must upgrade to activate).`
-                      : 'No trial, the client must upgrade to activate. Enter a number of days to add a free trial.')}
-                {' '}Leave blank to use your account default ({clientTrialDays} day{clientTrialDays === 1 ? '' : 's'}).
-              </p>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-[11px]" style={{ color: labelColor, opacity: 0.75 }}>
+                <span>Blank = your default ({clientTrialDays} day{clientTrialDays === 1 ? '' : 's'})</span>
+                <span style={{ opacity: 0.4 }}>•</span>
+                <span>0 = {isManualBilling ? 'live right away, no window' : 'no trial, they upgrade to activate'}</span>
+              </div>
 
-              {/* Plain-language explainer of exactly what happens when the window
-                  or trial ends, mode-aware and day-count-aware, so the agent is
-                  never guessing what the client experiences after it runs out. */}
-              <button
-                type="button"
-                onClick={() => setShowTrialInfo((v) => !v)}
-                className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-medium transition-colors"
-                style={{ color: primaryColor }}
-              >
-                <HelpCircle className="h-3.5 w-3.5" />
-                What happens after the {isManualBilling ? 'free access window' : 'free trial'} is over?
-                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showTrialInfo ? 'rotate-180' : ''}`} />
-              </button>
-              {showTrialInfo && (
-                <div className="mt-2 rounded-lg p-3 text-[11px] leading-relaxed" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${borderColor}`, color: mutedTextColor }}>
-                  {isManualBilling
-                    ? (effectiveTrialDays > 0
-                        ? <>While the free access window runs, this client&apos;s receptionist is fully live and you keep paying the platform for them as usual. On day {effectiveTrialDays} it automatically pauses and their phone number is held, nothing is charged to anyone. It stays paused until you open the client from <span style={{ color: textColor, fontWeight: 500 }}>Clients</span> and hit <span style={{ color: textColor, fontWeight: 500 }}>Mark as paid</span>, which puts them live again on your own billing. You can mark them paid before day {effectiveTrialDays} too, that just ends the window early and keeps them live.</>
-                        : <>There is no free window, so this client goes live the moment you add them and stays live. You invoice them directly on whatever schedule you set, there is no countdown and nothing auto-pauses. You keep paying the platform for them the whole time.</>)
-                    : (effectiveTrialDays > 0
-                        ? <>During the free trial the receptionist is fully live with no card on file. When the trial ends on day {effectiveTrialDays}, it pauses until the client adds a payment method and starts their subscription, which is billed through <span style={{ color: textColor, fontWeight: 500 }}>Stripe Connect</span> straight to you (you keep your margin). It stays paused until they do, so give them a window long enough to decide.</>
-                        : <>There is no trial, so the client has to add a payment method and start their subscription before the receptionist goes live. Once they do, they are billed through <span style={{ color: textColor, fontWeight: 500 }}>Stripe Connect</span> straight to you and the receptionist activates. Until then it stays inactive.</>)}
+              <div className="mt-2.5 rounded-xl p-3 flex gap-2.5" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${borderColor}` }}>
+                <HelpCircle className="h-4 w-4 shrink-0 mt-0.5" style={{ color: primaryColor }} />
+                <div>
+                  <p className="text-xs font-semibold mb-0.5" style={{ color: textColor }}>
+                    What happens after the {isManualBilling ? 'window' : 'trial'}
+                  </p>
+                  <p className="text-[11px] leading-relaxed" style={{ color: mutedTextColor }}>
+                    {isManualBilling
+                      ? (effectiveTrialDays > 0
+                          ? <>The receptionist is live now. On day {effectiveTrialDays} it auto-pauses (their number is kept) until you open the client and hit <span style={{ color: textColor, fontWeight: 500 }}>Mark as paid</span>. You can mark them paid anytime to keep them live, you invoice them directly on your own terms.</>
+                          : <>They go live right away and stay live, no countdown and nothing auto-pauses. You invoice them directly on whatever schedule you set.</>)
+                      : (effectiveTrialDays > 0
+                          ? <>The receptionist is live now with no card on file. On day {effectiveTrialDays} it pauses until the client adds a payment method and subscribes, billed through <span style={{ color: textColor, fontWeight: 500 }}>Stripe Connect</span> straight to you (you keep your margin). Give them a window long enough to decide.</>
+                          : <>No trial, so the client adds a payment method and subscribes first, then the receptionist goes live. Billing runs through <span style={{ color: textColor, fontWeight: 500 }}>Stripe Connect</span> straight to you.</>)}
+                  </p>
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Country Picker */}
