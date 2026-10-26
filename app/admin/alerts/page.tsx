@@ -12,6 +12,7 @@ interface ErrorReport {
   message: string | null;
   stack: string | null;
   metadata: Record<string, any> | null;
+  signature?: string | null;
   resolved: boolean;
   created_at: string;
 }
@@ -20,11 +21,35 @@ interface ErrorReport {
 const prettyContext = (c: string) =>
   String(c || 'Alert').replace(/[_-]+/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase());
 
+// Build a complete, paste-ready text block of one alert (title, message, all
+// metadata, signature, stack) so an admin can copy it straight into a chat with
+// enough context to diagnose it.
+function formatErrorForCopy(r: ErrorReport): string {
+  const m = r.metadata || {};
+  const lines: string[] = [];
+  lines.push(`[${prettyContext(r.context)}] (${r.context})`);
+  lines.push(`Time: ${new Date(r.created_at).toLocaleString()}`);
+  if (r.message) lines.push(`Message: ${r.message}`);
+  const keys = Object.keys(m);
+  if (keys.length) {
+    lines.push('Context:');
+    for (const k of keys) {
+      const v = (m as Record<string, unknown>)[k];
+      lines.push(`  ${k}: ${v !== null && typeof v === 'object' ? JSON.stringify(v) : String(v)}`);
+    }
+  }
+  if (r.signature) lines.push(`Signature: ${r.signature}`);
+  if (r.stack) lines.push(`Stack:\n${r.stack}`);
+  return lines.join('\n');
+}
+
 export default function AdminAlertsPage() {
   const [reports, setReports] = useState<ErrorReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [showResolved, setShowResolved] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
+  const [loggingIn, setLoggingIn] = useState<string | null>(null);
 
   const fetchErrors = useCallback(async () => {
     setLoading(true);
@@ -49,6 +74,26 @@ export default function AdminAlertsPage() {
       });
       await fetchErrors();
     } catch { /* no-op */ } finally { setBusy(null); }
+  };
+
+  const copyError = (r: ErrorReport) => {
+    try {
+      navigator.clipboard.writeText(formatErrorForCopy(r));
+      setCopied(r.id);
+      setTimeout(() => setCopied(null), 1500);
+    } catch { /* ignore */ }
+  };
+
+  const loginAsAgency = async (agencyId: string) => {
+    setLoggingIn(agencyId);
+    try {
+      const res = await fetch(`${getBackendUrl()}/api/admin/agencies/${agencyId}/login-as`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      const d = await res.json();
+      if (d.loginUrl) window.open(d.loginUrl, '_blank');
+    } catch { /* ignore */ } finally { setLoggingIn(null); }
   };
 
   return (
@@ -79,35 +124,61 @@ export default function AdminAlertsPage() {
       )}
 
       <div className="space-y-3">
-        {reports.map((r) => (
-          <div key={r.id} className="rounded-xl p-4" style={{ background: 'var(--a-card)', border: '1px solid var(--a-line-2)' }}>
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-[var(--a-ink)] break-words">{prettyContext(r.context)}</p>
-                {r.message && <p className="mt-1 text-sm text-[var(--a-muted)] break-words">{r.message}</p>}
+        {reports.map((r) => {
+          const agencyId = r.metadata?.agency_id ? String(r.metadata.agency_id) : null;
+          return (
+            <div key={r.id} className="rounded-xl p-4" style={{ background: 'var(--a-card)', border: '1px solid var(--a-line-2)' }}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-[var(--a-ink)] break-words">{prettyContext(r.context)}</p>
+                  {r.message && <p className="mt-1 text-sm text-[var(--a-muted)] break-words">{r.message}</p>}
+                </div>
+                <div className="flex-shrink-0 flex items-center gap-2">
+                  <button onClick={() => copyError(r)} className="text-xs rounded-lg px-3 py-1.5"
+                    style={{ background: 'var(--a-card)', border: '1px solid var(--a-line-2)', color: 'var(--a-muted)' }}>
+                    {copied === r.id ? 'Copied' : 'Copy'}
+                  </button>
+                  <button onClick={() => resolve(r.id, !r.resolved)} disabled={busy === r.id}
+                    className="text-xs rounded-lg px-3 py-1.5 disabled:opacity-50"
+                    style={{ background: r.resolved ? 'var(--a-card)' : 'var(--a-em-soft)', border: '1px solid var(--a-em-line)', color: 'var(--a-em-deep)' }}>
+                    {r.resolved ? 'Reopen' : 'Resolve'}
+                  </button>
+                </div>
               </div>
-              <button onClick={() => resolve(r.id, !r.resolved)} disabled={busy === r.id}
-                className="flex-shrink-0 text-xs rounded-lg px-3 py-1.5 disabled:opacity-50"
-                style={{ background: r.resolved ? 'var(--a-card)' : 'var(--a-em-soft)', border: '1px solid var(--a-em-line)', color: 'var(--a-em-deep)' }}>
-                {r.resolved ? 'Reopen' : 'Resolve'}
-              </button>
+
+              {r.metadata && Object.keys(r.metadata).length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
+                  {Object.entries(r.metadata).map(([k, v]) => (
+                    <span key={k} className="text-[11px] text-[var(--a-muted)] break-all">
+                      <span className="font-medium text-[var(--a-ink)]">{k}:</span> {v !== null && typeof v === 'object' ? JSON.stringify(v) : String(v)}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {agencyId && (
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span className="text-[11px] text-[var(--a-muted)]">Agency: <span className="font-medium text-[var(--a-ink)]">{String(r.metadata?.agency_name || agencyId)}</span></span>
+                  <a href={`/admin/agencies?expand=${agencyId}`} className="text-[11px] font-semibold rounded-md px-2 py-1"
+                    style={{ background: 'var(--a-card)', border: '1px solid var(--a-line-2)', color: 'var(--a-em-deep)' }}>
+                    View agency
+                  </a>
+                  <button onClick={() => loginAsAgency(agencyId)} disabled={loggingIn === agencyId}
+                    className="text-[11px] font-semibold rounded-md px-2 py-1 disabled:opacity-50"
+                    style={{ background: 'var(--a-em-soft)', border: '1px solid var(--a-em-line)', color: 'var(--a-em-deep)' }}>
+                    {loggingIn === agencyId ? 'Opening…' : 'Log in as agency'}
+                  </button>
+                </div>
+              )}
+
+              {r.stack && (
+                <pre className="mt-2 max-h-32 overflow-auto rounded-lg p-2 text-[10px] leading-relaxed text-[var(--a-muted)]"
+                  style={{ background: 'rgba(127,127,127,0.06)' }}>{r.stack}</pre>
+              )}
+              <p className="mt-2 text-[10px] text-[var(--a-muted)]">{new Date(r.created_at).toLocaleString()}</p>
             </div>
-            {r.metadata && Object.keys(r.metadata).length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
-                {Object.entries(r.metadata).map(([k, v]) => (
-                  <span key={k} className="text-[11px] text-[var(--a-muted)] break-all">
-                    <span className="font-medium text-[var(--a-ink)]">{k}:</span> {String(v)}
-                  </span>
-                ))}
-              </div>
-            )}
-            {r.stack && (
-              <pre className="mt-2 max-h-32 overflow-auto rounded-lg p-2 text-[10px] leading-relaxed text-[var(--a-muted)]"
-                style={{ background: 'rgba(127,127,127,0.06)' }}>{r.stack}</pre>
-            )}
-            <p className="mt-2 text-[10px] text-[var(--a-muted)]">{new Date(r.created_at).toLocaleString()}</p>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
