@@ -366,15 +366,7 @@ export default function HomePage() {
       <section className="bg-paper py-20 lg:py-28">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
           <div className="text-center max-w-2xl mx-auto">
-            <h2 className="t-h2 text-black">Vetted on the directories agencies trust.</h2>
-            <div className="mt-7 inline-flex items-center gap-3 rounded-full bg-black/[0.04] border border-black/[0.06] px-5 py-2.5">
-              <span className="flex gap-1" aria-hidden="true">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <svg key={i} viewBox="0 0 24 24" className="w-5 h-5" fill="#F5A623"><path d="M12 2.2l2.95 6.3 6.85.72-5.1 4.64 1.42 6.74L12 17.9l-6.12 2.9 1.42-6.74-5.1-4.64 6.85-.72z" /></svg>
-                ))}
-              </span>
-              <span className="text-[13.5px] font-medium text-black/60">Reviewed by agencies, add yours</span>
-            </div>
+            <h2 className="t-h2 text-black">Recognized across the directories agencies trust.</h2>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-5 mt-12 max-w-4xl mx-auto">
             {([
