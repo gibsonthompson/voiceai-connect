@@ -852,7 +852,7 @@ export default function AddClientPage() {
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-[11px]" style={{ color: labelColor, opacity: 0.75 }}>
                 <span>Blank = your default ({clientTrialDays} day{clientTrialDays === 1 ? '' : 's'})</span>
                 <span style={{ opacity: 0.4 }}>•</span>
-                <span>0 = {isManualBilling ? 'live right away, no window' : 'no trial, they upgrade to activate'}</span>
+                <span>0 = {isManualBilling ? 'live right away, no window' : 'no trial, client subscribes before going live'}</span>
               </div>
 
               <div className="mt-2.5 rounded-xl p-3 flex gap-2.5" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${borderColor}` }}>
