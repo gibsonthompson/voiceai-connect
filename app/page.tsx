@@ -369,21 +369,6 @@ export default function HomePage() {
             <h2 className="t-h2 text-black">Recognized across the directories agencies trust.</h2>
           </div>
 
-          {/* credentials, in numbers */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-y-10 gap-x-6 mt-14 max-w-4xl mx-auto">
-            {([
-              { v: '16', l: 'Enterprise vendors integrated' },
-              { v: '60s', l: 'To onboard a new client' },
-              { v: '∞', l: 'Simultaneous calls, no busy signal' },
-              { v: '24/7', l: 'Always answering' },
-            ] as { v: string; l: string }[]).map(s => (
-              <div key={s.l} className="text-center">
-                <div className="font-display text-[42px] sm:text-[54px] font-semibold text-black leading-none tracking-tight t-numeric">{s.v}</div>
-                <div className="text-[12.5px] sm:text-[13px] text-black/55 mt-3 max-w-[18ch] mx-auto leading-snug">{s.l}</div>
-              </div>
-            ))}
-          </div>
-
           {/* directory listings */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-5 mt-16 max-w-4xl mx-auto">
             {([
