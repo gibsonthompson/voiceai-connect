@@ -296,14 +296,6 @@ export default function HomePage() {
               Or try the interactive demo <ArrowRight className="w-3 h-3" />
             </Link>
             <p className="font-mono text-[11px] text-white/35 mt-7">Start free · no card to begin · upgrade anytime</p>
-            <a href={`tel:${PLATFORM_DEMO_TEL}`} className="mt-8 group inline-flex items-center gap-3 sm:gap-4 rounded-2xl border border-white/[0.1] bg-white/[0.02] px-5 py-4 hover:border-white/25 transition-colors">
-              <span className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(0,227,170,0.1)', border: '1px solid rgba(0,227,170,0.25)' }}><Phone className="w-5 h-5 text-em" /></span>
-              <span>
-                <span className="block font-mono text-[10px] tracking-[0.14em] uppercase text-white/45">Hear the AI now · tap to call, no signup</span>
-                <span className="block font-display text-[22px] sm:text-[24px] font-medium text-white t-numeric tracking-tight whitespace-nowrap">{PLATFORM_DEMO_NUMBER}</span>
-              </span>
-              <span className="ml-1 waveform max-sm:hidden">{Array.from({ length: 8 }).map((_, j) => (<span key={j} className="waveform-bar" style={{ animationDelay: `${j * 80}ms` }} />))}</span>
-            </a>
           </div>
         </div>
 
@@ -345,22 +337,58 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ════════ LISTED ON (directories) ════════ */}
-      <section className="bg-ink py-14 lg:py-16 border-t border-white/[0.04]">
+      {/* ════════ HEAR IT LIVE (concierge demo) ════════ */}
+      <section className="relative bg-ink py-20 lg:py-28 border-t border-white/[0.04] overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(900px 440px at 50% 0%, rgba(0,227,170,0.09), transparent 70%)' }} />
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative">
+          <div className="rounded-3xl border border-white/[0.08] bg-white/[0.015] p-8 sm:p-12 lg:p-16 text-center">
+            <p className="t-eyebrow text-em mb-5">Hear it for yourself</p>
+            <h2 className="t-h2 text-white max-w-[22ch] mx-auto">Call the AI receptionist right now.</h2>
+            <p className="t-body mt-5 max-w-xl mx-auto">No signup, no form. Call the number and talk to the same voice AI your clients get, so you hear exactly what a caller experiences. Sixty seconds, from your own phone.</p>
+            <a href={`tel:${PLATFORM_DEMO_TEL}`} className="group inline-flex items-center gap-4 sm:gap-6 mt-10 rounded-2xl px-6 sm:px-9 py-5 sm:py-6 transition-colors" style={{ border: '1px solid rgba(0,227,170,0.3)', background: 'rgba(0,227,170,0.06)' }}>
+              <span className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(0,227,170,0.14)', border: '1px solid rgba(0,227,170,0.3)' }}><Phone className="w-6 h-6 text-em" /></span>
+              <span className="text-left">
+                <span className="block font-mono text-[11px] tracking-[0.16em] uppercase text-em/90">Tap to call · live demo</span>
+                <span className="block font-display text-[32px] sm:text-[44px] font-semibold text-white leading-none t-numeric tracking-tight whitespace-nowrap mt-1.5">{PLATFORM_DEMO_NUMBER}</span>
+              </span>
+              <span className="waveform max-sm:hidden ml-1">{Array.from({ length: 12 }).map((_, j) => (<span key={j} className="waveform-bar" style={{ animationDelay: `${j * 70}ms` }} />))}</span>
+            </a>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-7 gap-y-2">
+              {['Answers 24/7', 'Natural, human-sounding voice', 'No signup required'].map(x => (
+                <span key={x} className="flex items-center gap-2 text-[13px] text-white/55"><Check className="w-3.5 h-3.5 text-em flex-shrink-0" strokeWidth={2.5} />{x}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ════════ REVIEWS / TRUST ════════ */}
+      <section className="bg-paper py-20 lg:py-28">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
-          <p className="t-eyebrow text-white/35 mb-6 text-center">Find us on the software directories</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 max-w-5xl mx-auto">
+          <div className="text-center max-w-2xl mx-auto">
+            <p className="t-eyebrow text-em-deep mb-5">Trusted &amp; reviewed in the open</p>
+            <h2 className="t-h2 text-black">Find VoiceAI Connect on every major software directory.</h2>
+            <div className="mt-7 inline-flex items-center gap-3 rounded-full bg-black/[0.04] border border-black/[0.06] px-5 py-2.5">
+              <span className="flex gap-1" aria-hidden="true">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <svg key={i} viewBox="0 0 24 24" className="w-5 h-5" fill="#F5A623"><path d="M12 2.2l2.95 6.3 6.85.72-5.1 4.64 1.42 6.74L12 17.9l-6.12 2.9 1.42-6.74-5.1-4.64 6.85-.72z" /></svg>
+                ))}
+              </span>
+              <span className="text-[13.5px] font-medium text-black/60">Reviewed by agencies, add yours</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-5 mt-12 max-w-4xl mx-auto">
             {([
-              { n: 'G2', img: '/trust/g2.png', d: 'g2.com', href: 'https://www.g2.com/products/voiceai-connect/reviews' },
-              { n: 'Capterra', img: '/trust/capterra.png', d: 'capterra.com', href: 'https://www.capterra.com/p/10036529/VoiceAI-Connect/' },
-              { n: 'GetApp', img: '/trust/getapp.png', d: 'getapp.com', href: 'https://www.getapp.com/all-software/a/voiceai-connect/' },
-              { n: 'AlternativeTo', img: '/trust/alternativeto.png', d: 'alternativeto.net', href: 'https://alternativeto.net/software/voiceai-connect/about' },
-              { n: 'Trustpilot', img: '/trust/trustpilot.png', d: 'trustpilot.com', href: 'https://www.trustpilot.com/review/myvoiceaiconnect.com' },
-              { n: 'Product Hunt', img: '/trust/producthunt.png', d: 'producthunt.com', href: 'https://www.producthunt.com/products/voiceai-connect' },
-            ] as { n: string; img: string; d: string; href: string }[]).map(x => (
-              <a key={x.n} href={x.href} target="_blank" rel="noopener noreferrer" className="group flex items-center justify-center gap-2.5 rounded-xl border border-white/[0.07] bg-white/[0.015] px-3 py-4 hover:border-white/20 transition-colors">
-                <img src={x.img} alt={`${x.n} logo`} width={18} height={18} onError={(e) => { (e.currentTarget as HTMLImageElement).src = `https://icons.duckduckgo.com/ip3/${x.d}.ico`; }} style={{ width: 18, height: 18, objectFit: 'contain' }} />
-                <span className="font-mono text-[11px] tracking-[0.1em] uppercase text-white/55 group-hover:text-white/80 transition-colors whitespace-nowrap">{x.n}</span>
+              { n: 'Trustpilot', img: '/trust/trustpilot.png', href: 'https://www.trustpilot.com/review/myvoiceaiconnect.com' },
+              { n: 'G2', img: '/trust/g2.png', href: 'https://www.g2.com/products/voiceai-connect/reviews' },
+              { n: 'Capterra', img: '/trust/capterra.png', href: 'https://www.capterra.com/p/10036529/VoiceAI-Connect/' },
+              { n: 'GetApp', img: '/trust/getapp.png', href: 'https://www.getapp.com/all-software/a/voiceai-connect/' },
+              { n: 'Product Hunt', img: '/trust/producthunt.png', href: 'https://www.producthunt.com/products/voiceai-connect' },
+              { n: 'AlternativeTo', img: '/trust/alternativeto.png', href: 'https://alternativeto.net/software/voiceai-connect/about' },
+            ] as { n: string; img: string; href: string }[]).map(x => (
+              <a key={x.n} href={x.href} target="_blank" rel="noopener noreferrer" className="group flex flex-col items-center justify-center gap-3.5 rounded-2xl bg-white border border-black/[0.06] shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all py-9 px-5 min-h-[140px]">
+                <img src={x.img} alt={`${x.n} logo`} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} className="h-12 sm:h-14 w-auto object-contain max-w-[72%]" />
+                <span className="font-mono text-[11px] tracking-[0.12em] uppercase text-black/50 group-hover:text-black/75 transition-colors">{x.n}</span>
               </a>
             ))}
           </div>
