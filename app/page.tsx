@@ -366,8 +366,7 @@ export default function HomePage() {
       <section className="bg-paper py-20 lg:py-28">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
           <div className="text-center max-w-2xl mx-auto">
-            <p className="t-eyebrow text-em-deep mb-5">Trusted &amp; reviewed in the open</p>
-            <h2 className="t-h2 text-black">Find VoiceAI Connect on every major software directory.</h2>
+            <h2 className="t-h2 text-black">Vetted on the directories agencies trust.</h2>
             <div className="mt-7 inline-flex items-center gap-3 rounded-full bg-black/[0.04] border border-black/[0.06] px-5 py-2.5">
               <span className="flex gap-1" aria-hidden="true">
                 {Array.from({ length: 5 }).map((_, i) => (
@@ -382,13 +381,13 @@ export default function HomePage() {
               { n: 'Trustpilot', img: '/trust/trustpilot.png', href: 'https://www.trustpilot.com/review/myvoiceaiconnect.com' },
               { n: 'G2', img: '/trust/g2.png', href: 'https://www.g2.com/products/voiceai-connect/reviews' },
               { n: 'Capterra', img: '/trust/capterra.png', href: 'https://www.capterra.com/p/10036529/VoiceAI-Connect/' },
-              { n: 'GetApp', img: '/trust/getapp.png', href: 'https://www.getapp.com/all-software/a/voiceai-connect/' },
+              { n: 'VoiceAI Space', img: '/trust/voiceaispace.png', href: 'https://www.voiceaispace.com/tool/voiceai-connect' },
               { n: 'Product Hunt', img: '/trust/producthunt.png', href: 'https://www.producthunt.com/products/voiceai-connect' },
               { n: 'AlternativeTo', img: '/trust/alternativeto.png', href: 'https://alternativeto.net/software/voiceai-connect/about' },
             ] as { n: string; img: string; href: string }[]).map(x => (
               <a key={x.n} href={x.href} target="_blank" rel="noopener noreferrer" className="group flex flex-col items-center justify-center gap-3.5 rounded-2xl bg-white border border-black/[0.06] shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all py-9 px-5 min-h-[140px]">
                 <img src={x.img} alt={`${x.n} logo`} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} className="h-12 sm:h-14 w-auto object-contain max-w-[72%]" />
-                <span className="font-mono text-[11px] tracking-[0.12em] uppercase text-black/50 group-hover:text-black/75 transition-colors">{x.n}</span>
+                <span className="font-display text-[13px] sm:text-sm font-semibold tracking-tight text-black/60 group-hover:text-black/80 transition-colors">{x.n}</span>
               </a>
             ))}
           </div>
