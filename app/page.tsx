@@ -296,6 +296,14 @@ export default function HomePage() {
               Or try the interactive demo <ArrowRight className="w-3 h-3" />
             </Link>
             <p className="font-mono text-[11px] text-white/35 mt-7">Start free · no card to begin · upgrade anytime</p>
+            <a href={`tel:${PLATFORM_DEMO_TEL}`} className="mt-8 group inline-flex items-center gap-3 sm:gap-4 rounded-2xl border border-white/[0.1] bg-white/[0.02] px-5 py-4 hover:border-white/25 transition-colors">
+              <span className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(0,227,170,0.1)', border: '1px solid rgba(0,227,170,0.25)' }}><Phone className="w-5 h-5 text-em" /></span>
+              <span>
+                <span className="block font-mono text-[10px] tracking-[0.14em] uppercase text-white/45">Hear the AI now · tap to call, no signup</span>
+                <span className="block font-display text-[22px] sm:text-[24px] font-medium text-white t-numeric tracking-tight whitespace-nowrap">{PLATFORM_DEMO_NUMBER}</span>
+              </span>
+              <span className="ml-1 waveform max-sm:hidden">{Array.from({ length: 8 }).map((_, j) => (<span key={j} className="waveform-bar" style={{ animationDelay: `${j * 80}ms` }} />))}</span>
+            </a>
           </div>
         </div>
 
@@ -332,6 +340,26 @@ export default function HomePage() {
                 />
                 <span className="trust-item-name">{b.n}</span>
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ════════ LISTED ON (directories) ════════ */}
+      <section className="bg-ink py-14 lg:py-16 border-t border-white/[0.04]">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
+          <p className="t-eyebrow text-white/35 mb-6 text-center">Find us on the software directories</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto">
+            {([
+              { n: 'G2', img: '/trust/g2.png', d: 'g2.com', href: 'https://www.g2.com/products/voiceai-connect/reviews' },
+              { n: 'Capterra', img: '/trust/capterra.png', d: 'capterra.com', href: 'https://www.capterra.com/p/10036529/VoiceAI-Connect/' },
+              { n: 'GetApp', img: '/trust/getapp.png', d: 'getapp.com', href: 'https://www.getapp.com/all-software/a/voiceai-connect/' },
+              { n: 'AlternativeTo', img: '/trust/alternativeto.png', d: 'alternativeto.net', href: 'https://alternativeto.net/software/voiceai-connect/about' },
+            ] as { n: string; img: string; d: string; href: string }[]).map(x => (
+              <a key={x.n} href={x.href} target="_blank" rel="noopener noreferrer" className="group flex items-center justify-center gap-2.5 rounded-xl border border-white/[0.07] bg-white/[0.015] px-3 py-4 hover:border-white/20 transition-colors">
+                <img src={x.img} alt={`${x.n} logo`} width={18} height={18} onError={(e) => { (e.currentTarget as HTMLImageElement).src = `https://icons.duckduckgo.com/ip3/${x.d}.ico`; }} style={{ width: 18, height: 18, objectFit: 'contain' }} />
+                <span className="font-mono text-[11px] tracking-[0.1em] uppercase text-white/55 group-hover:text-white/80 transition-colors">{x.n}</span>
+              </a>
             ))}
           </div>
         </div>
