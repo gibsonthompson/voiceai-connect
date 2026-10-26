@@ -140,7 +140,7 @@ export default function TemplateEditorPage() {
   const [firstMessage, setFirstMessage] = useState('');
   const [voiceId, setVoiceId] = useState('');
   const [model, setModel] = useState('gpt-4o-mini');
-  const [ttsModel, setTtsModel] = useState('eleven_flash_v2_5');
+  const [ttsModel, setTtsModel] = useState('eleven_v4_turbo');
   const [transcriberModel, setTranscriberModel] = useState('nova-3');
   const [temperature, setTemperature] = useState(0.7);
   const [speed, setSpeed] = useState(1);
@@ -191,7 +191,7 @@ export default function TemplateEditorPage() {
       setIndustryInfo(data.industry); setTemplate(data.template); setDefaults(data.defaults);
       setDocuments(Array.isArray((data.industry as any)?.documents) ? (data.industry as any).documents : []);
       setSystemPrompt(data.template.system_prompt); setFirstMessage(data.template.first_message);
-      setVoiceId(data.template.voice_id); setModel(data.template.model || 'gpt-4o-mini'); setTemperature(data.template.temperature); setSpeed(data.template.voice_speed ?? 1); setTtsModel(data.template.tts_model || 'eleven_flash_v2_5'); setTranscriberModel(data.template.transcriber_model || 'nova-3'); setDenoising(data.template.background_denoising ?? true);
+      setVoiceId(data.template.voice_id); setModel(data.template.model || 'gpt-4o-mini'); setTemperature(data.template.temperature); setSpeed(data.template.voice_speed ?? 1); setTtsModel(data.template.tts_model || 'eleven_v4_turbo'); setTranscriberModel(data.template.transcriber_model || 'nova-3'); setDenoising(data.template.background_denoising ?? true);
       const kb = data.template.knowledge_base_data;
       if (kb) {
         setKbWebsite(kb.websiteUrl || '');
@@ -280,7 +280,7 @@ export default function TemplateEditorPage() {
 
   const hasChanges = template && (
     systemPrompt !== template.system_prompt || firstMessage !== template.first_message ||
-    voiceId !== template.voice_id || model !== (template.model || 'gpt-4o-mini') || ttsModel !== (template.tts_model || 'eleven_flash_v2_5') || transcriberModel !== (template.transcriber_model || 'nova-3') || temperature !== template.temperature || speed !== (template.voice_speed ?? 1) || denoising !== (template.background_denoising ?? true) ||
+    voiceId !== template.voice_id || model !== (template.model || 'gpt-4o-mini') || ttsModel !== (template.tts_model || 'eleven_v4_turbo') || transcriberModel !== (template.transcriber_model || 'nova-3') || temperature !== template.temperature || speed !== (template.voice_speed ?? 1) || denoising !== (template.background_denoising ?? true) ||
     kbWebsite !== (template.knowledge_base_data?.websiteUrl || '') || kbAdditionalInfo !== (template.knowledge_base_data?.additionalInfo || '') ||
     formatServicesText(kbServices) !== (template.knowledge_base_data?.services || '') || formatFaqsText(kbFaqs) !== (template.knowledge_base_data?.faqs || '')
   );
