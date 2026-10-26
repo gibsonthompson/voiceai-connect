@@ -368,7 +368,24 @@ export default function HomePage() {
           <div className="text-center max-w-2xl mx-auto">
             <h2 className="t-h2 text-black">Recognized across the directories agencies trust.</h2>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-5 mt-12 max-w-4xl mx-auto">
+
+          {/* credentials, in numbers */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-y-10 gap-x-6 mt-14 max-w-4xl mx-auto">
+            {([
+              { v: '16', l: 'Enterprise vendors integrated' },
+              { v: '60s', l: 'To onboard a new client' },
+              { v: '∞', l: 'Simultaneous calls, no busy signal' },
+              { v: '24/7', l: 'Always answering' },
+            ] as { v: string; l: string }[]).map(s => (
+              <div key={s.l} className="text-center">
+                <div className="font-display text-[42px] sm:text-[54px] font-semibold text-black leading-none tracking-tight t-numeric">{s.v}</div>
+                <div className="text-[12.5px] sm:text-[13px] text-black/55 mt-3 max-w-[18ch] mx-auto leading-snug">{s.l}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* directory listings */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-5 mt-16 max-w-4xl mx-auto">
             {([
               { n: 'Trustpilot', img: '/trust/trustpilot.png', href: 'https://www.trustpilot.com/review/myvoiceaiconnect.com' },
               { n: 'G2', img: '/trust/g2.png', href: 'https://www.g2.com/products/voiceai-connect/reviews' },
@@ -381,6 +398,15 @@ export default function HomePage() {
                 <img src={x.img} alt={`${x.n} logo`} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} className="h-12 sm:h-14 w-auto object-contain max-w-[72%]" />
                 <span className="font-display text-[13px] sm:text-sm font-semibold tracking-tight text-black/60 group-hover:text-black/80 transition-colors">{x.n}</span>
               </a>
+            ))}
+          </div>
+
+          {/* no-risk + compliance */}
+          <div className="flex flex-wrap items-center justify-center gap-2.5 mt-14 max-w-3xl mx-auto">
+            {['Start free, no card', 'Cancel anytime', 'No contracts', 'No revenue share', 'A2P 10DLC compliant', 'SOC 2-audited infrastructure', 'Payments secured by Stripe'].map(c => (
+              <span key={c} className="inline-flex items-center gap-1.5 rounded-full bg-white border border-black/[0.07] px-3.5 py-1.5 text-[12.5px] font-medium text-black/60">
+                <Check className="w-3.5 h-3.5 text-em-deep flex-shrink-0" strokeWidth={2.5} />{c}
+              </span>
             ))}
           </div>
         </div>
