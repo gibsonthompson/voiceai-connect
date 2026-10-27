@@ -27,6 +27,7 @@ const COLUMNS: { t: string; l: [string, string][] }[] = [
       ['Blog', '/blog'],
       ['FAQ', '/faq'],
       ['Interactive demo', '/interactive-demo'],
+      ['Developer API', '/developers'],
       ['Get started', '/get-started'],
     ],
   },
