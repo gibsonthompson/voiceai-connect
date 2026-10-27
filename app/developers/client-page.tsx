@@ -29,58 +29,59 @@ const NAV = [
   { group: 'Guides', items: [['calendar', 'Calendar booking'], ['roadmap', 'Roadmap']] },
 ];
 
-type Ep = { m: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'; path: string; rw?: boolean; desc: string };
+type Ep = { m: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'; path: string; rw?: boolean; desc: string; use: string };
 
 const CLIENTS: Ep[] = [
-  { m: 'GET', path: '/clients', desc: 'List clients (paginated).' },
-  { m: 'POST', path: '/clients', rw: true, desc: 'Create and auto-provision a client (assistant + phone number).' },
-  { m: 'GET', path: '/clients/:id', desc: 'One client.' },
-  { m: 'PATCH', path: '/clients/:id', rw: true, desc: 'Update client fields.' },
-  { m: 'DELETE', path: '/clients/:id', rw: true, desc: 'Remove a client.' },
-  { m: 'GET', path: '/clients/:id/provisioning-status/:jobId', desc: 'Poll provisioning after a create.' },
+  { m: 'GET', path: '/clients', desc: 'List clients (paginated).', use: 'Sync your client roster into your own CRM or billing view.' },
+  { m: 'POST', path: '/clients', rw: true, desc: 'Create and auto-provision a client (assistant + phone number).', use: 'Onboard a client straight from your own signup form or ops tool.' },
+  { m: 'GET', path: '/clients/:id', desc: 'One client.', use: "Show a single client's details in your own dashboard." },
+  { m: 'PATCH', path: '/clients/:id', rw: true, desc: 'Update client fields.', use: 'Push an edit (business name, notification phone) made in your system.' },
+  { m: 'DELETE', path: '/clients/:id', rw: true, desc: 'Remove a client.', use: 'Offboard a client automatically when they cancel in your tool.' },
+  { m: 'GET', path: '/clients/:id/provisioning-status/:jobId', desc: 'Poll provisioning after a create.', use: "Show a live 'setting up...' state right after you create a client." },
 ];
 const RECEPTIONIST: Ep[] = [
-  { m: 'GET', path: '/clients/:id/receptionist', desc: 'Current AI config: prompt, voice, greeting, transfer.' },
-  { m: 'PATCH', path: '/clients/:id/receptionist', rw: true, desc: 'Update the AI config.' },
-  { m: 'GET', path: '/clients/:id/knowledge-base', desc: "The client's knowledge base." },
-  { m: 'PUT', path: '/clients/:id/knowledge-base', rw: true, desc: 'Replace the knowledge base.' },
+  { m: 'GET', path: '/clients/:id/receptionist', desc: 'Current AI config: prompt, voice, greeting, transfer.', use: "Read a client's current prompt and voice to display or audit." },
+  { m: 'PATCH', path: '/clients/:id/receptionist', rw: true, desc: 'Update the AI config.', use: 'Change the greeting or transfer number from your own UI.' },
+  { m: 'GET', path: '/clients/:id/knowledge-base', desc: "The client's knowledge base.", use: 'Export what the AI knows about the business for review.' },
+  { m: 'PUT', path: '/clients/:id/knowledge-base', rw: true, desc: 'Replace the knowledge base.', use: 'Sync hours, services, and FAQs from your own source of truth.' },
 ];
 const CALLS: Ep[] = [
-  { m: 'GET', path: '/calls', desc: 'List calls (paginated). Filter by client_id and date range.' },
-  { m: 'GET', path: '/calls/:id', desc: 'One call: outcome, captured details, summary, transcript.' },
-  { m: 'GET', path: '/calls/:id/recording', desc: 'A fresh, authenticated recording URL.' },
+  { m: 'GET', path: '/calls', desc: 'List calls (paginated). Filter by client_id and date range.', use: 'Nightly pull of every call into your CRM or data warehouse.' },
+  { m: 'GET', path: '/calls/:id', desc: 'One call: outcome, captured details, summary, transcript.', use: "Open a single call's transcript and summary inside your app." },
+  { m: 'GET', path: '/calls/:id/recording', desc: 'A fresh, authenticated recording URL.', use: 'Fetch a playable recording link on demand (links expire).' },
 ];
 const APPTS: Ep[] = [
-  { m: 'GET', path: '/appointments', desc: 'List appointments. Filter by client_id, status, since, until.' },
-  { m: 'GET', path: '/appointments/:id', desc: 'One appointment.' },
+  { m: 'GET', path: '/appointments', desc: 'List appointments. Filter by client_id, status, since, until.', use: "Show upcoming bookings on a client's ops board." },
+  { m: 'GET', path: '/appointments/:id', desc: 'One appointment.', use: "Look up one booking's details by id." },
 ];
 const MISC: Ep[] = [
-  { m: 'GET', path: '/numbers', desc: "Phone numbers across the agency's clients." },
-  { m: 'GET', path: '/usage', desc: 'Usage: minutes, billable clients.' },
-  { m: 'GET', path: '/analytics/calls', desc: 'Call analytics and aggregates.' },
+  { m: 'GET', path: '/numbers', desc: "Phone numbers across the agency's clients.", use: 'Audit which number each client is running on.' },
+  { m: 'GET', path: '/usage', desc: 'Usage: minutes, billable clients.', use: 'Bill your own clients from real minute usage.' },
+  { m: 'GET', path: '/analytics/calls', desc: 'Call analytics and aggregates.', use: 'Feed call volume and outcomes into a reporting dashboard.' },
 ];
 const HOOKS: Ep[] = [
-  { m: 'GET', path: '/events', desc: 'The event catalog.' },
-  { m: 'POST', path: '/webhooks', rw: true, desc: 'Subscribe a URL to events.' },
-  { m: 'GET', path: '/webhooks', desc: 'List subscriptions.' },
-  { m: 'PATCH', path: '/webhooks/:id', rw: true, desc: 'Update URL, events, or status.' },
-  { m: 'DELETE', path: '/webhooks/:id', rw: true, desc: 'Delete a subscription.' },
-  { m: 'GET', path: '/webhooks/:id/deliveries', desc: 'Delivery log: status, attempts, response code.' },
-  { m: 'POST', path: '/webhooks/:id/ping', rw: true, desc: 'Send a test ping event.' },
+  { m: 'GET', path: '/events', desc: 'The event catalog.', use: 'Discover the exact event names before subscribing.' },
+  { m: 'POST', path: '/webhooks', rw: true, desc: 'Subscribe a URL to events.', use: 'Wire VoiceAI into Zapier, Make, n8n, or your own endpoint.' },
+  { m: 'GET', path: '/webhooks', desc: 'List subscriptions.', use: "See everything you're subscribed to." },
+  { m: 'PATCH', path: '/webhooks/:id', rw: true, desc: 'Update URL, events, or status.', use: 'Move your endpoint or change events without re-creating.' },
+  { m: 'DELETE', path: '/webhooks/:id', rw: true, desc: 'Delete a subscription.', use: 'Turn a subscription off.' },
+  { m: 'GET', path: '/webhooks/:id/deliveries', desc: 'Delivery log: status, attempts, response code.', use: "Debug why your endpoint didn't receive an event." },
+  { m: 'POST', path: '/webhooks/:id/ping', rw: true, desc: 'Send a test ping event.', use: 'Test your endpoint end to end before going live.' },
 ];
 
-const EVENTS: [string, string][] = [
-  ['call.started', 'A call begins (live event; carries a call_session_id).'],
-  ['call.completed', 'A call ends. Enriched with the full call (see payloads).'],
-  ['call.transferred', 'The call was transferred to the business line. Enriched.'],
-  ['call.escalated', 'A call-center agent took over a live call.'],
-  ['appointment.booked', 'The AI booked an appointment. Google Calendar only.'],
-  ['client.provisioned', 'A new client finished provisioning.'],
-  ['client.provisioning_failed', 'Provisioning failed.'],
-  ['client.payment_failed', "A client's payment failed."],
-  ['client.subscription_activated', 'A client subscription activated.'],
-  ['client.trial_expired', 'A client trial expired.'],
-  ['client.canceled', 'A client was canceled.'],
+// [event, description, when-you-would-use-it]
+const EVENTS: [string, string, string][] = [
+  ['call.started', 'A call begins (live event; carries a call_session_id).', 'Flash a live-call indicator or start a screen-pop.'],
+  ['call.completed', 'A call ends. Enriched with the full call (see payloads).', 'Create a CRM activity and text the owner the second a call ends.'],
+  ['call.transferred', 'The call was transferred to the business line. Enriched.', 'Track how often calls reach a human, and when.'],
+  ['call.escalated', 'A call-center agent took over a live call.', 'Alert a manager when an agent jumps into a live call.'],
+  ['appointment.booked', 'The AI booked an appointment. Google Calendar only.', 'Mirror the booking into your ops calendar or a confirmation flow.'],
+  ['client.provisioned', 'A new client finished provisioning.', 'Kick off your own welcome sequence when a client goes live.'],
+  ['client.provisioning_failed', 'Provisioning failed.', 'Page yourself if a client setup breaks, before they notice.'],
+  ['client.payment_failed', "A client's payment failed.", 'Trigger a dunning email from your billing tool.'],
+  ['client.subscription_activated', 'A client subscription activated.', 'Mark a client as paying in your CRM.'],
+  ['client.trial_expired', 'A client trial expired.', 'Start a win-back sequence when a trial lapses.'],
+  ['client.canceled', 'A client was canceled.', 'Update churn tracking and stop your own billing.'],
 ];
 
 const METHOD_COLOR: Record<string, string> = {
@@ -161,11 +162,20 @@ function CodeBlock({ code, k, copied, onCopy }: { code: string; k: string; copie
   );
 }
 
+function WhenLine({ text }: { text: string }) {
+  return (
+    <span className="basis-full flex items-baseline gap-2 pl-[66px] max-[520px]:pl-0 mt-0.5">
+      <span className="font-mono text-[9px] tracking-[0.12em] uppercase shrink-0" style={{ color: 'rgba(1,245,209,0.7)' }}>When</span>
+      <span className="text-[12.5px] text-white/40 leading-relaxed">{text}</span>
+    </span>
+  );
+}
+
 function EndpointList({ eps }: { eps: Ep[] }) {
   return (
     <div className="rounded-2xl border border-white/[0.07] bg-white/[0.018] divide-y divide-white/[0.05]">
       {eps.map((e) => (
-        <div key={e.m + e.path} className="flex flex-wrap items-baseline gap-x-3 gap-y-1.5 px-4 lg:px-5 py-3">
+        <div key={e.m + e.path} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-4 lg:px-5 py-3.5">
           <span
             className="font-mono text-[10.5px] font-semibold tracking-wide px-2 py-[3px] rounded-md text-[#050505] text-center"
             style={{ background: METHOD_COLOR[e.m], minWidth: 54 }}
@@ -174,7 +184,8 @@ function EndpointList({ eps }: { eps: Ep[] }) {
           </span>
           <code className="font-mono text-[12.5px] text-white/90 break-all min-w-0">{e.path}</code>
           {e.rw && <span className="font-mono text-[9.5px] tracking-wide px-1.5 py-[2px] rounded border border-[#a98bf0]/40 text-[#a98bf0]">read_write</span>}
-          <span className="basis-full text-[13px] text-white/50 leading-relaxed pl-[66px] max-[520px]:pl-0">{e.desc}</span>
+          <span className="basis-full text-[13px] text-white/55 leading-relaxed pl-[66px] max-[520px]:pl-0">{e.desc}</span>
+          <WhenLine text={e.use} />
         </div>
       ))}
     </div>
@@ -213,6 +224,8 @@ export default function DevelopersPage() {
             <p className="t-body mt-8 max-w-2xl text-[1rem]">
               Read and manage everything on your agency account, and push real-time call and booking events
               into any outside system. A Scale-plan feature, with API keys, scoped access, and signed webhooks.
+              Every endpoint and event below lists a short "when you would use it" so you (or an AI assistant) can
+              wire up an integration fast.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-3">
               <Link href="/agency/settings" className="btn btn-em">Get API keys <ArrowUpRight className="w-3.5 h-3.5" /></Link>
@@ -356,10 +369,16 @@ export default function DevelopersPage() {
             <section id="events" className="scroll-mt-28 mb-14">
               <h2 className="font-display text-[22px] font-semibold text-white tracking-tight mb-4">Event catalog</h2>
               <div className="rounded-2xl border border-white/[0.07] bg-white/[0.018] divide-y divide-white/[0.05]">
-                {EVENTS.map(([e, d]) => (
-                  <div key={e} className="flex flex-wrap items-baseline gap-x-4 gap-y-1 px-4 lg:px-5 py-3">
-                    <code className="font-mono text-[12.5px] text-em whitespace-nowrap">{e}</code>
-                    <span className="text-[13px] text-white/50 flex-1 min-w-0">{d}</span>
+                {EVENTS.map(([e, d, u]) => (
+                  <div key={e} className="px-4 lg:px-5 py-3.5">
+                    <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                      <code className="font-mono text-[12.5px] text-em whitespace-nowrap">{e}</code>
+                      <span className="text-[13px] text-white/55 flex-1 min-w-0">{d}</span>
+                    </div>
+                    <div className="flex items-baseline gap-2 mt-1">
+                      <span className="font-mono text-[9px] tracking-[0.12em] uppercase shrink-0" style={{ color: 'rgba(1,245,209,0.7)' }}>When</span>
+                      <span className="text-[12.5px] text-white/40 leading-relaxed">{u}</span>
+                    </div>
                   </div>
                 ))}
               </div>
