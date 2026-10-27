@@ -409,6 +409,12 @@ function ConfigDrawer({ node, workflow, theme, plan, onPatchNode, onDeleteNode, 
           </Field>
         )}
 
+        {node.type === 'send_sms' && (
+          <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: theme.text }}>
+            <Checkbox on={!!d.copy_to_owner} theme={theme} onClick={() => set({ copy_to_owner: !d.copy_to_owner })} /> Also text a copy to the business owner
+          </label>
+        )}
+
         {node.type === 'ai_sms' && (
           <>
             <Field label="What should the AI say?" theme={theme}>
@@ -417,6 +423,9 @@ function ConfigDrawer({ node, workflow, theme, plan, onPatchNode, onDeleteNode, 
             <Field label="Fallback message (if AI is unavailable)" theme={theme}>
               <textarea value={d.fallback || ''} onChange={(e) => set({ fallback: e.target.value })} rows={3} className="w-full px-3 py-2 rounded-xl text-sm resize-y" style={{ background: theme.inputBg || theme.card, border: `1px solid ${theme.inputBorder || theme.border}`, color: theme.text }} />
             </Field>
+            <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: theme.text }}>
+              <Checkbox on={!!d.copy_to_owner} theme={theme} onClick={() => set({ copy_to_owner: !d.copy_to_owner })} /> Also text a copy to the business owner
+            </label>
           </>
         )}
 
