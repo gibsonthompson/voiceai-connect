@@ -23,65 +23,73 @@ function useInView<T extends HTMLElement = HTMLDivElement>(threshold = 0.15) {
 }
 
 const NAV = [
-  { group: 'Start', items: [['overview', 'Overview'], ['auth', 'Authentication'], ['conventions', 'Conventions']] },
+  { group: 'Start', items: [['overview', 'Overview'], ['auth', 'Authentication'], ['conventions', 'Conventions'], ['limits', 'Rate limits']] },
   { group: 'Endpoints', items: [['clients', 'Clients'], ['receptionist', 'Receptionist & KB'], ['calls', 'Calls'], ['appointments', 'Appointments'], ['misc', 'Numbers · Usage'], ['webhook-mgmt', 'Webhook management']] },
   { group: 'Webhooks', items: [['events', 'Event catalog'], ['signature', 'Signature'], ['payloads', 'Payloads']] },
-  { group: 'Guides', items: [['calendar', 'Calendar booking'], ['roadmap', 'Roadmap']] },
+  { group: 'Recipes', items: [['recipes', 'Integration recipes'], ['calendar', 'Calendar booking']] },
+  { group: 'Reference', items: [['summary', 'Quick reference'], ['roadmap', 'Roadmap']] },
 ];
 
 type Ep = { m: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'; path: string; rw?: boolean; desc: string; use: string };
 
 const CLIENTS: Ep[] = [
-  { m: 'GET', path: '/clients', desc: 'List clients (paginated).', use: 'Sync your client roster into your own CRM or billing view.' },
-  { m: 'POST', path: '/clients', rw: true, desc: 'Create and auto-provision a client (assistant + phone number).', use: 'Onboard a client straight from your own signup form or ops tool.' },
-  { m: 'GET', path: '/clients/:id', desc: 'One client.', use: "Show a single client's details in your own dashboard." },
-  { m: 'PATCH', path: '/clients/:id', rw: true, desc: 'Update client fields.', use: 'Push an edit (business name, notification phone) made in your system.' },
-  { m: 'DELETE', path: '/clients/:id', rw: true, desc: 'Remove a client.', use: 'Offboard a client automatically when they cancel in your tool.' },
-  { m: 'GET', path: '/clients/:id/provisioning-status/:jobId', desc: 'Poll provisioning after a create.', use: "Show a live 'setting up...' state right after you create a client." },
+  { m: 'GET', path: '/clients', desc: 'List clients (paginated). Filter by status or industry.', use: 'Mirror your client roster into your own CRM or billing view. Page with cursor on a schedule to keep it in sync, and filter ?status=active to skip ones still setting up.' },
+  { m: 'POST', path: '/clients', rw: true, desc: 'Create and auto-provision a client (assistant + phone number). Returns 202 with a provisioning job id.', use: 'Onboard a client straight from your own signup form or ops tool. The call returns immediately with a job id while the number and assistant provision in the background, so poll provisioning-status to drive a live "setting up..." state instead of blocking your form on it.' },
+  { m: 'GET', path: '/clients/:id', desc: 'One client.', use: "Show a single client's details, provisioned number, and status in your own dashboard." },
+  { m: 'PATCH', path: '/clients/:id', rw: true, desc: 'Update a whitelist of client fields (name, city, notification phone, post-call SMS, etc.).', use: 'Push an edit made in your system back to VoiceAI so the two stay consistent. Provisioning-owned fields (the number, assistant ids, billing) are intentionally not editable here.' },
+  { m: 'DELETE', path: '/clients/:id', rw: true, desc: 'Not available yet. Returns 501 not_implemented.', use: 'Deletion has to tear down the paid phone number, the assistant, and billing cleanly, so for now offboard a client from the dashboard. A write API for this is on the roadmap.' },
+  { m: 'GET', path: '/clients/:id/provisioning-status/:jobId', desc: 'Poll a provisioning job after a create.', use: 'Right after POST /clients, poll this with the returned job id to show a live "setting up... / ready" state. Stop when status is done (the result carries the provisioned number).' },
 ];
 const RECEPTIONIST: Ep[] = [
-  { m: 'GET', path: '/clients/:id/receptionist', desc: 'Current AI config: prompt, voice, greeting, transfer.', use: "Read a client's current prompt and voice to display or audit." },
-  { m: 'PATCH', path: '/clients/:id/receptionist', rw: true, desc: 'Update the AI config.', use: 'Change the greeting or transfer number from your own UI.' },
-  { m: 'GET', path: '/clients/:id/knowledge-base', desc: "The client's knowledge base.", use: 'Export what the AI knows about the business for review.' },
-  { m: 'PUT', path: '/clients/:id/knowledge-base', rw: true, desc: 'Replace the knowledge base.', use: 'Sync hours, services, and FAQs from your own source of truth.' },
+  { m: 'GET', path: '/clients/:id/receptionist', desc: 'Current AI config: greeting, voice, human-handoff mode, transfer number, business hours.', use: "Read a client's current greeting and transfer setup to display or audit in your own UI." },
+  { m: 'PATCH', path: '/clients/:id/receptionist', rw: true, desc: 'Update the AI config. Takes effect on the next call, no rebuild.', use: 'Change the greeting, voice, handoff mode (transfer or message), or transfer number from your own panel. The dynamic assistant reads these at call time, so a change lands on the very next call.' },
+  { m: 'GET', path: '/clients/:id/knowledge-base', desc: "The client's knowledge base content.", use: 'Export what the AI knows about the business for review or backup.' },
+  { m: 'PUT', path: '/clients/:id/knowledge-base', rw: true, desc: 'Replace the knowledge base content.', use: 'Sync hours, services, and FAQs from your own source of truth. Writing it rebuilds the assistant knowledge file in the background, so it is a heavier call than a receptionist edit.' },
 ];
 const CALLS: Ep[] = [
-  { m: 'GET', path: '/calls', desc: 'List calls (paginated). Filter by client_id and date range.', use: 'Nightly pull of every call into your CRM or data warehouse.' },
-  { m: 'GET', path: '/calls/:id', desc: 'One call: outcome, captured details, summary, transcript.', use: "Open a single call's transcript and summary inside your app." },
-  { m: 'GET', path: '/calls/:id/recording', desc: 'A fresh, authenticated recording URL.', use: 'Fetch a playable recording link on demand (links expire).' },
+  { m: 'GET', path: '/calls', desc: 'List calls (paginated). Filter by client_id, since, until.', use: 'Nightly or hourly pull of every call into your CRM or warehouse. Walk pages with cursor, and bound each run with ?since so you only fetch what landed since the last sync.' },
+  { m: 'GET', path: '/calls/:id', desc: 'One call: outcome, captured customer details, summary, transcript, recording.', use: "Open a single call's transcript and summary inside your app. This fetch resolves a fresh recording_url for you, so it is the right call to back a transcript view." },
+  { m: 'GET', path: '/calls/:id/recording', desc: 'A fresh, authenticated recording URL.', use: 'Stored recording links expire. Call this the moment the user hits play to get a fresh, playable URL rather than relying on a saved one.' },
 ];
 const APPTS: Ep[] = [
-  { m: 'GET', path: '/appointments', desc: 'List appointments. Filter by client_id, status, since, until.', use: "Show upcoming bookings on a client's ops board." },
-  { m: 'GET', path: '/appointments/:id', desc: 'One appointment.', use: "Look up one booking's details by id." },
+  { m: 'GET', path: '/clients/:id/availability', desc: 'Open slots for a client on a date. ?date=YYYY-MM-DD (&duration=30).', use: 'Show bookable times in your own UI before creating an appointment. Needs a connected calendar to read against; a client with none returns 409 calendar_not_connected.' },
+  { m: 'GET', path: '/appointments', desc: 'List appointments. Filter by client_id, status, since, until.', use: "Show upcoming bookings on a client's ops board, or reconcile booked slots against your own calendar." },
+  { m: 'GET', path: '/appointments/:id', desc: 'One appointment.', use: "Look up one booking's full details (customer, time, service, where it landed) by id." },
+  { m: 'POST', path: '/appointments', rw: true, desc: 'Create an appointment. Writes the real calendar event when the client has one connected.', use: 'Book from your own form or flow. For a Google-connected client it checks availability and writes the calendar event; for a client with no connected calendar it records the appointment (no calendar write) so the call still succeeds. Fires appointment.booked.' },
+  { m: 'PATCH', path: '/appointments/:id', rw: true, desc: 'Reschedule to a new date/time.', use: 'Move a booking. Patches the calendar event when there is one, otherwise moves the record. Fires appointment.rescheduled.' },
+  { m: 'POST', path: '/appointments/:id/cancel', rw: true, desc: 'Cancel an appointment (kept for history).', use: 'Cancel a booking. Removes the calendar event when present and marks the row canceled. Fires appointment.canceled. Optional body: reason.' },
 ];
 const MISC: Ep[] = [
-  { m: 'GET', path: '/numbers', desc: "Phone numbers across the agency's clients.", use: 'Audit which number each client is running on.' },
-  { m: 'GET', path: '/usage', desc: 'Usage: minutes, billable clients.', use: 'Bill your own clients from real minute usage.' },
-  { m: 'GET', path: '/analytics/calls', desc: 'Call analytics and aggregates.', use: 'Feed call volume and outcomes into a reporting dashboard.' },
+  { m: 'GET', path: '/numbers', desc: "Provisioned phone numbers across the agency's clients.", use: 'Audit which AI number each client is running on, and spot any client still without a number.' },
+  { m: 'GET', path: '/usage', desc: 'Minutes and records per client over a window or billing month.', use: 'Bill your own clients from real minute usage. Pass ?billing_month=YYYY-MM for a clean monthly total, or ?since/?until for a custom window.' },
+  { m: 'GET', path: '/analytics/calls', desc: 'Call aggregates: totals, minutes, spam, by status.', use: 'Feed call volume and outcomes into a reporting dashboard without pulling every call row.' },
 ];
 const HOOKS: Ep[] = [
-  { m: 'GET', path: '/events', desc: 'The event catalog.', use: 'Discover the exact event names before subscribing.' },
-  { m: 'POST', path: '/webhooks', rw: true, desc: 'Subscribe a URL to events.', use: 'Wire VoiceAI into Zapier, Make, n8n, or your own endpoint.' },
-  { m: 'GET', path: '/webhooks', desc: 'List subscriptions.', use: "See everything you're subscribed to." },
-  { m: 'PATCH', path: '/webhooks/:id', rw: true, desc: 'Update URL, events, or status.', use: 'Move your endpoint or change events without re-creating.' },
-  { m: 'DELETE', path: '/webhooks/:id', rw: true, desc: 'Delete a subscription.', use: 'Turn a subscription off.' },
-  { m: 'GET', path: '/webhooks/:id/deliveries', desc: 'Delivery log: status, attempts, response code.', use: "Debug why your endpoint didn't receive an event." },
-  { m: 'POST', path: '/webhooks/:id/ping', rw: true, desc: 'Send a test ping event.', use: 'Test your endpoint end to end before going live.' },
+  { m: 'GET', path: '/events', desc: 'The event catalog (array of event-type strings).', use: 'Discover the exact event names before subscribing, handy for an AI or a dynamic settings UI that lists them.' },
+  { m: 'POST', path: '/webhooks', rw: true, desc: 'Subscribe a URL to events. Returns the signing secret once.', use: 'Wire VoiceAI into Zapier, Make, n8n, or your own endpoint. The response includes a whsec_ secret exactly once, store it then, it is what you verify signatures with and it is never shown again.' },
+  { m: 'GET', path: '/webhooks', desc: 'List subscriptions.', use: "See everything you're subscribed to and each endpoint's last delivery and last error." },
+  { m: 'GET', path: '/webhooks/:id', desc: 'One subscription.', use: 'Check a single subscription config and health.' },
+  { m: 'PATCH', path: '/webhooks/:id', rw: true, desc: 'Update URL, events, or status (active / disabled).', use: 'Move your endpoint, change which events you get, or pause delivery without re-creating the subscription (and without minting a new secret).' },
+  { m: 'DELETE', path: '/webhooks/:id', rw: true, desc: 'Delete a subscription.', use: 'Turn a subscription off for good.' },
+  { m: 'GET', path: '/webhooks/:id/deliveries', desc: 'Delivery log: status, attempts, response code, stored payload.', use: "Debug why your endpoint didn't receive an event. Each row shows the attempt count, your endpoint's response code, and the exact payload that was sent." },
+  { m: 'POST', path: '/webhooks/:id/ping', rw: true, desc: 'Send a test ping event to the endpoint.', use: 'Test your endpoint and signature check end to end before going live. The ping has type "ping", not a catalog event.' },
 ];
 
 // [event, description, when-you-would-use-it]
 const EVENTS: [string, string, string][] = [
-  ['call.started', 'A call begins (live event; carries a call_session_id).', 'Flash a live-call indicator or start a screen-pop.'],
-  ['call.completed', 'A call ends. Enriched with the full call (see payloads).', 'Create a CRM activity and text the owner the second a call ends.'],
-  ['call.transferred', 'The call was transferred to the business line. Enriched.', 'Track how often calls reach a human, and when.'],
-  ['call.escalated', 'A call-center agent took over a live call.', 'Alert a manager when an agent jumps into a live call.'],
-  ['appointment.booked', 'The AI booked an appointment. Google Calendar only.', 'Mirror the booking into your ops calendar or a confirmation flow.'],
-  ['client.provisioned', 'A new client finished provisioning.', 'Kick off your own welcome sequence when a client goes live.'],
-  ['client.provisioning_failed', 'Provisioning failed.', 'Page yourself if a client setup breaks, before they notice.'],
-  ['client.payment_failed', "A client's payment failed.", 'Trigger a dunning email from your billing tool.'],
-  ['client.subscription_activated', 'A client subscription activated.', 'Mark a client as paying in your CRM.'],
-  ['client.trial_expired', 'A client trial expired.', 'Start a win-back sequence when a trial lapses.'],
-  ['client.canceled', 'A client was canceled.', 'Update churn tracking and stop your own billing.'],
+  ['call.started', 'A call begins (live event; carries a call_session_id, not a calls row id).', 'Flash a live-call indicator or start a screen-pop. This one is not enriched, it is a lightweight live signal.'],
+  ['call.completed', 'A call ends. Enriched with the full call (see payloads).', 'The main real-time hook. Create a CRM activity, text or notify the owner, or act on a captured appointment, all from this one event with no follow-up GET.'],
+  ['call.transferred', 'The call was transferred to the business line. Enriched like call.completed.', 'Track how often calls reach a human and when, or alert the owner that a live call is coming to their phone.'],
+  ['call.escalated', 'A call-center agent took over a live call (browser jump-in or their phone was rung).', 'Alert a manager when an agent jumps into a live call. Distinct from call.transferred, which is a dial to the business line.'],
+  ['appointment.booked', 'An appointment was created (by the AI on a call, or via POST /appointments).', 'Mirror the booking into your ops calendar, a confirmation SMS, or a reminder flow.'],
+  ['appointment.rescheduled', 'An appointment moved to a new time (via PATCH /appointments/:id). Carries previous_appointment_time.', 'Update the booking everywhere you mirror it, and re-send a confirmation for the new time.'],
+  ['appointment.canceled', 'An appointment was canceled (via POST /appointments/:id/cancel). Carries cancel_reason.', 'Free the slot in your own system and notify the customer or staff.'],
+  ['client.provisioned', 'A new client finished provisioning and is live.', 'Kick off your own welcome sequence the moment a client goes live.'],
+  ['client.provisioning_failed', 'Provisioning failed for a client.', 'Page yourself if a setup breaks, before the client notices their number is not answering.'],
+  ['client.payment_failed', "A client's payment failed.", 'Trigger a dunning email or in-app nudge from your billing tool.'],
+  ['client.subscription_activated', 'A client subscription activated.', 'Mark a client as paying in your CRM and end any trial messaging.'],
+  ['client.trial_expired', 'A client trial expired.', 'Start a win-back sequence the moment a trial lapses.'],
+  ['client.canceled', 'A client was canceled.', 'Update churn tracking and stop your own billing for them.'],
 ];
 
 const METHOD_COLOR: Record<string, string> = {
@@ -89,46 +97,224 @@ const METHOD_COLOR: Record<string, string> = {
 };
 
 const SIGN_CODE =
-`// Node
+`// Node, verify a delivery before trusting it
 const crypto = require('crypto');
 function verify(rawBody, header, secret) {
   const p = Object.fromEntries(header.split(',').map(x => x.split('=')));
   const expected = crypto.createHmac('sha256', secret)
     .update(p.t + '.' + rawBody).digest('hex');
   return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(p.v1));
+}
+// Pass the exact raw request body, not the re-stringified JSON.`;
+
+// ── curl examples (accurate to the live API) ────────────────────────────────
+const CURL_LIST =
+`curl ${BASE_URL}/calls?limit=25 \\
+  -H "Authorization: Bearer YOUR_API_KEY"
+
+# Next page: pass the cursor you got back
+curl "${BASE_URL}/calls?limit=25&cursor=2026-10-20T14:03:00.000Z" \\
+  -H "Authorization: Bearer YOUR_API_KEY"`;
+
+const LIST_RESP =
+`{
+  "data": [ { "id": "c1a2...", "client_id": "9f3b...", "caller_phone": "+14045551212", "... ": "..." } ],
+  "has_more": true,
+  "next_cursor": "2026-10-20T14:03:00.000Z"
 }`;
 
-const SUBSCRIBE_CODE =
-`POST /webhooks
+const CURL_CREATE =
+`curl -X POST ${BASE_URL}/clients \\
+  -H "Authorization: Bearer YOUR_READ_WRITE_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "first_name": "Dana",
+    "last_name": "Reyes",
+    "email": "dana@brightplumbing.com",
+    "phone": "+14045550199",
+    "business_name": "Bright Plumbing",
+    "industry": "plumbing",
+    "business_city": "Atlanta",
+    "business_state": "GA",
+    "plan_type": "starter"
+  }'`;
+
+const CREATE_RESP =
+`// 202 Accepted, provisioning runs in the background
+{ "client_id": "9f3b...", "job_id": "prov_8c21...", "status": "processing" }
+
+// Then poll:
+// GET /clients/9f3b.../provisioning-status/prov_8c21...
+// -> { "id": "...", "status": "done", "result": { "phone_number": "+1..." }, "created_at": "..." }`;
+
+const CURL_SUBSCRIBE =
+`curl -X POST ${BASE_URL}/webhooks \\
+  -H "Authorization: Bearer YOUR_READ_WRITE_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "url": "https://yourapp.com/hooks/voiceai",
+    "events": ["call.completed", "appointment.booked"],
+    "description": "CRM sync"
+  }'`;
+
+const SUBSCRIBE_RESP =
+`// 201 Created, secret is shown ONCE, store it now
 {
+  "id": "wh_7a9c...",
   "url": "https://yourapp.com/hooks/voiceai",
   "events": ["call.completed", "appointment.booked"],
-  "description": "CRM sync"
+  "status": "active",
+  "description": "CRM sync",
+  "created_at": "2026-10-27T15:12:00.000Z",
+  "secret": "whsec_1f2e3d4c..."
 }`;
 
-const CALL_PAYLOAD =
-`id, caller_phone, customer_name, customer_phone, customer_email,
-customer_address, service_requested, urgency_level, sentiment,
-appointment_booked, appointment_time,
-ai_summary, summary, transcript,
-recording_url      (short-lived),
-recording_api_url  (durable, auth with your API key),
-ended_reason, transfer_status, is_spam, spam_reason,
-call_language, started_at, ended_at`;
+// ── worked webhook payloads (realistic, field-accurate) ─────────────────────
+const CALL_PAYLOAD_JSON =
+`{
+  "id": "evt_6b1f9c2a-...",
+  "type": "call.completed",
+  "created_at": "2026-10-27T15:42:11.904Z",
+  "data": {
+    "id": "a7c4e0d2-...",
+    "client_id": "9f3b1d88-...",
+    "caller_phone": "+14045551212",
+    "customer_name": "Marcus Hale",
+    "customer_phone": "+14045551212",
+    "customer_email": "marcus.hale@gmail.com",
+    "customer_address": "812 Oak Ridge Dr, Atlanta, GA",
+    "service_requested": "Water heater leaking, wants someone out today",
+    "urgency_level": "high",
+    "sentiment": "anxious",
+    "appointment_booked": true,
+    "appointment_time": "2026-10-27T21:00:00.000Z",
+    "ai_summary": "Caller has an active leak. Booked an emergency visit for 5pm.",
+    "summary": "Emergency water heater call, same-day visit booked.",
+    "transcript": "AI: Thanks for calling Bright Plumbing...",
+    "recording_url": "https://storage.vapi.ai/....mp3?token=... (short-lived)",
+    "recording_api_url": "${BASE_URL}/calls/a7c4e0d2-.../recording",
+    "ended_reason": "customer-ended-call",
+    "transfer_status": null,
+    "is_spam": false,
+    "spam_reason": null,
+    "call_language": "en",
+    "started_at": "2026-10-27T15:40:02.000Z",
+    "ended_at": "2026-10-27T15:42:10.000Z"
+  }
+}`;
 
-const APPT_PAYLOAD =
-`id, client_id, business_name, customer_name, customer_phone,
-appointment_time, end_time, duration_minutes, timezone,
-service_type, staff_name, notes,
-status ("confirmed"), booking_source ("ai_receptionist"),
-google_event_id, google_calendar_id, calendar_link, created_at`;
+const APPT_PAYLOAD_JSON =
+`{
+  "id": "evt_2d8a7f10-...",
+  "type": "appointment.booked",
+  "created_at": "2026-10-27T15:42:09.511Z",
+  "data": {
+    "id": "appt_5e9b...",
+    "client_id": "9f3b1d88-...",
+    "business_name": "Bright Plumbing",
+    "customer_name": "Marcus Hale",
+    "customer_phone": "+14045551212",
+    "appointment_time": "2026-10-27T21:00:00.000Z",
+    "end_time": "2026-10-27T22:00:00.000Z",
+    "duration_minutes": 60,
+    "timezone": "America/New_York",
+    "service_type": "Emergency water heater",
+    "staff_name": null,
+    "notes": "Active leak, caller will be home.",
+    "status": "confirmed",
+    "booking_source": "ai_receptionist",
+    "google_event_id": "abc123def456",
+    "google_calendar_id": "primary",
+    "calendar_link": "https://calendar.google.com/event?eid=...",
+    "created_at": "2026-10-27T15:42:09.000Z"
+  }
+}`;
 
-const RECIPE_CODE =
-`1. Subscribe a webhook to  call.completed
-2. On each event, read:    data.appointment_booked, data.appointment_time,
-                           customer_name, customer_phone, service_requested
-3. Create the event in your calendar (Microsoft Graph, Acuity,
-   Calendly, Cal.com, iCloud) from those fields.`;
+// ── integration recipes ─────────────────────────────────────────────────────
+const RECIPE_CRM =
+`1. Create a read key.
+2. On a schedule (hourly/nightly), GET /calls?since=<last run>&limit=100
+3. Walk pages with next_cursor until has_more is false.
+4. Upsert each call by its id into your CRM; store ended_at as the sync mark.
+   Tip: the row already carries customer_name/phone/email, service_requested,
+   summary and transcript, so no per-call follow-up is needed.`;
+
+const RECIPE_REALTIME =
+`1. Create a read_write key.
+2. POST /webhooks with events ["call.completed"] and your endpoint URL.
+   Store the whsec_ secret from the response.
+3. On each delivery: verify the signature against the raw body, then act, e.g.
+   - create a CRM activity from data.summary + data.service_requested
+   - text the owner if data.urgency_level is "high" or "emergency"
+   - if data.appointment_booked is true, push it to your calendar
+4. Return 2xx fast. Non-2xx is retried with backoff (up to 6 attempts).`;
+
+const RECIPE_SCHEDULE =
+`1. Create a read_write key.
+2. GET /clients/:id/availability?date=YYYY-MM-DD to show open slots.
+3. POST /appointments with client_id, customer_name, date, time (+ service_type,
+   duration_minutes). Google-connected client -> real calendar event; no calendar
+   connected -> record-only appointment. Fires appointment.booked.
+4. PATCH /appointments/:id to move it (appointment.rescheduled);
+   POST /appointments/:id/cancel to cancel (appointment.canceled).`;
+
+const RECIPE_NONGOOGLE =
+`Interim, until native writes for your calendar land via the aggregator:
+1. Subscribe a webhook to call.completed.
+2. On each event where data.appointment_booked is true, read:
+   data.appointment_time, customer_name, customer_phone, service_requested.
+3. Create the event in your calendar (Microsoft Graph, Acuity, Calendly,
+   Cal.com, iCloud) from those fields.
+Caveat: the AI did not check that calendar's live availability, so treat it
+as a requested slot, not a double-book-safe confirmed one.`;
+
+const RECIPE_ONBOARD =
+`1. Create a read_write key.
+2. On your own signup form submit: POST /clients with the business details.
+3. Take the job_id from the 202 response and poll
+   GET /clients/:id/provisioning-status/:jobId every few seconds.
+4. When status is "done", show the provisioned number from result and tell
+   the client to forward their existing line to it.`;
+
+// ── machine-readable quick reference (for AI assistants reading this page) ───
+const QUICK_REF =
+`VoiceAI Connect Developer API, v1
+base_url: ${BASE_URL}
+auth: Authorization: Bearer <api_key>   (or x-api-key: <api_key>)
+plan: Scale only (call-center agencies any plan; trialing = Scale); else 403 upgrade_required
+scopes: read (GET), read_write (POST/PATCH/PUT/DELETE)
+rate_limit: 120 req/min per key; headers X-RateLimit-Limit/Remaining/Reset; 429 rate_limit_exceeded
+pagination: ?limit=1-100 (default 25) & ?cursor=<next_cursor>; list -> { data, has_more, next_cursor }
+errors: { error: { type, message } }; types: authentication_error(401), insufficient_scope(403),
+        upgrade_required(403), account_suspended(403), not_found(404), invalid_request(400),
+        rate_limit_exceeded(429), not_implemented(501), api_error(400/500)
+
+endpoints:
+  GET    /account
+  GET    /clients            POST /clients(rw)
+  GET    /clients/:id        PATCH /clients/:id(rw)    DELETE /clients/:id(rw -> 501 not_implemented)
+  GET    /clients/:id/provisioning-status/:jobId
+  GET    /clients/:id/receptionist     PATCH /clients/:id/receptionist(rw)
+  GET    /clients/:id/knowledge-base   PUT   /clients/:id/knowledge-base(rw)
+  GET    /calls   GET /calls/:id   GET /calls/:id/recording
+  GET    /clients/:id/availability?date=YYYY-MM-DD
+  GET    /appointments   GET /appointments/:id
+  POST   /appointments(rw)   PATCH /appointments/:id(rw)   POST /appointments/:id/cancel(rw)
+  GET    /numbers   GET /usage   GET /analytics/calls
+  GET    /events
+  POST   /webhooks(rw)   GET /webhooks   GET /webhooks/:id
+  PATCH  /webhooks/:id(rw)   DELETE /webhooks/:id(rw)
+  GET    /webhooks/:id/deliveries   POST /webhooks/:id/ping(rw)
+
+events: call.started, call.completed, call.transferred, call.escalated,
+        appointment.booked, appointment.rescheduled, appointment.canceled,
+        client.provisioned, client.provisioning_failed, client.payment_failed,
+        client.subscription_activated, client.trial_expired, client.canceled
+webhook_signature: header X-VoiceAI-Signature: t=<unix>,v1=<hex>; v1 = HMAC-SHA256(secret, t + "." + rawBody)
+webhook_headers_also: X-VoiceAI-Event, X-VoiceAI-Delivery
+webhook_retries: up to 6 attempts, backoff 1/5/30/120/360/720 min, 10s timeout, needs 2xx
+calendar: appointment writes hit the client's connected calendar (Google live now; Outlook/Acuity/Calendly via aggregator coming). No calendar connected = record-only appointment.
+docs: https://www.myvoiceaiconnect.com/developers`;
 
 function useCopy() {
   const [copied, setCopied] = useState<string | null>(null);
@@ -148,16 +334,17 @@ function fallback(text: string, cb: () => void) {
   } catch { /* clipboard unavailable */ }
 }
 
-function CodeBlock({ code, k, copied, onCopy }: { code: string; k: string; copied: string | null; onCopy: (t: string, k: string) => void }) {
+function CodeBlock({ code, k, copied, onCopy, label }: { code: string; k: string; copied: string | null; onCopy: (t: string, k: string) => void; label?: string }) {
   return (
     <div className="relative rounded-xl border border-white/[0.08] bg-white/[0.03] my-3">
+      {label && <span className="absolute top-2.5 left-3 font-mono text-[9.5px] tracking-[0.12em] uppercase text-white/30">{label}</span>}
       <button
         onClick={() => onCopy(code, k)}
         className="absolute top-2.5 right-2.5 font-mono text-[11px] px-2.5 py-1 rounded-md border border-white/[0.12] text-white/55 hover:text-white hover:border-white/30 transition-colors"
       >
         {copied === k ? 'Copied' : 'Copy'}
       </button>
-      <pre className="m-0 p-4 overflow-x-auto font-mono text-[12.5px] leading-[1.65] text-white/75 whitespace-pre">{code}</pre>
+      <pre className={`m-0 p-4 overflow-x-auto font-mono text-[12.5px] leading-[1.65] text-white/75 whitespace-pre ${label ? 'pt-7' : ''}`}>{code}</pre>
     </div>
   );
 }
@@ -188,6 +375,16 @@ function EndpointList({ eps }: { eps: Ep[] }) {
           <WhenLine text={e.use} />
         </div>
       ))}
+    </div>
+  );
+}
+
+function RecipeCard({ title, sub, code, k, copied, onCopy }: { title: string; sub: string; code: string; k: string; copied: string | null; onCopy: (t: string, k: string) => void }) {
+  return (
+    <div className="rounded-2xl border border-white/[0.07] bg-white/[0.018] p-5">
+      <h3 className="font-display text-[15.5px] font-medium text-white/90 mb-0.5">{title}</h3>
+      <p className="text-[12.5px] text-white/45 mb-1">{sub}</p>
+      <CodeBlock k={k} copied={copied} onCopy={onCopy} code={code} />
     </div>
   );
 }
@@ -224,11 +421,11 @@ export default function DevelopersPage() {
             <p className="t-body mt-8 max-w-2xl text-[1rem]">
               Read and manage everything on your agency account, and push real-time call and booking events
               into any outside system. A Scale-plan feature, with API keys, scoped access, and signed webhooks.
-              Every endpoint and event below lists a short "when you would use it" so you (or an AI assistant) can
-              wire up an integration fast.
+              Every endpoint and event below lists a short "when you would use it", plus copyable curl, worked
+              JSON, and named integration recipes, so you (or an AI assistant) can wire up an integration fast.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-3">
-              <Link href="/agency/settings" className="btn btn-em">Get API keys <ArrowUpRight className="w-3.5 h-3.5" /></Link>
+              <Link href="/agency/settings?tab=developer" className="btn btn-em">Get API keys <ArrowUpRight className="w-3.5 h-3.5" /></Link>
               <button
                 onClick={() => copy(BASE_URL, 'hero-base')}
                 className="btn btn-ghost-dark font-mono text-[12.5px]"
@@ -238,7 +435,7 @@ export default function DevelopersPage() {
             </div>
             <div className="mt-9 flex flex-wrap gap-5 text-white/45">
               <span className="inline-flex items-center gap-2 text-[12.5px]"><KeyRound className="w-3.5 h-3.5 text-em" strokeWidth={1.9} /> Bearer API key</span>
-              <span className="inline-flex items-center gap-2 text-[12.5px]"><Webhook className="w-3.5 h-3.5 text-em" strokeWidth={1.9} /> 11 signed events</span>
+              <span className="inline-flex items-center gap-2 text-[12.5px]"><Webhook className="w-3.5 h-3.5 text-em" strokeWidth={1.9} /> 13 signed events</span>
               <span className="inline-flex items-center gap-2 text-[12.5px]"><CalendarClock className="w-3.5 h-3.5 text-em" strokeWidth={1.9} /> Live booking data</span>
             </div>
           </div>
@@ -297,11 +494,11 @@ export default function DevelopersPage() {
               <h2 className="font-display text-[22px] font-semibold text-white tracking-tight mb-3">Authentication</h2>
               <p className="text-[14.5px] text-white/60 leading-relaxed">
                 Every request authenticates with an API key, created in the agency dashboard under
-                <b className="text-white/85"> Settings &rarr; API keys</b>. The full key is shown once at creation; only a
+                <b className="text-white/85"> Settings &rarr; API</b>. The full key is shown once at creation; only a
                 SHA-256 hash and a short prefix are stored, so a lost key is revoked and replaced, never recovered. Keys
                 are agency-scoped.
               </p>
-              <CodeBlock k="auth" copied={copied} onCopy={copy} code={'Authorization: Bearer YOUR_API_KEY'} />
+              <CodeBlock k="auth" copied={copied} onCopy={copy} code={'Authorization: Bearer YOUR_API_KEY\n# or, equivalently:\nx-api-key: YOUR_API_KEY'} />
               <div className="grid sm:grid-cols-2 gap-3 mt-4">
                 <div className="rounded-xl border border-white/[0.07] bg-white/[0.018] p-4">
                   <code className="font-mono text-[13px] text-em">read</code>
@@ -309,9 +506,12 @@ export default function DevelopersPage() {
                 </div>
                 <div className="rounded-xl border border-white/[0.07] bg-white/[0.018] p-4">
                   <code className="font-mono text-[13px]" style={{ color: '#a98bf0' }}>read_write</code>
-                  <p className="text-[13px] text-white/50 mt-1.5">POST, PATCH, DELETE. A write with a read key returns 403.</p>
+                  <p className="text-[13px] text-white/50 mt-1.5">POST, PATCH, PUT, DELETE. A write with a read key returns 403 insufficient_scope.</p>
                 </div>
               </div>
+              <h3 className="font-display text-[15px] font-medium text-white/90 mt-6 mb-1.5">Your first request</h3>
+              <CodeBlock k="firstreq" copied={copied} onCopy={copy} label="curl" code={`curl ${BASE_URL}/account \\\n  -H "Authorization: Bearer YOUR_API_KEY"`} />
+              <p className="text-[13px] text-white/40">Returns the authenticated agency: id, name, plan_type, subscription_status, and the key's scope.</p>
             </section>
 
             <section id="conventions" className="scroll-mt-28 mb-14">
@@ -319,23 +519,52 @@ export default function DevelopersPage() {
               <h3 className="font-display text-[15px] font-medium text-white/90 mt-5 mb-1.5">Errors</h3>
               <CodeBlock k="err" copied={copied} onCopy={copy} code={'{ "error": { "type": "insufficient_scope", "message": "This API key is read-only." } }'} />
               <p className="text-[13.5px] text-white/55 leading-relaxed mt-2">
-                Status codes: <code className="font-mono text-white/80">401</code> authentication_error,
-                <code className="font-mono text-white/80"> 403</code> insufficient_scope,
-                <code className="font-mono text-white/80"> 404</code> not_found,
-                <code className="font-mono text-white/80"> 400/500</code> api_error.
+                Every error uses that envelope. Types you may see:
               </p>
+              <div className="rounded-2xl border border-white/[0.07] bg-white/[0.018] divide-y divide-white/[0.05] mt-3">
+                {[
+                  ['401', 'authentication_error', 'Missing, invalid, or revoked key.'],
+                  ['403', 'insufficient_scope', 'Write attempted with a read-only key.'],
+                  ['403', 'upgrade_required', 'Account is below the Scale plan.'],
+                  ['403', 'account_suspended', 'Agency account is suspended.'],
+                  ['404', 'not_found', 'No such object, or not owned by your agency.'],
+                  ['400', 'invalid_request', 'Bad or missing fields in the request.'],
+                  ['429', 'rate_limit_exceeded', 'Over 120 requests/min on this key.'],
+                  ['501', 'not_implemented', 'Endpoint exists but is not available yet (e.g. DELETE /clients).'],
+                  ['400/500', 'api_error', 'A query or internal error.'],
+                ].map(([code, type, note]) => (
+                  <div key={type} className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 px-4 lg:px-5 py-2.5">
+                    <code className="font-mono text-[11.5px] text-white/80 shrink-0" style={{ minWidth: 54 }}>{code}</code>
+                    <code className="font-mono text-[12px] text-em-deep shrink-0">{type}</code>
+                    <span className="basis-full sm:basis-auto text-[12.5px] text-white/45 sm:flex-1 pl-[66px] sm:pl-0">{note}</span>
+                  </div>
+                ))}
+              </div>
               <h3 className="font-display text-[15px] font-medium text-white/90 mt-6 mb-1.5">Pagination</h3>
               <p className="text-[13.5px] text-white/55 leading-relaxed">
                 List endpoints take <code className="font-mono text-white/80">limit</code> (1&ndash;100, default 25) and
                 <code className="font-mono text-white/80"> cursor</code>. Pass the returned cursor back to page.
               </p>
               <CodeBlock k="page" copied={copied} onCopy={copy} code={'{ "data": [ ... ], "has_more": true, "next_cursor": "2026-10-20T14:03:00.000Z" }'} />
-              <p className="text-[13px] text-white/40 mt-1">Single objects return directly. Only allowlisted public fields are returned; internal IDs and secrets never leave the API.</p>
+              <p className="text-[13px] text-white/40 mt-1">Single objects return directly. Only allowlisted public fields are returned; internal IDs and secrets never leave the API. (Numbers, usage, analytics, and the event catalog return a plain <code className="font-mono text-white/70">{'{ data }'}</code> or object, not a cursor page.)</p>
+            </section>
+
+            <section id="limits" className="scroll-mt-28 mb-14">
+              <h2 className="font-display text-[22px] font-semibold text-white tracking-tight mb-3">Rate limits</h2>
+              <p className="text-[14px] text-white/60 leading-relaxed">
+                Each API key is limited to <b className="text-white/85">120 requests per minute</b>. Every response carries
+                the current budget, and going over returns <code className="font-mono text-em-deep">429 rate_limit_exceeded</code> with a <code className="font-mono text-white/80">Retry-After</code> header.
+              </p>
+              <CodeBlock k="rl" copied={copied} onCopy={copy} code={'X-RateLimit-Limit: 120\nX-RateLimit-Remaining: 118\nX-RateLimit-Reset: 1793114400'} />
+              <p className="text-[13px] text-white/40">For a large nightly sync, page with the max <code className="font-mono text-white/70">limit=100</code> and, if you hit a 429, wait the window out using Retry-After rather than hammering.</p>
             </section>
 
             <section id="clients" className="scroll-mt-28 mb-14">
               <h2 className="font-display text-[22px] font-semibold text-white tracking-tight mb-4">Clients</h2>
               <EndpointList eps={CLIENTS} />
+              <h3 className="font-display text-[15px] font-medium text-white/90 mt-6 mb-1.5">Example: create a client</h3>
+              <CodeBlock k="createcurl" copied={copied} onCopy={copy} label="curl" code={CURL_CREATE} />
+              <CodeBlock k="createresp" copied={copied} onCopy={copy} label="response" code={CREATE_RESP} />
             </section>
             <section id="receptionist" className="scroll-mt-28 mb-14">
               <h2 className="font-display text-[22px] font-semibold text-white tracking-tight mb-4">Receptionist &amp; Knowledge base</h2>
@@ -344,13 +573,16 @@ export default function DevelopersPage() {
             <section id="calls" className="scroll-mt-28 mb-14">
               <h2 className="font-display text-[22px] font-semibold text-white tracking-tight mb-4">Calls</h2>
               <EndpointList eps={CALLS} />
+              <h3 className="font-display text-[15px] font-medium text-white/90 mt-6 mb-1.5">Example: list and page</h3>
+              <CodeBlock k="listcurl" copied={copied} onCopy={copy} label="curl" code={CURL_LIST} />
+              <CodeBlock k="listresp" copied={copied} onCopy={copy} label="response" code={LIST_RESP} />
             </section>
             <section id="appointments" className="scroll-mt-28 mb-14">
-              <h2 className="font-display text-[22px] font-semibold text-white tracking-tight mb-4">Appointments <span className="text-white/35 text-[15px] font-normal">(read only)</span></h2>
+              <h2 className="font-display text-[22px] font-semibold text-white tracking-tight mb-4">Appointments</h2>
               <EndpointList eps={APPTS} />
               <p className="text-[13px] text-white/45 mt-3 leading-relaxed">
-                There is no endpoint to create or reschedule an appointment. Appointments are created by the AI during
-                calls. See <a href="#calendar" className="text-em">Calendar booking</a>.
+                Appointments are created by the AI during calls and, now, directly through the API. How a write reaches a
+                real calendar depends on what the client has connected. See <a href="#calendar" className="text-em">Calendar booking</a>.
               </p>
             </section>
             <section id="misc" className="scroll-mt-28 mb-14">
@@ -362,8 +594,9 @@ export default function DevelopersPage() {
               <h2 className="font-display text-[22px] font-semibold text-white tracking-tight mb-4">Webhook management</h2>
               <EndpointList eps={HOOKS} />
               <h3 className="font-display text-[15px] font-medium text-white/90 mt-6 mb-1.5">Subscribe</h3>
-              <CodeBlock k="sub" copied={copied} onCopy={copy} code={SUBSCRIBE_CODE} />
-              <p className="text-[13px] text-white/40">Use <code className="font-mono text-white/70">{'"events": ["*"]'}</code> to subscribe to everything.</p>
+              <CodeBlock k="subcurl" copied={copied} onCopy={copy} label="curl" code={CURL_SUBSCRIBE} />
+              <CodeBlock k="subresp" copied={copied} onCopy={copy} label="response" code={SUBSCRIBE_RESP} />
+              <p className="text-[13px] text-white/40">Use <code className="font-mono text-white/70">{'"events": ["*"]'}</code> to subscribe to everything. The <code className="font-mono text-white/70">secret</code> is returned only on this create call.</p>
             </section>
 
             <section id="events" className="scroll-mt-28 mb-14">
@@ -388,59 +621,88 @@ export default function DevelopersPage() {
 
             <section id="signature" className="scroll-mt-28 mb-14">
               <h2 className="font-display text-[22px] font-semibold text-white tracking-tight mb-3">Signature verification</h2>
-              <p className="text-[14px] text-white/60 leading-relaxed">Each delivery is signed. Header:</p>
-              <CodeBlock k="sighdr" copied={copied} onCopy={copy} code={'X-VoiceAI-Signature: t=<unix_ts>,v1=<hex>'} />
+              <p className="text-[14px] text-white/60 leading-relaxed">Each delivery is signed. Three headers are sent:</p>
+              <CodeBlock k="sighdr" copied={copied} onCopy={copy} code={'X-VoiceAI-Signature: t=<unix_ts>,v1=<hex>\nX-VoiceAI-Event:     call.completed\nX-VoiceAI-Delivery:  <delivery_id>'} />
               <p className="text-[13.5px] text-white/55 leading-relaxed">
                 where <code className="font-mono text-white/80">v1 = HMAC-SHA256(secret, t + "." + rawBody)</code>. Verify
                 against the raw body before parsing JSON.
               </p>
               <CodeBlock k="sig" copied={copied} onCopy={copy} code={SIGN_CODE} />
-              <p className="text-[13px] text-white/40">Deliveries are logged and retried on failure. Stored payloads keep a short-lived recording_url; use recording_api_url or GET /calls/:id/recording for a fresh one.</p>
+              <p className="text-[13px] text-white/40 leading-relaxed">
+                Deliveries are logged and retried on failure: up to 6 attempts with a 1 / 5 / 30 / 120 / 360 / 720 minute
+                backoff and a 10-second timeout, so your endpoint should return a 2xx quickly and do slow work after.
+                Stored payloads keep a short-lived <code className="font-mono text-white/70">recording_url</code>; use
+                <code className="font-mono text-white/70"> recording_api_url</code> or GET /calls/:id/recording for a fresh one.
+              </p>
             </section>
 
             <section id="payloads" className="scroll-mt-28 mb-14">
               <h2 className="font-display text-[22px] font-semibold text-white tracking-tight mb-3">Payloads</h2>
-              <h3 className="font-display text-[15px] font-medium text-white/90 mt-2 mb-1.5"><code className="font-mono text-em text-[13px]">call.completed</code> / <code className="font-mono text-em text-[13px]">call.transferred</code></h3>
-              <CodeBlock k="pcall" copied={copied} onCopy={copy} code={CALL_PAYLOAD} />
-              <p className="text-[13px] text-white/40">Carries the whole call, so you can ingest it from the webhook alone with no follow-up GET.</p>
+              <p className="text-[13.5px] text-white/50 leading-relaxed mb-1">
+                <code className="font-mono text-em text-[13px]">call.completed</code> and <code className="font-mono text-em text-[13px]">call.transferred</code> carry
+                the whole call, so you can ingest from the webhook alone with no follow-up GET.
+              </p>
+              <CodeBlock k="pcall" copied={copied} onCopy={copy} label="call.completed" code={CALL_PAYLOAD_JSON} />
               <h3 className="font-display text-[15px] font-medium text-white/90 mt-6 mb-1.5"><code className="font-mono text-em text-[13px]">appointment.booked</code></h3>
-              <CodeBlock k="pappt" copied={copied} onCopy={copy} code={APPT_PAYLOAD} />
+              <p className="text-[13px] text-white/45 mb-1">Fires on any create, whether from the AI on a call or POST /appointments. appointment.rescheduled and appointment.canceled carry the same shape (plus previous_appointment_time / cancel_reason). google_event_id and calendar_link are null for a record-only appointment.</p>
+              <CodeBlock k="pappt" copied={copied} onCopy={copy} label="appointment.booked" code={APPT_PAYLOAD_JSON} />
+            </section>
+
+            <section id="recipes" className="scroll-mt-28 mb-14">
+              <h2 className="font-display text-[22px] font-semibold text-white tracking-tight mb-4">Integration recipes</h2>
+              <div className="grid gap-4">
+                <RecipeCard title="Schedule appointments via the API" sub="availability, create, reschedule, cancel" k="r0" copied={copied} onCopy={copy} code={RECIPE_SCHEDULE} />
+                <RecipeCard title="Sync calls to your CRM" sub="GET /calls, scheduled pull" k="r1" copied={copied} onCopy={copy} code={RECIPE_CRM} />
+                <RecipeCard title="Real-time alerts via call.completed" sub="Webhook, for Zapier / Make / your own endpoint" k="r2" copied={copied} onCopy={copy} code={RECIPE_REALTIME} />
+                <RecipeCard title="Book into a not-yet-native calendar" sub="interim: call.completed, capture then create" k="r3" copied={copied} onCopy={copy} code={RECIPE_NONGOOGLE} />
+                <RecipeCard title="Onboard clients via the API" sub="POST /clients, then poll provisioning" k="r4" copied={copied} onCopy={copy} code={RECIPE_ONBOARD} />
+              </div>
             </section>
 
             <section id="calendar" className="scroll-mt-28 mb-14">
               <h2 className="font-display text-[22px] font-semibold text-white tracking-tight mb-3">Calendar booking</h2>
               <p className="text-[14.5px] text-white/60 leading-relaxed">
-                <b className="text-white/85">Automated booking is Google Calendar only.</b> The AI checks live availability
-                and writes the event during the call only when the client has Google Calendar connected. Without it, the AI
-                captures the request but does not confirm a slot, and <code className="font-mono text-em-deep">appointment.booked</code> does not fire.
+                An appointment write (create, reschedule, cancel) reaches a real calendar based on what the client has
+                connected. The behavior is the same whether the booking comes from the AI on a call or from the API.
               </p>
               <div className="rounded-2xl border border-white/[0.07] bg-white/[0.018] divide-y divide-white/[0.05] my-4">
                 <div className="px-5 py-3.5">
-                  <p className="text-[13.5px] text-white"><b>Google Calendar</b></p>
-                  <p className="text-[13px] text-white/50 mt-0.5">Full automated booking. appointment.booked fires with the event link.</p>
+                  <p className="text-[13.5px] text-white"><b>Google Calendar (live)</b></p>
+                  <p className="text-[13px] text-white/50 mt-0.5">Full calendar write. Create checks live availability, reschedule patches the event, cancel removes it. The matching event fires with the event link.</p>
                 </div>
                 <div className="px-5 py-3.5">
-                  <p className="text-[13.5px] text-white"><b>Outlook · M365 · Acuity · Calendly · other</b></p>
-                  <p className="text-[13px] text-white/50 mt-0.5">No native automated booking yet. Use the recipe below.</p>
+                  <p className="text-[13.5px] text-white"><b>Outlook · M365 · Acuity · Calendly · other (coming)</b></p>
+                  <p className="text-[13px] text-white/50 mt-0.5">Native writes to these are being added through a calendar aggregator. The API is already provider-agnostic, so these plug in with no change to your integration.</p>
+                </div>
+                <div className="px-5 py-3.5">
+                  <p className="text-[13.5px] text-white"><b>No calendar connected</b></p>
+                  <p className="text-[13px] text-white/50 mt-0.5">A write creates a record-only appointment (a real row, no calendar event), so the API still succeeds. Availability returns 409 calendar_not_connected.</p>
                 </div>
               </div>
-              <h3 className="font-display text-[15px] font-medium text-white/90 mt-5 mb-1.5">Recipe: non-Google calendars</h3>
-              <CodeBlock k="recipe" copied={copied} onCopy={copy} code={RECIPE_CODE} />
               <div className="rounded-xl p-4 mt-2" style={{ background: 'rgba(217,166,64,0.07)', border: '1px solid rgba(217,166,64,0.25)' }}>
                 <p className="text-[13px] text-white/70 leading-relaxed">
-                  The AI did not check that calendar's live availability or confirm a slot on the call, so treat it as a
-                  requested appointment, not a double-book-safe confirmed one. Real-time availability against a non-Google
-                  calendar needs a native integration.
+                  A record-only appointment was not checked against any live calendar, so treat it as a requested slot, not a
+                  double-book-safe confirmed one, until the client connects a calendar.
                 </p>
               </div>
+            </section>
+
+            <section id="summary" className="scroll-mt-28 mb-14">
+              <h2 className="font-display text-[22px] font-semibold text-white tracking-tight mb-3">Quick reference</h2>
+              <p className="text-[13.5px] text-white/50 leading-relaxed mb-1">
+                A compact, copyable map of the whole API, handy to paste into an AI assistant you are building an
+                integration with.
+              </p>
+              <CodeBlock k="quickref" copied={copied} onCopy={copy} code={QUICK_REF} />
             </section>
 
             <section id="roadmap" className="scroll-mt-28">
               <h2 className="font-display text-[22px] font-semibold text-white tracking-tight mb-3">Roadmap</h2>
               <p className="text-[13.5px] text-white/45 mb-2">Not available yet:</p>
               <ul className="space-y-2">
-                <li className="flex items-start gap-2.5 text-[13.5px] text-white/60"><Terminal className="w-3.5 h-3.5 text-em shrink-0 mt-1" strokeWidth={2} /> Native automated booking for Microsoft 365 / Outlook, Cal.com, Calendly, Acuity.</li>
-                <li className="flex items-start gap-2.5 text-[13.5px] text-white/60"><Terminal className="w-3.5 h-3.5 text-em shrink-0 mt-1" strokeWidth={2} /> A write API for appointments (create / reschedule / cancel) with matching events.</li>
+                <li className="flex items-start gap-2.5 text-[13.5px] text-white/60"><Terminal className="w-3.5 h-3.5 text-em shrink-0 mt-1" strokeWidth={2} /> Native calendar writes for Microsoft 365 / Outlook, Cal.com, Calendly, Acuity (in progress via a calendar aggregator; the appointment API already supports them without a change on your side).</li>
+                <li className="flex items-start gap-2.5 text-[13.5px] text-white/60"><Terminal className="w-3.5 h-3.5 text-em shrink-0 mt-1" strokeWidth={2} /> A call.followup_required event for calls that need a human (voicemail, callback requested, unanswered, complaint, abandoned).</li>
+                <li className="flex items-start gap-2.5 text-[13.5px] text-white/60"><Terminal className="w-3.5 h-3.5 text-em shrink-0 mt-1" strokeWidth={2} /> Client deletion via the API (today DELETE /clients returns 501; offboard from the dashboard).</li>
               </ul>
             </section>
           </div>

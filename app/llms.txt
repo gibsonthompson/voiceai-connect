@@ -21,6 +21,7 @@ Key facts:
 - Agency platform pricing: Free (no platform fee, usage-based per-client and per-minute rates), Pro ($99/mo), and Scale ($499/mo). End-client subscriptions are typically $99 to $299 per month, set by the agency.
 - Capabilities: 24/7 AI voice answering, automatic English and Spanish with real-time language detection, real-time Google Calendar appointment booking, spam and robocall filtering, unlimited concurrent calls, call recordings and transcripts, per-client branded dashboards, a built-in lead-generation CRM, direct Stripe Connect payouts, and US plus international telephony (Telnyx and Twilio).
 - Number continuity: clients forward their existing business number to the AI-provisioned number. This is call forwarding, not porting.
+- Developer API: a Scale-plan REST API plus signed webhooks lets agencies read and manage clients, calls, appointments, and usage, and receive real-time call and booking events. See the Developer API section below.
 - VoiceAI Connect is software infrastructure, not a course or coaching program. It is comparable to how Shopify is the operating system for an e-commerce business.
 
 ## Core pages
@@ -29,6 +30,7 @@ Key facts:
 - [How it works](https://www.myvoiceaiconnect.com/how-it-works): the four-step setup process for agencies.
 - [Pricing](https://www.myvoiceaiconnect.com/ai-receptionist-agency-pricing): agency plan tiers and per-usage rates.
 - [FAQ](https://www.myvoiceaiconnect.com/faq): common questions about the platform.
+- [Developer API & webhooks](https://www.myvoiceaiconnect.com/developers): REST API and webhook reference for agencies on the Scale plan.
 
 ## Guides and comparisons
 - [What is a white-label AI receptionist?](https://www.myvoiceaiconnect.com/what-is-white-label-ai-receptionist)
@@ -41,6 +43,36 @@ Key facts:
 - [VoiceAI Connect vs Bland AI](https://www.myvoiceaiconnect.com/voiceai-connect-vs-bland-ai)
 - [VoiceAI Connect vs Synthflow](https://www.myvoiceaiconnect.com/voiceai-connect-vs-synthflow)
 - [GoHighLevel AI receptionist alternative](https://www.myvoiceaiconnect.com/gohighlevel-ai-receptionist)
+
+## Developer API & webhooks
+Full reference with curl examples, worked JSON payloads, and integration recipes: https://www.myvoiceaiconnect.com/developers
+
+- Base URL: https://urchin-app-bqb4i.ondigitalocean.app/api/v1
+- Access: Scale plan only (call-center agencies get it on any plan; trialing agencies are treated as Scale). Below that, requests return 403 upgrade_required.
+- Auth: an agency-scoped API key sent as "Authorization: Bearer <key>" (or "x-api-key: <key>"). Created in the dashboard under Settings, then API. The full key is shown once at creation.
+- Scopes: read (all GET) and read_write (POST, PATCH, PUT, DELETE).
+- Rate limit: 120 requests per minute per key (X-RateLimit-* headers; 429 rate_limit_exceeded when exceeded).
+- Pagination: list endpoints take ?limit (1-100, default 25) and ?cursor; a list returns { data, has_more, next_cursor }.
+- Errors: { error: { type, message } }. Types include authentication_error, insufficient_scope, upgrade_required, account_suspended, not_found, invalid_request, rate_limit_exceeded, not_implemented, api_error.
+
+REST endpoints (relative to the base URL):
+- GET /account
+- GET /clients, POST /clients, GET /clients/:id, PATCH /clients/:id, DELETE /clients/:id (not available yet; returns 501)
+- GET /clients/:id/provisioning-status/:jobId
+- GET and PATCH /clients/:id/receptionist
+- GET and PUT /clients/:id/knowledge-base
+- GET /calls, GET /calls/:id, GET /calls/:id/recording
+- GET /clients/:id/availability?date=YYYY-MM-DD (open slots; needs a connected calendar)
+- GET /appointments, GET /appointments/:id
+- POST /appointments, PATCH /appointments/:id (reschedule), POST /appointments/:id/cancel
+- GET /numbers, GET /usage, GET /analytics/calls
+- GET /events, POST /webhooks, GET /webhooks, GET /webhooks/:id, PATCH /webhooks/:id, DELETE /webhooks/:id, GET /webhooks/:id/deliveries, POST /webhooks/:id/ping
+
+Webhook events: call.started, call.completed, call.transferred, call.escalated, appointment.booked, appointment.rescheduled, appointment.canceled, client.provisioned, client.provisioning_failed, client.payment_failed, client.subscription_activated, client.trial_expired, client.canceled. Subscribe to specific events or ["*"].
+
+Webhook signing: each delivery carries the header X-VoiceAI-Signature: t=<unix>,v1=<hex>, where v1 = HMAC-SHA256(secret, t + "." + rawBody). The secret (a whsec_ string) is returned once from POST /webhooks. Deliveries retry up to 6 times with backoff and expect a 2xx response. call.completed and call.transferred payloads are enriched with the full call, so no follow-up GET is needed.
+
+Calendar booking: appointment writes (create via POST /appointments, reschedule, cancel) reach the client's connected calendar. Google Calendar is live now (real event write, availability-checked). Native writes for Outlook/Microsoft 365, Acuity, Calendly and Cal.com are being added through a calendar aggregator, and the appointment API is already provider-agnostic so they require no change to an integration. A client with no connected calendar gets a record-only appointment (a real row, no calendar event). The same applies to the AI booking on a call.
 
 ## Contact
 - Support: support@myvoiceaiconnect.com
