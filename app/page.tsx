@@ -341,22 +341,28 @@ export default function HomePage() {
       <section className="relative bg-ink py-20 lg:py-28 border-t border-white/[0.04] overflow-hidden">
         <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(900px 440px at 50% 0%, rgba(0,227,170,0.09), transparent 70%)' }} />
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative">
-          <div className="rounded-3xl border border-white/[0.08] bg-white/[0.015] p-8 sm:p-12 lg:p-16 text-center">
-            <p className="t-eyebrow text-em mb-5">Hear it for yourself</p>
-            <h2 className="t-h2 text-white max-w-[22ch] mx-auto">Call the AI receptionist right now.</h2>
-            <p className="t-body mt-5 max-w-xl mx-auto">No signup, no form. Call the number and talk to the same voice AI your clients get, so you hear exactly what a caller experiences. Sixty seconds, from your own phone.</p>
-            <a href={`tel:${PLATFORM_DEMO_TEL}`} className="group inline-flex items-center gap-4 sm:gap-6 mt-10 rounded-2xl px-6 sm:px-9 py-5 sm:py-6 transition-colors" style={{ border: '1px solid rgba(0,227,170,0.3)', background: 'rgba(0,227,170,0.06)' }}>
-              <span className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(0,227,170,0.14)', border: '1px solid rgba(0,227,170,0.3)' }}><Phone className="w-6 h-6 text-em" /></span>
-              <span className="text-left">
-                <span className="block font-mono text-[11px] tracking-[0.16em] uppercase text-em/90">Tap to call · live demo</span>
-                <span className="block font-display text-[32px] sm:text-[44px] font-semibold text-white leading-none t-numeric tracking-tight whitespace-nowrap mt-1.5">{PLATFORM_DEMO_NUMBER}</span>
-              </span>
-              <span className="waveform max-sm:hidden ml-1">{Array.from({ length: 12 }).map((_, j) => (<span key={j} className="waveform-bar" style={{ animationDelay: `${j * 70}ms` }} />))}</span>
-            </a>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-7 gap-y-2">
-              {['Answers 24/7', 'Natural, human-sounding voice', 'No signup required'].map(x => (
-                <span key={x} className="flex items-center gap-2 text-[13px] text-white/55"><Check className="w-3.5 h-3.5 text-em flex-shrink-0" strokeWidth={2.5} />{x}</span>
-              ))}
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center rounded-3xl border border-white/[0.08] bg-white/[0.015] p-8 sm:p-12 lg:p-14">
+            {/* copy */}
+            <div>
+              <p className="t-eyebrow text-em mb-5">Hear it for yourself</p>
+              <h2 className="t-h2 text-white">Call the AI receptionist, live.</h2>
+              <p className="t-body mt-5 max-w-md">No signup, no form. Call the number and talk to the same voice AI your clients get, so you hear exactly what a caller experiences. Sixty seconds, from your own phone.</p>
+              <div className="mt-8 flex flex-col gap-3">
+                {['Answers 24/7', 'Natural, human-sounding voice', 'No signup required'].map(x => (
+                  <span key={x} className="flex items-center gap-2.5 text-[14px] text-white/65"><Check className="w-4 h-4 text-em flex-shrink-0" strokeWidth={2.5} />{x}</span>
+                ))}
+              </div>
+            </div>
+            {/* call card */}
+            <div className="rounded-3xl border border-white/[0.1] p-8 sm:p-10 text-center" style={{ background: 'linear-gradient(180deg, rgba(0,227,170,0.06), rgba(255,255,255,0.012))', boxShadow: '0 24px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05)' }}>
+              <p className="font-mono text-[11px] tracking-[0.2em] uppercase text-em/80">Live demo line</p>
+              <p className="font-display text-[30px] sm:text-[38px] font-semibold text-white t-numeric tracking-tight mt-3 whitespace-nowrap">{PLATFORM_DEMO_NUMBER}</p>
+              <div className="flex justify-center mt-7 mb-1">
+                <span className="waveform">{Array.from({ length: 16 }).map((_, j) => (<span key={j} className="waveform-bar" style={{ animationDelay: `${j * 60}ms` }} />))}</span>
+              </div>
+              <a href={`tel:${PLATFORM_DEMO_TEL}`} className="mt-8 inline-flex w-full items-center justify-center gap-2.5 rounded-full py-4 px-6 font-display text-[16px] font-semibold transition-transform hover:scale-[1.015]" style={{ background: '#00e3aa', color: '#06201c', boxShadow: '0 10px 30px rgba(0,227,170,0.3)' }}>
+                <Phone className="w-5 h-5" strokeWidth={2.5} /> Tap to call
+              </a>
             </div>
           </div>
         </div>
