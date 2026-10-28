@@ -94,6 +94,21 @@ interface Branding {
   accentColor: string;
   logoUrl: string | null;
   name: string;
+  // Multiplier for the nav logo height (1 = default). Stored in
+  // branding_overrides.logo_scale, clamped so it can never overflow the fixed
+  // nav bar. See LOGO_SCALE bounds below.
+  logoScale: number;
+}
+
+// Nav logo size bounds. The nav bar is a fixed height, so the scale is clamped
+// here (and the layout also caps the pixel height) to guarantee a bigger logo
+// never makes the nav taller.
+export const LOGO_SCALE_MIN = 1;
+export const LOGO_SCALE_MAX = 1.5;
+export function clampLogoScale(raw: any): number {
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return 1;
+  return Math.min(LOGO_SCALE_MAX, Math.max(LOGO_SCALE_MIN, n));
 }
 
 interface AgencyContextType {
@@ -127,6 +142,7 @@ const defaultBranding: Branding = {
   accentColor: '#01f5d1',
   logoUrl: null,
   name: 'VoiceAI Connect',
+  logoScale: 1,
 };
 
 const AgencyContext = createContext<AgencyContextType>({
@@ -180,6 +196,7 @@ function buildBranding(agency: any): Branding {
     accentColor: agency.accent_color || '#01f5d1',
     logoUrl: agency.logo_url || null,
     name: agency.name || 'VoiceAI Connect',
+    logoScale: clampLogoScale(agency.branding_overrides?.logo_scale),
   };
 }
 

@@ -731,7 +731,7 @@ export default function ComposerModal({
                         >
                           <p className="font-medium text-sm" style={{ color: theme.text }}>{template.name}</p>
                           {template.buyer_type && (
-                            <p className="text-[11px] mt-0.5" style={{ color: theme.primary }}>{getIndustryLabel(template.buyer_type)}</p>
+                            <p className="text-[11px] mt-0.5" style={{ color: primaryColor }}>{getIndustryLabel(template.buyer_type)}</p>
                           )}
                           {template.description && (
                             <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{template.description}</p>
@@ -961,7 +961,7 @@ export default function ComposerModal({
                           <div>
                             <p className="font-medium text-sm" style={{ color: theme.text }}>{template.name}</p>
                             {template.buyer_type && (
-                              <p className="text-[11px] mt-0.5" style={{ color: theme.primary }}>{getIndustryLabel(template.buyer_type)}</p>
+                              <p className="text-[11px] mt-0.5" style={{ color: primaryColor }}>{getIndustryLabel(template.buyer_type)}</p>
                             )}
                             {template.description && (
                               <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{template.description}</p>
