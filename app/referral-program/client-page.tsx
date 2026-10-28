@@ -38,13 +38,13 @@ export default function ReferralProgramPage() {
             <p className="t-eyebrow text-em mb-7">Referral program</p>
             <h1 className="t-h1 text-white max-w-[15ch]">Send agencies our way. Get paid every month.</h1>
             <p className="t-body mt-8 max-w-2xl text-[1rem]">
-              Refer an agency operator to VoiceAI Connect and earn 30% recurring commission for the lifetime of their subscription. No caps, no clawbacks, no expiration. Paid monthly via Stripe Connect — same rails as the main platform.
+              Refer an agency operator to VoiceAI Connect and earn 40% recurring commission for the lifetime of their subscription. No caps, no clawbacks, no expiration. Your commission builds up automatically every time they get billed, and you withdraw it to your Stripe Connect account whenever you want.
             </p>
             <div className="mt-10 flex flex-wrap gap-3">
               <Link href="/signup" className="btn btn-em">Become a referrer <ArrowUpRight className="w-3.5 h-3.5" /></Link>
               <Link href="/#pricing" className="btn btn-ghost-dark">See pricing <ArrowRight className="w-3.5 h-3.5" /></Link>
             </div>
-            <p className="font-mono text-[11px] text-white/35 mt-7">Existing operators only · sign up first</p>
+            <p className="font-mono text-[11px] text-white/35 mt-7">For agencies on a paid plan · sign up first</p>
           </div>
         </div>
       </section>
@@ -57,17 +57,16 @@ export default function ReferralProgramPage() {
               <p className="t-eyebrow text-em mb-6">The math</p>
               <h2 className="t-h2 text-white">Every referral compounds.</h2>
               <p className="t-body mt-6 max-w-md">
-                30% recurring on every plan tier. Your commission grows when they upgrade and pays out as long as they pay us. Twenty referrals on the Professional plan covers your own subscription twice over.
+                40% recurring on every paid plan. Your commission jumps when a referral moves up to Scale, and it keeps paying for as long as they pay us. Ten referrals on the Pro plan covers your own subscription four times over.
               </p>
             </div>
 
             <div className="lg:col-span-7">
               <div className="rounded-2xl border border-white/[0.07] bg-white/[0.018] p-7 lg:p-8">
-                <div className="grid sm:grid-cols-3 gap-5">
+                <div className="grid sm:grid-cols-2 gap-5">
                   {[
-                    { label: 'Per Starter', value: '$30', sub: '/mo recurring' },
-                    { label: 'Per Professional', value: '$60', sub: '/mo recurring' },
-                    { label: 'Per Enterprise', value: '$150', sub: '/mo recurring' },
+                    { label: 'Per Pro referral', value: '$39.60', sub: '/mo recurring (40% of $99)' },
+                    { label: 'Per Scale referral', value: '$199.60', sub: '/mo recurring (40% of $499)' },
                   ].map(s => (
                     <div key={s.label}>
                       <p className="font-mono text-[10px] tracking-[0.14em] uppercase text-white/40">{s.label}</p>
@@ -82,7 +81,7 @@ export default function ReferralProgramPage() {
                 <div className="mt-7 pt-6 border-t border-white/[0.06]">
                   <p className="font-mono text-[10px] tracking-[0.14em] uppercase text-white/40 mb-3">Example</p>
                   <p className="text-[14px] text-white/65 leading-relaxed">
-                    Refer 10 Professional operators. <span className="text-em font-medium">$600/mo</span> recurring commission, paid every month they remain active. After 12 months, you&apos;ve earned <span className="text-em font-medium">$7,200</span> from one round of outreach.
+                    Refer 10 Pro operators. <span className="text-em font-medium">$396/mo</span> recurring commission, paid every month they stay active. After 12 months, you&apos;ve earned <span className="text-em font-medium">$4,752</span> from one round of outreach.
                   </p>
                 </div>
               </div>
@@ -96,15 +95,15 @@ export default function ReferralProgramPage() {
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
           <div ref={r3} className="fade-up max-w-3xl mb-14">
             <p className="t-eyebrow text-em-deep mb-6">Mechanics</p>
-            <h2 className="t-h2 text-black">Simple. Tracked. Paid monthly.</h2>
+            <h2 className="t-h2 text-black">Simple. Tracked. Automatic.</h2>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 max-w-5xl">
             {[
-              { icon: Users, title: 'Activate the program', desc: 'Already have a workspace? Toggle the referral program on in your agency settings.', n: '01' },
-              { icon: Zap, title: 'Share your link', desc: 'You get a tracked link tied to your account. Paste it in cold emails, blog posts, social.', n: '02' },
+              { icon: Users, title: 'Grab your link', desc: 'Open the Referrals tab in your agency dashboard. Your tracked link is already there, nothing to switch on.', n: '01' },
+              { icon: Zap, title: 'Share your link', desc: 'The link is tied to your account. Paste it in cold emails, blog posts, video descriptions, social.', n: '02' },
               { icon: Repeat, title: 'Get attributed for life', desc: 'Anyone who signs up via your link is permanently attributed. No 30-day cookie nonsense.', n: '03' },
-              { icon: DollarSign, title: 'Get paid every month', desc: '30% commission deposits to your Stripe Connect account on the 1st, for as long as they stay subscribed.', n: '04' },
+              { icon: DollarSign, title: 'Get paid, on repeat', desc: '40% of every payment they make lands in your balance automatically. Withdraw to Stripe Connect any time you clear $10.', n: '04' },
             ].map(s => (
               <div key={s.n} className="rounded-2xl border border-black/[0.06] bg-white p-6">
                 <p className="font-mono text-[11px] tracking-[0.14em] text-black/35">{s.n}</p>
@@ -127,18 +126,18 @@ export default function ReferralProgramPage() {
               <p className="t-eyebrow text-em mb-6">The rules</p>
               <h2 className="t-h2 text-white">Straightforward. Honest.</h2>
               <p className="t-body mt-6 max-w-md">
-                No hidden conditions, no surprise clawbacks, no minimum thresholds before payout. The terms below are the entire contract.
+                No hidden conditions and no surprise clawbacks. The terms below are the entire contract.
               </p>
             </div>
 
             <div className="lg:col-span-7 space-y-3">
               {[
-                'Recurring 30% commission for the lifetime of the referred subscription, across all tiers.',
-                'Self-referrals are not eligible — your own subscription does not earn commission.',
-                'Attribution is permanent. Once a customer signs up via your link, they are tied to your account forever.',
-                'Commissions are paid via Stripe Connect on the 1st of each month, in arrears, for prior-month subscription revenue.',
+                'Recurring 40% commission for the lifetime of the referred subscription, on every paid plan.',
+                'Self-referrals are not eligible. Your own subscription does not earn commission.',
+                'Attribution is permanent. Once an agency signs up via your link, they are tied to your account forever.',
+                'Commission accrues automatically each time a referred agency is billed. Withdraw it to your Stripe Connect account whenever your balance is at least $10.',
                 'No cap on referrals or earnings. Refer one agency or refer a hundred.',
-                'If a referred customer cancels, the commission stream stops. There is no clawback for prior months earned.',
+                'If a referred agency cancels, the commission stream stops. There is no clawback for prior months earned.',
                 'Referrals are tracked via a unique URL parameter and stored in our database, not via cookies. Cross-device and cross-session attribution works.',
               ].map((rule, i) => (
                 <div key={i} className="rounded-xl border border-white/[0.07] bg-white/[0.015] p-5 flex gap-4 items-start">
@@ -159,7 +158,7 @@ export default function ReferralProgramPage() {
             <p className="t-eyebrow text-em mb-6">Get your link</p>
             <h2 className="t-h1 text-white">Sign up. Refer. Get paid.</h2>
             <p className="t-body mt-7 max-w-lg">
-              Already running a workspace? Open agency settings and activate the referral program. Not yet a customer? Start a free trial — referral links unlock once your subscription is active.
+              Already running a workspace on the Pro or Scale plan? Your referral link is sitting in the Referrals tab, ready to go. Not yet a customer? Start a free trial, then your link unlocks the moment you move to a paid plan.
             </p>
             <div className="flex flex-wrap gap-3 mt-10">
               <Link href="/signup" className="btn btn-em">Start free trial <ArrowUpRight className="w-3.5 h-3.5" /></Link>
