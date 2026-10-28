@@ -12,8 +12,9 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   FileText, Mail, MessageSquare, Plus, Search, Loader2,
-  MoreVertical, Copy, Trash2, Edit, ArrowRight, Linkedin, Check,
+  MoreVertical, Copy, Trash2, Edit, ArrowRight, Linkedin, Check, Users,
 } from 'lucide-react';
+import { BUYER_TYPES, getBuyerTypeLabel } from '@/lib/buyer-types';
 
 interface Template {
   id: string;
@@ -27,6 +28,7 @@ interface Template {
   sequence_name: string | null;
   sequence_order: number | null;
   delay_days: number | null;
+  buyer_type: string | null;
   use_count: number;
   created_at: string;
 }
@@ -50,6 +52,7 @@ export default function AdminOutreachPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
+  const [buyerFilter, setBuyerFilter] = useState<string | null>(null);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
 
   const getBackendUrl = () => process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
@@ -115,7 +118,9 @@ export default function AdminOutreachPage() {
       template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       template.description?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = !typeFilter || template.type === typeFilter;
-    return matchesSearch && matchesType;
+    // buyerFilter of '' matches templates with no buyer type set (All buyers).
+    const matchesBuyer = buyerFilter === null || (template.buyer_type || '') === buyerFilter;
+    return matchesSearch && matchesType && matchesBuyer;
   });
 
   const emailTemplates = filteredTemplates.filter(t => t.type === 'email');
@@ -143,6 +148,7 @@ export default function AdminOutreachPage() {
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <p className="font-semibold text-[13px] text-[var(--a-ink)]">{template.name}</p>
+                {template.buyer_type && <span className="text-[10px] px-1.5 py-0.5 rounded-md font-medium inline-flex items-center gap-1" style={{ background: '#EEF3EF', color: 'var(--a-muted)' }}><Users className="h-2.5 w-2.5" />{getBuyerTypeLabel(template.buyer_type)}</span>}
                 {template.sequence_order && <span className="text-[10px] px-1.5 py-0.5 rounded-md font-medium" style={{ background: 'var(--a-em-soft)', color: 'var(--a-em-deep)' }}>Step {template.sequence_order}</span>}
                 {template.delay_days && template.delay_days > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded-md" style={{ background: '#EEF3EF', color: 'var(--a-dim)' }}>+{template.delay_days}d</span>}
               </div>
@@ -202,14 +208,29 @@ export default function AdminOutreachPage() {
         {quickCreate('linkedin', 'LinkedIn Template', 'Create new LinkedIn')}
       </div>
 
-      <div className="flex items-center gap-3 mb-6">
-        <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--a-dim)]" />
-          <input type="text" placeholder="Search templates..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="a-input pl-10" />
+      <div className="flex flex-col gap-3 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1 max-w-xs">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--a-dim)]" />
+            <input type="text" placeholder="Search templates..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="a-input pl-10" />
+          </div>
+          <div className="flex items-center gap-0.5 rounded-lg bg-white border border-[var(--a-line-2)] p-0.5">
+            {[{ value: null, label: 'All' }, { value: 'email', label: 'Email' }, { value: 'sms', label: 'SMS' }, { value: 'linkedin', label: 'LinkedIn' }].map((filter) => (
+              <button key={filter.label} onClick={() => setTypeFilter(filter.value)} className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${typeFilter === filter.value ? 'bg-[var(--a-em-soft)] text-[var(--a-em-deep)]' : 'text-[var(--a-dim)] hover:text-[var(--a-muted)]'}`}>{filter.label}</button>
+            ))}
+          </div>
         </div>
-        <div className="flex items-center gap-0.5 rounded-lg bg-white border border-[var(--a-line-2)] p-0.5">
-          {[{ value: null, label: 'All' }, { value: 'email', label: 'Email' }, { value: 'sms', label: 'SMS' }, { value: 'linkedin', label: 'LinkedIn' }].map((filter) => (
-            <button key={filter.label} onClick={() => setTypeFilter(filter.value)} className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${typeFilter === filter.value ? 'bg-[var(--a-em-soft)] text-[var(--a-em-deep)]' : 'text-[var(--a-dim)] hover:text-[var(--a-muted)]'}`}>{filter.label}</button>
+        {/* Buyer-type filter: sort the library by who each message is written for. */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[var(--a-dim)] shrink-0 pr-1"><Users className="h-3.5 w-3.5" /> Buyer</span>
+          {[{ value: null, label: 'All' }, { value: '', label: 'Unassigned' }, ...BUYER_TYPES.map(b => ({ value: b.value, label: b.label }))].map((filter) => (
+            <button
+              key={filter.label}
+              onClick={() => setBuyerFilter(filter.value)}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap border transition-colors ${buyerFilter === filter.value ? 'bg-[var(--a-em-soft)] text-[var(--a-em-deep)] border-[var(--a-em-line)]' : 'text-[var(--a-dim)] border-[var(--a-line-2)] hover:text-[var(--a-muted)]'}`}
+            >
+              {filter.label}
+            </button>
           ))}
         </div>
       </div>
@@ -217,7 +238,7 @@ export default function AdminOutreachPage() {
       {filteredTemplates.length === 0 ? (
         <div className="a-panel py-20 text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl mx-auto mb-4" style={{ background: 'var(--a-em-soft)' }}><FileText className="h-7 w-7 text-[var(--a-em-deep)]" /></div>
-          <p className="text-sm text-[var(--a-muted)] mb-1">{searchQuery || typeFilter ? 'No templates match' : 'No templates yet'}</p>
+          <p className="text-sm text-[var(--a-muted)] mb-1">{searchQuery || typeFilter || buyerFilter !== null ? 'No templates match' : 'No templates yet'}</p>
           <p className="text-xs text-[var(--a-dim)] mb-5">Create your first outreach template</p>
           <Link href="/admin/outreach/templates/new" className="a-btn inline-flex"><Plus className="h-4 w-4" /> Create Template</Link>
         </div>

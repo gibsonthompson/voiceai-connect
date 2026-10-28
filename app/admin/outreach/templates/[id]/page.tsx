@@ -7,6 +7,7 @@ import {
   ArrowLeft, Loader2, Mail, MessageSquare, Save, Info,
   Copy, Check, Linkedin, ChevronDown
 } from 'lucide-react';
+import { BUYER_TYPES } from '@/lib/buyer-types';
 
 interface TemplateVariable {
   key: string;
@@ -97,6 +98,52 @@ function TypeSelect({ value, onChange }: { value: string; onChange: (v: string) 
   );
 }
 
+// Custom themed Buyer Type picker. Groups the template library by the audience
+// persona it targets. Empty value ('') means "All buyers" (stored as NULL).
+function BuyerTypeSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const options = [{ value: '', label: 'All buyers' }, ...BUYER_TYPES.map(b => ({ value: b.value, label: b.label }))];
+  const current = options.find(o => o.value === value) || options[0];
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="a-input flex items-center justify-between text-left"
+        style={{ cursor: 'pointer' }}
+      >
+        <span className="text-[var(--a-ink)] truncate">{current.label}</span>
+        <ChevronDown className={`h-4 w-4 text-[var(--a-dim)] shrink-0 ml-2 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <>
+          <button
+            type="button"
+            aria-hidden="true"
+            tabIndex={-1}
+            className="fixed inset-0 z-40 cursor-default"
+            onClick={() => setOpen(false)}
+          />
+          <div className="absolute left-0 right-0 top-full mt-1.5 z-50 a-card overflow-auto py-1 max-h-64">
+            {options.map(o => (
+              <button
+                key={o.value || 'all'}
+                type="button"
+                onClick={() => { onChange(o.value); setOpen(false); }}
+                className="w-full flex items-center justify-between px-3.5 py-2.5 text-sm text-[var(--a-ink)] hover:bg-[var(--a-em-soft)] transition-colors text-left"
+              >
+                {o.label}
+                {o.value === value && <Check className="h-3.5 w-3.5 text-[var(--a-em-deep)] shrink-0 ml-2" />}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function AdminTemplateEditorPage() {
   const params = useParams();
   const router = useRouter();
@@ -121,6 +168,7 @@ export default function AdminTemplateEditorPage() {
     sequence_name: '',
     sequence_order: '',
     delay_days: '',
+    buyer_type: searchParams.get('buyer_type') || '',
   });
 
   const getBackendUrl = () => process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
@@ -164,6 +212,7 @@ export default function AdminTemplateEditorPage() {
         sequence_name: data.template.sequence_name || '',
         sequence_order: data.template.sequence_order?.toString() || '',
         delay_days: data.template.delay_days?.toString() || '',
+        buyer_type: data.template.buyer_type || '',
       });
     } catch (error) {
       console.error('Failed to fetch template:', error);
@@ -293,15 +342,25 @@ export default function AdminTemplateEditorPage() {
                   />
                 </div>
               </div>
-              <div>
-                <label className="block text-xs text-[var(--a-muted)] mb-2">Description</label>
-                <input
-                  type="text"
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder={formData.type === 'linkedin' ? 'e.g., Connection request for agency owners' : 'When to use this template'}
-                  className={inputClass}
-                />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs text-[var(--a-muted)] mb-2">Description</label>
+                  <input
+                    type="text"
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder={formData.type === 'linkedin' ? 'e.g., Connection request for agency owners' : 'When to use this template'}
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-[var(--a-muted)] mb-2">Buyer type</label>
+                  <BuyerTypeSelect
+                    value={formData.buyer_type}
+                    onChange={(v) => setFormData(prev => ({ ...prev, buyer_type: v }))}
+                  />
+                  <p className="text-[10px] text-[var(--a-dim)] mt-1.5">Who this message is written for</p>
+                </div>
               </div>
               {/* Sequence settings */}
               <div className="grid gap-4 sm:grid-cols-2">

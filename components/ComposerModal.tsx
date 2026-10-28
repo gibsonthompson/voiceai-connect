@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useAgency } from '@/app/agency/context';
 import { getDemoTemplates, composeDemoMessage, logDemoOutreach } from '@/app/agency/demoData';
+import { normalizeIndustry, getIndustryLabel } from '@/lib/industries';
 
 // Safe wrapper, allows ComposerModal to work outside AgencyProvider (admin mode)
 function useSafeAgency(adminMode: boolean) {
@@ -28,6 +29,7 @@ interface Template {
   sequence_order?: number;
   is_follow_up?: boolean;
   sequence_name?: string;
+  buyer_type?: string | null;
 }
 
 interface ComposerModalProps {
@@ -191,11 +193,29 @@ export default function ComposerModal({
     if (templateList.length === 0 || autoSelectDone.current) return;
     autoSelectDone.current = true;
 
-    const targetSequenceOrder = type === 'email' 
-      ? counts.email + 1 
+    const targetSequenceOrder = type === 'email'
+      ? counts.email + 1
       : type === 'sms'
         ? counts.sms + 1
         : counts.linkedin + 1;
+
+    // Industry match takes priority: if this lead has a real industry and any
+    // template is tagged for that industry, prefer it. Among industry matches,
+    // honor the sequence step, then the first non-follow-up, then the first.
+    const leadIndustry = lead.industry ? normalizeIndustry(lead.industry) : null;
+    if (leadIndustry && leadIndustry !== 'general') {
+      const industryMatches = templateList.filter(
+        (t) => t.buyer_type && normalizeIndustry(t.buyer_type) === leadIndustry
+      );
+      if (industryMatches.length > 0) {
+        const pick =
+          industryMatches.find((t) => t.sequence_order === targetSequenceOrder) ||
+          industryMatches.find((t) => !t.is_follow_up) ||
+          industryMatches[0];
+        handleTemplateSelect(pick.id);
+        return;
+      }
+    }
 
     const sequenceMatch = templateList.find(
       (t) => t.sequence_order === targetSequenceOrder
@@ -710,6 +730,9 @@ export default function ComposerModal({
                           onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                         >
                           <p className="font-medium text-sm" style={{ color: theme.text }}>{template.name}</p>
+                          {template.buyer_type && (
+                            <p className="text-[11px] mt-0.5" style={{ color: theme.primary }}>{getIndustryLabel(template.buyer_type)}</p>
+                          )}
                           {template.description && (
                             <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{template.description}</p>
                           )}
@@ -937,6 +960,9 @@ export default function ComposerModal({
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="font-medium text-sm" style={{ color: theme.text }}>{template.name}</p>
+                            {template.buyer_type && (
+                              <p className="text-[11px] mt-0.5" style={{ color: theme.primary }}>{getIndustryLabel(template.buyer_type)}</p>
+                            )}
                             {template.description && (
                               <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{template.description}</p>
                             )}

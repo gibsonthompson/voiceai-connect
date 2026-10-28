@@ -3,13 +3,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { 
+import {
   ArrowLeft, Loader2, Mail, MessageSquare, PhoneCall, Save, Info,
-  Copy, Check, Plus
+  Copy, Check, Plus, ChevronDown
 } from 'lucide-react';
 import { useAgency } from '../../../context';
 import { useTheme } from '../../../../../hooks/useTheme';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
+import { SELECTABLE_INDUSTRIES } from '@/lib/industries';
 
 interface TemplateVariable {
   key: string;
@@ -21,6 +22,57 @@ interface VariableGroup {
   lead: TemplateVariable[];
   agency: TemplateVariable[];
   dynamic: TemplateVariable[];
+}
+
+// Custom themed dropdown (dark agency theme). Replaces native <select> so no
+// OS/Safari picker UI appears. Used for Type and Industry here.
+function ThemedSelect({ value, onChange, options, theme, ariaLabel }: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  theme: any;
+  ariaLabel?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const current = options.find(o => o.value === value) || options[0];
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        aria-label={ariaLabel}
+        onClick={() => setOpen(o => !o)}
+        className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm flex items-center justify-between text-left focus:outline-none"
+        style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text, cursor: 'pointer' }}
+      >
+        <span className="truncate">{current?.label}</span>
+        <ChevronDown className="h-4 w-4 shrink-0 ml-2 transition-transform" style={{ color: theme.textMuted, transform: open ? 'rotate(180deg)' : 'none' }} />
+      </button>
+      {open && (
+        <>
+          <button type="button" aria-hidden="true" tabIndex={-1} className="fixed inset-0 z-40 cursor-default" onClick={() => setOpen(false)} />
+          <div
+            className="absolute left-0 right-0 top-full mt-1.5 z-50 rounded-xl overflow-auto py-1 max-h-64 shadow-xl"
+            style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
+          >
+            {options.map(o => (
+              <button
+                key={o.value || 'any'}
+                type="button"
+                onClick={() => { onChange(o.value); setOpen(false); }}
+                className="w-full flex items-center justify-between px-3.5 py-2.5 text-sm text-left transition-colors"
+                style={{ color: theme.text }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.hover)}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                {o.label}
+                {o.value === value && <Check className="h-3.5 w-3.5 shrink-0 ml-2" style={{ color: theme.primary }} />}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
 
 export default function TemplateEditorPage() {
@@ -55,6 +107,9 @@ export default function TemplateEditorPage() {
     is_follow_up: false,
     sequence_name: '',
     delay_days: '',
+    // Agency templates store the target lead industry in buyer_type so the
+    // composer can auto-match a template to a pulled lead's industry.
+    buyer_type: searchParams.get('industry') || '',
   });
 
   const isCallScript = formData.type === 'call_script';
@@ -122,6 +177,7 @@ export default function TemplateEditorPage() {
         is_follow_up: data.template.is_follow_up || false,
         sequence_name: data.template.sequence_name || '',
         delay_days: data.template.delay_days?.toString() || '',
+        buyer_type: data.template.buyer_type || '',
       });
     } catch (error) {
       console.error('Failed to fetch template:', error);
@@ -368,28 +424,45 @@ export default function TemplateEditorPage() {
                 </div>
                 <div>
                   <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Type</label>
-                  <select
+                  <ThemedSelect
                     value={formData.type}
-                    onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
-                    className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none"
-                    style={inputStyle}
-                  >
-                    <option value="email">Email</option>
-                    <option value="sms">SMS</option>
-                    <option value="call_script">Call Script</option>
-                  </select>
+                    onChange={(v) => setFormData(prev => ({ ...prev, type: v }))}
+                    theme={theme}
+                    ariaLabel="Template type"
+                    options={[
+                      { value: 'email', label: 'Email' },
+                      { value: 'sms', label: 'SMS' },
+                      { value: 'call_script', label: 'Call Script' },
+                    ]}
+                  />
                 </div>
               </div>
-              <div>
-                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Description</label>
-                <input
-                  type="text"
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder={isCallScript ? 'e.g., First cold call to a new lead — build rapport and qualify' : 'Brief description of when to use this'}
-                  className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none"
-                  style={inputStyle}
-                />
+              <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Description</label>
+                  <input
+                    type="text"
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder={isCallScript ? 'e.g., First cold call to a new lead, build rapport and qualify' : 'Brief description of when to use this'}
+                    className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none"
+                    style={inputStyle}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Industry</label>
+                  <ThemedSelect
+                    value={formData.buyer_type}
+                    onChange={(v) => setFormData(prev => ({ ...prev, buyer_type: v }))}
+                    theme={theme}
+                    ariaLabel="Target industry"
+                    options={[
+                      { value: '', label: 'Any industry' },
+                      ...SELECTABLE_INDUSTRIES.map(i => ({ value: i.value, label: i.label })),
+                    ]}
+                  />
+                  <p className="text-[11px] mt-1.5" style={{ color: theme.textMuted }}>Auto-matches leads in this industry when you reach out</p>
+                </div>
               </div>
             </div>
           </div>

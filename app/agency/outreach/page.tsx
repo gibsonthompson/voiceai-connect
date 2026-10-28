@@ -2,14 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { 
+import {
   FileText, Mail, MessageSquare, PhoneCall, Plus, Search, Loader2,
-  MoreVertical, Copy, Trash2, Edit, Sparkles, Megaphone, ChevronRight
+  MoreVertical, Copy, Trash2, Edit, Sparkles, Megaphone, ChevronRight, Building2
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import LockedFeatureOverlay from '@/components/LockedFeature';
 import { useTheme } from '../../../hooks/useTheme';
+import { SELECTABLE_INDUSTRIES, getIndustryLabel } from '@/lib/industries';
 
 interface Template {
   id: string;
@@ -22,6 +23,7 @@ interface Template {
   is_follow_up: boolean;
   sequence_name: string | null;
   sequence_order: number | null;
+  buyer_type: string | null;
   use_count: number;
   created_at: string;
 }
@@ -34,6 +36,7 @@ export default function OutreachPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
+  const [industryFilter, setIndustryFilter] = useState<string | null>(null);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
 
   useEffect(() => {
@@ -122,7 +125,9 @@ export default function OutreachPage() {
       template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       template.description?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = !typeFilter || template.type === typeFilter;
-    return matchesSearch && matchesType;
+    // industryFilter of '' matches templates with no industry set (Any industry).
+    const matchesIndustry = industryFilter === null || (template.buyer_type || '') === industryFilter;
+    return matchesSearch && matchesType && matchesIndustry;
   });
 
   // Deterministic order within each type. Call scripts seed with a null
@@ -306,11 +311,20 @@ export default function OutreachPage() {
                 </span>
               )}
               {template.type === 'call_script' && template.sequence_order && (
-                <span 
+                <span
                   className="text-[9px] sm:text-xs px-1.5 py-0.5 rounded"
                   style={{ backgroundColor: 'rgba(34,197,94,0.1)', color: theme.isDark ? '#4ade80' : '#16a34a' }}
                 >
                   Step {template.sequence_order}
+                </span>
+              )}
+              {template.buyer_type && (
+                <span
+                  className="inline-flex items-center gap-1 text-[9px] sm:text-xs px-1.5 py-0.5 rounded"
+                  style={{ backgroundColor: theme.hover, color: theme.textMuted }}
+                >
+                  <Building2 className="h-2.5 w-2.5" />
+                  {getIndustryLabel(template.buyer_type)}
                 </span>
               )}
             </div>
@@ -494,7 +508,8 @@ export default function OutreachPage() {
       </div>
 
       {/* Search & Filters */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4 sm:mb-6">
+      <div className="flex flex-col gap-3 mb-4 sm:mb-6">
+       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="relative flex-1 sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted }} />
           <input
@@ -529,6 +544,34 @@ export default function OutreachPage() {
             </button>
           ))}
         </div>
+       </div>
+       {/* Industry filter: narrow templates to a lead industry. */}
+       <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1">
+         <span className="inline-flex items-center gap-1.5 text-[11px] font-medium shrink-0 pr-1" style={{ color: theme.textMuted }}>
+           <Building2 className="h-3.5 w-3.5" /> Industry
+         </span>
+         {[
+           { value: null, label: 'All' },
+           { value: '', label: 'Any' },
+           ...SELECTABLE_INDUSTRIES.map(i => ({ value: i.value, label: i.label })),
+         ].map((filter) => (
+           <button
+             key={filter.label}
+             onClick={() => setIndustryFilter(filter.value)}
+             className="rounded-full px-3 py-1.5 text-xs font-medium whitespace-nowrap border transition-colors"
+             style={industryFilter === filter.value ? {
+               backgroundColor: theme.primary15,
+               color: theme.primary,
+               borderColor: theme.primary,
+             } : {
+               color: theme.textMuted,
+               borderColor: theme.inputBorder,
+             }}
+           >
+             {filter.label}
+           </button>
+         ))}
+       </div>
       </div>
 
       {/* Templates List */}
@@ -544,7 +587,7 @@ export default function OutreachPage() {
             <FileText className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: theme.primary, opacity: 0.8 }} />
           </div>
           <p className="mt-4 font-medium text-sm sm:text-base" style={{ color: theme.text, opacity: 0.7 }}>
-            {searchQuery || typeFilter ? 'No templates match your search' : 'No templates yet'}
+            {searchQuery || typeFilter || industryFilter !== null ? 'No templates match your search' : 'No templates yet'}
           </p>
           <p className="text-xs sm:text-sm mt-1 mb-4" style={{ color: theme.textMuted }}>
             Create your first outreach template
