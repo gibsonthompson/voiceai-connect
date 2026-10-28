@@ -96,16 +96,16 @@ interface Branding {
   logoUrl: string | null;
   name: string;
   // Multiplier for the nav logo height (1 = default). Stored in
-  // branding_overrides.logo_scale, clamped so it can never overflow the fixed
-  // nav bar. See LOGO_SCALE bounds below.
+  // branding_overrides.logo_scale and clamped to the bounds below. The top logo
+  // box grows to fit a larger logo (the nav links are pushed down), so this just
+  // controls how tall the logo is.
   logoScale: number;
 }
 
-// Nav logo size bounds. The nav bar is a fixed height, so the scale is clamped
-// here (and the layout also caps the pixel height) to guarantee a bigger logo
-// never makes the nav taller.
+// Nav logo size bounds. The logo header grows to fit, so a larger scale makes
+// the top logo taller without changing the nav itself.
 export const LOGO_SCALE_MIN = 1;
-export const LOGO_SCALE_MAX = 1.5;
+export const LOGO_SCALE_MAX = 4;
 export function clampLogoScale(raw: any): number {
   const n = Number(raw);
   if (!Number.isFinite(n)) return 1;

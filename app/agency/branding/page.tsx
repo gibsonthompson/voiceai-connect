@@ -196,21 +196,18 @@ export default function BrandingPage() {
 
       <div className="rounded-xl p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="flex items-center gap-3"><div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Sparkles className="h-4.5 w-4.5" style={{ color: theme.primary }} /></div><div><p className="text-sm font-medium" style={{ color: theme.text }}>Auto-generate a palette</p><p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>Shuffles your brand colors ({primaryColor}, {secondaryColor}, {accentColor}) into different arrangements. Press multiple times for different combos.</p></div></div><button onClick={handleShuffle} className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-all hover:opacity-90 flex-shrink-0" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Shuffle className="h-4 w-4" />Shuffle</button></div>
 
-      {/* Logo size: scale the nav logo. Capped so a bigger logo never grows the nav bar. */}
+      {/* Logo size: scale the nav logo. The top logo box grows to fit, the nav itself is unchanged. */}
       <div className="rounded-xl p-4 sm:p-5 mb-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
         <div className="flex items-center gap-3 mb-4">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Maximize2 className="h-4 w-4" style={{ color: theme.primary }} /></div>
-          <div>
-            <p className="text-sm font-medium" style={{ color: theme.text }}>Logo size</p>
-            <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>Make your logo bigger in the nav. It stays inside the bar, so the nav never grows.</p>
-          </div>
+          <p className="text-sm font-medium" style={{ color: theme.text }}>Logo size</p>
         </div>
 
         {agency?.logo_url ? (
           <>
             <div className="rounded-xl overflow-hidden mb-4" style={{ border: `1px solid ${theme.border}` }}>
-              <div className="flex items-center px-5" style={{ height: '64px', backgroundColor: theme.sidebarBg, borderBottom: `1px solid ${theme.sidebarBorder}` }}>
-                <img src={agency.logo_url} alt="Logo preview" style={{ height: `${Math.round(32 * logoScale)}px`, maxHeight: '48px', width: 'auto' }} className="object-contain" />
+              <div className="flex items-center px-5 py-3" style={{ minHeight: '64px', backgroundColor: theme.sidebarBg, borderBottom: `1px solid ${theme.sidebarBorder}` }}>
+                <img src={agency.logo_url} alt="Logo preview" style={{ height: `${Math.round(32 * logoScale)}px`, width: 'auto', maxWidth: '100%' }} className="object-contain" />
               </div>
             </div>
 
@@ -226,15 +223,14 @@ export default function BrandingPage() {
                 className="logo-range flex-1"
                 min={LOGO_SCALE_MIN}
                 max={LOGO_SCALE_MAX}
-                step={0.05}
+                step={0.1}
                 value={logoScale}
                 onChange={(e) => { setLogoScale(clampLogoScale(Number(e.target.value))); setSaved(false); setError(null); }}
                 style={{ ['--pct']: `${((logoScale - LOGO_SCALE_MIN) / (LOGO_SCALE_MAX - LOGO_SCALE_MIN)) * 100}%` } as unknown as React.CSSProperties}
                 aria-label="Logo size"
               />
-              <span className="text-sm font-medium tabular-nums w-12 text-right" style={{ color: theme.text }}>{logoScale.toFixed(2)}x</span>
+              <span className="text-sm font-medium tabular-nums w-12 text-right" style={{ color: theme.text }}>{logoScale.toFixed(1)}x</span>
             </div>
-            <p className="text-[11px] mt-2" style={{ color: theme.textMuted }}>Save to apply. Shows in your dashboard nav and your clients&apos; dashboards.</p>
           </>
         ) : (
           <div className="rounded-xl p-4 text-sm" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>
