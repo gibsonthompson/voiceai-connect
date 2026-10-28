@@ -60,9 +60,48 @@ function EarningsCalculator() {
   const monthly = perReferral * count;
   const yearly = monthly * 12;
   const coversOwn = RATE * count; // identical for both plans
+  const pct = ((count - 1) / (100 - 1)) * 100; // slider fill %
 
   return (
     <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-stretch">
+      {/* Custom slider styling: no native OS range UI, mint fill + dark thumb. */}
+      <style>{`
+        input.ref-range {
+          -webkit-appearance: none;
+          appearance: none;
+          height: 8px;
+          border-radius: 999px;
+          background: linear-gradient(90deg, #00c6b2 0%, #00c6b2 var(--pct,10%), rgba(0,0,0,0.09) var(--pct,10%), rgba(0,0,0,0.09) 100%);
+          outline: none;
+          cursor: pointer;
+        }
+        input.ref-range::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 22px;
+          height: 22px;
+          border-radius: 50%;
+          background: #050505;
+          border: 3px solid #ffffff;
+          box-shadow: 0 1px 5px rgba(0,0,0,0.3);
+          cursor: pointer;
+        }
+        input.ref-range::-moz-range-thumb {
+          width: 22px;
+          height: 22px;
+          border-radius: 50%;
+          background: #050505;
+          border: 3px solid #ffffff;
+          box-shadow: 0 1px 5px rgba(0,0,0,0.3);
+          cursor: pointer;
+        }
+        input.ref-range::-moz-range-track {
+          height: 8px;
+          border-radius: 999px;
+          background: transparent;
+        }
+        input.ref-range:focus-visible { box-shadow: 0 0 0 3px rgba(0,198,178,0.3); }
+      `}</style>
       {/* Controls */}
       <div className="flex flex-col gap-7">
         <div>
@@ -77,8 +116,8 @@ function EarningsCalculator() {
             step={1}
             value={count}
             onChange={(e) => setCount(Number(e.target.value))}
-            className="w-full"
-            style={{ accentColor: '#00c6b2' }}
+            className="ref-range w-full"
+            style={{ ['--pct' as string]: `${pct}%` } as React.CSSProperties}
             aria-label="Number of agencies you refer"
           />
           <div className="flex items-center justify-between mt-2 font-mono text-[10px] text-black/30">
