@@ -66,28 +66,6 @@ function EarningsCalculator() {
       {/* Controls */}
       <div className="flex flex-col gap-7">
         <div>
-          <p className="font-mono text-[11px] tracking-[0.12em] uppercase text-black/40 mb-3">Their plan</p>
-          <div className="inline-flex rounded-full border border-black/[0.08] bg-black/[0.03] p-1">
-            {(Object.keys(PLANS) as PlanId[]).map((id) => {
-              const active = plan === id;
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => setPlan(id)}
-                  className="rounded-full px-5 py-2 text-sm font-medium transition-colors"
-                  style={active
-                    ? { background: '#050505', color: '#fff' }
-                    : { background: 'transparent', color: 'rgba(0,0,0,0.5)' }}
-                >
-                  {PLANS[id].name} <span className="font-mono text-[11px] opacity-60">${PLANS[id].price}/mo</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div>
           <div className="flex items-baseline justify-between mb-3">
             <p className="font-mono text-[11px] tracking-[0.12em] uppercase text-black/40">Agencies you refer</p>
             <p className="font-display text-2xl font-medium text-black tabular-nums tracking-tight">{count}</p>
@@ -121,6 +99,28 @@ function EarningsCalculator() {
                     : { background: 'transparent', borderColor: 'rgba(0,0,0,0.1)', color: 'rgba(0,0,0,0.5)' }}
                 >
                   {n}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div>
+          <p className="font-mono text-[11px] tracking-[0.12em] uppercase text-black/40 mb-3">Their plan</p>
+          <div className="inline-flex rounded-full border border-black/[0.08] bg-black/[0.03] p-1">
+            {(Object.keys(PLANS) as PlanId[]).map((id) => {
+              const active = plan === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setPlan(id)}
+                  className="rounded-full px-5 py-2 text-sm font-medium transition-colors"
+                  style={active
+                    ? { background: '#050505', color: '#fff' }
+                    : { background: 'transparent', color: 'rgba(0,0,0,0.5)' }}
+                >
+                  {PLANS[id].name} <span className="font-mono text-[11px] opacity-60">${PLANS[id].price}/mo</span>
                 </button>
               );
             })}
