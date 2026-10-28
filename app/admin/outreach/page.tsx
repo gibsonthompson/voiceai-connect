@@ -12,7 +12,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   FileText, Mail, MessageSquare, Plus, Search, Loader2,
-  MoreVertical, Copy, Trash2, Edit, ArrowRight, Linkedin, Check, Users, GripVertical,
+  MoreVertical, Copy, Trash2, Edit, Linkedin, Check, Users, GripVertical,
 } from 'lucide-react';
 import { BUYER_TYPES, getBuyerTypeLabel } from '@/lib/buyer-types';
 
@@ -237,21 +237,6 @@ export default function AdminOutreachPage() {
     );
   };
 
-  const quickCreate = (type: 'email' | 'sms' | 'linkedin', label: string, sub: string) => {
-    const s = TYPE_STYLE[type];
-    return (
-      <Link href={`/admin/outreach/templates/new?type=${type}`} className="group a-card p-4 hover:-translate-y-px transition-transform">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ background: s.bg }}>
-            {type === 'email' ? <Mail className="h-5 w-5" style={{ color: s.color }} /> : type === 'sms' ? <MessageSquare className="h-5 w-5" style={{ color: s.color }} /> : <Linkedin className="h-5 w-5" style={{ color: s.color }} />}
-          </div>
-          <div><p className="font-semibold text-[13px] text-[var(--a-ink)]">{label}</p><p className="text-xs text-[var(--a-dim)]">{sub}</p></div>
-          <ArrowRight className="h-3.5 w-3.5 ml-auto text-[var(--a-dim)] group-hover:text-[var(--a-em-deep)] transition-colors" />
-        </div>
-      </Link>
-    );
-  };
-
   return (
     <div className="admin-scope p-5 lg:p-8 max-w-[1400px]">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
@@ -260,12 +245,6 @@ export default function AdminOutreachPage() {
           <p className="mt-1 text-sm text-[var(--a-dim)]">Email, SMS, and LinkedIn templates for your sales pipeline</p>
         </div>
         <Link href="/admin/outreach/templates/new" className="a-btn"><Plus className="h-4 w-4" /> New Template</Link>
-      </div>
-
-      <div className="grid gap-3 grid-cols-1 sm:grid-cols-3 mb-6">
-        {quickCreate('email', 'Email Template', 'Create new email')}
-        {quickCreate('sms', 'SMS Template', 'Create new SMS')}
-        {quickCreate('linkedin', 'LinkedIn Template', 'Create new LinkedIn')}
       </div>
 
       <div className="flex flex-col gap-3 mb-6">
