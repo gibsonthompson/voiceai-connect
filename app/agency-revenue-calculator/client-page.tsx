@@ -175,7 +175,7 @@ function Row({ label, value, strong, em }: { label: string; value: string; stron
   );
 }
 
-export default function ResellerCalculatorPage() {
+export default function AgencyRevenueCalculatorPage() {
   return (
     <main className="min-h-screen bg-ink">
       <MarketingNav />
@@ -185,10 +185,10 @@ export default function ResellerCalculatorPage() {
         <div className="hero-aurora" />
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative">
           <FadeIn className="max-w-4xl">
-            <p className="t-eyebrow text-em mb-7">Reseller earnings calculator</p>
-            <h1 className="t-h1 text-white max-w-[16ch]">See what you&apos;d make reselling AI receptionists.</h1>
+            <p className="t-eyebrow text-em mb-7">Agency revenue calculator</p>
+            <h1 className="t-h1 text-white max-w-[17ch]">See what your agency can earn with AI receptionists.</h1>
             <p className="t-body mt-8 max-w-2xl text-[1rem]">
-              You charge the client. You keep the margin. This is the real math: your revenue minus exactly what the platform costs you, including per-client fees and voice minutes. Drag the sliders.
+              You offer AI receptionists to your clients under your own brand. VoiceAI Connect runs the infrastructure behind it, you set the price and keep the margin. This is the real math: revenue minus exactly what the platform costs you, per-client fees and voice minutes included. Drag the sliders.
             </p>
             <div className="mt-10 flex flex-wrap gap-3">
               <Link href="/signup" className="btn btn-em">Start free trial <ArrowUpRight className="w-3.5 h-3.5" /></Link>
