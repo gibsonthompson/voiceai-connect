@@ -121,7 +121,9 @@ export function CustomSelect({ value, onChange, options, placeholder, disabled, 
           ref={listRef}
           role="listbox"
           className="rounded-xl overflow-y-auto py-1 shadow-xl"
-          style={{ position: 'fixed', top: pos.top, left: pos.left, width: pos.width, maxHeight: pos.maxH, zIndex: 9999, backgroundColor: ui.panelBg, border: `1px solid ${ui.panelBorder}` }}
+          // Opaque base under the themed panel color so a translucent panelBg
+          // (e.g. theme.card = rgba(...)) never lets page content bleed through.
+          style={{ position: 'fixed', top: pos.top, left: pos.left, width: pos.width, maxHeight: pos.maxH, zIndex: 9999, backgroundColor: ui.isDark ? '#1c1c1b' : '#ffffff', backgroundImage: `linear-gradient(${ui.panelBg}, ${ui.panelBg})`, border: `1px solid ${ui.panelBorder}` }}
         >
           {options.map((o, i) => {
             const isSel = o.value === value;
@@ -216,7 +218,7 @@ export function CountrySelect({ value, onChange, countries, disabled, ui }: {
         <ChevronDown className={`h-4 w-4 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} style={{ color: ui.muted }} />
       </button>
       {open && (
-        <div className="absolute z-50 mt-1.5 w-full rounded-xl overflow-hidden shadow-xl" style={{ backgroundColor: ui.panelBg, border: `1px solid ${ui.panelBorder}` }}>
+        <div className="absolute z-50 mt-1.5 w-full rounded-xl overflow-hidden shadow-xl" style={{ backgroundColor: ui.isDark ? '#1c1c1b' : '#ffffff', backgroundImage: `linear-gradient(${ui.panelBg}, ${ui.panelBg})`, border: `1px solid ${ui.panelBorder}` }}>
           <div className="p-2" style={{ borderBottom: `1px solid ${ui.panelBorder}` }}>
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: ui.muted }} />
