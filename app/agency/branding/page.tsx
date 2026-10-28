@@ -116,9 +116,15 @@ export default function BrandingPage() {
   const [brandKit, setBrandKit] = useState<any>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [logoScale, setLogoScale] = useState<number>(1);
+  // Core brand palette (primary/secondary/accent). Edited here so the branding
+  // page is the single white-label hub; persisted as agency.primary_color etc.
+  const [brandPrimary, setBrandPrimary] = useState('#00a19b');
+  const [brandSecondary, setBrandSecondary] = useState('#007e77');
+  const [brandAccent, setBrandAccent] = useState('#01f5d1');
 
   useEffect(() => { if (agency?.branding_overrides) { setOverrides({ ...agency.branding_overrides }); } else { setOverrides({}); } }, [agency?.branding_overrides]);
   useEffect(() => { setLogoScale(clampLogoScale(agency?.branding_overrides?.logo_scale)); }, [agency?.branding_overrides]);
+  useEffect(() => { if (agency) { setBrandPrimary(agency.primary_color || '#00a19b'); setBrandSecondary(agency.secondary_color || '#007e77'); setBrandAccent(agency.accent_color || '#01f5d1'); } }, [agency?.primary_color, agency?.secondary_color, agency?.accent_color]);
   useEffect(() => { setDisplayFont(agency?.display_font || null); setBodyFont(agency?.body_font || null); }, [agency?.display_font, agency?.body_font]);
   useEffect(() => { setIconStyle(agency?.icon_style || 'lucide'); setBrandKit(agency?.brand_kit || null); }, [agency?.icon_style, agency?.brand_kit]);
 
@@ -147,9 +153,9 @@ export default function BrandingPage() {
   useEffect(() => { const href = googleFontsHref([displayFont, bodyFont]); if (!href) return; const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = href; document.head.appendChild(link); return () => { if (link.parentNode) link.parentNode.removeChild(link); }; }, [displayFont, bodyFont]);
 
   const mode = agency?.website_theme !== 'light' ? 'dark' : 'light';
-  const primaryColor = branding.primaryColor || '#00a19b';
-  const secondaryColor = branding.secondaryColor || '#007e77';
-  const accentColor = branding.accentColor || '#01f5d1';
+  const primaryColor = isValidHex(brandPrimary) ? brandPrimary : (branding.primaryColor || '#00a19b');
+  const secondaryColor = isValidHex(brandSecondary) ? brandSecondary : (branding.secondaryColor || '#007e77');
+  const accentColor = isValidHex(brandAccent) ? brandAccent : (branding.accentColor || '#01f5d1');
   const previewTheme = useMemo(() => buildTheme(mode as 'dark' | 'light', primaryColor, overrides), [mode, primaryColor, overrides]);
   const defaultTheme = useMemo(() => buildTheme(mode as 'dark' | 'light', primaryColor), [mode, primaryColor]);
   const getDefaultForField = useCallback((key: keyof BrandingOverrides): string => { const map: Record<keyof BrandingOverrides, string> = { nav_bg: defaultTheme.sidebarBg, nav_text: defaultTheme.sidebarText, nav_accent: defaultTheme.sidebarActiveItemColor, page_bg: defaultTheme.bg, card_bg: defaultTheme.card, card_border: defaultTheme.border, button_text: defaultTheme.primaryText, text_primary: defaultTheme.text, text_muted: defaultTheme.textMuted }; return map[key] || '#000000'; }, [defaultTheme]);
@@ -163,14 +169,15 @@ export default function BrandingPage() {
   const fontsChanged = (agency?.display_font || null) !== displayFont || (agency?.body_font || null) !== bodyFont;
   const kitChanged = (agency?.icon_style || 'lucide') !== iconStyle || JSON.stringify(agency?.brand_kit || null) !== JSON.stringify(brandKit || null);
   const logoScaleChanged = clampLogoScale(agency?.branding_overrides?.logo_scale) !== logoScale;
-  const dirty = hasChanges || fontsChanged || kitChanged || logoScaleChanged;
+  const brandColorsChanged = (agency?.primary_color || '#00a19b') !== brandPrimary || (agency?.secondary_color || '#007e77') !== brandSecondary || (agency?.accent_color || '#01f5d1') !== brandAccent;
+  const dirty = hasChanges || fontsChanged || kitChanged || logoScaleChanged || brandColorsChanged;
 
   const handleShuffle = () => { const isDark = mode === 'dark'; let idx = Math.floor(Math.random() * PALETTE_RECIPES.length); if (PALETTE_RECIPES.length > 1) { while (idx === lastShuffleIndex) { idx = Math.floor(Math.random() * PALETTE_RECIPES.length); } } setLastShuffleIndex(idx); const recipe = PALETTE_RECIPES[idx]; const result = recipe.build(primaryColor, secondaryColor, accentColor, isDark); setOverrides(result); setSaved(false); setError(null); };
   const handleThemeSwitch = async (newMode: 'light' | 'dark') => { if (mode === newMode || !agency) return; setSwitchingTheme(true); setError(null); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ website_theme: newMode }) }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to update theme'); } await refreshAgency(); } catch (err) { setError(err instanceof Error ? err.message : 'Failed to update theme mode'); } finally { setSwitchingTheme(false); } };
   const handleChange = (key: keyof BrandingOverrides, value: string) => { setOverrides(prev => ({ ...prev, [key]: value })); setSaved(false); setError(null); };
   const handleClear = (key: keyof BrandingOverrides) => { setOverrides(prev => { const next = { ...prev }; delete next[key]; return next; }); setSaved(false); setError(null); };
   const handleResetAll = () => { setOverrides({}); setSaved(false); setError(null); };
-  const handleSave = async () => { if (!agency) return; setSaving(true); setError(null); setSaved(false); try { const token = localStorage.getItem('auth_token'); const cleanOverrides: BrandingOverrides = {}; for (const field of COLOR_FIELDS) { const val = overrides[field.key]; if (isValidHex(val)) { cleanOverrides[field.key] = val; } } if (logoScale > 1) { (cleanOverrides as any).logo_scale = Math.round(logoScale * 100) / 100; } const payload = { branding_overrides: Object.keys(cleanOverrides).length > 0 ? cleanOverrides : null, display_font: displayFont || null, body_font: bodyFont || null, icon_style: iconStyle || null, brand_kit: brandKit || null }; const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload) }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to save branding'); } await refreshAgency(); setSaved(true); setTimeout(() => setSaved(false), 3000); } catch (err) { setError(err instanceof Error ? err.message : 'Failed to save'); } finally { setSaving(false); } };
+  const handleSave = async () => { if (!agency) return; setSaving(true); setError(null); setSaved(false); try { const token = localStorage.getItem('auth_token'); const cleanOverrides: BrandingOverrides = {}; for (const field of COLOR_FIELDS) { const val = overrides[field.key]; if (isValidHex(val)) { cleanOverrides[field.key] = val; } } if (logoScale > 1) { (cleanOverrides as any).logo_scale = Math.round(logoScale * 100) / 100; } const payload = { branding_overrides: Object.keys(cleanOverrides).length > 0 ? cleanOverrides : null, display_font: displayFont || null, body_font: bodyFont || null, icon_style: iconStyle || null, brand_kit: brandKit || null, primary_color: isValidHex(brandPrimary) ? brandPrimary : (agency.primary_color || '#00a19b'), secondary_color: isValidHex(brandSecondary) ? brandSecondary : (agency.secondary_color || '#007e77'), accent_color: isValidHex(brandAccent) ? brandAccent : (agency.accent_color || '#01f5d1') }; const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload) }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to save branding'); } await refreshAgency(); setSaved(true); setTimeout(() => setSaved(false), 3000); } catch (err) { setError(err instanceof Error ? err.message : 'Failed to save'); } finally { setSaving(false); } };
 
   // ── LOCKED FOR FREE PLAN ────────────────────────────────────────────
   if (!hasWhiteLabel) {
@@ -194,6 +201,36 @@ export default function BrandingPage() {
       {error && (<div className="rounded-xl p-4 mb-6 flex items-center gap-3" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-5 w-5 flex-shrink-0" style={{ color: theme.error }} /><p className="text-sm" style={{ color: theme.errorText }}>{error}</p></div>)}
 
       <div className="rounded-xl p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="flex items-center gap-3"><div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>{mode === 'dark' ? <Moon className="h-4 w-4" style={{ color: theme.primary }} /> : <Sun className="h-4 w-4" style={{ color: theme.primary }} />}</div><div><p className="text-sm font-medium" style={{ color: theme.text }}>Dashboard Theme</p><p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>Applies to both your agency dashboard and all client dashboards</p></div></div><div className="flex items-center gap-1 rounded-xl p-1" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>{(['light', 'dark'] as const).map((m) => (<button key={m} onClick={() => handleThemeSwitch(m)} disabled={switchingTheme} className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition-all disabled:opacity-70" style={{ backgroundColor: mode === m ? theme.primary : 'transparent', color: mode === m ? theme.primaryText : theme.textMuted }}>{m === 'light' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}{m.charAt(0).toUpperCase() + m.slice(1)}{switchingTheme && mode !== m && <Loader2 className="h-3 w-3 animate-spin ml-1" />}</button>))}</div></div>
+
+      {/* Brand colors: the core white-label palette. Primary drives buttons and the
+          default nav highlight; all three feed the theme and the shuffle. */}
+      <div className="rounded-xl p-4 sm:p-5 mb-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Paintbrush className="h-4 w-4" style={{ color: theme.primary }} /></div>
+          <div>
+            <p className="text-sm font-medium" style={{ color: theme.text }}>Brand colors</p>
+            <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>Your core palette. Primary drives buttons and the default nav highlight.</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {[
+            { label: 'Primary', val: brandPrimary, set: setBrandPrimary },
+            { label: 'Secondary', val: brandSecondary, set: setBrandSecondary },
+            { label: 'Accent', val: brandAccent, set: setBrandAccent },
+          ].map((c) => (
+            <div key={c.label} className="rounded-xl p-3" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+              <p className="text-[11px] font-medium mb-2" style={{ color: theme.textMuted }}>{c.label}</p>
+              <div className="flex items-center gap-2">
+                <div className="relative w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 border" style={{ borderColor: theme.border }}>
+                  <div className="w-full h-full" style={{ backgroundColor: isValidHex(c.val) ? c.val : '#000000' }} />
+                  <input type="color" value={isValidHex(c.val) ? c.val : '#000000'} onChange={(e) => { c.set(e.target.value); setSaved(false); setError(null); }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" aria-label={`${c.label} color`} />
+                </div>
+                <input type="text" value={c.val} onChange={(e) => { c.set(e.target.value); setSaved(false); setError(null); }} spellCheck={false} className="flex-1 min-w-0 rounded-lg px-2 py-1.5 text-xs font-mono" style={{ backgroundColor: theme.card, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       <div className="rounded-xl p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="flex items-center gap-3"><div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Sparkles className="h-4.5 w-4.5" style={{ color: theme.primary }} /></div><div><p className="text-sm font-medium" style={{ color: theme.text }}>Auto-generate a palette</p><p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>Shuffles your brand colors ({primaryColor}, {secondaryColor}, {accentColor}) into different arrangements. Press multiple times for different combos.</p></div></div><button onClick={handleShuffle} className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-all hover:opacity-90 flex-shrink-0" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Shuffle className="h-4 w-4" />Shuffle</button></div>
 
