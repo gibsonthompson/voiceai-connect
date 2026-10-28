@@ -35,6 +35,7 @@ import { useAgency } from '@/app/agency/context';
 export interface BrandingOverrides {
   nav_bg?: string;
   nav_text?: string;
+  nav_accent?: string;
   page_bg?: string;
   card_bg?: string;
   card_border?: string;
@@ -191,30 +192,34 @@ function buildDarkTheme(primary: string, overrides?: BrandingOverrides): Theme {
   const baseBorder = 'rgba(255,255,255,0.06)';
   const baseSidebarBg = '#141414';
 
-  // Structural overrides are gated by mode brightness so a LIGHT override never
-  // bleeds into dark mode (and vice versa in buildLightTheme). Without this, an
-  // agency that set page_bg/card_bg/text overrides in one mode broke the other
-  // mode entirely, which is why light/dark appeared not to work app-wide. An
-  // override that fits the mode still applies; one that would fight it falls
-  // back to the base. primary and button_text are contrast-based, so they stay.
-  const pageBg = (isValidHex(overrides?.page_bg) && !isLightColor(overrides!.page_bg)) ? overrides!.page_bg : baseBg;
-  const textPrimary = (isValidHex(overrides?.text_primary) && isLightColor(overrides!.text_primary)) ? overrides!.text_primary : baseText;
-  const textMuted = (isValidHex(overrides?.text_muted) && isLightColor(overrides!.text_muted)) ? overrides!.text_muted : baseTextMuted;
-  const cardBg = (isValidHex(overrides?.card_bg) && !isLightColor(overrides!.card_bg)) ? overrides!.card_bg : baseCard;
-  const cardBorder = (isValidHex(overrides?.card_border) && !isLightColor(overrides!.card_border)) ? overrides!.card_border : baseBorder;
-  const buttonText = isValidHex(overrides?.button_text) ? overrides!.button_text : getContrastText(primary, true);
+  // White-label overrides apply exactly as the agency sets them (WYSIWYG with
+  // the branding Live Preview). Each value is used whenever it is a valid hex;
+  // only the tokens the agency did NOT set are auto-derived from the chosen
+  // surfaces so everything stays legible. (Previously these were gated by
+  // brightness and silently dropped when they didn't match the mode, which is
+  // why picked colors "did nothing".)
+  const pageBg = isValidHex(overrides?.page_bg) ? overrides!.page_bg! : baseBg;
+  const textPrimary = isValidHex(overrides?.text_primary) ? overrides!.text_primary! : baseText;
+  const textMuted = isValidHex(overrides?.text_muted) ? overrides!.text_muted! : baseTextMuted;
+  const cardBg = isValidHex(overrides?.card_bg) ? overrides!.card_bg! : baseCard;
+  const cardBorder = isValidHex(overrides?.card_border) ? overrides!.card_border! : baseBorder;
+  const buttonText = isValidHex(overrides?.button_text) ? overrides!.button_text! : getContrastText(primary, true);
 
-  const navBg = (isValidHex(overrides?.nav_bg) && !isLightColor(overrides!.nav_bg)) ? overrides!.nav_bg : baseSidebarBg;
+  const navBg = isValidHex(overrides?.nav_bg) ? overrides!.nav_bg! : baseSidebarBg;
   const hasNavBgOverride = navBg !== baseSidebarBg;
-  const navText = (isValidHex(overrides?.nav_text) && isLightColor(overrides!.nav_text)) ? overrides!.nav_text : (hasNavBgOverride ? autoNavText(navBg) : baseText);
+  const navText = isValidHex(overrides?.nav_text) ? overrides!.nav_text! : (hasNavBgOverride ? autoNavText(navBg) : baseText);
   const navTextMuted = hasNavBgOverride ? autoNavTextMuted(navBg) : 'rgba(250,250,249,0.5)';
   const navBorder = hasNavBgOverride ? autoNavBorder(navBg) : baseBorder;
   const navHover = hasNavBgOverride ? autoNavHover(navBg) : 'rgba(255,255,255,0.04)';
 
-  // Active item contrast check: if primary is too close to sidebar bg, use white
-  const primaryVisibleOnNav = hasSufficientContrast(primary, navBg);
-  const activeItemColor = primaryVisibleOnNav ? primary : '#ffffff';
-  const activeItemBg = primaryVisibleOnNav ? withAlpha(primary, 0.15) : 'rgba(255,255,255,0.1)';
+  // Active nav item ("the highlight"). Agencies can set nav_accent to color the
+  // selected tab independently of the brand primary; without it, primary is used.
+  // An explicit accent is always honored (they see it in the preview); the auto
+  // fallback only kicks in when no accent is set and primary is low-contrast.
+  const navAccent = isValidHex(overrides?.nav_accent) ? overrides!.nav_accent! : primary;
+  const accentVisibleOnNav = hasSufficientContrast(navAccent, navBg);
+  const activeItemColor = accentVisibleOnNav ? navAccent : (isValidHex(overrides?.nav_accent) ? navAccent : '#ffffff');
+  const activeItemBg = withAlpha(navAccent, 0.15);
 
   return {
     isDark: true,
@@ -288,31 +293,30 @@ function buildLightTheme(primary: string, overrides?: BrandingOverrides): Theme 
   const baseBorder = '#e5e7eb';
   const baseSidebarBg = '#ffffff';
 
-  // Mode-gated: in light mode only LIGHT surface overrides and DARK text
-  // overrides apply; anything that would fight light mode falls back to the
-  // light base. Mirror of the dark builder above.
-  const pageBg = (isValidHex(overrides?.page_bg) && isLightColor(overrides!.page_bg)) ? overrides!.page_bg : baseBg;
-  const textPrimary = (isValidHex(overrides?.text_primary) && !isLightColor(overrides!.text_primary)) ? overrides!.text_primary : baseText;
-  const textMuted = (isValidHex(overrides?.text_muted) && !isLightColor(overrides!.text_muted)) ? overrides!.text_muted : baseTextMuted;
-  const cardBg = (isValidHex(overrides?.card_bg) && isLightColor(overrides!.card_bg)) ? overrides!.card_bg : baseCard;
-  const cardBorder = (isValidHex(overrides?.card_border) && isLightColor(overrides!.card_border)) ? overrides!.card_border : baseBorder;
-  const buttonText = isValidHex(overrides?.button_text) ? overrides!.button_text : getContrastText(primary, false);
+  // White-label overrides apply exactly as set (WYSIWYG with the Live Preview).
+  // Each value is used whenever it is a valid hex; unset tokens auto-derive from
+  // the chosen surfaces. Mirror of the dark builder above (no brightness gating).
+  const pageBg = isValidHex(overrides?.page_bg) ? overrides!.page_bg! : baseBg;
+  const textPrimary = isValidHex(overrides?.text_primary) ? overrides!.text_primary! : baseText;
+  const textMuted = isValidHex(overrides?.text_muted) ? overrides!.text_muted! : baseTextMuted;
+  const cardBg = isValidHex(overrides?.card_bg) ? overrides!.card_bg! : baseCard;
+  const cardBorder = isValidHex(overrides?.card_border) ? overrides!.card_border! : baseBorder;
+  const buttonText = isValidHex(overrides?.button_text) ? overrides!.button_text! : getContrastText(primary, false);
 
-  const navBg = (isValidHex(overrides?.nav_bg) && isLightColor(overrides!.nav_bg)) ? overrides!.nav_bg : baseSidebarBg;
+  const navBg = isValidHex(overrides?.nav_bg) ? overrides!.nav_bg! : baseSidebarBg;
   const hasNavBgOverride = navBg !== baseSidebarBg;
-  const navText = (isValidHex(overrides?.nav_text) && !isLightColor(overrides!.nav_text)) ? overrides!.nav_text : (hasNavBgOverride ? autoNavText(navBg) : baseText);
+  const navText = isValidHex(overrides?.nav_text) ? overrides!.nav_text! : (hasNavBgOverride ? autoNavText(navBg) : baseText);
   const navTextMuted = hasNavBgOverride ? autoNavTextMuted(navBg) : '#6b7280';
   const navBorder = hasNavBgOverride ? autoNavBorder(navBg) : baseBorder;
   const navHover = hasNavBgOverride ? autoNavHover(navBg) : 'rgba(0,0,0,0.02)';
 
-  // Active item contrast. When primary has enough contrast on the nav, use it for
-  // the selected tab. Otherwise fall back to the nav's own readable (dark) text on
-  // a subtle neutral tint, NEVER white-on-white: in light mode the nav is always
-  // light, so the old '#ffffff' fallback (carried over from the dark theme) made
-  // the active tab a white label on a white sidebar, i.e. invisible.
-  const primaryVisibleOnNav = hasSufficientContrast(primary, navBg);
-  const activeItemColor = primaryVisibleOnNav ? primary : navText;
-  const activeItemBg = primaryVisibleOnNav ? withAlpha(primary, 0.15) : 'rgba(0,0,0,0.06)';
+  // Active nav item. nav_accent colors the selected tab independently of primary.
+  // An explicit accent is honored; otherwise primary is used, falling back to the
+  // nav's own readable text when primary is low-contrast (never white-on-white).
+  const navAccent = isValidHex(overrides?.nav_accent) ? overrides!.nav_accent! : primary;
+  const accentVisibleOnNav = hasSufficientContrast(navAccent, navBg);
+  const activeItemColor = accentVisibleOnNav ? navAccent : (isValidHex(overrides?.nav_accent) ? navAccent : navText);
+  const activeItemBg = withAlpha(navAccent, 0.15);
 
   return {
     isDark: false,

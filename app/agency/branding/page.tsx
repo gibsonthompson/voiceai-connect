@@ -22,6 +22,7 @@ interface ColorField { key: keyof BrandingOverrides; label: string; description:
 const COLOR_FIELDS: ColorField[] = [
   { key: 'nav_bg', label: 'Sidebar Background', description: 'Navigation sidebar background color', group: 'sidebar', icon: PanelLeft },
   { key: 'nav_text', label: 'Sidebar Text', description: 'Text color in the navigation sidebar', group: 'sidebar', icon: Type },
+  { key: 'nav_accent', label: 'Active Item Highlight', description: 'Color of the selected nav item (defaults to your brand color)', group: 'sidebar', icon: MousePointer },
   { key: 'page_bg', label: 'Page Background', description: 'Main content area background', group: 'page', icon: LayoutDashboard },
   { key: 'card_bg', label: 'Card Background', description: 'Background color for cards and panels', group: 'cards', icon: Square },
   { key: 'card_border', label: 'Card Border', description: 'Border color for cards and panels', group: 'cards', icon: Square },
@@ -151,7 +152,7 @@ export default function BrandingPage() {
   const accentColor = branding.accentColor || '#01f5d1';
   const previewTheme = useMemo(() => buildTheme(mode as 'dark' | 'light', primaryColor, overrides), [mode, primaryColor, overrides]);
   const defaultTheme = useMemo(() => buildTheme(mode as 'dark' | 'light', primaryColor), [mode, primaryColor]);
-  const getDefaultForField = useCallback((key: keyof BrandingOverrides): string => { const map: Record<keyof BrandingOverrides, string> = { nav_bg: defaultTheme.sidebarBg, nav_text: defaultTheme.sidebarText, page_bg: defaultTheme.bg, card_bg: defaultTheme.card, card_border: defaultTheme.border, button_text: defaultTheme.primaryText, text_primary: defaultTheme.text, text_muted: defaultTheme.textMuted }; return map[key] || '#000000'; }, [defaultTheme]);
+  const getDefaultForField = useCallback((key: keyof BrandingOverrides): string => { const map: Record<keyof BrandingOverrides, string> = { nav_bg: defaultTheme.sidebarBg, nav_text: defaultTheme.sidebarText, nav_accent: defaultTheme.sidebarActiveItemColor, page_bg: defaultTheme.bg, card_bg: defaultTheme.card, card_border: defaultTheme.border, button_text: defaultTheme.primaryText, text_primary: defaultTheme.text, text_muted: defaultTheme.textMuted }; return map[key] || '#000000'; }, [defaultTheme]);
   const hasChanges = useMemo(() => { const savedOverrides = agency?.branding_overrides || {}; for (const field of COLOR_FIELDS) { const savedVal = (savedOverrides as any)[field.key]; const currentVal = overrides[field.key]; if ((savedVal || '') !== (currentVal || '')) return true; } return false; }, [overrides, agency?.branding_overrides]);
   const activeCount = COLOR_FIELDS.filter(f => isValidHex(overrides[f.key])).length;
 
