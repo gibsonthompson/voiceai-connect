@@ -12,7 +12,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   FileText, Mail, MessageSquare, Plus, Search, Loader2,
-  MoreVertical, Copy, Trash2, Edit, ArrowRight, Linkedin, Check, Users,
+  MoreVertical, Copy, Trash2, Edit, ArrowRight, Linkedin, Check, Users, GripVertical,
 } from 'lucide-react';
 import { BUYER_TYPES, getBuyerTypeLabel } from '@/lib/buyer-types';
 
@@ -29,6 +29,7 @@ interface Template {
   sequence_order: number | null;
   delay_days: number | null;
   buyer_type: string | null;
+  sort_order: number | null;
   use_count: number;
   created_at: string;
 }
@@ -54,6 +55,8 @@ export default function AdminOutreachPage() {
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
   const [buyerFilter, setBuyerFilter] = useState<string | null>(null);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
 
   const getBackendUrl = () => process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
   const getToken = () => localStorage.getItem('admin_token');
@@ -123,9 +126,52 @@ export default function AdminOutreachPage() {
     return matchesSearch && matchesType && matchesBuyer;
   });
 
-  const emailTemplates = filteredTemplates.filter(t => t.type === 'email');
-  const smsTemplates = filteredTemplates.filter(t => t.type === 'sms');
-  const linkedinTemplates = filteredTemplates.filter(t => t.type === 'linkedin');
+  // Manual order first (sort_order asc, nulls last), then oldest-created as a
+  // stable fallback so new/un-ordered templates land at the end.
+  const byOrder = (a: Template, b: Template) => {
+    const ao = a.sort_order ?? Number.MAX_SAFE_INTEGER;
+    const bo = b.sort_order ?? Number.MAX_SAFE_INTEGER;
+    if (ao !== bo) return ao - bo;
+    return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+  };
+
+  const emailTemplates = filteredTemplates.filter(t => t.type === 'email').sort(byOrder);
+  const smsTemplates = filteredTemplates.filter(t => t.type === 'sms').sort(byOrder);
+  const linkedinTemplates = filteredTemplates.filter(t => t.type === 'linkedin').sort(byOrder);
+
+  // Drag-to-reorder is only safe in the full (unfiltered) view, where each
+  // channel group shows every template of that type. A search or buyer filter
+  // shows a subset, so reindexing would corrupt the real order, disable it then.
+  const dragEnabled = !searchQuery && buyerFilter === null;
+
+  const persistOrder = async (ordered: Template[]) => {
+    const items = ordered.map((t, i) => ({ id: t.id, sort_order: i }));
+    try {
+      await fetch(`${getBackendUrl()}/api/admin/templates/reorder`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items }),
+      });
+    } catch (error) { console.error('Failed to persist order:', error); }
+  };
+
+  const handleDrop = (target: Template, group: Template[]) => {
+    const srcId = draggingId;
+    setDraggingId(null);
+    setDragOverId(null);
+    if (!srcId || srcId === target.id) return;
+    const src = group.find(t => t.id === srcId);
+    if (!src) return; // dropped across channel groups, ignore
+    const fromIdx = group.findIndex(t => t.id === srcId);
+    const toIdx = group.findIndex(t => t.id === target.id);
+    if (fromIdx === -1 || toIdx === -1) return;
+    const reordered = [...group];
+    reordered.splice(fromIdx, 1);
+    reordered.splice(toIdx, 0, src);
+    const orderMap = new Map(reordered.map((t, i) => [t.id, i] as [string, number]));
+    setTemplates(prev => prev.map(t => orderMap.has(t.id) ? { ...t, sort_order: orderMap.get(t.id)! } : t));
+    persistOrder(reordered);
+  };
 
   const getTypeIcon = (type: string) => {
     const s = TYPE_STYLE[type] || TYPE_STYLE.email;
@@ -138,25 +184,39 @@ export default function AdminOutreachPage() {
     return <div className="admin-scope flex items-center justify-center min-h-[60vh]"><Loader2 className="h-6 w-6 animate-spin text-[var(--a-em)]" /></div>;
   }
 
-  const renderTemplateRow = (template: Template, idx: number, total: number) => {
+  const renderTemplateRow = (template: Template, idx: number, group: Template[]) => {
+    const total = group.length;
     const s = TYPE_STYLE[template.type] || TYPE_STYLE.email;
     return (
-      <div key={template.id} className={`flex items-center justify-between p-4 transition-colors hover:bg-[#F6FCF9] ${idx < total - 1 ? 'border-b border-[var(--a-line)]' : ''}`}>
-        <Link href={`/admin/outreach/templates/${template.id}`} className="flex-1 min-w-0">
-          <div className="flex items-center gap-3.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg shrink-0" style={{ background: s.bg }}>{getTypeIcon(template.type)}</div>
+      <div
+        key={template.id}
+        draggable={dragEnabled}
+        onDragStart={() => dragEnabled && setDraggingId(template.id)}
+        onDragEnd={() => { setDraggingId(null); setDragOverId(null); }}
+        onDragOver={(e) => { if (dragEnabled) { e.preventDefault(); if (dragOverId !== template.id) setDragOverId(template.id); } }}
+        onDrop={(e) => { if (dragEnabled) { e.preventDefault(); handleDrop(template, group); } }}
+        className={`flex items-center gap-1 px-2.5 py-2 transition-colors hover:bg-[#F6FCF9] ${idx < total - 1 ? 'border-b border-[var(--a-line)]' : ''} ${draggingId === template.id ? 'opacity-40' : ''} ${dragOverId === template.id && draggingId && draggingId !== template.id ? 'bg-[var(--a-em-soft)]' : ''}`}
+      >
+        {dragEnabled && (
+          <span className="shrink-0 cursor-grab active:cursor-grabbing text-[var(--a-dim)] hover:text-[var(--a-muted)] p-0.5" title="Drag to reorder">
+            <GripVertical className="h-4 w-4" />
+          </span>
+        )}
+        <Link draggable={false} href={`/admin/outreach/templates/${template.id}`} className="flex-1 min-w-0">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg shrink-0" style={{ background: s.bg }}>{getTypeIcon(template.type)}</div>
             <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <p className="font-semibold text-[13px] text-[var(--a-ink)]">{template.name}</p>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <p className="font-semibold text-[13px] leading-tight text-[var(--a-ink)]">{template.name}</p>
                 {template.buyer_type && <span className="text-[10px] px-1.5 py-0.5 rounded-md font-medium inline-flex items-center gap-1" style={{ background: '#EEF3EF', color: 'var(--a-muted)' }}><Users className="h-2.5 w-2.5" />{getBuyerTypeLabel(template.buyer_type)}</span>}
                 {template.sequence_order && <span className="text-[10px] px-1.5 py-0.5 rounded-md font-medium" style={{ background: 'var(--a-em-soft)', color: 'var(--a-em-deep)' }}>Step {template.sequence_order}</span>}
                 {template.delay_days && template.delay_days > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded-md" style={{ background: '#EEF3EF', color: 'var(--a-dim)' }}>+{template.delay_days}d</span>}
               </div>
-              <p className="text-xs text-[var(--a-dim)] truncate mt-0.5">{template.type === 'email' ? (template.subject || template.description || 'No subject') : (template.body?.substring(0, 60) || 'No content') + '...'}</p>
+              <p className="text-[11px] text-[var(--a-dim)] truncate leading-tight mt-0.5">{template.type === 'email' ? (template.subject || template.description || 'No subject') : (template.body?.substring(0, 60) || 'No content') + '...'}</p>
             </div>
           </div>
         </Link>
-        <div className="flex items-center gap-2 ml-2">
+        <div className="flex items-center gap-2 ml-2 shrink-0">
           <span className="text-[11px] text-[var(--a-dim)] a-num">{template.use_count || 0} sent</span>
           <div className="relative">
             <button onClick={() => setActiveDropdown(activeDropdown === template.id ? null : template.id)} className="rounded-lg p-1.5 text-[var(--a-dim)] hover:text-[var(--a-muted)] hover:bg-[var(--a-em-soft)] transition-colors"><MoreVertical className="h-4 w-4" /></button>
@@ -243,23 +303,23 @@ export default function AdminOutreachPage() {
           <Link href="/admin/outreach/templates/new" className="a-btn inline-flex"><Plus className="h-4 w-4" /> Create Template</Link>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
+          {linkedinTemplates.length > 0 && (!typeFilter || typeFilter === 'linkedin') && (
+            <div>
+              <div className="flex items-center gap-2 mb-2"><Linkedin className="h-3.5 w-3.5" style={{ color: '#2563EB' }} /><h3 className="text-xs font-medium text-[var(--a-dim)] uppercase tracking-[0.1em]">LinkedIn Templates</h3><span className="text-[10px] text-[var(--a-dim)]">({linkedinTemplates.length})</span></div>
+              <div className="a-panel overflow-visible">{linkedinTemplates.map((t, idx) => renderTemplateRow(t, idx, linkedinTemplates))}</div>
+            </div>
+          )}
           {emailTemplates.length > 0 && (!typeFilter || typeFilter === 'email') && (
             <div>
-              <div className="flex items-center gap-2 mb-3"><Mail className="h-3.5 w-3.5" style={{ color: 'var(--a-violet)' }} /><h3 className="text-xs font-medium text-[var(--a-dim)] uppercase tracking-[0.1em]">Email Templates</h3><span className="text-[10px] text-[var(--a-dim)]">({emailTemplates.length})</span></div>
-              <div className="a-panel overflow-visible">{emailTemplates.map((t, idx) => renderTemplateRow(t, idx, emailTemplates.length))}</div>
+              <div className="flex items-center gap-2 mb-2"><Mail className="h-3.5 w-3.5" style={{ color: 'var(--a-violet)' }} /><h3 className="text-xs font-medium text-[var(--a-dim)] uppercase tracking-[0.1em]">Email Templates</h3><span className="text-[10px] text-[var(--a-dim)]">({emailTemplates.length})</span></div>
+              <div className="a-panel overflow-visible">{emailTemplates.map((t, idx) => renderTemplateRow(t, idx, emailTemplates))}</div>
             </div>
           )}
           {smsTemplates.length > 0 && (!typeFilter || typeFilter === 'sms') && (
             <div>
-              <div className="flex items-center gap-2 mb-3"><MessageSquare className="h-3.5 w-3.5" style={{ color: 'var(--a-cyan)' }} /><h3 className="text-xs font-medium text-[var(--a-dim)] uppercase tracking-[0.1em]">SMS Templates</h3><span className="text-[10px] text-[var(--a-dim)]">({smsTemplates.length})</span></div>
-              <div className="a-panel overflow-visible">{smsTemplates.map((t, idx) => renderTemplateRow(t, idx, smsTemplates.length))}</div>
-            </div>
-          )}
-          {linkedinTemplates.length > 0 && (!typeFilter || typeFilter === 'linkedin') && (
-            <div>
-              <div className="flex items-center gap-2 mb-3"><Linkedin className="h-3.5 w-3.5" style={{ color: '#2563EB' }} /><h3 className="text-xs font-medium text-[var(--a-dim)] uppercase tracking-[0.1em]">LinkedIn Templates</h3><span className="text-[10px] text-[var(--a-dim)]">({linkedinTemplates.length})</span></div>
-              <div className="a-panel overflow-visible">{linkedinTemplates.map((t, idx) => renderTemplateRow(t, idx, linkedinTemplates.length))}</div>
+              <div className="flex items-center gap-2 mb-2"><MessageSquare className="h-3.5 w-3.5" style={{ color: 'var(--a-cyan)' }} /><h3 className="text-xs font-medium text-[var(--a-dim)] uppercase tracking-[0.1em]">SMS Templates</h3><span className="text-[10px] text-[var(--a-dim)]">({smsTemplates.length})</span></div>
+              <div className="a-panel overflow-visible">{smsTemplates.map((t, idx) => renderTemplateRow(t, idx, smsTemplates))}</div>
             </div>
           )}
           {agencyEmails.length > 0 && !typeFilter && (
