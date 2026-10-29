@@ -342,7 +342,7 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
                 </p>
               </div>
             </div>
-            <a href="/client/billing"
+            <a href="/client/settings"
               className="rounded-xl px-5 py-2.5 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] text-center"
               style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
               Manage Billing
