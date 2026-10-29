@@ -14,7 +14,6 @@ const COLUMNS: { t: string; l: [string, string][] }[] = [
   {
     t: 'COMPARE',
     l: [
-      ['vs GoHighLevel', '/gohighlevel-ai-receptionist'],
       ['vs Autocalls', '/blog/voiceai-connect-vs-autocalls'],
       ['vs echowin', '/blog/voiceai-connect-vs-echowin'],
       ['vs Bland AI', '/voiceai-connect-vs-bland-ai'],
