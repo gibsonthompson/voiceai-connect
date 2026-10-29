@@ -67,7 +67,7 @@ function Slider({
 }
 
 function Calculator() {
-  const [plan, setPlan] = useState<PlanId>('pro');
+  const [plan, setPlan] = useState<PlanId>('scale');
   const [clients, setClients] = useState(10);
   const [price, setPrice] = useState(500);
   const [minutes, setMinutes] = useState(400);
@@ -91,11 +91,13 @@ function Calculator() {
   return (
     <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-stretch">
       <style>{`
-        input.calc-range { -webkit-appearance:none; appearance:none; height:8px; border-radius:999px; outline:none; cursor:pointer;
-          background: linear-gradient(90deg, #00c6b2 0%, #00c6b2 var(--pct,0%), rgba(0,0,0,0.09) var(--pct,0%), rgba(0,0,0,0.09) 100%); }
-        input.calc-range::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:22px; height:22px; border-radius:50%; background:#050505; border:3px solid #fff; box-shadow:0 1px 5px rgba(0,0,0,0.3); cursor:pointer; }
+        input.calc-range { -webkit-appearance:none; -moz-appearance:none; appearance:none; width:100%; height:8px; border-radius:999px; outline:none; cursor:pointer; accent-color:#00c6b2; margin:0;
+          background: linear-gradient(90deg, #00c6b2 0%, #00c6b2 var(--pct,0%), rgba(5,5,5,0.14) var(--pct,0%), rgba(5,5,5,0.14) 100%); }
+        input.calc-range::-webkit-slider-runnable-track { height:8px; border-radius:999px; background:transparent; }
+        input.calc-range::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:22px; height:22px; margin-top:-7px; border-radius:50%; background:#050505; border:3px solid #fff; box-shadow:0 1px 5px rgba(0,0,0,0.3); cursor:pointer; }
+        input.calc-range::-moz-range-track { height:8px; border-radius:999px; background:rgba(5,5,5,0.14); }
+        input.calc-range::-moz-range-progress { height:8px; border-radius:999px; background:#00c6b2; }
         input.calc-range::-moz-range-thumb { width:22px; height:22px; border-radius:50%; background:#050505; border:3px solid #fff; box-shadow:0 1px 5px rgba(0,0,0,0.3); cursor:pointer; }
-        input.calc-range::-moz-range-track { height:8px; border-radius:999px; background:transparent; }
       `}</style>
 
       {/* Controls */}
