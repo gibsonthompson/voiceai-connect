@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useClientTheme } from '@/hooks/useClientTheme';
 import { getCallBadges } from '@/lib/call-badges';
+import { resolveClientBilling } from '@/lib/client-billing';
 import { CallForwardingCard } from './forwarding-card';
 
 interface Branding {
@@ -166,16 +167,16 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
   // Agency can hide ALL billing/subscription UI from the client dashboard
   // (white-glove / manual billing). When on, the trial banners and the Voice
   // Minutes / usage card are suppressed entirely.
-  const hideBilling = !!(client.agency as any)?.hide_client_billing;
+  // Single source of truth for billing capability (see lib/client-billing.ts).
+  const billingCaps = resolveClientBilling(client.agency, client);
+  const hideBilling = !billingCaps.billingVisible;
   // Call-usage meter visibility (agency toggle, independent of hide_client_billing).
-  const showCallUsage = !hideBilling && (client.agency as any)?.show_client_call_usage !== false;
-  // Whether the client can self-upgrade: agency allows plan changes, billing is
-  // self-serve (not manual), not a test client, and the subscription section is shown.
-  const canSelfUpgrade =
-    !!(client.agency as any)?.allow_client_plan_changes &&
-    !isManual &&
-    !(client as any).is_test_client &&
-    (client.agency as any)?.show_client_subscription !== false;
+  const showCallUsage = billingCaps.showUsage;
+  // The no-card trial banner's CTA lets a client ACTIVATE their assigned plan.
+  // Under Option A this is gated by self-activation (can they pay at all), NOT by
+  // tier-change permission: a client whose agency disallows plan changes can still
+  // subscribe to the single plan the agency put them on.
+  const canSelfUpgrade = billingCaps.canSelfActivate;
   const providerName = (client.agency as any)?.name || 'your provider';
 
   // ── Trial type discrimination ─────────────────────────────────────────────
@@ -342,7 +343,7 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
                 </p>
               </div>
             </div>
-            <a href="/client/settings"
+            <a href="/client/billing"
               className="rounded-xl px-5 py-2.5 text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] text-center"
               style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
               Manage Billing

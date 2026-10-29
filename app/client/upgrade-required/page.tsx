@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Check, Loader2, AlertTriangle, Clock, Zap, X } from 'lucide-react';
 import { buildClientPlans, type ClientPlanTile } from '@/lib/plan-features-meta';
+import { resolveClientBilling } from '@/lib/client-billing';
 
 function getContrastColor(hex: string): string {
   const c = hex.replace('#', '');
@@ -100,10 +101,10 @@ function ClientUpgradeContent() {
   // agency), so they are excluded too. Non-active clients are NOT affected by
   // this: they still reach checkout below so they can subscribe or reactivate
   // regardless of the flag.
-  const canChangePlan =
-    !!(agency as any)?.allow_client_plan_changes &&
-    (client as any)?.billing_mode !== 'manual' &&
-    !(client as any)?.is_test_client;
+  // Single source of truth (see lib/client-billing.ts). canChangeTier is the same
+  // gate the Settings page and the backend use, so the three never disagree.
+  const caps = resolveClientBilling(agency, client);
+  const canChangePlan = caps.canChangeTier;
 
   const isDark = agency?.website_theme === 'dark';
   const primaryColor = agency?.primary_color || '#6366f1';
@@ -133,9 +134,18 @@ function ClientUpgradeContent() {
   }, [plans, isActive, client?.plan_type]);
   const showLowerPlans = !!(agency as any)?.show_lower_plans_on_upgrade;
   const visiblePlans = useMemo(() => {
+    // Option A: when the client cannot change tiers, they may only ACTIVATE the
+    // plan the agency assigned them. Show that single plan, never the full picker,
+    // so "Let clients change their own plan = off" is honored on the trial path
+    // too (not just for active clients). Falls through to the normal list if no
+    // plan is assigned yet, so a client is never left with nothing to pick.
+    if (!canChangePlan && client?.plan_type) {
+      const assigned = plans.filter(p => p.id === client.plan_type);
+      if (assigned.length > 0) return assigned;
+    }
     if (showLowerPlans || currentPlanPrice == null) return plans;
     return plans.filter(p => p.price >= currentPlanPrice);
-  }, [plans, showLowerPlans, currentPlanPrice]);
+  }, [plans, showLowerPlans, currentPlanPrice, canChangePlan, client?.plan_type]);
   // Keep the row balanced (no single tile marooned in a 3-up grid).
   const gridColsClass = visiblePlans.length <= 1
     ? 'md:grid-cols-1 max-w-sm'

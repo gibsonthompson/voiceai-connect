@@ -15,6 +15,7 @@ import { SectionCard } from '@/components/client/SectionCard';
 import { Toast } from '@/components/ui/toast';
 import CancelClientModal from '@/components/CancelClientModal';
 import { useClient } from '@/lib/client-context';
+import { resolveClientBilling } from '@/lib/client-billing';
 
 interface Client {
   id: string; business_name: string; owner_name?: string; email: string; owner_phone: string; industry: string;
@@ -245,16 +246,17 @@ export function ClientSettingsContent({ client: initialClient, branding }: Props
 
   const [showPlanPicker, setShowPlanPicker] = useState(false);
   const [changingPlan, setChangingPlan] = useState<string | null>(null);
-  const canChangePlan = !!(client.agency as any)?.allow_client_plan_changes && client.billing_mode !== 'manual' && !(client as any).is_test_client;
-  // Agency can hide all billing/subscription UI from the client (white-glove /
-  // manual billing). When on, the whole Subscription card is suppressed.
-  const hideBilling = !!(client.agency as any)?.hide_client_billing;
-  // Granular agency toggles (independent of the master hide_client_billing).
-  const showSubscription = !hideBilling && (client.agency as any)?.show_client_subscription !== false;
+  // Single source of truth for every client billing capability (see
+  // lib/client-billing.ts). Replaces the old per-field derivations that drifted
+  // apart across pages.
+  const billingCaps = resolveClientBilling(client.agency, client);
+  const canChangePlan = billingCaps.canChangeTier;
+  const hideBilling = !billingCaps.billingVisible;
+  const showSubscription = billingCaps.showSubscriptionCard;
   // Agency can hide the client-dashboard cancel option (default: shown). The
   // backend cancel-subscription endpoint enforces the same flag server-side.
-  const allowClientCancel = (client.agency as any)?.allow_client_cancel !== false;
-  const showCallUsage = !hideBilling && (client.agency as any)?.show_client_call_usage !== false;
+  const allowClientCancel = billingCaps.canCancel;
+  const showCallUsage = billingCaps.showUsage;
   // Self-billed providers (Paystack / Flutterwave): the platform owns the billing
   // schedule, so both share one set of management UI driven by these helpers.
   const selfBilled = client.billing_mode === 'paystack' || client.billing_mode === 'flutterwave';

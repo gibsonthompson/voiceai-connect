@@ -13,6 +13,7 @@ import AddToHomeScreenModal from '@/components/client/AddToHomeScreenModal';
 import SupportWidget from '@/components/SupportWidget';
 import OnboardingWizard from '@/components/client/OnboardingWizard';
 import { fontStack, googleFontsHref } from '@/lib/brandFonts';
+import { resolveClientBilling } from '@/lib/client-billing';
 
 // Favicon is handled by DynamicFavicon in ClientProvider, no need to set it here
 
@@ -92,8 +93,9 @@ function ClientDashboardLayout({ children, initialDark = true }: { children: Rea
   };
 
   // Agency can hide all billing/subscription UI from the client (white-glove /
-  // manual-billing). When on, trial and payment banners never surface.
-  const hideBilling = !!(client?.agency as any)?.hide_client_billing;
+  // manual-billing). When on, trial and payment banners never surface. Resolved
+  // through the shared capability helper (see lib/client-billing.ts).
+  const hideBilling = !resolveClientBilling(client?.agency, client).billingVisible;
   const clientTrialExpired = !hideBilling && isTrialExpired(client);
   const clientPaymentFailed = !hideBilling && isPaymentFailed(client?.subscription_status);
   const clientCanceled = !hideBilling && isCanceled(client?.subscription_status);
