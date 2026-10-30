@@ -3,7 +3,7 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe, Phone, Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Zap, Paintbrush, Clock, Headphones, Headset, Check, Crown, Shield, Inbox, Compass, Rocket, type LucideIcon } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe, Phone, Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Zap, Paintbrush, Clock, Headphones, Headset, Check, Crown, Shield, Inbox, Compass, type LucideIcon } from 'lucide-react';
 import { AgencyProvider, useAgency } from './context';
 import { usePlanFeatures } from '../../hooks/usePlanFeatures';
 import { useTheme } from '../../hooks/useTheme';
@@ -39,7 +39,6 @@ const ALWAYS_ACCESSIBLE_ROUTES = ['/agency/settings', '/agency/login'];
 // gated under 'billing' since it exposes the agency's live Stripe balance.
 const PATH_PERMISSIONS: Record<string, string> = {
   '/agency/dashboard': 'dashboard',
-  '/agency/first-client': 'dashboard',
   '/agency/clients': 'clients',
   '/agency/leads': 'leads',
   '/agency/outreach': 'outreach',
@@ -156,7 +155,6 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
 
   const navItems: NavItem[] = [
     { href: '/agency/dashboard', label: 'Dashboard', icon: LayoutDashboard, permissionKey: 'dashboard' },
-    { href: '/agency/first-client', label: 'First Client', icon: Rocket, permissionKey: 'dashboard' },
     // Call-center only: the live wallboard across all the businesses this agency
     // serves. Shown when the agency signed up as a call center.
     ...(agency?.is_call_center ? [{ href: '/agency/live-calls', label: 'Live Calls', icon: Headphones } as NavItem] : []),
@@ -192,7 +190,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   // by default. A call center that buys the growth add-on (cc_growth_addon) gets
   // them back. Plain reseller agencies are unaffected.
   const CC_GROWTH_HREFS = new Set([
-    '/agency/first-client', '/agency/leads', '/agency/outreach', '/agency/referrals', '/agency/demo-phone', '/agency/marketing',
+    '/agency/leads', '/agency/outreach', '/agency/referrals', '/agency/demo-phone', '/agency/marketing',
   ]);
   const stripGrowthForCallCenter = !!agency?.is_call_center && !agency?.cc_growth_addon;
 

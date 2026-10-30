@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Mic, Loader2, Check, Plus, X } from 'lucide-react';
+import { Mic, Loader2, Check, Plus, X, ChevronDown } from 'lucide-react';
 import VoicePicker from '@/components/agency/VoicePicker';
 
 interface Voice {
@@ -34,6 +34,7 @@ export default function DemoCustomizer({ agencyId, theme, demoNumberId }: Props)
   const configUrl = demoNumberId
     ? `${backendUrl}/api/agency/${agencyId}/demo-numbers/${demoNumberId}`
     : `${backendUrl}/api/agency/${agencyId}/demo-phone/config`;
+  const [expanded, setExpanded] = useState(false);
   const [voices, setVoices] = useState<Voice[]>([]);
   const [loading, setLoading] = useState(true);
   const [voiceFilter, setVoiceFilter] = useState<'all' | 'male' | 'female'>('all');
@@ -216,11 +217,19 @@ export default function DemoCustomizer({ agencyId, theme, demoNumberId }: Props)
 
   return (
     <div className="rounded-xl p-5 sm:p-6 mb-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-      <div className="flex items-center gap-2 mb-1">
-        <Mic className="h-4 w-4" style={{ color: theme.primary }} />
-        <h3 className="font-semibold text-base sm:text-lg" style={{ color: theme.text }}>Customize Your Demo</h3>
-      </div>
-      <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>
+      <button type="button" onClick={() => setExpanded((v) => !v)} className="w-full flex items-center justify-between gap-2 text-left" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+        <span className="flex items-center gap-2">
+          <Mic className="h-4 w-4" style={{ color: theme.primary }} />
+          <h3 className="font-semibold text-base sm:text-lg" style={{ color: theme.text }}>Customize Your Demo</h3>
+        </span>
+        <ChevronDown className="h-4 w-4 flex-shrink-0 transition-transform" style={{ color: theme.textMuted, transform: expanded ? 'rotate(180deg)' : 'none' }} />
+      </button>
+      {!expanded && (
+        <p className="text-xs sm:text-sm mt-1.5" style={{ color: theme.textMuted }}>Voice, greeting, and instructions. The demo works great as-is, tap to customize.</p>
+      )}
+
+      {expanded && (<>
+      <p className="text-xs sm:text-sm mb-4 mt-1.5" style={{ color: theme.textMuted }}>
         Pick the voice callers hear and, if you want, tweak the greeting and add a few instructions. Optional, the demo works great as-is.
       </p>
 
@@ -344,6 +353,7 @@ export default function DemoCustomizer({ agencyId, theme, demoNumberId }: Props)
           </div>
         </>
       )}
+      </>)}
     </div>
   );
 }

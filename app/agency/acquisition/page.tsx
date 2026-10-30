@@ -1,18 +1,19 @@
 'use client';
 
 // ============================================================================
-// FIRST-CLIENT COMMAND CENTER
-// The one page an agency lives in until they land their first paying client.
-// North star (0 -> 1 paying), the acquisition funnel with a diagnostic that reads
-// the real drop-off, the setup checklist (auto-verified), demo-call warm leads to
-// follow up, light daily reps, and the field playbook wired to the real tools.
-// Data: GET /api/agency/:id/first-client.
+// ACQUISITION COMMAND CENTER
+// The page an agency works from to land clients, and keeps using after the first
+// one. North star (0 -> 1 paying) before the first client; an ongoing pipeline
+// view after. The acquisition funnel with a diagnostic that reads the real
+// drop-off, the setup checklist (auto-verified, collapses when done), demo-call
+// warm leads to follow up, daily reps, and the field playbook (collapses once
+// they know it). Data: GET /api/agency/:id/acquisition.
 // ============================================================================
 
 import { useState, useEffect } from 'react';
 import {
-  Rocket, Mail, PhoneIncoming, Star, DollarSign, Check, ChevronRight,
-  Loader2, Flame, Phone, Send, Megaphone, Target, Play, CalendarCheck, Sparkles, PartyPopper,
+  TrendingUp, Mail, PhoneIncoming, Star, DollarSign, Check, ChevronRight,
+  ChevronDown, Loader2, Flame, Play, CalendarCheck, PartyPopper,
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '../../../hooks/useTheme';
@@ -25,7 +26,7 @@ interface DemoLead {
   interest_level?: string | null;
   created_at: string;
 }
-interface FirstClientData {
+interface AcquisitionData {
   funnel: { messagesThisWeek: number; messagesAllTime: number; demoCallsThisWeek: number; demoCallsAllTime: number; trials: number; paying: number };
   checklist: { demoLive: boolean; testClient: boolean; pricingSet: boolean; stripeConnected: boolean; leadList: boolean; firstOutreach: boolean };
   recentDemoCalls: DemoLead[];
@@ -33,7 +34,7 @@ interface FirstClientData {
   hasFirstClient: boolean;
 }
 
-const DEMO_DATA: FirstClientData = {
+const DEMO_DATA: AcquisitionData = {
   funnel: { messagesThisWeek: 38, messagesAllTime: 112, demoCallsThisWeek: 6, demoCallsAllTime: 14, trials: 2, paying: 0 },
   checklist: { demoLive: true, testClient: true, pricingSet: true, stripeConnected: false, leadList: false, firstOutreach: true },
   recentDemoCalls: [
@@ -47,8 +48,8 @@ const DEMO_DATA: FirstClientData = {
 
 function formatPhone(phone?: string | null): string {
   if (!phone) return '';
-  const d = phone.replace(/\D/g, '');
-  const ten = d.length === 11 && d.startsWith('1') ? d.slice(1) : d;
+  const dd = phone.replace(/\D/g, '');
+  const ten = dd.length === 11 && dd.startsWith('1') ? dd.slice(1) : dd;
   if (ten.length === 10) return `(${ten.slice(0, 3)}) ${ten.slice(3, 6)}-${ten.slice(6)}`;
   return phone;
 }
@@ -57,19 +58,22 @@ function timeAgo(iso: string): string {
   const h = Math.floor(diff / 3600000);
   if (h < 1) return 'just now';
   if (h < 24) return `${h}h ago`;
-  const d = Math.floor(h / 24);
-  return d === 1 ? 'yesterday' : `${d} days ago`;
+  const dys = Math.floor(h / 24);
+  return dys === 1 ? 'yesterday' : `${dys} days ago`;
 }
 function pct(a: number, b: number): string {
   if (!b) return '—';
   return `${Math.round((a / b) * 100)}%`;
 }
 
-export default function FirstClientPage() {
+export default function AcquisitionPage() {
   const { agency, loading: ctxLoading, demoMode } = useAgency();
   const theme = useTheme();
-  const [data, setData] = useState<FirstClientData | null>(null);
+  const [data, setData] = useState<AcquisitionData | null>(null);
   const [loading, setLoading] = useState(true);
+  // null = auto (derive from state); a boolean = the user's explicit toggle.
+  const [checklistOpen, setChecklistOpen] = useState<boolean | null>(null);
+  const [playOpen, setPlayOpen] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (demoMode) { setData(DEMO_DATA); setLoading(false); return; }
@@ -78,7 +82,7 @@ export default function FirstClientPage() {
       try {
         const token = localStorage.getItem('auth_token');
         const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
-        const res = await fetch(`${backendUrl}/api/agency/${agency.id}/first-client`, { headers: { Authorization: `Bearer ${token}` } });
+        const res = await fetch(`${backendUrl}/api/agency/${agency.id}/acquisition`, { headers: { Authorization: `Bearer ${token}` } });
         if (res.ok) setData(await res.json());
       } catch { /* leave data null; render a safe empty shell */ }
       finally { setLoading(false); }
@@ -92,9 +96,8 @@ export default function FirstClientPage() {
   const d = data || DEMO_DATA;
   const f = d.funnel;
 
-  // Diagnostic: find the first stage that's stuck and prescribe the next move.
   const diagnose = (): { title: string; how: string; href?: string; cta?: string } => {
-    if (f.paying > 0) return { title: 'You landed your first client.', how: 'Now do it again. The same play that landed one lands the next five.' };
+    if (f.paying > 0) return { title: `You've landed ${f.paying} ${f.paying === 1 ? 'client' : 'clients'}.`, how: 'Keep the funnel full. The same play that landed those lands the next ones, so keep the demo calls coming and keep following up.' };
     if (f.messagesThisWeek === 0 && f.demoCallsAllTime === 0) return { title: 'Nothing is going out yet.', how: 'The funnel only moves when you do. Pick a niche, pull a list, and start reaching out, or go do the in-person walk-in.', href: '/agency/leads', cta: 'Open lead finder' };
     if (f.demoCallsThisWeek === 0 && f.demoCallsAllTime === 0) return { title: 'Messages are going out but nobody is calling the demo.', how: 'Your outreach is not landing. The highest-converting move is in person: walk in and get them to hear it on the spot.', href: '/agency/marketing-kit', cta: 'Get the walk-in kit' };
     if (f.trials === 0) return { title: 'You are getting demo calls but no trials.', how: 'These are warm leads, people who already heard it. Follow up with the callers below and start a trial.', href: '/agency/demo-phone', cta: 'See demo callers' };
@@ -112,6 +115,10 @@ export default function FirstClientPage() {
     { done: chk.firstOutreach, label: 'Send your first outreach', href: '/agency/outreach', go: 'Outreach' },
   ];
   const doneCount = checklistItems.filter(i => i.done).length;
+  const setupComplete = doneCount === checklistItems.length;
+
+  const checklistExpanded = checklistOpen ?? (!setupComplete && !d.hasFirstClient);
+  const playExpanded = playOpen ?? !d.hasFirstClient;
 
   const repsPct = Math.min(100, Math.round((d.reps.outreachToday / Math.max(1, d.reps.goal)) * 100));
   const payingPct = Math.max(6, Math.min(100, (f.paying > 0 ? 100 : Math.min(90, f.demoCallsThisWeek * 12 + f.trials * 20 + 10))));
@@ -130,33 +137,39 @@ export default function FirstClientPage() {
     return { c: theme.warning, bg: theme.warningBg, label: 'Medium' };
   };
 
-  // Stat tiles for the funnel.
   const stages = [
-    { k: 'Messages sent', v: f.messagesThisWeek, sub: 'this week', icon: Mail, accent: false },
-    { k: 'Demo calls', v: f.demoCallsThisWeek, sub: `${pct(f.demoCallsThisWeek, f.messagesThisWeek)} of messages`, icon: PhoneIncoming, accent: true },
-    { k: 'Trials started', v: f.trials, sub: `${pct(f.trials, f.demoCallsAllTime)} of demo calls`, icon: Star, accent: false },
-    { k: 'Paying', v: f.paying, sub: f.paying > 0 ? 'you did it' : 'close a trial', icon: DollarSign, accent: false },
+    { k: 'Messages sent', v: f.messagesThisWeek, sub: 'this week', accent: false, icon: Mail },
+    { k: 'Demo calls', v: f.demoCallsThisWeek, sub: `${pct(f.demoCallsThisWeek, f.messagesThisWeek)} of messages`, accent: true, icon: PhoneIncoming },
+    { k: 'Trials started', v: f.trials, sub: `${pct(f.trials, f.demoCallsAllTime)} of demo calls`, accent: false, icon: Star },
+    { k: 'Paying', v: f.paying, sub: f.paying > 0 ? 'keep going' : 'close a trial', accent: false, icon: DollarSign },
   ];
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-[960px]">
       {/* Header */}
       <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0 mt-0.5" style={{ backgroundColor: theme.primary15 }}><Rocket className="h-5 w-5" style={{ color: theme.primary }} /></div>
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0 mt-0.5" style={{ backgroundColor: theme.primary15 }}><TrendingUp className="h-5 w-5" style={{ color: theme.primary }} /></div>
         <div>
-          <p className="text-[11px] font-mono uppercase tracking-[0.14em]" style={{ color: theme.textMuted }}>Launchpad</p>
-          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Get your first client</h1>
-          <p className="mt-1 text-sm max-w-[62ch]" style={{ color: theme.textMuted }}>One paying client is the whole game. Everything here points at the one thing that lands it: getting a prospect to hear your AI answer, then closing them on a trial.</p>
+          <p className="text-[11px] font-mono uppercase tracking-[0.14em]" style={{ color: theme.textMuted }}>Acquisition</p>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>{d.hasFirstClient ? 'Keep landing clients' : 'Get your first client'}</h1>
+          <p className="mt-1 text-sm max-w-[62ch]" style={{ color: theme.textMuted }}>Your pipeline from first message to paying client. The whole game is getting a prospect to hear your AI answer, then closing them on a trial.</p>
         </div>
       </div>
 
-      {/* NORTH STAR / success */}
+      {/* HERO: north star (pre) or pipeline metrics (post) */}
       {d.hasFirstClient ? (
-        <div className="mt-5 rounded-2xl p-5 sm:p-6 flex items-center gap-4" style={{ background: theme.isDark ? `linear-gradient(90deg, ${theme.withAlpha(theme.success, 0.14)}, transparent)` : `linear-gradient(90deg, ${theme.withAlpha(theme.success, 0.1)}, transparent)`, border: `1px solid ${theme.successBorder}` }}>
-          <PartyPopper className="h-8 w-8 flex-shrink-0" style={{ color: theme.success }} />
-          <div>
-            <h2 className="text-lg font-semibold" style={{ color: theme.text }}>You landed your first client.</h2>
-            <p className="text-sm mt-0.5" style={{ color: theme.textMuted }}>{f.paying} paying now. Run the same play again, the next ones come faster.</p>
+        <div className="mt-5 rounded-2xl p-5 sm:p-6 flex flex-wrap items-center gap-x-8 gap-y-4" style={{ ...card, background: theme.isDark ? `linear-gradient(90deg, ${theme.withAlpha(theme.success, 0.1)}, ${theme.card} 60%)` : `linear-gradient(90deg, ${theme.withAlpha(theme.success, 0.07)}, ${theme.card} 60%)` }}>
+          <div className="flex items-center gap-3">
+            <PartyPopper className="h-7 w-7 flex-shrink-0" style={{ color: theme.success }} />
+            <div>
+              <p className="text-[11px] font-mono uppercase tracking-[0.12em]" style={{ color: theme.textMuted }}>Paying clients</p>
+              <p className="text-4xl font-bold leading-none" style={{ color: theme.success }}>{f.paying}</p>
+            </div>
+          </div>
+          <div className="h-10 w-px hidden sm:block" style={{ backgroundColor: theme.border }} />
+          <div className="flex items-center gap-6">
+            <div><p className="text-2xl font-bold tabular-nums" style={{ color: theme.text }}>{f.demoCallsThisWeek}</p><p className="text-[11px] font-mono" style={{ color: theme.textMuted }}>demo calls this week</p></div>
+            <div><p className="text-2xl font-bold tabular-nums" style={{ color: theme.text }}>{f.trials}</p><p className="text-[11px] font-mono" style={{ color: theme.textMuted }}>trials open</p></div>
           </div>
         </div>
       ) : (
@@ -179,7 +192,7 @@ export default function FirstClientPage() {
       )}
 
       {/* FUNNEL */}
-      {sectionLabel('Your path to the first client')}
+      {sectionLabel('Your pipeline')}
       <div className="rounded-2xl overflow-hidden" style={card}>
         <div className="grid grid-cols-2 sm:grid-cols-4">
           {stages.map((s, i) => (
@@ -202,25 +215,30 @@ export default function FirstClientPage() {
         </div>
       </div>
 
-      {/* SETUP + REPS */}
-      {sectionLabel('Before you sell', `${doneCount} of ${checklistItems.length} done`)}
+      {/* SETUP (collapsible) + REPS */}
+      {sectionLabel('Setup', `${doneCount} of ${checklistItems.length} done`)}
       <div className="grid grid-cols-1 sm:grid-cols-[1fr_minmax(0,220px)] gap-4">
         <div className="p-4 sm:p-5" style={card}>
-          <div className="flex items-center justify-between gap-3 mb-3">
-            <h3 className="text-sm font-semibold" style={{ color: theme.text }}>Setup checklist</h3>
-            {doneCount === checklistItems.length
-              ? <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full" style={{ color: theme.success, backgroundColor: theme.successBg }}>Ready to sell</span>
-              : <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full" style={{ color: theme.primary, backgroundColor: theme.primary15 }}>Almost there</span>}
-          </div>
-          <div>
-            {checklistItems.map((item, i) => (
-              <div key={item.label} className="flex items-center gap-3 py-2.5" style={{ borderTop: i === 0 ? 'none' : `1px solid ${theme.borderSubtle}` }}>
-                <span className="h-5 w-5 rounded-md flex items-center justify-center flex-shrink-0" style={item.done ? { backgroundColor: theme.success } : { border: `1.5px solid ${theme.border}` }}>{item.done && <Check className="h-3 w-3" style={{ color: theme.getContrastText(theme.success) }} strokeWidth={3} />}</span>
-                <span className="text-[13.5px]" style={{ color: item.done ? theme.textMuted : theme.text }}>{item.label}</span>
-                {!item.done && <a href={item.href} className="ml-auto text-[11px] font-mono flex-shrink-0" style={{ color: theme.primary }}>{item.go} ›</a>}
-              </div>
-            ))}
-          </div>
+          <button type="button" onClick={() => setChecklistOpen(!checklistExpanded)} className="w-full flex items-center justify-between gap-3 text-left" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+            <span className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold" style={{ color: theme.text }}>Setup checklist</h3>
+              {setupComplete
+                ? <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full" style={{ color: theme.success, backgroundColor: theme.successBg }}>Complete</span>
+                : <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full" style={{ color: theme.primary, backgroundColor: theme.primary15 }}>{doneCount}/{checklistItems.length}</span>}
+            </span>
+            <ChevronDown className="h-4 w-4 flex-shrink-0 transition-transform" style={{ color: theme.textMuted, transform: checklistExpanded ? 'rotate(180deg)' : 'none' }} />
+          </button>
+          {checklistExpanded && (
+            <div className="mt-3">
+              {checklistItems.map((item, i) => (
+                <div key={item.label} className="flex items-center gap-3 py-2.5" style={{ borderTop: i === 0 ? 'none' : `1px solid ${theme.borderSubtle}` }}>
+                  <span className="h-5 w-5 rounded-md flex items-center justify-center flex-shrink-0" style={item.done ? { backgroundColor: theme.success } : { border: `1.5px solid ${theme.border}` }}>{item.done && <Check className="h-3 w-3" style={{ color: theme.getContrastText(theme.success) }} strokeWidth={3} />}</span>
+                  <span className="text-[13.5px]" style={{ color: item.done ? theme.textMuted : theme.text }}>{item.label}</span>
+                  {!item.done && <a href={item.href} className="ml-auto text-[11px] font-mono flex-shrink-0" style={{ color: theme.primary }}>{item.go} ›</a>}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         <div className="p-5 flex flex-col items-center justify-center text-center gap-1.5" style={card}>
           <p className="text-[11px] font-mono uppercase tracking-[0.1em]" style={{ color: theme.textMuted }}>Today's outreach</p>
@@ -264,40 +282,48 @@ export default function FirstClientPage() {
         </>
       )}
 
-      {/* PLAYBOOK */}
-      {sectionLabel('The play that lands clients')}
-      <div className="p-1.5" style={card}>
-        {[
-          { h: 'Pick one niche with a storefront', p: 'Home services work best: HVAC, plumbing, roofing, auto, med spas. Pick one, in one city. Focus beats spraying ten industries.', links: [{ label: 'Lead finder', href: '/agency/leads' }], vid: 'Pick your niche' },
-          { h: 'Walk in and ask one question', p: 'Don’t pitch. Ask: "How many calls does this place miss when you’re slammed or closed?" Let them answer. That’s the opening.', links: [], vid: 'The walk-in: first 20 seconds' },
-          { h: 'Call the demo on speaker, right there', p: 'Pull out your phone, call your demo line, and let them hear the AI answer as their business. This is the moment the deal is made.', links: [{ label: 'Demo phone', href: '/agency/demo-phone' }], vid: 'The live-demo close' },
-          { h: 'Leave the kit, get their cell', p: 'Hand them the one-pager with the QR so they can hear it again. If the owner is out, leave the "Sorry we missed you" card.', links: [{ label: 'Marketing kit', href: '/agency/marketing-kit' }], vid: null },
-          { h: 'Follow up and close the trial', p: 'Text the next day with the demo number again. When they’re in, start the 7-day trial, walk them through it, and ask for the card.', links: [{ label: 'Outreach templates', href: '/agency/outreach' }], vid: 'The 4 objections' },
-        ].map((step, i, arr) => (
-          <div key={i} className="flex gap-3.5 p-3.5" style={{ borderTop: i === 0 ? 'none' : `1px solid ${theme.borderSubtle}` }}>
-            <span className="h-[26px] w-[26px] rounded-lg flex items-center justify-center flex-shrink-0 text-[13px] font-mono font-semibold" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}`, color: theme.primary }}>{i + 1}</span>
-            <div className="min-w-0 flex-1">
-              <h4 className="text-sm font-semibold mb-1" style={{ color: theme.text }}>{step.h}</h4>
-              <p className="text-[13px]" style={{ color: theme.textMuted }}>{step.p}</p>
-              {(step.links.length > 0 || step.vid) && (
-                <div className="flex flex-wrap gap-2 mt-2.5">
-                  {step.links.map((l) => (
-                    <a key={l.href} href={l.href} className="text-[11px] font-mono rounded-full px-2.5 py-1" style={{ color: theme.primary, backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>{l.label}</a>
-                  ))}
-                  {step.vid && <span className="text-[11px] font-mono rounded-full px-2.5 py-1 inline-flex items-center gap-1.5" style={{ color: theme.textMuted, border: `1px dashed ${theme.border}` }}><Play className="h-3 w-3" />{step.vid}</span>}
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
+      {/* PLAYBOOK (collapsible) */}
+      <div className="flex items-center gap-3 mt-7 mb-3">
+        <button type="button" onClick={() => setPlayOpen(!playExpanded)} className="flex items-center gap-2 flex-shrink-0" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+          <span className="text-[11px] font-mono uppercase tracking-[0.1em]" style={{ color: theme.textMuted }}>The play that lands clients</span>
+          <ChevronDown className="h-3.5 w-3.5 transition-transform" style={{ color: theme.textMuted, transform: playExpanded ? 'rotate(180deg)' : 'none' }} />
+        </button>
+        <span className="flex-1 h-px" style={{ backgroundColor: theme.border }} />
       </div>
+      {playExpanded && (
+        <div className="p-1.5" style={card}>
+          {[
+            { h: 'Pick one niche with a storefront', p: 'Home services work best: HVAC, plumbing, roofing, auto, med spas. Pick one, in one city. Focus beats spraying ten industries.', links: [{ label: 'Lead finder', href: '/agency/leads' }], vid: 'Pick your niche' },
+            { h: 'Walk in and ask one question', p: 'Don’t pitch. Ask: "How many calls does this place miss when you’re slammed or closed?" Let them answer. That’s the opening.', links: [], vid: 'The walk-in: first 20 seconds' },
+            { h: 'Call the demo on speaker, right there', p: 'Pull out your phone, call your demo line, and let them hear the AI answer as their business. This is the moment the deal is made.', links: [{ label: 'Demo phone', href: '/agency/demo-phone' }], vid: 'The live-demo close' },
+            { h: 'Leave the kit, get their cell', p: 'Hand them the one-pager with the QR so they can hear it again. If the owner is out, leave the "Sorry we missed you" card.', links: [{ label: 'Marketing kit', href: '/agency/marketing-kit' }], vid: null },
+            { h: 'Follow up and close the trial', p: 'Text the next day with the demo number again. When they’re in, start the 7-day trial, walk them through it, and ask for the card.', links: [{ label: 'Outreach templates', href: '/agency/outreach' }], vid: 'The 4 objections' },
+          ].map((step, i) => (
+            <div key={i} className="flex gap-3.5 p-3.5" style={{ borderTop: i === 0 ? 'none' : `1px solid ${theme.borderSubtle}` }}>
+              <span className="h-[26px] w-[26px] rounded-lg flex items-center justify-center flex-shrink-0 text-[13px] font-mono font-semibold" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}`, color: theme.primary }}>{i + 1}</span>
+              <div className="min-w-0 flex-1">
+                <h4 className="text-sm font-semibold mb-1" style={{ color: theme.text }}>{step.h}</h4>
+                <p className="text-[13px]" style={{ color: theme.textMuted }}>{step.p}</p>
+                {(step.links.length > 0 || step.vid) && (
+                  <div className="flex flex-wrap gap-2 mt-2.5">
+                    {step.links.map((l) => (
+                      <a key={l.href} href={l.href} className="text-[11px] font-mono rounded-full px-2.5 py-1" style={{ color: theme.primary, backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>{l.label}</a>
+                    ))}
+                    {step.vid && <span className="text-[11px] font-mono rounded-full px-2.5 py-1 inline-flex items-center gap-1.5" style={{ color: theme.textMuted, border: `1px dashed ${theme.border}` }}><Play className="h-3 w-3" />{step.vid}</span>}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* WALKTHROUGH CTA */}
       <div className="mt-6 rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3" style={{ background: theme.isDark ? `linear-gradient(90deg, ${theme.primary15}, transparent)` : `linear-gradient(90deg, ${theme.primary10}, transparent)`, border: `1px solid ${theme.primary30}` }}>
         <div className="flex items-center gap-3 min-w-0">
           <CalendarCheck className="h-5 w-5 flex-shrink-0" style={{ color: theme.primary }} />
           <div className="min-w-0">
-            <p className="text-sm font-semibold" style={{ color: theme.text }}>Stuck after a couple weeks?</p>
+            <p className="text-sm font-semibold" style={{ color: theme.text }}>Stuck, or want a second set of eyes?</p>
             <p className="text-[12.5px]" style={{ color: theme.textMuted }}>Get on a live walkthrough and we'll find exactly where you're losing deals.</p>
           </div>
         </div>
