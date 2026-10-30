@@ -175,6 +175,12 @@ export default function AgencyDashboardPage() {
   // the same gate with a 403).
   const isFreePlan = String(agency?.plan_type || '').toLowerCase() === 'free';
 
+  // Mirror the backend gate (stripe-platform.js canAgencyAddClient): a Free
+  // agency with no Stripe customer can't add billable clients, so its public
+  // signup link rejects every submission with "not accepting signups". Warn the
+  // owner on the link card so they set up billing before sharing or testing it.
+  const needsBillingSetup = isFreePlan && !agency?.stripe_customer_id && !agency?.is_call_center;
+
   if (contextLoading || loading) {
     return (<div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} /></div>);
   }
@@ -310,6 +316,17 @@ export default function AgencyDashboardPage() {
           <div className="min-w-0"><p className="text-xs sm:text-sm mb-1" style={{ color: theme.textMuted }}>Your Client Signup Link</p><p className="text-sm sm:text-lg font-medium truncate" style={{ color: theme.primary }}>{signupLink}</p></div>
           <button onClick={copySignupLink} className="inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors flex-shrink-0" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary}40`, color: theme.primary }}>{copied ? (<><Check className="h-4 w-4" />Copied!</>) : (<><Copy className="h-4 w-4" />Copy Link</>)}</button>
         </div>
+        {needsBillingSetup && (
+          <div className="mt-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 rounded-lg px-3 py-2.5" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningText}30` }}>
+            <div className="flex items-start gap-2 min-w-0 flex-1">
+              <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.warningText }} />
+              <p className="text-xs sm:text-sm" style={{ color: theme.warningText }}>This link won&apos;t accept client signups until you set up billing. Add a payment method to start onboarding clients.</p>
+            </div>
+            <a href="/agency/settings?tab=billing" className="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium flex-shrink-0 transition-colors" style={{ backgroundColor: theme.warningText, color: theme.isDark ? '#1a1a1a' : '#ffffff' }}>
+              <CreditCard className="h-3.5 w-3.5" />Set up billing
+            </a>
+          </div>
+        )}
       </div>
 
       {/* MARKETING KIT quick access */}

@@ -63,7 +63,7 @@ export default function SetupChecklist({ agency, clientCount, theme, userRole, d
       id: 'test_ai',
       title: 'Set up your test client',
       description: provisioningTestClient
-        ? 'Setting up your test client — this takes about 15 seconds...'
+        ? 'Setting up your test client, this takes about 15 seconds...'
         : 'Activate a working AI receptionist with its own phone number to test the system',
       icon: Phone,
       completed: testClientComplete,
@@ -84,7 +84,9 @@ export default function SetupChecklist({ agency, clientCount, theme, userRole, d
       title: 'Add a payment method',
       description: 'Required before adding your first client',
       icon: CreditCard,
-      completed: !!agency?.stripe_subscription_id,
+      // Mirror the backend gate (canAgencyAddClient): a Stripe customer is what
+      // actually unblocks adding clients, so count that as well as a full sub.
+      completed: !!(agency?.stripe_customer_id || agency?.stripe_subscription_id),
       href: '/agency/settings?tab=billing',
     },
     {
@@ -100,7 +102,7 @@ export default function SetupChecklist({ agency, clientCount, theme, userRole, d
       id: 'test_ai',
       title: 'Set up your test client',
       description: provisioningTestClient
-        ? 'Setting up your test client — this takes about 15 seconds...'
+        ? 'Setting up your test client, this takes about 15 seconds...'
         : 'Activate a working AI receptionist with its own phone number to test the system',
       icon: Phone,
       completed: testClientComplete,
@@ -162,7 +164,7 @@ export default function SetupChecklist({ agency, clientCount, theme, userRole, d
           <div className="flex items-center gap-1">
             {steps.map(s => (<div key={s.id} className="w-2 h-2 rounded-full transition-colors" style={{ backgroundColor: s.completed ? theme.primary : theme.border }} />))}
           </div>
-          <span className="text-sm font-medium" style={{ color: theme.textMuted }}>Complete setup — {completedCount}/{steps.length} done</span>
+          <span className="text-sm font-medium" style={{ color: theme.textMuted }}>Complete setup, {completedCount}/{steps.length} done</span>
         </div>
         <ChevronDown className="h-4 w-4" style={{ color: theme.textMuted }} />
       </button>
@@ -179,7 +181,7 @@ export default function SetupChecklist({ agency, clientCount, theme, userRole, d
             </div>
             <div>
               <h3 className="text-sm sm:text-base font-semibold" style={{ color: theme.text }}>{isFree ? 'Get started' : 'Finish setting up your agency'}</h3>
-              <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{completedCount} of {steps.length} steps — {steps.length - completedCount} remaining</p>
+              <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{completedCount} of {steps.length} steps, {steps.length - completedCount} remaining</p>
             </div>
           </div>
           <button onClick={() => { setDismissed(true); try { localStorage.setItem('voiceai_setup_dismissed', 'true'); } catch {} }}
