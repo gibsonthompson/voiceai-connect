@@ -133,7 +133,7 @@ export default function GoHighLevelPage() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/[0.08] px-4 py-1.5 text-sm mb-6">
             <Zap className="h-4 w-4 text-blue-400" />
-            <span className="text-blue-300/90">GoHighLevel Integration</span>
+            <span className="text-blue-300/90">Works with GoHighLevel</span>
           </div>
 
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight leading-[1.1]">
@@ -146,7 +146,7 @@ export default function GoHighLevelPage() {
           {/* Answer-First Summary Box */}
           <div className="mt-8 p-6 rounded-2xl border border-blue-500/20 bg-blue-500/[0.05]">
             <p className="text-lg sm:text-xl text-[#fafaf9]/80 leading-relaxed">
-              <strong className="text-[#fafaf9]">For GHL agency owners and SaaS Mode users:</strong> Add AI receptionist as a new revenue stream alongside your existing GoHighLevel offerings. Call data syncs directly to GHL contacts, triggers workflows, and books to GHL calendars. Your sub-accounts get 24/7 call coverage that feels native to the platform—while you earn $150-300/month per client with zero delivery work.
+              <strong className="text-[#fafaf9]">For GHL agency owners and SaaS Mode users:</strong> Add AI receptionist as a new revenue stream alongside your existing GoHighLevel offerings. Calls create GHL contacts automatically and the AI books straight into your GHL calendars. Your sub-accounts get 24/7 call coverage that fits the tools you already use, while you earn $150-300/month per client with zero delivery work.
             </p>
           </div>
 
@@ -161,13 +161,13 @@ export default function GoHighLevelPage() {
       {/* GHL Integration Highlights */}
       <section className="py-12 border-y border-white/[0.06] bg-white/[0.01]">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <h2 className="text-xl font-semibold text-center mb-8">Native GoHighLevel Integration</h2>
+          <h2 className="text-xl font-semibold text-center mb-8">Works with GoHighLevel</h2>
           <div className="grid sm:grid-cols-4 gap-6">
             {[
-              { icon: Database, title: 'Contact Sync', description: 'Calls create/update GHL contacts automatically' },
-              { icon: Workflow, title: 'Trigger Workflows', description: 'Fire automations based on call outcomes' },
-              { icon: Calendar, title: 'Calendar Booking', description: 'AI books directly to GHL calendars' },
-              { icon: MessageSquare, title: 'Conversation Logs', description: 'Call transcripts sync to contact records' },
+              { icon: Database, title: 'Contact Sync', description: 'Callers become GHL contacts automatically' },
+              { icon: Calendar, title: 'Live Availability', description: 'The AI reads your GHL calendar’s open times on the call' },
+              { icon: Calendar, title: 'Calendar Booking', description: 'Appointments book straight into your GHL calendar' },
+              { icon: MessageSquare, title: 'No Double-Booking', description: 'The AI only offers times that are genuinely free' },
             ].map((item) => (
               <div key={item.title} className="text-center">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10 mx-auto mb-3">
@@ -196,7 +196,7 @@ export default function GoHighLevelPage() {
             
             <p className="text-[#fafaf9]/60 text-lg leading-relaxed mb-6">
               You already sell software and automations to local businesses. You understand recurring revenue. 
-              Your clients trust you with their tech stack. AI receptionist is a natural extension—and it 
+              Your clients trust you with their tech stack. AI receptionist is a natural extension, and it 
               integrates directly with the GHL ecosystem you already manage.
             </p>
 
@@ -240,7 +240,7 @@ export default function GoHighLevelPage() {
             </h2>
 
             <p className="text-[#fafaf9]/60 text-lg leading-relaxed mb-6">
-              The integration is designed to feel native to GHL. Your clients get AI-powered call handling 
+              The integration fits into the GHL workflow you already use. Your clients get AI-powered call handling
               that feeds directly into the CRM and automations they already use.
             </p>
 
@@ -259,12 +259,12 @@ export default function GoHighLevelPage() {
                 {
                   step: '3',
                   title: 'Data Syncs to GHL',
-                  description: 'Contact created/updated in GHL with name, phone, email, call reason, transcript, and recording.',
+                  description: 'A GHL contact is created or updated with name, phone, and email, deduped against your existing contacts.',
                 },
                 {
                   step: '4',
-                  title: 'Workflows Trigger',
-                  description: 'Custom tags applied, automations fired, tasks created—whatever you\'ve built in GHL.',
+                  title: 'Your GHL Workflows Fire',
+                  description: 'GHL\'s native Contact Created trigger runs your own automations, nurture sequences, notifications, and tasks, exactly as you built them.',
                 },
                 {
                   step: '5',
@@ -285,21 +285,15 @@ export default function GoHighLevelPage() {
             </div>
 
             <div className="p-6 rounded-2xl border border-white/[0.08] bg-[#0a0a0a]">
-              <h3 className="font-semibold mb-4">Data That Syncs to GHL Contacts</h3>
+              <h3 className="font-semibold mb-4">What the AI Writes to GoHighLevel</h3>
               <div className="grid sm:grid-cols-2 gap-4">
                 {[
                   'Caller name',
                   'Phone number',
                   'Email (if captured)',
-                  'Call reason/intent',
-                  'Full transcript',
-                  'Call recording URL',
-                  'Call duration',
-                  'Custom tags',
-                  'Lead score',
-                  'Appointment details',
-                  'Follow-up tasks',
-                  'Urgency level',
+                  'New or updated GHL contact',
+                  'Booked appointment on your calendar',
+                  'Appointment shown on the calendar grid',
                 ].map((item) => (
                   <div key={item} className="flex items-center gap-2 text-sm">
                     <Check className="h-4 w-4 text-emerald-400" />
@@ -307,6 +301,9 @@ export default function GoHighLevelPage() {
                   </div>
                 ))}
               </div>
+              <p className="mt-4 pt-4 border-t border-white/[0.06] text-sm text-[#fafaf9]/50">
+                The full call recording, transcript, duration, and summary live in the VoiceAI Connect client dashboard.
+              </p>
             </div>
           </div>
 
@@ -364,7 +361,7 @@ export default function GoHighLevelPage() {
             <div className="p-5 rounded-xl border border-white/[0.06] bg-white/[0.02]">
               <p className="text-[#fafaf9]/70">
                 <strong className="text-[#fafaf9]">The positioning that works:</strong> "Our platform now includes AI-powered 
-                call handling. Never miss a lead again—even at 2am. It integrates directly with your CRM and automations."
+                call handling. Never miss a lead again, even at 2am. It integrates directly with your CRM and automations."
               </p>
             </div>
           </div>
@@ -431,40 +428,41 @@ export default function GoHighLevelPage() {
             </h2>
 
             <p className="text-[#fafaf9]/60 text-lg leading-relaxed mb-6">
-              Here's how GHL agencies are using AI receptionist data to power automations:
+              Every answered call creates or updates a GHL contact, and every booking lands on your calendar.
+              GHL fires its native triggers off those two events, so you can build automations like these:
             </p>
 
             <div className="grid sm:grid-cols-2 gap-4">
               {[
                 {
-                  name: 'Hot Lead Alert',
-                  trigger: 'AI tags call as "urgent" or "high value"',
-                  action: 'Instant SMS to business owner + Slack notification + task created',
+                  name: 'New Lead Alert',
+                  trigger: 'A call creates a new GHL contact',
+                  action: 'Instant SMS to the business owner + Slack notification + task created',
                 },
                 {
                   name: 'Appointment Confirmation',
-                  trigger: 'AI books appointment via GHL calendar',
+                  trigger: 'The AI books an appointment on your GHL calendar',
                   action: 'Confirmation email + SMS reminder sequence + add to pipeline',
                 },
                 {
-                  name: 'Missed Opportunity Recovery',
-                  trigger: 'Caller hangs up before completing',
-                  action: 'SMS follow-up: "Sorry we missed you, can we call you back?"',
+                  name: 'New Lead Nurture',
+                  trigger: 'A first-time caller is saved as a GHL contact',
+                  action: 'Start your welcome sequence + send a follow-up SMS',
                 },
                 {
-                  name: 'After-Hours Handling',
-                  trigger: 'Call comes in outside business hours',
-                  action: 'Tag contact + schedule callback task + send "we got your message" SMS',
+                  name: 'Pipeline Routing',
+                  trigger: 'A new contact is created from a call',
+                  action: 'Add to the right pipeline stage + assign to a team member',
                 },
                 {
-                  name: 'Service Request Routing',
-                  trigger: 'AI identifies service type (e.g., "emergency repair")',
-                  action: 'Route to specific pipeline + assign to on-call technician',
+                  name: 'Callback Task',
+                  trigger: 'A new contact comes in from a call',
+                  action: 'Create a callback task + notify the on-call user',
                 },
                 {
-                  name: 'New Customer Onboarding',
-                  trigger: 'First-time caller identified',
-                  action: 'Add to nurture sequence + send welcome email + create opportunity',
+                  name: 'Booking Follow-Through',
+                  trigger: 'The AI books an appointment',
+                  action: 'Send prep instructions + add to a post-appointment review sequence',
                 },
               ].map((item) => (
                 <div key={item.name} className="p-5 rounded-xl border border-white/[0.06] bg-white/[0.02]">
@@ -494,7 +492,7 @@ export default function GoHighLevelPage() {
                 
                 <p>Quick update on something we just added to your [Platform Name] account.</p>
                 
-                <p>You can now add an AI receptionist that answers every single call to your business—24/7, 
+                <p>You can now add an AI receptionist that answers every single call to your business, 24/7, 
                 even when you're busy or it's after hours.</p>
                 
                 <p>Here's what it does:</p>
@@ -531,7 +529,7 @@ export default function GoHighLevelPage() {
             {[
               {
                 q: 'Does this work with GHL SaaS Mode?',
-                a: 'Yes. You can offer AI receptionist as an add-on to your SaaS Mode clients just like any other feature. Pricing is flexible—charge what you want, bill through your existing Stripe integration, and keep the margin.',
+                a: 'Yes. You can offer AI receptionist as an add-on to your SaaS Mode clients just like any other feature. Pricing is flexible, charge what you want, bill through your existing Stripe integration, and keep the margin.',
               },
               {
                 q: 'How does the calendar integration work?',
