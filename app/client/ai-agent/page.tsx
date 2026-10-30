@@ -14,6 +14,7 @@ import ToolConfigSection from '@/components/client/ToolConfigSection';
 
 interface VoiceOption { id: string; name: string; gender: 'male' | 'female'; accent: string; style: string; description: string; previewUrl: string; recommended?: boolean; }
 interface CalendarStatus { connected: boolean; token_valid: boolean; calendar_access?: boolean; plan_allowed: boolean; plan_message: string | null; email?: string | null; }
+interface GhlStatus { connected: boolean; token_valid: boolean; provider?: string | null; location_id?: string | null; calendar_id?: string | null; needs_calendar?: boolean; calendars?: { id: string; name: string | null }[]; }
 
 function hexToRgba(hex: string, alpha: number): string {
   const r = parseInt(hex.slice(1, 3), 16);
@@ -124,7 +125,12 @@ export default function ClientAIAgentPage() {
   const [calendarLoading, setCalendarLoading] = useState(true);
   const [disconnectingCalendar, setDisconnectingCalendar] = useState(false);
 
-  useEffect(() => { if (client) { fetchVoices(); fetchCurrentVoice(); fetchGreeting(); fetchCalendarStatus(); } }, [client]);
+  // GoHighLevel state
+  const [ghlStatus, setGhlStatus] = useState<GhlStatus | null>(null);
+  const [ghlLoading, setGhlLoading] = useState(true);
+  const [disconnectingGhl, setDisconnectingGhl] = useState(false);
+
+  useEffect(() => { if (client) { fetchVoices(); fetchCurrentVoice(); fetchGreeting(); fetchCalendarStatus(); fetchGhlStatus(); } }, [client]);
 
   // Once voices load, make sure the Female/American defaults actually have
   // voices for this client; if not, fall back to All so the panel never opens
@@ -168,6 +174,17 @@ export default function ClientAIAgentPage() {
       window.history.replaceState({}, '', window.location.pathname);
     } else if (error?.startsWith('calendar_')) {
       showMessage('Failed to connect Google Calendar. Please try again.', true);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+    // GoHighLevel round-trip result
+    if (params.get('success') === 'crm_connected') {
+      showMessage('GoHighLevel connected successfully!');
+      setGhlStatus(prev => (prev ? { ...prev, connected: true, token_valid: true } : { connected: true, token_valid: true }));
+      setTimeout(() => document.getElementById('ghl-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if ((error || '').startsWith('crm_')) {
+      showMessage('Failed to connect GoHighLevel. Please try again.', true);
+      setTimeout(() => document.getElementById('ghl-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
@@ -238,6 +255,52 @@ export default function ClientAIAgentPage() {
       showMessage('Error disconnecting calendar', true);
     } finally {
       setDisconnectingCalendar(false);
+    }
+  };
+
+  // GoHighLevel: status is public (no auth header), same pattern as the calendar
+  // status check. Connect/disconnect mirror the Google flow.
+  const fetchGhlStatus = async () => {
+    if (!client) return;
+    try {
+      const response = await fetch(`${getBackendUrl()}/api/auth/crm-calendar/status/${client.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setGhlStatus(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch GoHighLevel status:', err);
+      setGhlStatus({ connected: (client as any).ghl_connected || false, token_valid: false });
+    } finally {
+      setGhlLoading(false);
+    }
+  };
+
+  const handleConnectGhl = () => {
+    const ret = encodeURIComponent(`${window.location.origin}/client/ai-agent`);
+    window.location.href = `${getBackendUrl()}/api/auth/crm-calendar/connect?clientId=${client?.id}&return=${ret}`;
+  };
+
+  const handleDisconnectGhl = async () => {
+    if (!confirm('Disconnect GoHighLevel? Your AI will stop booking into your GoHighLevel calendar.')) return;
+    setDisconnectingGhl(true);
+    try {
+      const response = await fetch(`${getBackendUrl()}/api/auth/crm-calendar/disconnect`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` },
+        body: JSON.stringify({ clientId: client?.id }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        showMessage('GoHighLevel disconnected');
+        setGhlStatus(prev => prev ? { ...prev, connected: false, token_valid: false } : null);
+      } else {
+        showMessage(data.error || 'Failed to disconnect GoHighLevel', true);
+      }
+    } catch {
+      showMessage('Error disconnecting GoHighLevel', true);
+    } finally {
+      setDisconnectingGhl(false);
     }
   };
 
@@ -330,6 +393,7 @@ export default function ClientAIAgentPage() {
   const availableAccents = getAvailableAccents();
   const isCalendarConnected = calendarStatus?.connected || client?.google_calendar_connected;
   const isCalendarPlanAllowed = (client as any)?.is_test_client || calendarStatus?.plan_allowed !== false;
+  const isGhlConnected = ghlStatus?.connected || (client as any)?.ghl_connected;
 
   const glass = { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.8)', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`, backdropFilter: theme.isDark ? 'blur(20px)' : 'blur(12px)', WebkitBackdropFilter: theme.isDark ? 'blur(20px)' : 'blur(12px)' };
   const inputStyle = { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#ffffff', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`, color: theme.text };
@@ -452,6 +516,72 @@ export default function ClientAIAgentPage() {
 
                 <p className="text-[11px] leading-relaxed" style={{ color: theme.textMuted4 }}>
                   Powered by our scheduling partner, VoiceAI Connect, so Google shows their name when you approve. Your calendar stays private.
+                </p>
+              </div>
+            )}
+          </SectionCard>
+        </div>
+
+        {/* GoHighLevel Integration */}
+        <div id="ghl-section" className="fu fu2 scroll-mt-6">
+          <SectionCard icon={SectionCalendarIcon} title="GoHighLevel" subtitle={isGhlConnected ? 'Your AI books into your GoHighLevel calendar' : 'Already on GoHighLevel? Connect it so your AI books there'} live={!!isGhlConnected} theme={theme} primaryColor={primaryColor} glass={glass}>
+            {ghlLoading ? (
+              <div className="flex items-center justify-center py-3"><Loader2 className="w-4 h-4 animate-spin" style={{ color: theme.textMuted4 }} /></div>
+            ) : isGhlConnected ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 rounded-xl p-3 sm:p-3.5" style={{ backgroundColor: theme.successBg, border: `1px solid ${theme.successBorder}` }}>
+                  <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ backgroundColor: theme.success }} />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5" style={{ backgroundColor: theme.success }} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold leading-tight" style={{ color: theme.successText }}>GoHighLevel connected</p>
+                    <p className="text-[11px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>Your AI books appointments straight into your GoHighLevel calendar.</p>
+                  </div>
+                </div>
+
+                {ghlStatus?.needs_calendar && (
+                  <div className="p-2.5 sm:p-3 rounded-lg flex items-start gap-2" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
+                    <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: theme.warning }} />
+                    <p className="text-xs sm:text-sm font-medium" style={{ color: theme.warningText }}>No calendar found in GoHighLevel yet. Create one there, then reconnect.</p>
+                  </div>
+                )}
+
+                {ghlStatus && ghlStatus.token_valid === false && (
+                  <div className="p-2.5 sm:p-3 rounded-lg flex items-start gap-2" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
+                    <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: theme.warning }} />
+                    <p className="text-xs sm:text-sm font-medium" style={{ color: theme.warningText }}>GoHighLevel connection may have expired. Reconnect to keep bookings flowing.</p>
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <button onClick={handleConnectGhl} className="flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition hover:opacity-90" style={{ backgroundColor: theme.bg, color: theme.textMuted, border: `1px solid ${theme.border}` }}><RotateCcw className="w-3.5 h-3.5" /> Reconnect</button>
+                  <button onClick={handleDisconnectGhl} disabled={disconnectingGhl} className="flex-1 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: theme.errorBg, color: theme.error, border: `1px solid ${theme.errorBorder}` }}>
+                    {disconnectingGhl ? (<span className="flex items-center justify-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Disconnecting...</span>) : 'Disconnect'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm leading-relaxed" style={{ color: theme.textMuted }}>
+                  Already use GoHighLevel? Connect it and the AI books appointments straight into your GoHighLevel calendar, so your contacts and automations there keep running off every call.
+                </p>
+
+                <div className="flex flex-wrap gap-x-5 gap-y-2">
+                  <span className="inline-flex items-center gap-1.5 text-[13px] font-medium" style={{ color: theme.text }}>
+                    <Check className="w-4 h-4 flex-shrink-0" style={{ color: primaryColor }} /> Books into your GoHighLevel calendar
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-[13px] font-medium" style={{ color: theme.text }}>
+                    <Shield className="w-4 h-4 flex-shrink-0" style={{ color: primaryColor }} /> Disconnect anytime
+                  </span>
+                </div>
+
+                <button onClick={handleConnectGhl} className="w-full flex items-center justify-center gap-2.5 py-3 rounded-xl text-sm font-semibold transition hover:shadow-sm" style={{ backgroundColor: theme.card, color: theme.text, border: `1px solid ${theme.border}` }}>
+                  <Calendar className="w-[18px] h-[18px]" /> Connect GoHighLevel
+                </button>
+
+                <p className="text-[11px] leading-relaxed" style={{ color: theme.textMuted4 }}>
+                  Optional. Your AI already books and texts on its own, connect GoHighLevel only if you already run your scheduling and automations there.
                 </p>
               </div>
             )}
