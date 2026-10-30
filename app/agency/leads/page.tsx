@@ -13,6 +13,7 @@ import { useAgency } from '../context';
 import LockedFeatureOverlay from '@/components/LockedFeature';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import { useTheme } from '../../../hooks/useTheme';
+import FirstClientBanner from '@/components/agency/FirstClientBanner';
 import { CustomSelect } from '@/components/ui/custom-select';
 import { getDemoLeads } from '../demoData';
 import CSVImportModal from '@/components/CSVImportModal';
@@ -519,6 +520,7 @@ export default function AgencyLeadsPage() {
 
   const pageContent = (
     <div className="p-4 sm:p-6 lg:p-8" style={lpVars}>
+      <FirstClientBanner />
       {/* Header */}
       <div className="mb-5 sm:mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

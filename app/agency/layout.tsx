@@ -3,7 +3,7 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe, Phone, Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Zap, Paintbrush, Clock, Headphones, Headset, Check, Crown, Shield, Inbox, Compass, type LucideIcon } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe, Phone, Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Zap, Paintbrush, Clock, Headphones, Headset, Check, Crown, Shield, Inbox, Compass, Rocket, type LucideIcon } from 'lucide-react';
 import { AgencyProvider, useAgency } from './context';
 import { usePlanFeatures } from '../../hooks/usePlanFeatures';
 import { useTheme } from '../../hooks/useTheme';
@@ -39,6 +39,7 @@ const ALWAYS_ACCESSIBLE_ROUTES = ['/agency/settings', '/agency/login'];
 // gated under 'billing' since it exposes the agency's live Stripe balance.
 const PATH_PERMISSIONS: Record<string, string> = {
   '/agency/dashboard': 'dashboard',
+  '/agency/first-client': 'dashboard',
   '/agency/clients': 'clients',
   '/agency/leads': 'leads',
   '/agency/outreach': 'outreach',
@@ -141,11 +142,6 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const secondaryColor = branding.secondaryColor || '#007e77';
   const accentColor = branding.accentColor || '#01f5d1';
   const trialDaysLeft = getTrialDaysLeft(agency?.trial_ends_at);
-  // Nav logo size multiplier. Read straight from the agency's branding_overrides
-  // so it works regardless of the context's branding resolution (plan gating,
-  // stale build). The only requirement is a valid number in [1, 4].
-  const _rawLogoScale = Number((agency as any)?.branding_overrides?.logo_scale);
-  const logoScale = (isFinite(_rawLogoScale) && _rawLogoScale >= 1 && _rawLogoScale <= 4) ? _rawLogoScale : 1;
   const isOnTrial = isTrialStatus(agency?.subscription_status);
   const hasPaymentIssue = isPaymentFailed(agency?.subscription_status);
   const agencyIsSuspended = isSuspended(agency?.status);
@@ -160,6 +156,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
 
   const navItems: NavItem[] = [
     { href: '/agency/dashboard', label: 'Dashboard', icon: LayoutDashboard, permissionKey: 'dashboard' },
+    { href: '/agency/first-client', label: 'First Client', icon: Rocket, permissionKey: 'dashboard' },
     // Call-center only: the live wallboard across all the businesses this agency
     // serves. Shown when the agency signed up as a call center.
     ...(agency?.is_call_center ? [{ href: '/agency/live-calls', label: 'Live Calls', icon: Headphones } as NavItem] : []),
@@ -195,7 +192,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   // by default. A call center that buys the growth add-on (cc_growth_addon) gets
   // them back. Plain reseller agencies are unaffected.
   const CC_GROWTH_HREFS = new Set([
-    '/agency/leads', '/agency/outreach', '/agency/referrals', '/agency/demo-phone', '/agency/marketing',
+    '/agency/first-client', '/agency/leads', '/agency/outreach', '/agency/referrals', '/agency/demo-phone', '/agency/marketing',
   ]);
   const stripGrowthForCallCenter = !!agency?.is_call_center && !agency?.cc_growth_addon;
 
@@ -487,14 +484,14 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       {hasPaymentIssue && isAccessibleRoute && (<div className="sticky z-40 px-4 py-3 flex items-center justify-between gap-3" style={{ top: 0, backgroundColor: theme.errorBg, borderBottom: `1px solid ${theme.errorBorder}` }}><div className="flex items-center gap-3"><CreditCard className="h-5 w-5 flex-shrink-0" style={{ color: theme.error }} /><div><p className="font-medium text-sm" style={{ color: theme.errorText }}>Payment failed</p><p className="text-xs" style={{ color: theme.errorText, opacity: 0.7 }}>Please update your payment method to continue using your agency.</p></div></div>{!pathname?.startsWith('/agency/settings') && (<Link href="/agency/settings" className="rounded-full px-4 py-2 text-sm font-medium transition-colors flex-shrink-0" style={{ backgroundColor: '#ef4444', color: '#ffffff' }}>Update Payment</Link>)}</div>)}
 
       {/* Mobile header */}
-      <div className="sticky z-30 md:hidden" style={{ backgroundColor: theme.sidebarBg, paddingTop: 'env(safe-area-inset-top)', top: hasPaymentIssue && isAccessibleRoute ? '60px' : 0 }}><header className="flex items-center justify-between min-h-[4rem] px-4 py-2" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}><div className="flex items-center gap-3 min-w-0">{branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} style={{ height: `${Math.round(40 * logoScale)}px`, width: 'auto', maxWidth: '100%' }} className="object-contain flex-shrink min-w-0" />) : (<><div className="flex items-center justify-center rounded-xl" style={{ height: '40px', width: '40px', backgroundColor: theme.primary15, border: `1px solid ${theme.sidebarBorder}` }}><WaveformIcon className="h-6 w-6" color={theme.primary} /></div><span className="font-semibold text-lg truncate max-w-[180px]" style={{ color: theme.sidebarText }}>{branding.name}</span></>)}</div><button onClick={() => setSidebarOpen(true)} className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors" style={{ color: theme.sidebarText }}><Menu className="h-7 w-7" /></button></header></div>
+      <div className="sticky z-30 md:hidden" style={{ backgroundColor: theme.sidebarBg, paddingTop: 'env(safe-area-inset-top)', top: hasPaymentIssue && isAccessibleRoute ? '60px' : 0 }}><header className="flex items-center justify-between h-16 px-4" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}><div className="flex items-center gap-3">{branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} style={{ height: '40px', width: 'auto' }} className="object-contain flex-shrink-0" />) : (<><div className="flex items-center justify-center rounded-xl" style={{ height: '40px', width: '40px', backgroundColor: theme.primary15, border: `1px solid ${theme.sidebarBorder}` }}><WaveformIcon className="h-6 w-6" color={theme.primary} /></div><span className="font-semibold text-lg truncate max-w-[180px]" style={{ color: theme.sidebarText }}>{branding.name}</span></>)}</div><button onClick={() => setSidebarOpen(true)} className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors" style={{ color: theme.sidebarText }}><Menu className="h-7 w-7" /></button></header></div>
 
       {sidebarOpen && isMobile && (<div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden" onClick={() => setSidebarOpen(false)} />)}
 
       {/* Sidebar */}
       <aside className={`brand-shell brand-display fixed inset-y-0 left-0 z-50 w-72 md:w-64 flex flex-col transform transition-transform duration-300 ease-out ${isMobile ? `${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}` : 'translate-x-0'}`} style={{ backgroundColor: theme.sidebarBg, borderRight: `1px solid ${theme.sidebarBorder}`, paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0, top: !isMobile ? (hasPaymentIssue && isAccessibleRoute ? '60px' : 0) : 0 }}>
         <div className="flex md:hidden items-center justify-between h-16 px-4" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}><span className="font-semibold text-lg" style={{ color: theme.sidebarText }}>Menu</span><button onClick={() => setSidebarOpen(false)} className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors" style={{ color: theme.sidebarText }}><X className="h-7 w-7" /></button></div>
-        <div className="hidden md:flex min-h-[4rem] items-center gap-3 px-6 py-3" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}>{branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} style={{ height: `${Math.round(32 * logoScale)}px`, width: 'auto', maxWidth: '100%' }} className="object-contain flex-shrink-0" />) : (<><div className="flex items-center justify-center rounded-lg" style={{ height: '32px', width: '32px', backgroundColor: theme.primary15, border: `1px solid ${theme.sidebarBorder}` }}><WaveformIcon className="h-5 w-5" color={theme.primary} /></div><span className="font-semibold truncate" style={{ color: theme.sidebarText }}>{branding.name}</span></>)}</div>
+        <div className="hidden md:flex h-16 items-center gap-3 px-6" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}>{branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} style={{ height: '32px', width: 'auto' }} className="object-contain flex-shrink-0" />) : (<><div className="flex items-center justify-center rounded-lg" style={{ height: '32px', width: '32px', backgroundColor: theme.primary15, border: `1px solid ${theme.sidebarBorder}` }}><WaveformIcon className="h-5 w-5" color={theme.primary} /></div><span className="font-semibold truncate" style={{ color: theme.sidebarText }}>{branding.name}</span></>)}</div>
 
         <nav className="flex-1 min-h-0 overflow-y-auto p-4 space-y-1">
           {filteredNavItems.map((item) => { const active = isActive(item.href); const isLocked = item.locked === true; const route = AGENCY_HREF_ROUTE[item.href]; const IconComponent: any = (route && navIcon(agency?.icon_style, route)) || item.icon; return (

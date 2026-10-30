@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { 
   Users, DollarSign, PhoneCall, Copy, Check,
   ChevronRight, ArrowUpRight, Loader2, MessageSquare, Send, X,
-  Phone, PhoneIncoming, Headphones, Sparkles, Mail, MessageCircle, FlaskConical, Megaphone,
+  Phone, Headphones, Sparkles, Mail, MessageCircle, FlaskConical, Megaphone,
   CheckCircle2, Clock, CreditCard, AlertTriangle, XCircle, Ban
 } from 'lucide-react';
 import { useAgency } from '../context';
@@ -23,24 +23,11 @@ interface RecentClient {
   is_test_client?: boolean;
 }
 
-interface DemoCallLead {
-  id: string;
-  caller_phone?: string | null;
-  caller_name?: string | null;
-  business_name?: string | null;
-  interest_level?: string | null;
-  created_at: string;
-}
-
 interface DashboardStats {
   clientCount: number;
   mrr: number;
   totalCalls: number;
   recentClients: RecentClient[];
-  // Demo-line calls: each one is a prospect who called the demo and heard the AI.
-  demoCallsAllTime?: number;
-  demoCallsThisWeek?: number;
-  recentDemoCalls?: DemoCallLead[];
 }
 
 function formatCurrency(cents: number): string {
@@ -107,7 +94,7 @@ export default function AgencyDashboardPage() {
       const response = await fetch(`${backendUrl}/api/agency/${agency.id}/dashboard`, { headers: { 'Authorization': `Bearer ${token}` } });
       if (response.ok) {
         const data = await response.json();
-        setStats({ clientCount: data.clientCount || 0, mrr: data.mrr || 0, totalCalls: data.totalCalls || 0, recentClients: data.recentClients || [], demoCallsAllTime: data.demoCallsAllTime || 0, demoCallsThisWeek: data.demoCallsThisWeek || 0, recentDemoCalls: data.recentDemoCalls || [] });
+        setStats({ clientCount: data.clientCount || 0, mrr: data.mrr || 0, totalCalls: data.totalCalls || 0, recentClients: data.recentClients || [] });
       }
     } catch (error) { console.error('Failed to fetch dashboard data:', error); }
     finally { setLoading(false); }
@@ -193,11 +180,9 @@ export default function AgencyDashboardPage() {
   }
 
   const statCards = [
-    { label: 'Clients', value: billableClientCount, sub: '', icon: Users, color: theme.primary },
-    { label: 'Monthly Revenue', value: formatCurrency(stats?.mrr || 0), sub: '', icon: DollarSign, color: theme.warning },
-    { label: 'Calls This Month', value: stats?.totalCalls || 0, sub: '', icon: PhoneCall, color: theme.info },
-    // Demo calls = warm leads (prospects who called the demo and heard the AI).
-    { label: 'Demo Calls', value: stats?.demoCallsAllTime || 0, sub: `${stats?.demoCallsThisWeek || 0} this week`, icon: PhoneIncoming, color: theme.success },
+    { label: 'Clients', value: billableClientCount, icon: Users, color: theme.primary },
+    { label: 'Monthly Revenue', value: formatCurrency(stats?.mrr || 0), icon: DollarSign, color: theme.warning },
+    { label: 'Calls This Month', value: stats?.totalCalls || 0, icon: PhoneCall, color: theme.info },
   ];
 
   return (
@@ -365,54 +350,16 @@ export default function AgencyDashboardPage() {
       )}
 
       {/* Stats Grid */}
-      <div className="grid gap-3 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6 sm:mb-8">
+      <div className="grid gap-3 sm:gap-6 grid-cols-1 sm:grid-cols-3 mb-6 sm:mb-8">
         {statCards.map((stat) => (
           <div key={stat.label} className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, boxShadow: theme.isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)' }}>
             <div className="flex items-center justify-between sm:justify-start sm:gap-4">
-              <div className="order-2 sm:order-1 min-w-0">
-                <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>{stat.label}</p>
-                <p className="mt-0.5 sm:mt-1 text-2xl sm:text-3xl font-semibold" style={{ color: theme.text }}>{stat.value}</p>
-                {stat.sub ? <p className="mt-0.5 text-[11px] sm:text-xs font-medium" style={{ color: stat.color }}>{stat.sub}</p> : null}
-              </div>
+              <div className="order-2 sm:order-1"><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>{stat.label}</p><p className="mt-0.5 sm:mt-1 text-2xl sm:text-3xl font-semibold" style={{ color: theme.text }}>{stat.value}</p></div>
               <div className="order-1 sm:order-2 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl" style={{ backgroundColor: `${stat.color}15` }}><stat.icon className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: stat.color }} /></div>
             </div>
           </div>
         ))}
       </div>
-
-      {/* NEW DEMO CALLS, follow-up prompts. Each is a prospect who called the demo
-          and heard the AI, the warmest lead an agency gets. Shown only when there
-          are recent ones; links through to the full feed with transcripts. */}
-      {!demoMode && stats?.recentDemoCalls && stats.recentDemoCalls.length > 0 && (
-        <div className="mb-6 sm:mb-8 rounded-xl" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, boxShadow: theme.isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <div className="flex items-center justify-between p-4 sm:p-5" style={{ borderBottom: `1px solid ${theme.border}` }}>
-            <div className="flex items-center gap-2 min-w-0">
-              <PhoneIncoming className="h-4 w-4 flex-shrink-0" style={{ color: theme.success }} />
-              <h2 className="font-medium text-sm sm:text-base truncate" style={{ color: theme.text }}>Demo calls to follow up</h2>
-            </div>
-            <a href="/agency/demo-phone" className="flex items-center gap-1 text-xs sm:text-sm transition-colors flex-shrink-0" style={{ color: theme.primary }}>View all<ChevronRight className="h-4 w-4" /></a>
-          </div>
-          <div className="p-2 sm:p-3">
-            {stats.recentDemoCalls.slice(0, 5).map((c) => {
-              const who = c.business_name || c.caller_name || formatDemoPhone(c.caller_phone || '') || 'Unknown caller';
-              const interest = (c.interest_level || '').toLowerCase();
-              const interestColor = interest === 'high' ? theme.success : interest === 'low' ? theme.textMuted : theme.warning;
-              return (
-                <a key={c.id} href="/agency/demo-phone" className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 transition-colors" onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.hover)} onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}>
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.success + '15' }}><PhoneIncoming className="h-4 w-4" style={{ color: theme.success }} /></span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate" style={{ color: theme.text }}>{who}</p>
-                      <p className="text-[11px] truncate" style={{ color: theme.textMuted }}>{c.caller_phone ? formatDemoPhone(c.caller_phone) : 'No number captured'}{c.created_at ? ` · ${new Date(c.created_at).toLocaleDateString()}` : ''}</p>
-                    </div>
-                  </div>
-                  {interest ? <span className="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full flex-shrink-0" style={{ color: interestColor, backgroundColor: interestColor + '18' }}>{interest}</span> : null}
-                </a>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Recent Clients */}
       <div className="rounded-xl" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, boxShadow: theme.isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)' }}>

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
+import FirstClientBanner from '@/components/agency/FirstClientBanner';
 import { usePlanFeatures } from '../../../hooks/usePlanFeatures';
 import LockedFeature from '@/components/LockedFeature';
 import DemoCustomizer from '@/components/agency/DemoCustomizer';
@@ -279,6 +280,7 @@ function DemoCallsList({ agencyId, theme }: { agencyId: string; theme: any }) {
   const [calls, setCalls] = useState<DemoCall[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
+  const [thisWeek, setThisWeek] = useState(0);
   const [selectedCall, setSelectedCall] = useState<DemoCall | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
@@ -294,6 +296,7 @@ function DemoCallsList({ agencyId, theme }: { agencyId: string; theme: any }) {
       const data = await res.json();
       setCalls(data.calls || []);
       setTotal(data.total || 0);
+      setThisWeek(data.thisWeek || 0);
     } catch (e) {
       console.error('Failed to fetch demo calls:', e);
     } finally {
@@ -351,6 +354,18 @@ function DemoCallsList({ agencyId, theme }: { agencyId: string; theme: any }) {
 
   return (
     <>
+      {/* Count strip: each demo call is a warm lead (someone heard the AI). */}
+      <div className="flex items-center gap-5 px-1 pb-3 mb-1">
+        <div>
+          <span className="text-2xl font-bold tabular-nums" style={{ color: theme.text }}>{total}</span>
+          <span className="text-xs ml-1.5" style={{ color: theme.textMuted }}>all-time</span>
+        </div>
+        <div style={{ width: 1, height: 24, backgroundColor: theme.border }} />
+        <div>
+          <span className="text-2xl font-bold tabular-nums" style={{ color: theme.success }}>{thisWeek}</span>
+          <span className="text-xs ml-1.5" style={{ color: theme.textMuted }}>this week</span>
+        </div>
+      </div>
       <div className="divide-y" style={{ borderColor: theme.border }}>
         {calls.map((call) => (
           <button
@@ -854,6 +869,7 @@ export default function DemoPhonePage() {
 
     return (
       <div className="p-4 sm:p-6 lg:p-8">
+        <FirstClientBanner />
         <div className="flex items-center gap-3 mb-6 sm:mb-8">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Phone className="h-5 w-5" style={{ color: theme.primary }} /></div>
           <div>
