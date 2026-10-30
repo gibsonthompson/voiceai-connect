@@ -501,15 +501,6 @@ export default function ClientAIAgentPage() {
                   Connect your calendar and the AI books appointments right on the call, 24/7, then texts you the details.
                 </p>
 
-                <div className="flex flex-wrap gap-x-5 gap-y-2">
-                  <span className="inline-flex items-center gap-1.5 text-[13px] font-medium" style={{ color: theme.text }}>
-                    <Check className="w-4 h-4 flex-shrink-0" style={{ color: primaryColor }} /> Books in real time
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 text-[13px] font-medium" style={{ color: theme.text }}>
-                    <Shield className="w-4 h-4 flex-shrink-0" style={{ color: primaryColor }} /> Private, disconnect anytime
-                  </span>
-                </div>
-
                 <button onClick={handleConnectCalendar} className="w-full flex items-center justify-center gap-2.5 py-3 rounded-xl text-sm font-semibold transition hover:shadow-sm" style={{ backgroundColor: theme.card, color: theme.text, border: `1px solid ${theme.border}` }}>
                   <GoogleGIcon className="w-[18px] h-[18px]" /> Connect Google Calendar
                 </button>
@@ -566,15 +557,6 @@ export default function ClientAIAgentPage() {
                 <p className="text-sm leading-relaxed" style={{ color: theme.textMuted }}>
                   Already use GoHighLevel? Connect it and the AI books appointments straight into your GoHighLevel calendar, so your contacts and automations there keep running off every call.
                 </p>
-
-                <div className="flex flex-wrap gap-x-5 gap-y-2">
-                  <span className="inline-flex items-center gap-1.5 text-[13px] font-medium" style={{ color: theme.text }}>
-                    <Check className="w-4 h-4 flex-shrink-0" style={{ color: primaryColor }} /> Books into your GoHighLevel calendar
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 text-[13px] font-medium" style={{ color: theme.text }}>
-                    <Shield className="w-4 h-4 flex-shrink-0" style={{ color: primaryColor }} /> Disconnect anytime
-                  </span>
-                </div>
 
                 <button onClick={handleConnectGhl} className="w-full flex items-center justify-center gap-2.5 py-3 rounded-xl text-sm font-semibold transition hover:shadow-sm" style={{ backgroundColor: theme.card, color: theme.text, border: `1px solid ${theme.border}` }}>
                   <Calendar className="w-[18px] h-[18px]" /> Connect GoHighLevel
