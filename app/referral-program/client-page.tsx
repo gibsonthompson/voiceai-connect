@@ -52,7 +52,7 @@ function FadeIn({ children, className = '' }: { children: ReactNode; className?:
 // presets. Everything recomputes live.
 // ---------------------------------------------------------------------------
 function EarningsCalculator() {
-  const [plan, setPlan] = useState<PlanId>('pro');
+  const [plan, setPlan] = useState<PlanId>('scale');
   const [count, setCount] = useState(10);
 
   const planPrice = PLANS[plan].price;
