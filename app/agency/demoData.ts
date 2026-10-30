@@ -49,6 +49,9 @@ export const DEMO_DASHBOARD = {
   clientCount: 32,
   mrr: 320000, // cents = $3,200.00
   totalCalls: 2417,
+  demoCallsAllTime: 48,
+  demoCallsThisWeek: 6,
+  recentDemoCalls: [],
   recentClients: [
     {
       id: 'demo-client-30',
