@@ -21,7 +21,7 @@ interface Voice {
 interface TemplateData {
   id: string | null; isCustom: boolean; isActive: boolean;
   system_prompt: string; first_message: string; voice_id: string; voice_speed: number; voice: Voice | null;
-  model: string; temperature: number; tts_model?: string; transcriber_model?: string; background_denoising?: boolean; knowledge_base_data: KBData | null; updated_at: string | null;
+  model: string; temperature: number; tts_model?: string; transcriber_model?: string; background_denoising?: boolean; voice_stability?: number; voice_style?: number; voice_similarity_boost?: number; voice_speaker_boost?: boolean; knowledge_base_data: KBData | null; updated_at: string | null;
 }
 
 interface KBData {
@@ -33,17 +33,17 @@ interface IndustryInfo {
 }
 
 interface Defaults {
-  system_prompt: string; first_message: string; voice_id: string; model: string; temperature: number; voice_speed: number; tts_model?: string; transcriber_model?: string; background_denoising?: boolean;
+  system_prompt: string; first_message: string; voice_id: string; model: string; temperature: number; voice_speed: number; tts_model?: string; transcriber_model?: string; background_denoising?: boolean; voice_stability?: number; voice_style?: number; voice_similarity_boost?: number; voice_speaker_boost?: boolean;
 }
 
 interface ServiceRow { id: string; name: string; price: string; description: string; }
 interface FaqRow { id: string; question: string; answer: string; }
 
 const MODEL_OPTIONS = [
-  { id: 'gpt-4.1', name: 'GPT-4.1', desc: 'Full GPT-4.1 — best instruction following and reasoning for voice. Production default.', tag: 'Recommended' },
-  { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', desc: 'Lighter 4.1, faster and cheaper — same speed tier as 4o Mini', tag: 'Fast' },
-  { id: 'gpt-4o-mini', name: 'GPT-4o Mini', desc: 'Fastest response time, lowest cost — leanest for simple call flows', tag: 'Budget' },
-  { id: 'gpt-4o', name: 'GPT-4o', desc: 'Strong reasoning but slower — legacy option for complex industries', tag: 'Legacy' },
+  { id: 'gpt-4.1', name: 'GPT-4.1', desc: 'Full GPT-4.1 - best instruction following and reasoning for voice. Production default.', tag: 'Recommended' },
+  { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', desc: 'Lighter 4.1, faster and cheaper - same speed tier as 4o Mini', tag: 'Fast' },
+  { id: 'gpt-4o-mini', name: 'GPT-4o Mini', desc: 'Fastest response time, lowest cost - leanest for simple call flows', tag: 'Budget' },
+  { id: 'gpt-4o', name: 'GPT-4o', desc: 'Strong reasoning but slower - legacy option for complex industries', tag: 'Legacy' },
 ];
 
 const TTS_MODEL_OPTIONS: { id: string; name: string; desc: string; tag: string; comingSoon?: boolean }[] = [
@@ -145,6 +145,10 @@ export default function TemplateEditorPage() {
   const [temperature, setTemperature] = useState(0.7);
   const [speed, setSpeed] = useState(1);
   const [denoising, setDenoising] = useState(true);
+  const [stability, setStability] = useState(0.4);
+  const [styleVal, setStyleVal] = useState(0.35);
+  const [similarity, setSimilarity] = useState(0.8);
+  const [speakerBoost, setSpeakerBoost] = useState(true);
 
   const [kbWebsite, setKbWebsite] = useState('');
   const [kbServices, setKbServices] = useState<ServiceRow[]>([{ id: '1', name: '', price: '', description: '' }]);
@@ -191,7 +195,7 @@ export default function TemplateEditorPage() {
       setIndustryInfo(data.industry); setTemplate(data.template); setDefaults(data.defaults);
       setDocuments(Array.isArray((data.industry as any)?.documents) ? (data.industry as any).documents : []);
       setSystemPrompt(data.template.system_prompt); setFirstMessage(data.template.first_message);
-      setVoiceId(data.template.voice_id); setModel(data.template.model || 'gpt-4o-mini'); setTemperature(data.template.temperature); setSpeed(data.template.voice_speed ?? 1); setTtsModel(data.template.tts_model || 'eleven_v4_turbo'); setTranscriberModel(data.template.transcriber_model || 'nova-3'); setDenoising(data.template.background_denoising ?? true);
+      setVoiceId(data.template.voice_id); setModel(data.template.model || 'gpt-4o-mini'); setTemperature(data.template.temperature); setSpeed(data.template.voice_speed ?? 1); setTtsModel(data.template.tts_model || 'eleven_v4_turbo'); setTranscriberModel(data.template.transcriber_model || 'nova-3'); setDenoising(data.template.background_denoising ?? true); setStability(data.template.voice_stability ?? 0.4); setStyleVal(data.template.voice_style ?? 0.35); setSimilarity(data.template.voice_similarity_boost ?? 0.8); setSpeakerBoost(data.template.voice_speaker_boost ?? true);
       const kb = data.template.knowledge_base_data;
       if (kb) {
         setKbWebsite(kb.websiteUrl || '');
@@ -249,7 +253,7 @@ export default function TemplateEditorPage() {
       const hasKb = kbData.services || kbData.faqs || kbData.additionalInfo || kbData.websiteUrl;
       const r = await fetch(`${api}/api/agency/${agency.id}/ai-templates/${industry}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-        body: JSON.stringify({ system_prompt: systemPrompt, first_message: firstMessage, voice_id: voiceId, model, tts_model: ttsModel, transcriber_model: transcriberModel, temperature, voice_speed: speed, background_denoising: denoising, is_active: true, knowledge_base_data: hasKb ? kbData : null }),
+        body: JSON.stringify({ system_prompt: systemPrompt, first_message: firstMessage, voice_id: voiceId, model, tts_model: ttsModel, transcriber_model: transcriberModel, temperature, voice_speed: speed, background_denoising: denoising, voice_stability: stability, voice_style: styleVal, voice_similarity_boost: similarity, voice_speaker_boost: speakerBoost, is_active: true, knowledge_base_data: hasKb ? kbData : null }),
       });
       if (!r.ok) { const d = await r.json(); throw new Error(d.error || 'Failed'); }
       setSaved(true); setTimeout(() => setSaved(false), 3000); await fetchTemplateData();
@@ -263,7 +267,7 @@ export default function TemplateEditorPage() {
     try {
       const r = await fetch(`${api}/api/agency/${agency.id}/ai-templates/${industry}`, { method: 'DELETE', headers: { Authorization: `Bearer ${getToken()}` } });
       if (!r.ok) throw new Error('Failed');
-      if (defaults) { setSystemPrompt(defaults.system_prompt); setFirstMessage(defaults.first_message); setVoiceId(defaults.voice_id); setTemperature(defaults.temperature); setModel(defaults.model || 'gpt-4o-mini'); setTtsModel(defaults.tts_model || 'eleven_flash_v2_5'); setTranscriberModel(defaults.transcriber_model || 'nova-3'); setSpeed(defaults.voice_speed ?? 1); setDenoising(defaults.background_denoising ?? true); }
+      if (defaults) { setSystemPrompt(defaults.system_prompt); setFirstMessage(defaults.first_message); setVoiceId(defaults.voice_id); setTemperature(defaults.temperature); setModel(defaults.model || 'gpt-4o-mini'); setTtsModel(defaults.tts_model || 'eleven_flash_v2_5'); setTranscriberModel(defaults.transcriber_model || 'nova-3'); setSpeed(defaults.voice_speed ?? 1); setDenoising(defaults.background_denoising ?? true); setStability(defaults.voice_stability ?? 0.4); setStyleVal(defaults.voice_style ?? 0.35); setSimilarity(defaults.voice_similarity_boost ?? 0.8); setSpeakerBoost(defaults.voice_speaker_boost ?? true); }
       setKbWebsite(''); setKbServices([{ id: '1', name: '', price: '', description: '' }]);
       setKbFaqs([{ id: '1', question: '', answer: '' }]); setKbAdditionalInfo('');
       await fetchTemplateData();
@@ -280,7 +284,7 @@ export default function TemplateEditorPage() {
 
   const hasChanges = template && (
     systemPrompt !== template.system_prompt || firstMessage !== template.first_message ||
-    voiceId !== template.voice_id || model !== (template.model || 'gpt-4o-mini') || ttsModel !== (template.tts_model || 'eleven_v4_turbo') || transcriberModel !== (template.transcriber_model || 'nova-3') || temperature !== template.temperature || speed !== (template.voice_speed ?? 1) || denoising !== (template.background_denoising ?? true) ||
+    voiceId !== template.voice_id || model !== (template.model || 'gpt-4o-mini') || ttsModel !== (template.tts_model || 'eleven_v4_turbo') || transcriberModel !== (template.transcriber_model || 'nova-3') || temperature !== template.temperature || speed !== (template.voice_speed ?? 1) || denoising !== (template.background_denoising ?? true) || stability !== (template.voice_stability ?? 0.4) || styleVal !== (template.voice_style ?? 0.35) || similarity !== (template.voice_similarity_boost ?? 0.8) || speakerBoost !== (template.voice_speaker_boost ?? true) ||
     kbWebsite !== (template.knowledge_base_data?.websiteUrl || '') || kbAdditionalInfo !== (template.knowledge_base_data?.additionalInfo || '') ||
     formatServicesText(kbServices) !== (template.knowledge_base_data?.services || '') || formatFaqsText(kbFaqs) !== (template.knowledge_base_data?.faqs || '')
   );
@@ -399,7 +403,7 @@ export default function TemplateEditorPage() {
       <div className="mb-6 rounded-xl p-3 flex items-start gap-3" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.06 : 0.04), border: `1px solid ${hexToRgba(theme.primary, 0.15)}` }}>
         <Info className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.primary }} />
         <p className="text-xs" style={{ color: theme.textMuted }}>
-          Use <code className="px-1.5 py-0.5 rounded text-xs" style={{ backgroundColor: theme.hover }}>{'{businessName}'}</code> in prompts — it&apos;s replaced with the client&apos;s actual business name at signup.
+          Use <code className="px-1.5 py-0.5 rounded text-xs" style={{ backgroundColor: theme.hover }}>{'{businessName}'}</code> in prompts - it&apos;s replaced with the client&apos;s actual business name at signup.
         </p>
       </div>
 
@@ -415,7 +419,7 @@ export default function TemplateEditorPage() {
               <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Voice engine</label>
               <CustomSelect value={ttsModel} onChange={(v) => setTtsModel(v)} options={[...TTS_MODEL_OPTIONS.filter(m => !m.comingSoon).map(m => ({ value: m.id, label: `${m.name}${m.tag ? ` (${m.tag})` : ''}` })), ...(TTS_MODEL_OPTIONS.find(m => m.id === ttsModel) ? [] : [{ value: ttsModel, label: ttsModel }])]} ui={{ inputStyle, text: theme.text, muted: theme.textMuted, panelBg: theme.isDark ? '#232321' : '#ffffff', panelBorder: theme.border, hover: theme.hover, accent: theme.primary, isDark: theme.isDark }} />
               {selectedTtsObj && <p className="text-xs mt-1" style={{ color: theme.textMuted }}>{selectedTtsObj.desc}</p>}
-              {TTS_MODEL_OPTIONS.some(m => m.comingSoon) && <p className="text-[11px] mt-1.5" style={{ color: theme.primary }}>Coming soon: {TTS_MODEL_OPTIONS.filter(m => m.comingSoon).map(m => m.name).join(', ')} — we'll add it automatically once our voice provider supports it.</p>}
+              {TTS_MODEL_OPTIONS.some(m => m.comingSoon) && <p className="text-[11px] mt-1.5" style={{ color: theme.primary }}>Coming soon: {TTS_MODEL_OPTIONS.filter(m => m.comingSoon).map(m => m.name).join(', ')} - we'll add it automatically once our voice provider supports it.</p>}
             </div>
             <div className="mb-3">
               <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Speech recognition</label>
@@ -433,6 +437,37 @@ export default function TemplateEditorPage() {
                 <input type="range" min="0.7" max="1.2" step="0.05" value={speed} onChange={e => setSpeed(parseFloat(e.target.value))} className="w-full mt-1" style={{ accentColor: theme.primary }} />
                 <div className="flex justify-between text-sm mt-0.5" style={{ color: theme.textMuted }}><span>Slower</span><span>Faster</span></div>
               </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <div>
+                <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Expressiveness: {stability.toFixed(2)}</label>
+                <input type="range" min="0" max="1" step="0.05" value={stability} onChange={e => setStability(parseFloat(e.target.value))} className="w-full mt-1" style={{ accentColor: theme.primary }} />
+                <div className="flex justify-between text-sm mt-0.5" style={{ color: theme.textMuted }}><span>Expressive</span><span>Flat</span></div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Style: {styleVal.toFixed(2)}</label>
+                <input type="range" min="0" max="1" step="0.05" value={styleVal} onChange={e => setStyleVal(parseFloat(e.target.value))} className="w-full mt-1" style={{ accentColor: theme.primary }} />
+                <div className="flex justify-between text-sm mt-0.5" style={{ color: theme.textMuted }}><span>Neutral</span><span>Dramatic</span></div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <div>
+                <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Clarity: {similarity.toFixed(2)}</label>
+                <input type="range" min="0" max="1" step="0.05" value={similarity} onChange={e => setSimilarity(parseFloat(e.target.value))} className="w-full mt-1" style={{ accentColor: theme.primary }} />
+                <div className="flex justify-between text-sm mt-0.5" style={{ color: theme.textMuted }}><span>Lower</span><span>Higher</span></div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Speaker Boost</label>
+                <div className="flex rounded-lg overflow-hidden" style={{ border: `1px solid ${theme.inputBorder}`, maxWidth: '240px' }}>
+                  <button type="button" onClick={() => setSpeakerBoost(true)} className="flex-1 px-3 py-2 text-sm font-medium transition" style={{ backgroundColor: speakerBoost ? theme.primary : 'transparent', color: speakerBoost ? theme.primaryText : theme.textMuted }}>On</button>
+                  <button type="button" onClick={() => setSpeakerBoost(false)} className="flex-1 px-3 py-2 text-sm font-medium transition" style={{ backgroundColor: !speakerBoost ? theme.primary : 'transparent', color: !speakerBoost ? theme.primaryText : theme.textMuted }}>Off</button>
+                </div>
+                <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>Sharpens the voice on a phone line.</p>
+              </div>
+            </div>
+            <div className="mb-3">
+              <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Voice tuning</label>
+              <p className="text-xs mb-2" style={{ color: theme.textMuted }}>Lower Expressiveness makes the voice vary its tone and sound less robotic. Style adds emphasis. These apply to every client on this template.</p>
             </div>
             <div className="mb-3">
               <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Background Denoising (Krisp)</label>
@@ -501,7 +536,7 @@ export default function TemplateEditorPage() {
             {!kbExpanded ? (
               <p className="text-xs" style={{ color: theme.textMuted }}>
                 {kbServices.filter(s => s.name.trim()).length} services · {kbFaqs.filter(f => f.question.trim()).length} FAQs{kbAdditionalInfo ? ' · Has additional info' : ''}
-                {!kbServices.some(s => s.name.trim()) && !kbFaqs.some(f => f.question.trim()) && !kbAdditionalInfo ? 'No KB data — clients inherit industry default.' : ''}
+                {!kbServices.some(s => s.name.trim()) && !kbFaqs.some(f => f.question.trim()) && !kbAdditionalInfo ? 'No KB data - clients inherit industry default.' : ''}
               </p>
             ) : (
               <div className="space-y-3 mt-2">
@@ -597,7 +632,7 @@ export default function TemplateEditorPage() {
               style={{ ...inputStyle, resize: 'vertical', minHeight: '500px', height: '70vh', maxHeight: '80vh' }}
               placeholder="Enter the system prompt..." />
             <p className="text-sm mt-1.5" style={{ color: theme.textMuted }}>
-              Use <code className="px-1 py-0.5 rounded text-sm" style={{ backgroundColor: theme.hover }}>{'{businessName}'}</code> — auto-replaced at signup.
+              Use <code className="px-1 py-0.5 rounded text-sm" style={{ backgroundColor: theme.hover }}>{'{businessName}'}</code> - auto-replaced at signup.
             </p>
           </div>
         </div>
