@@ -371,7 +371,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
 
   // ── Scroll to top on step change ────────────────────────────────────
   useEffect(() => {
-    contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [step]);
 
   // ── Cleanup audio on unmount ────────────────────────────────────────
@@ -1462,13 +1462,13 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
   const canSkip = step >= 1 && step <= totalSteps - 2;
 
   return (
-    <div className="fixed inset-x-0 top-0 z-[100] flex flex-col" style={{ backgroundColor: theme.bg, height: '100dvh' }}>
+    <div className="relative z-[100] flex flex-col overflow-x-hidden" style={{ backgroundColor: theme.bg, minHeight: '100dvh' }}>
       <style dangerouslySetInnerHTML={{ __html: ANIM_CSS }} />
 
       {/* ── Progress Bar ──────────────────────────────────────────────── */}
       {step > 0 && step < totalSteps - 1 && (
-        <div className="flex-shrink-0 px-4 sm:px-6 pt-4 sm:pt-5 pb-3"
-          style={{ borderBottom: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}` }}>
+        <div className="sticky top-0 z-20 px-4 sm:px-6 pt-4 sm:pt-5 pb-3"
+          style={{ backgroundColor: theme.bg, borderBottom: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}` }}>
           <div className="max-w-2xl mx-auto">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-semibold" style={{ color: theme.textMuted }}>
@@ -1491,7 +1491,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
       )}
 
       {/* ── Content ───────────────────────────────────────────────────── */}
-      <div ref={contentRef} className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain px-4 sm:px-6 py-5 sm:py-8" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div ref={contentRef} className="flex-1 px-4 sm:px-6 py-5 sm:py-8">
         {/* key={step} remounts on every move so the slide-in replays; direction
             comes from dir. Parent holds all step state, so the remount is
             visual only and never drops anything the user entered. */}
@@ -1502,8 +1502,9 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
 
       {/* ── Navigation ────────────────────────────────────────────────── */}
       {showNav && (
-        <div className="flex-shrink-0 px-4 sm:px-6 py-4"
+        <div className="sticky bottom-0 z-20 px-4 sm:px-6 py-4"
           style={{
+            backgroundColor: theme.bg,
             borderTop: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`,
             paddingBottom: 'max(env(safe-area-inset-bottom), 1rem)',
           }}>
