@@ -227,6 +227,8 @@ function ThemedFormInput({
         <input
           name={name} type={type} placeholder={placeholder} value={value}
           onChange={onChange} required={required} maxLength={maxLength}
+          autoComplete="off" autoCorrect="off" spellCheck={false}
+          data-lpignore="true" data-1p-ignore="true" data-form-type="other" data-bwignore="true"
           className={`w-full rounded-xl border ${Icon ? 'pl-11' : 'pl-4'} pr-4 py-3.5 transition-all duration-200 focus:outline-none focus:ring-2 ${
             isDark
               ? 'border-white/[0.08] bg-white/[0.03] text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:border-white/20 focus:bg-white/[0.05]'
@@ -336,6 +338,7 @@ function ThemedSelect({
         {/* Hidden field so native "required" validation still works on submit */}
         {required && (
           <input tabIndex={-1} aria-hidden="true" required value={value || ''} onChange={() => {}}
+            autoComplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other" data-bwignore="true"
             style={{ position: 'absolute', opacity: 0, height: 1, width: 1, bottom: 0, left: '50%', pointerEvents: 'none' }} />
         )}
 
@@ -580,7 +583,7 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
               <p className="mt-2" style={{ color: mutedTextColor }}>{(agency as any).signup_subtitle || `Start your free trial with ${agency.name}`}</p>
             </div>
 
-            <form onSubmit={handleSubmit} noValidate className="space-y-5">
+            <form onSubmit={handleSubmit} noValidate autoComplete="off" className="space-y-5">
               <ThemedFormInput label="Business Name" name="businessName" placeholder="Acme Plumbing Services" value={formData.businessName} onChange={handleChange} required icon={Building} isDark={isDark} primaryColor={primaryColor} />
               <ThemedFormInput label="Your Name" name="ownerName" placeholder="John Smith" value={formData.ownerName} onChange={handleChange} required icon={User} isDark={isDark} primaryColor={primaryColor} />
               
@@ -591,6 +594,8 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
                   <div className="relative">
                     <Phone className={`absolute left-4 top-1/2 -translate-y-1/2 h-[18px] w-[18px] ${isDark ? 'text-[#fafaf9]/30' : 'text-gray-400'}`} />
                     <input name="phone" type="tel" placeholder={phoneConfig.placeholder} value={formData.phone} onChange={handleChange} required
+                      autoComplete="off" autoCorrect="off"
+                      data-lpignore="true" data-1p-ignore="true" data-form-type="other" data-bwignore="true"
                       className={`w-full rounded-xl border pl-11 pr-4 py-3.5 transition-all duration-200 focus:outline-none focus:ring-2 ${
                         isDark ? 'border-white/[0.08] bg-white/[0.03] text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:border-white/20 focus:bg-white/[0.05]'
                           : 'border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-gray-300'
@@ -885,7 +890,7 @@ function AgencySignupForm({ isEmbed }: { isEmbed: boolean }) {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} noValidate className="space-y-4">
+      <form onSubmit={handleSubmit} noValidate autoComplete="off" className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <ThemedFormInput label="First Name" name="firstName" placeholder="John" value={formData.firstName} onChange={handleChange} required isDark={true} />
           <ThemedFormInput label="Last Name" name="lastName" placeholder="Smith" value={formData.lastName} onChange={handleChange} required isDark={true} />
