@@ -178,12 +178,12 @@ export default function ClientAIAgentPage() {
     }
     // GoHighLevel round-trip result
     if (params.get('success') === 'crm_connected') {
-      showMessage('GoHighLevel connected successfully!');
+      showMessage('CRM calendar connected successfully!');
       setGhlStatus(prev => (prev ? { ...prev, connected: true, token_valid: true } : { connected: true, token_valid: true }));
       setTimeout(() => document.getElementById('ghl-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
       window.history.replaceState({}, '', window.location.pathname);
     } else if ((error || '').startsWith('crm_')) {
-      showMessage('Failed to connect GoHighLevel. Please try again.', true);
+      showMessage('Failed to connect your CRM calendar. Please try again.', true);
       setTimeout(() => document.getElementById('ghl-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
       window.history.replaceState({}, '', window.location.pathname);
     }
@@ -282,7 +282,7 @@ export default function ClientAIAgentPage() {
   };
 
   const handleDisconnectGhl = async () => {
-    if (!confirm('Disconnect GoHighLevel? Your AI will stop booking into your GoHighLevel calendar.')) return;
+    if (!confirm('Disconnect your CRM calendar? Your AI will stop booking into it.')) return;
     setDisconnectingGhl(true);
     try {
       const response = await fetch(`${getBackendUrl()}/api/auth/crm-calendar/disconnect`, {
@@ -292,13 +292,13 @@ export default function ClientAIAgentPage() {
       });
       const data = await response.json();
       if (data.success) {
-        showMessage('GoHighLevel disconnected');
+        showMessage('CRM calendar disconnected');
         setGhlStatus(prev => prev ? { ...prev, connected: false, token_valid: false } : null);
       } else {
-        showMessage(data.error || 'Failed to disconnect GoHighLevel', true);
+        showMessage(data.error || 'Failed to disconnect your CRM calendar', true);
       }
     } catch {
-      showMessage('Error disconnecting GoHighLevel', true);
+      showMessage('Error disconnecting your CRM calendar', true);
     } finally {
       setDisconnectingGhl(false);
     }
@@ -515,7 +515,7 @@ export default function ClientAIAgentPage() {
 
         {/* GoHighLevel Integration */}
         <div id="ghl-section" className="fu fu2 scroll-mt-6">
-          <SectionCard icon={SectionCalendarIcon} title="GoHighLevel" subtitle={isGhlConnected ? 'Your AI books into your GoHighLevel calendar' : 'Already on GoHighLevel? Connect it so your AI books there'} live={!!isGhlConnected} theme={theme} primaryColor={primaryColor} glass={glass}>
+          <SectionCard icon={SectionCalendarIcon} title="CRM Calendar" subtitle={isGhlConnected ? 'Your AI books into your CRM calendar' : 'Connect your CRM calendar so your AI books there'} live={!!isGhlConnected} theme={theme} primaryColor={primaryColor} glass={glass}>
             {ghlLoading ? (
               <div className="flex items-center justify-center py-3"><Loader2 className="w-4 h-4 animate-spin" style={{ color: theme.textMuted4 }} /></div>
             ) : isGhlConnected ? (
@@ -526,22 +526,22 @@ export default function ClientAIAgentPage() {
                     <span className="relative inline-flex rounded-full h-2.5 w-2.5" style={{ backgroundColor: theme.success }} />
                   </span>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold leading-tight" style={{ color: theme.successText }}>GoHighLevel connected</p>
-                    <p className="text-[11px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>Your AI books appointments straight into your GoHighLevel calendar.</p>
+                    <p className="text-sm font-semibold leading-tight" style={{ color: theme.successText }}>CRM calendar connected</p>
+                    <p className="text-[11px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>Your AI books appointments straight into your CRM calendar.</p>
                   </div>
                 </div>
 
                 {ghlStatus?.needs_calendar && (
                   <div className="p-2.5 sm:p-3 rounded-lg flex items-start gap-2" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
                     <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: theme.warning }} />
-                    <p className="text-xs sm:text-sm font-medium" style={{ color: theme.warningText }}>No calendar found in GoHighLevel yet. Create one there, then reconnect.</p>
+                    <p className="text-xs sm:text-sm font-medium" style={{ color: theme.warningText }}>No calendar found in your CRM yet. Create one there, then reconnect.</p>
                   </div>
                 )}
 
                 {ghlStatus && ghlStatus.token_valid === false && (
                   <div className="p-2.5 sm:p-3 rounded-lg flex items-start gap-2" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
                     <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: theme.warning }} />
-                    <p className="text-xs sm:text-sm font-medium" style={{ color: theme.warningText }}>GoHighLevel connection may have expired. Reconnect to keep bookings flowing.</p>
+                    <p className="text-xs sm:text-sm font-medium" style={{ color: theme.warningText }}>Your CRM calendar connection may have expired. Reconnect to keep bookings flowing.</p>
                   </div>
                 )}
 
@@ -555,15 +555,15 @@ export default function ClientAIAgentPage() {
             ) : (
               <div className="space-y-4">
                 <p className="text-sm leading-relaxed" style={{ color: theme.textMuted }}>
-                  Already use GoHighLevel? Connect it and the AI books appointments straight into your GoHighLevel calendar, so your contacts and automations there keep running off every call.
+                  Already use a CRM for scheduling? Connect its calendar and the AI books appointments straight into it, so your contacts and automations there keep running off every call.
                 </p>
 
                 <button onClick={handleConnectGhl} className="w-full flex items-center justify-center gap-2.5 py-3 rounded-xl text-sm font-semibold transition hover:shadow-sm" style={{ backgroundColor: theme.card, color: theme.text, border: `1px solid ${theme.border}` }}>
-                  <Calendar className="w-[18px] h-[18px]" /> Connect GoHighLevel
+                  <Calendar className="w-[18px] h-[18px]" /> Connect your CRM calendar
                 </button>
 
                 <p className="text-[11px] leading-relaxed" style={{ color: theme.textMuted4 }}>
-                  Optional. Your AI already books and texts on its own, connect GoHighLevel only if you already run your scheduling and automations there.
+                  Optional. Your AI already books and texts on its own, connect your CRM calendar only if you already run your scheduling and automations there.
                 </p>
               </div>
             )}
