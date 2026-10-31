@@ -374,6 +374,21 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [step]);
 
+  // ── Restore natural scrolling for the onboarding page ───────────────
+  // The client layout pins html/body with `overscroll-behavior-y:none` so the
+  // dashboard's sticky nav can't be pulled past the top. During onboarding the
+  // wizard IS the whole page, and that rule is what makes it feel rigid and
+  // stops iOS Safari collapsing its URL bar on scroll. Re-enable natural scroll
+  // (inline style beats the layout's stylesheet rule) while mounted, restore on
+  // unmount so the dashboard behavior is untouched.
+  useEffect(() => {
+    const d = document.documentElement, b = document.body;
+    const prevD = d.style.overscrollBehaviorY, prevB = b.style.overscrollBehaviorY;
+    d.style.overscrollBehaviorY = 'auto';
+    b.style.overscrollBehaviorY = 'auto';
+    return () => { d.style.overscrollBehaviorY = prevD; b.style.overscrollBehaviorY = prevB; };
+  }, []);
+
   // ── Cleanup audio on unmount ────────────────────────────────────────
   useEffect(() => {
     return () => {
@@ -835,7 +850,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
         style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.12 : 0.06) }}>
         <Sparkles className="w-8 h-8" style={{ color: theme.primary }} />
       </div>
-      <h1 className="text-xl sm:text-3xl font-bold tracking-tight mb-2" style={{ color: theme.text }}>
+      <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2" style={{ color: theme.text }}>
         Let&apos;s set up your AI
       </h1>
       <p className="text-sm sm:text-base mb-8" style={{ color: theme.textMuted }}>
@@ -862,7 +877,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
         Takes about 3 minutes · Skip anything and come back later
       </p>
       <button onClick={() => { setDir(1); setStep(1); }}
-        className="w-full py-4 rounded-2xl text-base font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+        className="w-full py-3 rounded-xl text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
         style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
         Let&apos;s Go <ArrowRight className="w-5 h-5" />
       </button>
@@ -951,7 +966,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
 
     return (
       <div className="max-w-lg mx-auto ob-fu">
-        <h2 className="text-lg sm:text-2xl font-bold tracking-tight mb-1" style={{ color: theme.text }}>
+        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-1" style={{ color: theme.text }}>
           When are you open?
         </h2>
         <p className="text-sm mb-5" style={{ color: theme.textMuted }}>
@@ -1075,7 +1090,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
   // ── STEP 2: SERVICES ────────────────────────────────────────────────
   const renderServices = () => (
     <div className="max-w-lg mx-auto ob-fu">
-      <h2 className="text-lg sm:text-2xl font-bold tracking-tight mb-1" style={{ color: theme.text }}>
+      <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-1" style={{ color: theme.text }}>
         What do you offer?
       </h2>
       <p className="text-sm mb-6" style={{ color: theme.textMuted }}>
@@ -1099,7 +1114,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
 
     return (
       <div className="max-w-lg mx-auto ob-fu">
-        <h2 className="text-lg sm:text-2xl font-bold tracking-tight mb-1" style={{ color: theme.text }}>
+        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-1" style={{ color: theme.text }}>
           What do callers ask?
         </h2>
         <p className="text-sm mb-6" style={{ color: theme.textMuted }}>
@@ -1167,7 +1182,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
   // ── STEP 4: STAFF ───────────────────────────────────────────────────
   const renderStaff = () => (
     <div className="max-w-lg mx-auto ob-fu">
-      <h2 className="text-lg sm:text-2xl font-bold tracking-tight mb-1" style={{ color: theme.text }}>
+      <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-1" style={{ color: theme.text }}>
         Who&apos;s on your team?
       </h2>
       <p className="text-sm mb-6" style={{ color: theme.textMuted }}>
@@ -1189,7 +1204,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
 
     return (
       <div className="max-w-lg mx-auto ob-fu">
-        <h2 className="text-lg sm:text-2xl font-bold tracking-tight mb-1" style={{ color: theme.text }}>
+        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-1" style={{ color: theme.text }}>
           How should your AI sound?
         </h2>
         <p className="text-sm mb-6" style={{ color: theme.textMuted }}>
@@ -1298,7 +1313,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
           style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.12 : 0.06) }}>
           <Rocket className="w-8 h-8" style={{ color: theme.primary }} />
         </div>
-        <h2 className="text-xl sm:text-3xl font-bold tracking-tight mb-2" style={{ color: theme.text }}>
+        <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2" style={{ color: theme.text }}>
           You&apos;re ready!
         </h2>
         <p className="text-sm mb-8" style={{ color: theme.textMuted }}>
@@ -1363,7 +1378,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
 
         {/* Complete */}
         <button onClick={completeOnboarding} disabled={saving}
-          className="w-full py-4 rounded-2xl text-base font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2 ob-fu ob-d3"
+          className="w-full py-3 rounded-xl text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2 ob-fu ob-d3"
           style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
           {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-5 h-5" />}
           {saving ? 'Finishing...' : 'Go to Dashboard'}
@@ -1382,7 +1397,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
       <div className="flex items-center justify-center w-14 h-14 rounded-2xl mb-5 mx-auto" style={{ backgroundColor: hexToRgba(theme.primary, 0.12) }}>
         <Globe className="w-7 h-7" style={{ color: theme.primary }} />
       </div>
-      <h2 className="text-lg sm:text-2xl font-bold tracking-tight mb-1 text-center" style={{ color: theme.text }}>
+      <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-1 text-center" style={{ color: theme.text }}>
         Start with your website
       </h2>
       <p className="text-sm mb-6 text-center" style={{ color: theme.textMuted }}>
