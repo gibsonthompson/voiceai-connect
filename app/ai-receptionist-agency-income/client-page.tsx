@@ -319,7 +319,6 @@ export default function AgencyIncomePage() {
         <div className="hero-aurora" />
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative">
           <FadeIn className="max-w-4xl">
-            <p className="t-eyebrow text-em mb-7">AI receptionist agency income</p>
             <h1 className="t-h1 text-white max-w-[18ch]">What to charge for AI receptionists, and what you keep.</h1>
             <p className="t-body mt-8 max-w-2xl text-[1rem]">
               Pick the kind of local business you want to sell to. See what it loses to missed calls, what to charge it for an AI receptionist that answers every one, and what your agency pockets after the platform takes its cut. Every number moves as you drag.
@@ -336,7 +335,6 @@ export default function AgencyIncomePage() {
       <section id="calculator" className="bg-paper py-24 lg:py-32 scroll-mt-24">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
           <FadeIn className="max-w-2xl mb-12">
-            <p className="t-eyebrow text-em-deep mb-6">The numbers</p>
             <h2 className="t-h2 text-black">Problem, price, profit.</h2>
             <p className="t-body mt-5">
               One set of inputs runs the whole story. Start with the business you are targeting, and the page walks from what they are losing to what you take home.
@@ -357,7 +355,6 @@ export default function AgencyIncomePage() {
       <section className="bg-ink py-24 lg:py-32 border-t border-white/[0.04]">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
           <FadeIn className="max-w-2xl mb-14">
-            <p className="t-eyebrow text-em mb-6">How to price it</p>
             <h2 className="t-h2 text-white">Three rules that make the sale easy.</h2>
           </FadeIn>
           <FadeIn>
@@ -384,7 +381,6 @@ export default function AgencyIncomePage() {
       <section className="bg-paper py-24 lg:py-32">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
           <FadeIn className="max-w-2xl mb-14">
-            <p className="t-eyebrow text-em-deep mb-6">Why the margin holds</p>
             <h2 className="t-h2 text-black">Recurring revenue with almost no delivery cost.</h2>
           </FadeIn>
           <FadeIn>
@@ -412,7 +408,6 @@ export default function AgencyIncomePage() {
         <div className="hero-aurora" />
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative z-10">
           <FadeIn className="max-w-3xl">
-            <p className="t-eyebrow text-em mb-6">Start building</p>
             <h2 className="t-h1 text-white">Your brand. Your prices. Your margin.</h2>
             <p className="t-body mt-7 max-w-lg">
               Launch your own AI receptionist agency on VoiceAI Connect. White-label everything, set your own pricing, and keep the spread on every client you sign.
