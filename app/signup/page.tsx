@@ -229,15 +229,23 @@ function ThemedFormInput({
   // token reads as "off" to Chrome and is not a contact hint to Safari.
   const nativeType = type === 'email' || type === 'tel' ? 'text' : type;
   const mode: 'email' | 'tel' | undefined = type === 'email' ? 'email' : type === 'tel' ? 'tel' : undefined;
+  // iOS maps a field to a contact/address card property from its NAME (city,
+  // email, phone, name, state...) and shows "AutoFill Contact" even when
+  // autocomplete is disabled. Give the DOM input an opaque, non-semantic name so
+  // Safari can't map it, then translate changes back to the real key for the
+  // parent (both handleChange handlers read only target.name + target.value).
+  // autocomplete gets the same opaque token (an unknown token reads as off).
+  const domName = 'f' + name.split('').map((c) => c.charCodeAt(0).toString(36)).join('');
   return (
     <div className={className}>
       <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-[#fafaf9]/70' : 'text-gray-700'}`}>{label}</label>
       <div className="relative">
         {Icon && <Icon className={`absolute left-4 top-1/2 -translate-y-1/2 h-[18px] w-[18px] ${isDark ? 'text-[#fafaf9]/30' : 'text-gray-400'}`} />}
         <input
-          name={name} type={nativeType} inputMode={mode} placeholder={placeholder} value={value}
-          onChange={onChange} required={required} maxLength={maxLength}
-          autoComplete={`nofill-${name}`} autoCorrect="off" autoCapitalize={type === 'email' ? 'none' : undefined} spellCheck={false}
+          name={domName} type={nativeType} inputMode={mode} placeholder={placeholder} value={value}
+          onChange={(e) => onChange({ target: { name, value: e.target.value } } as any)}
+          required={required} maxLength={maxLength}
+          autoComplete={domName} autoCorrect="off" autoCapitalize={type === 'email' ? 'none' : undefined} spellCheck={false}
           data-lpignore="true" data-1p-ignore="true" data-form-type="other" data-bwignore="true"
           className={`w-full rounded-xl border ${Icon ? 'pl-11' : 'pl-4'} pr-4 py-3.5 transition-all duration-200 focus:outline-none focus:ring-2 ${
             isDark
@@ -603,8 +611,9 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
                   <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-[#fafaf9]/70' : 'text-gray-700'}`}>Phone</label>
                   <div className="relative">
                     <Phone className={`absolute left-4 top-1/2 -translate-y-1/2 h-[18px] w-[18px] ${isDark ? 'text-[#fafaf9]/30' : 'text-gray-400'}`} />
-                    <input name="phone" type="text" inputMode="tel" placeholder={phoneConfig.placeholder} value={formData.phone} onChange={handleChange} required
-                      autoComplete="nofill-phone" autoCorrect="off"
+                    <input name="f_contactline" type="text" inputMode="tel" placeholder={phoneConfig.placeholder} value={formData.phone}
+                      onChange={(e) => handleChange({ target: { name: 'phone', value: e.target.value } } as any)} required
+                      autoComplete="f_contactline" autoCorrect="off"
                       data-lpignore="true" data-1p-ignore="true" data-form-type="other" data-bwignore="true"
                       className={`w-full rounded-xl border pl-11 pr-4 py-3.5 transition-all duration-200 focus:outline-none focus:ring-2 ${
                         isDark ? 'border-white/[0.08] bg-white/[0.03] text-[#fafaf9] placeholder:text-[#fafaf9]/30 focus:border-white/20 focus:bg-white/[0.05]'
