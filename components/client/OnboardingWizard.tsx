@@ -150,7 +150,7 @@ const DAY_LABELS: Record<string, string> = {
 };
 
 // ============================================================================
-// INDUSTRY FAQ TEMPLATES — reduces blank-page paralysis
+// INDUSTRY FAQ TEMPLATES, reduces blank-page paralysis
 // NOTE: keyed off client.industry with an exact-string match. If the stored
 // industry value is not one of these keys, the client falls back to
 // DEFAULT_FAQ_TEMPLATE below, so keep the default strong and generic.
@@ -511,6 +511,9 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
     const url = websiteUrl.trim();
     if (!url) { setScanError('Add your website address first.'); return; }
     setScanning(true); setScanError(null); setScanDone(false); setScanSummary(null);
+    // Cap the scan so it can never hang on "Scanning..." forever (slow/unreachable site).
+    const _scanController = new AbortController();
+    const _scanTimeout = setTimeout(() => _scanController.abort(), 120000);
     try {
       // Reuses the "Learn from website" action: scrapes the site, rebuilds the
       // knowledge base, and stores services/staff/area/hours/FAQ suggestions.
@@ -518,6 +521,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
         body: JSON.stringify({ clientId: client.id, websiteUrl: url, scrapeWebsite: true }),
+        signal: _scanController.signal,
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || 'We could not read that website. Check the address and try again.');
@@ -535,8 +539,11 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
       setScanSummary({ services, staff, faqs: sugg?.faqs || 0, areas: sugg?.areas || 0, hours: !!sugg?.hours });
       setScanDone(true);
     } catch (e) {
-      setScanError(e instanceof Error ? e.message : 'Something went wrong scanning your website.');
-    } finally { setScanning(false); }
+      const aborted = e instanceof DOMException && e.name === 'AbortError';
+      setScanError(aborted
+        ? 'That took too long to scan. Tap "Skip for now" to add your details manually, or try again.'
+        : (e instanceof Error ? e.message : 'Something went wrong scanning your website.'));
+    } finally { clearTimeout(_scanTimeout); setScanning(false); }
   };
 
   // When Hours + KB have loaded, apply any suggestions the signup/activation
@@ -940,7 +947,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
           Tap the days you are open, then set your hours. Your AI uses this to tell callers when you are open.
         </p>
 
-        {/* Presets — one tap fills a typical week */}
+        {/* Presets, one tap fills a typical week */}
         <div className="flex flex-wrap gap-2 mb-4">
           {[
             { key: 'weekdays' as const, label: 'Weekdays 9 to 5' },
@@ -955,7 +962,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
           ))}
         </div>
 
-        {/* Day pills — visual open/closed toggle */}
+        {/* Day pills, visual open/closed toggle */}
         <label className="text-xs font-semibold uppercase tracking-wider mb-2 block" style={{ color: theme.textMuted }}>
           Days open
         </label>
@@ -1085,7 +1092,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
           What do callers ask?
         </h2>
         <p className="text-sm mb-6" style={{ color: theme.textMuted }}>
-          Teach your AI how to answer the questions you hear every day. Fill in the answers — the questions are pre-suggested for your industry.
+          Teach your AI how to answer the questions you hear every day. Fill in the answers, the questions are pre-suggested for your industry.
         </p>
 
         {/* FAQs */}
@@ -1330,7 +1337,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
                 <span className="text-xs" style={{ color: item.done ? theme.text : theme.textMuted }}>
                   {item.label}
                   {!item.done && skippedSteps.includes(item.key) && (
-                    <span className="ml-1" style={{ color: theme.textMuted }}> — skipped</span>
+                    <span className="ml-1" style={{ color: theme.textMuted }}>, skipped</span>
                   )}
                 </span>
               </div>
@@ -1444,7 +1451,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
   const canSkip = step >= 1 && step <= totalSteps - 2;
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col" style={{ backgroundColor: theme.bg }}>
+    <div className="fixed inset-x-0 top-0 z-[100] flex flex-col" style={{ backgroundColor: theme.bg, height: '100dvh' }}>
       <style dangerouslySetInnerHTML={{ __html: ANIM_CSS }} />
 
       {/* ── Progress Bar ──────────────────────────────────────────────── */}
@@ -1473,7 +1480,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
       )}
 
       {/* ── Content ───────────────────────────────────────────────────── */}
-      <div ref={contentRef} className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 sm:py-8">
+      <div ref={contentRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 sm:px-6 py-6 sm:py-8" style={{ WebkitOverflowScrolling: 'touch' }}>
         <div className="max-w-2xl mx-auto">
           {stepRenderers[step]?.()}
         </div>
