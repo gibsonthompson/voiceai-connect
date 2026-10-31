@@ -116,8 +116,11 @@ function applyPhoneMask(value: string): string {
 // Desktop keeps the original 0.8 zoom (works on desktop; nav stays put). Mobile
 // browsers ignore CSS `zoom`, so the phone view uses transform:scale instead,
 // sized to fill the viewport with no overflow. Scoped to this page via the class.
+// Mobile scale is 0.85 (was 0.9) so the form reads a touch smaller on a phone.
+// The width/min-height MUST stay 1/scale (1/0.85 = 117.647%) so the scaled box
+// still fills the viewport with no gap or horizontal scroll.
 function SignupMobileZoomStyle() {
-  return <style dangerouslySetInnerHTML={{ __html: '@media (min-width:768px){.signup-mobile-zoom{zoom:0.8}}@media (max-width:767px){html,body{overflow-x:hidden}.signup-mobile-zoom{transform:scale(0.9);transform-origin:top left;width:111.111%;min-height:111.111vh}}' }} />;
+  return <style dangerouslySetInnerHTML={{ __html: '@media (min-width:768px){.signup-mobile-zoom{zoom:0.8}}@media (max-width:767px){html,body{overflow-x:hidden}.signup-mobile-zoom{transform:scale(0.85);transform-origin:top left;width:117.647%;min-height:117.647vh}}' }} />;
 }
 
 function setFavicon(url: string) {
