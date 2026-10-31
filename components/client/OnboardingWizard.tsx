@@ -299,6 +299,12 @@ const ANIM_CSS = `
 .ob-step-next{animation:obStepNext .34s cubic-bezier(0.22,1,0.36,1) both}
 .ob-step-back{animation:obStepBack .34s cubic-bezier(0.22,1,0.36,1) both}
 @media (prefers-reduced-motion:reduce){.ob-step-next,.ob-step-back,.ob-fu,.ob-fi,.ob-si{animation:none}}
+/* Gentle zoom-out on phones to match the signup's scaled-down feel. Uses CSS
+   zoom (not transform:scale) so it reflows layout and keeps document scroll +
+   sticky chrome working. min-height is divided by the zoom so the scaled root
+   still fills the viewport with no gap below. */
+.ob-root{min-height:100dvh}
+@media (max-width:767px){.ob-root{zoom:0.9;min-height:calc(100dvh / 0.9)}}
 `;
 
 // ============================================================================
@@ -1477,7 +1483,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
   const canSkip = step >= 1 && step <= totalSteps - 2;
 
   return (
-    <div className="relative z-[100] flex flex-col overflow-x-hidden" style={{ backgroundColor: theme.bg, minHeight: '100dvh' }}>
+    <div className="relative z-[100] flex flex-col overflow-x-hidden ob-root" style={{ backgroundColor: theme.bg }}>
       <style dangerouslySetInnerHTML={{ __html: ANIM_CSS }} />
 
       {/* ── Progress Bar ──────────────────────────────────────────────── */}
