@@ -200,7 +200,6 @@ function Nav({ config }: { config: MarketingConfig }) {
           {config.showFAQ !== false && <li><a href="/faq">FAQ</a></li>}
         </ul>
         <div className="bsd-nav-actions">
-          {config.clientLoginPath && <a href={config.clientLoginPath} className="bsd-nav-login">Client login</a>}
           {config.footer.phone && <a href={`tel:${config.footer.phone.replace(/\D/g, '')}`} className="bsd-btn bsd-btn-ghost bsd-btn-sm bsd-nav-call">Call us</a>}
           <a href="/signup" className="bsd-btn bsd-btn-primary bsd-btn-sm">{config.signup?.trialDays === 0 ? 'Get Started' : 'Start free trial'}</a>
         </div>

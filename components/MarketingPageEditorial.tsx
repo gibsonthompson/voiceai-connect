@@ -177,7 +177,6 @@ function Nav({ config }: { config: MarketingConfig }) {
           {config.showFAQ !== false && <li><a href="/faq">FAQ</a></li>}
         </ul>
         <div className="ed-nav-actions">
-          {config.clientLoginPath && <a href={config.clientLoginPath} className="ed-nav-login">Client login</a>}
           <a href="/signup" className="ed-btn ed-btn-primary ed-btn-sm">{config.signup?.trialDays === 0 ? 'Get Started' : 'Start free trial'}</a>
         </div>
       </div>

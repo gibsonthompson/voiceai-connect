@@ -172,7 +172,6 @@ function Navigation({ config }: { config: MarketingConfig }) {
             {config.showFAQ !== false && <li><a href="/faq">FAQ</a></li>}
           </ul>
           <div className="nav-actions">
-            {config.clientLoginPath && <a href={config.clientLoginPath} className="client-login-link">Client Login</a>}
             {config.footer.phone && <a href={`tel:${config.footer.phone.replace(/\D/g, '')}`} className="btn-ghost">Call Us</a>}
             <a href="/signup" className="btn-primary">Start Free Trial</a>
           </div>

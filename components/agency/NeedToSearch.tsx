@@ -302,7 +302,7 @@ export default function NeedToSearch() {
 
       {open && (
         <div className="absolute z-50 mt-2 w-full rounded-2xl overflow-hidden shadow-xl"
-          style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+          style={{ background: `linear-gradient(${theme.card}, ${theme.card}), ${theme.bg}`, border: `1px solid ${theme.border}` }}>
           {!qClean && (
             <div className="px-4 pt-3 pb-1 text-[11px] font-medium uppercase tracking-wider" style={{ color: theme.textMuted }}>Popular</div>
           )}

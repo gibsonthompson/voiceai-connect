@@ -149,7 +149,6 @@ export default function MarketingPageAurora({ config: partial }: AuroraProps) {
           <li><a href="/faq">FAQ</a></li>
         </ul>
         <div className="a-nav-actions">
-          {c.clientLoginPath && <a href={c.clientLoginPath} className="a-nav-login">Client Login</a>}
           <a href="/get-started" className="a-btn a-btn-primary">Start Free Trial</a>
         </div>
       </nav>
