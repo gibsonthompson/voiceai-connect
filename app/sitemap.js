@@ -23,13 +23,74 @@ const PLATFORM_HOSTS = new Set([
 // ============================================================================
 // REDIRECTED BLOG SLUGS (SEO consolidation, Oct 2026)
 // These /blog/<slug> URLs are now 301'd to a stronger owner page in
-// next.config.ts to kill keyword cannibalization on the commercial head
-// terms. A sitemap must never advertise a URL that redirects, so we filter
-// them out of BOTH the hardcoded blog list and the auto-generated blog feed.
-// Keep this set in exact sync with the SEO CONSOLIDATION block in
-// next.config.ts: one entry here per 301 source whose path starts /blog/.
+// next.config.ts to kill keyword cannibalization and fold the low-value
+// "sell-to [vertical]" and "vs [competitor]" clusters into their hubs. A
+// sitemap must never advertise a URL that redirects, so we filter them out of
+// BOTH the hardcoded blog list and the auto-generated blog feed.
+// Keep this set in exact sync with the redirect blocks in next.config.ts.
 // ============================================================================
+
+// Phase 2a: "sell AI receptionist to [vertical]" -> /blog/best-industries-ai-receptionist
+const SELL_TO_REDIRECTED = [
+  'sell-ai-receptionist-to-accounting-firms',
+  'sell-ai-receptionist-to-auto-shops',
+  'sell-ai-receptionist-to-car-dealerships',
+  'sell-ai-receptionist-to-chiropractors',
+  'sell-ai-receptionist-to-churches',
+  'sell-ai-receptionist-to-cleaning-companies',
+  'sell-ai-receptionist-to-daycare-and-childcare-centers',
+  'sell-ai-receptionist-to-dental-offices',
+  'sell-ai-receptionist-to-electricians',
+  'sell-ai-receptionist-to-financial-advisors',
+  'sell-ai-receptionist-to-funeral-homes',
+  'sell-ai-receptionist-to-general-contractors',
+  'sell-ai-receptionist-to-gyms-fitness-studios',
+  'sell-ai-receptionist-to-home-care-agencies',
+  'sell-ai-receptionist-to-home-service-contractors',
+  'sell-ai-receptionist-to-hotels-and-resorts',
+  'sell-ai-receptionist-to-hvac-companies',
+  'sell-ai-receptionist-to-insurance-agencies',
+  'sell-ai-receptionist-to-landscaping-lawn-care-companies',
+  'sell-ai-receptionist-to-law-firms',
+  'sell-ai-receptionist-to-massage-therapy-studios',
+  'sell-ai-receptionist-to-med-spas',
+  'sell-ai-receptionist-to-medical-practices',
+  'sell-ai-receptionist-to-mortgage-brokers',
+  'sell-ai-receptionist-to-moving-companies',
+  'sell-ai-receptionist-to-nail-salons',
+  'sell-ai-receptionist-to-optometrists',
+  'sell-ai-receptionist-to-pest-control-companies',
+  'sell-ai-receptionist-to-photography-studios',
+  'sell-ai-receptionist-to-physical-therapy-clinics',
+  'sell-ai-receptionist-to-plumbers',
+  'sell-ai-receptionist-to-plumbing-companies',
+  'sell-ai-receptionist-to-property-management-companies',
+  'sell-ai-receptionist-to-restaurants',
+  'sell-ai-receptionist-to-roofing-contractors',
+  'sell-ai-receptionist-to-salons-and-spas',
+  'sell-ai-receptionist-to-tattoo-studios',
+  'sell-ai-receptionist-to-trucking-companies',
+  'sell-ai-receptionist-to-tutoring-centers',
+  'sell-ai-receptionist-to-urgent-care-centers',
+  'sell-ai-receptionist-to-veterinary-clinics',
+  'sell-ai-receptionist-to-wedding-venues',
+];
+
+// Phase 2b: "VoiceAI Connect vs [competitor]" -> /best-white-label-ai-receptionist-platforms
+// (synthflow is in the Phase 1 list below, not repeated here)
+const VS_REDIRECTED = [
+  'voiceai-connect-vs-autocalls',
+  'voiceai-connect-vs-callin-io',
+  'voiceai-connect-vs-echowin',
+  'voiceai-connect-vs-goodcall',
+  'voiceai-connect-vs-insighto',
+  'voiceai-connect-vs-smith-ai',
+  'voiceai-connect-vs-trillet',
+  'voiceai-connect-vs-voxtell',
+];
+
 const REDIRECTED_BLOG_SLUGS = new Set([
+  // Phase 1: cannibalization
   'white-label-ai-receptionist-platform',
   'white-label-ai-voice-agent-platform-agencies',
   'best-white-label-ai-receptionist-platforms-ranked',
@@ -41,6 +102,9 @@ const REDIRECTED_BLOG_SLUGS = new Set([
   'voiceai-connect-vs-synthflow',
   'ai-receptionist-agency-pricing-tiers',
   'ai-agency-profit-margins-2026',
+  // Phase 2: cluster cleanup
+  ...SELL_TO_REDIRECTED,
+  ...VS_REDIRECTED,
 ]);
 
 function isPlatformHost(host) {
