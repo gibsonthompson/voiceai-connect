@@ -291,6 +291,14 @@ const ANIM_CSS = `
 .ob-si{animation:scaleIn .4s ease-out both}
 .ob-d1{animation-delay:60ms}.ob-d2{animation-delay:120ms}.ob-d3{animation-delay:180ms}
 .ob-d4{animation-delay:240ms}.ob-d5{animation-delay:300ms}
+/* Step-to-step motion so moving through the wizard feels alive, not rigid.
+   Keyed on the step index so it replays on every forward/back move. Short and
+   eased so it reads as momentum, not a wait. */
+@keyframes obStepNext{from{opacity:0;transform:translateX(26px)}to{opacity:1;transform:translateX(0)}}
+@keyframes obStepBack{from{opacity:0;transform:translateX(-26px)}to{opacity:1;transform:translateX(0)}}
+.ob-step-next{animation:obStepNext .34s cubic-bezier(0.22,1,0.36,1) both}
+.ob-step-back{animation:obStepBack .34s cubic-bezier(0.22,1,0.36,1) both}
+@media (prefers-reduced-motion:reduce){.ob-step-next,.ob-step-back,.ob-fu,.ob-fi,.ob-si{animation:none}}
 `;
 
 // ============================================================================
@@ -305,6 +313,9 @@ interface Props {
 export default function OnboardingWizard({ client, onComplete }: Props) {
   const theme = useClientTheme();
   const [step, setStep] = useState(0);
+  // Direction of the last step move (1 = forward, -1 = back) so the content can
+  // slide in from the matching side. Drives .ob-step-next / .ob-step-back.
+  const [dir, setDir] = useState<1 | -1>(1);
   const [saving, setSaving] = useState(false);
   const [skippedSteps, setSkippedSteps] = useState<string[]>([]);
   const [completedSteps, setCompletedSteps] = useState<string[]>([]);
@@ -726,16 +737,16 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
     if (key === 'services') setCompletedSteps(prev => [...prev.filter(s => s !== 'services'), 'services']);
     if (key === 'staff') setCompletedSteps(prev => [...prev.filter(s => s !== 'staff'), 'staff']);
 
-    if (step < totalSteps - 1) setStep(step + 1);
+    if (step < totalSteps - 1) { setDir(1); setStep(step + 1); }
   };
 
-  const handleBack = () => { setSaveError(null); if (step > 0) setStep(step - 1); };
+  const handleBack = () => { setSaveError(null); if (step > 0) { setDir(-1); setStep(step - 1); } };
 
   const handleSkip = () => {
     setSaveError(null);
     const key = STEP_META[step]?.key;
     if (key) setSkippedSteps(prev => [...prev.filter(s => s !== key), key]);
-    if (step < totalSteps - 1) setStep(step + 1);
+    if (step < totalSteps - 1) { setDir(1); setStep(step + 1); }
   };
 
   // ====================================================================
@@ -824,7 +835,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
         style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.12 : 0.06) }}>
         <Sparkles className="w-8 h-8" style={{ color: theme.primary }} />
       </div>
-      <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2" style={{ color: theme.text }}>
+      <h1 className="text-xl sm:text-3xl font-bold tracking-tight mb-2" style={{ color: theme.text }}>
         Let&apos;s set up your AI
       </h1>
       <p className="text-sm sm:text-base mb-8" style={{ color: theme.textMuted }}>
@@ -850,7 +861,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
       <p className="text-xs mb-6" style={{ color: theme.textMuted }}>
         Takes about 3 minutes · Skip anything and come back later
       </p>
-      <button onClick={() => setStep(1)}
+      <button onClick={() => { setDir(1); setStep(1); }}
         className="w-full py-4 rounded-2xl text-base font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
         style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
         Let&apos;s Go <ArrowRight className="w-5 h-5" />
@@ -940,7 +951,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
 
     return (
       <div className="max-w-lg mx-auto ob-fu">
-        <h2 className="text-xl sm:text-2xl font-bold tracking-tight mb-1" style={{ color: theme.text }}>
+        <h2 className="text-lg sm:text-2xl font-bold tracking-tight mb-1" style={{ color: theme.text }}>
           When are you open?
         </h2>
         <p className="text-sm mb-5" style={{ color: theme.textMuted }}>
@@ -1064,7 +1075,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
   // ── STEP 2: SERVICES ────────────────────────────────────────────────
   const renderServices = () => (
     <div className="max-w-lg mx-auto ob-fu">
-      <h2 className="text-xl sm:text-2xl font-bold tracking-tight mb-1" style={{ color: theme.text }}>
+      <h2 className="text-lg sm:text-2xl font-bold tracking-tight mb-1" style={{ color: theme.text }}>
         What do you offer?
       </h2>
       <p className="text-sm mb-6" style={{ color: theme.textMuted }}>
@@ -1088,7 +1099,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
 
     return (
       <div className="max-w-lg mx-auto ob-fu">
-        <h2 className="text-xl sm:text-2xl font-bold tracking-tight mb-1" style={{ color: theme.text }}>
+        <h2 className="text-lg sm:text-2xl font-bold tracking-tight mb-1" style={{ color: theme.text }}>
           What do callers ask?
         </h2>
         <p className="text-sm mb-6" style={{ color: theme.textMuted }}>
@@ -1156,7 +1167,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
   // ── STEP 4: STAFF ───────────────────────────────────────────────────
   const renderStaff = () => (
     <div className="max-w-lg mx-auto ob-fu">
-      <h2 className="text-xl sm:text-2xl font-bold tracking-tight mb-1" style={{ color: theme.text }}>
+      <h2 className="text-lg sm:text-2xl font-bold tracking-tight mb-1" style={{ color: theme.text }}>
         Who&apos;s on your team?
       </h2>
       <p className="text-sm mb-6" style={{ color: theme.textMuted }}>
@@ -1178,7 +1189,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
 
     return (
       <div className="max-w-lg mx-auto ob-fu">
-        <h2 className="text-xl sm:text-2xl font-bold tracking-tight mb-1" style={{ color: theme.text }}>
+        <h2 className="text-lg sm:text-2xl font-bold tracking-tight mb-1" style={{ color: theme.text }}>
           How should your AI sound?
         </h2>
         <p className="text-sm mb-6" style={{ color: theme.textMuted }}>
@@ -1287,7 +1298,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
           style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.12 : 0.06) }}>
           <Rocket className="w-8 h-8" style={{ color: theme.primary }} />
         </div>
-        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-2" style={{ color: theme.text }}>
+        <h2 className="text-xl sm:text-3xl font-bold tracking-tight mb-2" style={{ color: theme.text }}>
           You&apos;re ready!
         </h2>
         <p className="text-sm mb-8" style={{ color: theme.textMuted }}>
@@ -1371,7 +1382,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
       <div className="flex items-center justify-center w-14 h-14 rounded-2xl mb-5 mx-auto" style={{ backgroundColor: hexToRgba(theme.primary, 0.12) }}>
         <Globe className="w-7 h-7" style={{ color: theme.primary }} />
       </div>
-      <h2 className="text-xl sm:text-2xl font-bold tracking-tight mb-1 text-center" style={{ color: theme.text }}>
+      <h2 className="text-lg sm:text-2xl font-bold tracking-tight mb-1 text-center" style={{ color: theme.text }}>
         Start with your website
       </h2>
       <p className="text-sm mb-6 text-center" style={{ color: theme.textMuted }}>
@@ -1480,8 +1491,11 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
       )}
 
       {/* ── Content ───────────────────────────────────────────────────── */}
-      <div ref={contentRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 sm:px-6 py-6 sm:py-8" style={{ WebkitOverflowScrolling: 'touch' }}>
-        <div className="max-w-2xl mx-auto">
+      <div ref={contentRef} className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain px-4 sm:px-6 py-5 sm:py-8" style={{ WebkitOverflowScrolling: 'touch' }}>
+        {/* key={step} remounts on every move so the slide-in replays; direction
+            comes from dir. Parent holds all step state, so the remount is
+            visual only and never drops anything the user entered. */}
+        <div key={step} className={`max-w-2xl mx-auto ${dir === 1 ? 'ob-step-next' : 'ob-step-back'}`}>
           {stepRenderers[step]?.()}
         </div>
       </div>
