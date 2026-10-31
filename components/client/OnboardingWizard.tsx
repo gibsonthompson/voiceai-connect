@@ -299,12 +299,12 @@ const ANIM_CSS = `
 .ob-step-next{animation:obStepNext .34s cubic-bezier(0.22,1,0.36,1) both}
 .ob-step-back{animation:obStepBack .34s cubic-bezier(0.22,1,0.36,1) both}
 @media (prefers-reduced-motion:reduce){.ob-step-next,.ob-step-back,.ob-fu,.ob-fi,.ob-si{animation:none}}
-/* Gentle zoom-out on phones to match the signup's scaled-down feel. Uses CSS
-   zoom (not transform:scale) so it reflows layout and keeps document scroll +
-   sticky chrome working. min-height is divided by the zoom so the scaled root
-   still fills the viewport with no gap below. */
 .ob-root{min-height:100dvh}
-@media (max-width:767px){.ob-root{zoom:0.9;min-height:calc(100dvh / 0.9)}}
+/* Scale the onboarding down on phones to match the signup's feel. Mobile Safari
+   IGNORES CSS zoom, so instead shrink the root rem unit: all Tailwind text and
+   spacing is rem-based, so this scales the whole wizard uniformly and reliably
+   on iOS. Scoped to this <style>, which unmounts with the wizard. */
+@media (max-width:767px){:root{font-size:85%}}
 `;
 
 // ============================================================================
@@ -1512,7 +1512,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
       )}
 
       {/* ── Content ───────────────────────────────────────────────────── */}
-      <div ref={contentRef} className="flex-1 px-4 sm:px-6 py-5 sm:py-8">
+      <div ref={contentRef} className="flex-1 px-4 sm:px-6 pt-10 pb-6 sm:py-8">
         {/* key={step} remounts on every move so the slide-in replays; direction
             comes from dir. Parent holds all step state, so the remount is
             visual only and never drops anything the user entered. */}
