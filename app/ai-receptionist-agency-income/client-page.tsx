@@ -34,8 +34,7 @@ const PLANS = {
 type PlanId = keyof typeof PLANS;
 
 // Fixed assumptions (kept off the controls so the page stays simple).
-const RECOVER = 0.70;   // share of missed calls an always-on AI wins back
-const AVG_MIN = 3.2;    // average answered-call length, minutes
+const AVG_MIN = 3.2;    // average answered-call length, minutes (drives platform minute cost)
 const WEEKS = 4.33;     // weeks per month
 
 const money0 = (n: number) => '$' + Math.round(n).toLocaleString('en-US');
@@ -138,14 +137,14 @@ function Calculator() {
 
   // 1) What the business loses.
   const missedMo = calls * (pr.missed / 100) * WEEKS;
-  const lostMo = missedMo * pr.job * (pr.close / 100);
+  const perCall = pr.job * (pr.close / 100); // expected work value of a single answered call
+  const lostMo = missedMo * perCall;
   const lostYr = lostMo * 12;
-  const backMo = lostMo * RECOVER;
 
   // 2) What to charge. Recommended sits at ~12% of the monthly loss, held inside
   // a believable local-business band, rounded to a clean number.
   const recommended = clamp(roundTo(lostMo * 0.05, 25), 199, 499);
-  const clientNet = backMo - price; // what the client still keeps after paying the agency
+  const clientNet = lostMo - price; // the AI answers the calls they were missing, so the recaptured work is the loss, minus your fee
 
   // 3) What the agency keeps.
   const minutesMo = calls * WEEKS * AVG_MIN;
@@ -156,8 +155,6 @@ function Calculator() {
   const profit = revenue - totalCost;
   const annual = profit * 12;
   const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
-  const scaleAt = (n: number) => n * price - (pl.fee + n * pl.perClient + n * minutesMo * pl.perMinute);
-
   const otherId: PlanId = plan === 'pro' ? 'scale' : 'pro';
   const o = PLANS[otherId];
   const otherProfit = revenue - (o.fee + clients * o.perClient + clients * minutesMo * o.perMinute);
@@ -204,7 +201,10 @@ function Calculator() {
           </div>
           <p className="text-[15px] text-white/60 mt-2">
             That is <span className="text-white font-medium">{money0(lostYr)}</span> a year, from about{' '}
-            <span className="text-white font-medium">{Math.round(missedMo)}</span> missed calls a month.
+            <span className="text-white font-medium">{Math.round(missedMo)}</span> calls a month going unanswered.
+          </p>
+          <p className="text-[14px] text-white/55 mt-3">
+            Every call that goes to voicemail is worth about <span className="text-em font-medium">{money0(perCall)}</span> in work.
           </p>
           <div className="mt-auto pt-7 flex items-center gap-2.5 rounded-xl p-3.5" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
             <PhoneOff className="w-4 h-4 text-white/50 shrink-0" />
@@ -233,7 +233,7 @@ function Calculator() {
             </button>
           </div>
           <p className="text-[13px] text-black/50 leading-relaxed mt-auto">
-            Price to a slice of what they are losing, not to your cost. A business bleeding {money0(lostMo)}/mo will not blink at {money0(recommended)}, and it is still a fraction of the {money0(3000)}/mo a full-time receptionist costs.
+            Base your price on what they are losing, not on what the platform costs you. A business losing about {money0(lostMo)}/mo to calls it never answers will happily pay {money0(price)}/mo to capture that work, and it is still far below the roughly {money0(3000)}/mo a full-time receptionist would cost.
           </p>
         </div>
         <ResultCard>
@@ -243,9 +243,9 @@ function Calculator() {
             <p className="t-stat text-em" style={{ fontSize: 'clamp(2.25rem, 6vw, 3.75rem)' }}>{money0(Math.max(0, clientNet))}</p>
             <span className="font-mono text-sm text-white/45 mb-2.5">/mo</span>
           </div>
-          <p className="text-[14px] text-white/55 mt-2">of recovered work, after paying you.</p>
+          <p className="text-[14px] text-white/55 mt-2">of work they were losing, after paying you.</p>
           <div className="mt-7 pt-6 space-y-2.5" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-            <Row label="Work an AI wins back / mo" value={money0(backMo)} strong />
+            <Row label="Work the AI saves / mo" value={money0(lostMo)} strong />
             <Row label="Your fee" value={`- ${money0(price)}`} />
             <div className="pt-2.5 mt-1" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
               <Row label="They come out ahead by" value={money0(Math.max(0, clientNet))} em />
@@ -305,16 +305,6 @@ function Calculator() {
         </ResultCard>
       </div>
 
-      {/* Scale strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {[5, 25, 50].map((n) => (
-          <div key={n} className="rounded-2xl border border-black/[0.08] bg-white/70 p-6">
-            <p className="font-mono text-[11px] tracking-[0.12em] uppercase text-black/45">{n} clients</p>
-            <p className="t-stat text-black mt-2" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)' }}>{money0(Math.max(0, scaleAt(n)))}<span className="font-mono text-sm text-black/40">/mo</span></p>
-            <p className="text-[13px] text-black/50 mt-1">{money0(Math.max(0, scaleAt(n) * 12))} a year at {money0(price)}/client</p>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
@@ -357,7 +347,7 @@ export default function AgencyIncomePage() {
           </FadeIn>
           <FadeIn>
             <p className="text-[12px] text-black/40 mt-6 max-w-3xl">
-              Estimates for illustration. Loss figures use industry benchmarks (missed-call rates, average job values, close rates) you can adjust. Platform costs are VoiceAI Connect published rates (Pro: $99/mo + $9.99/client + $0.10/min; Scale: $499/mo + $0.05/min, no per-client fee). Assumes an AI wins back 70% of missed calls and roughly 3 minutes a call. Your results depend on what you charge and real usage, and do not include your own outreach or payment-processing costs.
+              Estimates for illustration. Loss figures use industry benchmarks (how many calls a business misses, average job value, how often a call becomes a job) that you can adjust. Platform costs are VoiceAI Connect published rates (Pro: $99/mo + $9.99/client + $0.10/min; Scale: $499/mo + $0.05/min, no per-client fee).
             </p>
           </FadeIn>
         </div>
