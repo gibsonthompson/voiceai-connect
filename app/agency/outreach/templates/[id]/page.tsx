@@ -97,7 +97,8 @@ export default function TemplateEditorPage() {
   const [variables, setVariables] = useState<VariableGroup | null>(null);
   const [showVariables, setShowVariables] = useState(true);
   const [copiedVar, setCopiedVar] = useState<string | null>(null);
-  
+  const [copiedContent, setCopiedContent] = useState(false);
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -266,6 +267,15 @@ export default function TemplateEditorPage() {
     });
   };
 
+  const copyContent = () => {
+    const text = formData.type === 'email' && formData.subject.trim()
+      ? `Subject: ${formData.subject}\n\n${formData.body}`
+      : formData.body;
+    navigator.clipboard.writeText(text);
+    setCopiedContent(true);
+    setTimeout(() => setCopiedContent(false), 1500);
+  };
+
   const renderVariableButton = (v: TemplateVariable, accentColor: string) => (
     <button
       key={v.key}
@@ -400,10 +410,10 @@ export default function TemplateEditorPage() {
 
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
         {/* Main Editor */}
-        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+        <div className="lg:col-span-2 flex flex-col gap-4 sm:gap-6">
           {/* Basic Info */}
-          <div 
-            className="rounded-xl p-4 sm:p-6"
+          <div
+            className="rounded-xl p-4 sm:p-6 order-2 lg:order-1"
             style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
           >
             <h3 className="font-medium text-sm sm:text-base mb-4 sm:mb-5" style={{ color: theme.text }}>Template Info</h3>
@@ -468,19 +478,29 @@ export default function TemplateEditorPage() {
           </div>
 
           {/* Content */}
-          <div 
-            className="rounded-xl p-4 sm:p-6"
+          <div
+            className="rounded-xl p-4 sm:p-6 order-1 lg:order-2"
             style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
           >
             <div className="flex items-center justify-between mb-4 sm:mb-5">
               <h3 className="font-medium text-sm sm:text-base" style={{ color: theme.text }}>Content</h3>
-              <button
-                onClick={() => setShowVariables(!showVariables)}
-                className="text-xs sm:text-sm transition-colors"
-                style={{ color: theme.primary }}
-              >
-                {showVariables ? 'Hide' : 'Show'} Variables
-              </button>
+              <div className="flex items-center gap-3 sm:gap-4">
+                <button
+                  onClick={copyContent}
+                  className="inline-flex items-center gap-1.5 text-xs sm:text-sm transition-colors"
+                  style={{ color: theme.primary }}
+                >
+                  {copiedContent ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copiedContent ? 'Copied' : 'Copy message'}
+                </button>
+                <button
+                  onClick={() => setShowVariables(!showVariables)}
+                  className="text-xs sm:text-sm transition-colors"
+                  style={{ color: theme.primary }}
+                >
+                  {showVariables ? 'Hide' : 'Show'} Variables
+                </button>
+              </div>
             </div>
             
             <div className="space-y-3 sm:space-y-4">
@@ -534,8 +554,8 @@ export default function TemplateEditorPage() {
 
           {/* Mobile Variables Panel */}
           {showVariables && variables && (
-            <div 
-              className="lg:hidden rounded-xl p-4"
+            <div
+              className="lg:hidden rounded-xl p-4 order-3"
               style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
             >
               <h3 className="font-medium text-sm mb-3" style={{ color: theme.text }}>Variables</h3>

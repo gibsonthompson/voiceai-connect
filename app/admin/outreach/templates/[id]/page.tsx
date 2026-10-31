@@ -42,7 +42,7 @@ function getTypeBg(type: string) {
 function getTypeLabel(type: string) {
   switch (type) {
     case 'email': return 'Email template';
-    case 'sms': return 'SMS template';
+    case 'sms': return 'IG template';
     case 'linkedin': return 'LinkedIn template';
     default: return 'Email template';
   }
@@ -54,7 +54,7 @@ function TypeSelect({ value, onChange }: { value: string; onChange: (v: string) 
   const [open, setOpen] = useState(false);
   const options = [
     { value: 'email', label: 'Email' },
-    { value: 'sms', label: 'SMS' },
+    { value: 'sms', label: 'IG' },
     { value: 'linkedin', label: 'LinkedIn' },
   ];
   const current = options.find(o => o.value === value) || options[0];
@@ -157,6 +157,7 @@ export default function AdminTemplateEditorPage() {
   const [variables, setVariables] = useState<VariableGroup | null>(null);
   const [showVariables, setShowVariables] = useState(true);
   const [copiedVar, setCopiedVar] = useState<string | null>(null);
+  const [copiedContent, setCopiedContent] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -265,6 +266,15 @@ export default function AdminTemplateEditorPage() {
     setTimeout(() => setCopiedVar(null), 1500);
   };
 
+  const copyContent = () => {
+    const text = formData.type === 'email' && formData.subject.trim()
+      ? `Subject: ${formData.subject}\n\n${formData.body}`
+      : formData.body;
+    navigator.clipboard.writeText(text);
+    setCopiedContent(true);
+    setTimeout(() => setCopiedContent(false), 1500);
+  };
+
   if (loading) {
     return (
       <div className="admin-scope flex items-center justify-center min-h-[60vh]">
@@ -318,9 +328,9 @@ export default function AdminTemplateEditorPage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Main Editor */}
-        <div className="lg:col-span-2 space-y-5">
+        <div className="lg:col-span-2 flex flex-col gap-5">
           {/* Basic Info */}
-          <div className="a-card p-6">
+          <div className="a-card p-6 order-2 lg:order-1">
             <h3 className="text-xs font-medium text-[var(--a-muted)] uppercase tracking-[0.1em] mb-5">Template Info</h3>
             <div className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
@@ -391,15 +401,24 @@ export default function AdminTemplateEditorPage() {
           </div>
 
           {/* Content */}
-          <div className="a-card p-6">
+          <div className="a-card p-6 order-1 lg:order-2">
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-xs font-medium text-[var(--a-muted)] uppercase tracking-[0.1em]">Content</h3>
-              <button
-                onClick={() => setShowVariables(!showVariables)}
-                className="text-xs text-[var(--a-em-deep)] hover:text-[var(--a-em)] transition-colors"
-              >
-                {showVariables ? 'Hide' : 'Show'} Variables
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={copyContent}
+                  className="inline-flex items-center gap-1.5 text-xs text-[var(--a-em-deep)] hover:text-[var(--a-em)] transition-colors"
+                >
+                  {copiedContent ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                  {copiedContent ? 'Copied' : 'Copy message'}
+                </button>
+                <button
+                  onClick={() => setShowVariables(!showVariables)}
+                  className="text-xs text-[var(--a-em-deep)] hover:text-[var(--a-em)] transition-colors"
+                >
+                  {showVariables ? 'Hide' : 'Show'} Variables
+                </button>
+              </div>
             </div>
 
             <div className="space-y-4">
@@ -433,7 +452,7 @@ export default function AdminTemplateEditorPage() {
                 {(formData.type === 'sms' || formData.type === 'linkedin') && (
                   <p className="text-[10px] text-[var(--a-dim)] mt-1.5 tabular-nums">
                     {formData.body.length} characters
-                    {formData.type === 'sms' && ` · ${Math.ceil(formData.body.length / 160) || 1} segment${formData.body.length > 160 ? 's' : ''}`}
+                    {formData.type === 'sms' && ` · Instagram DM limit ~1,000`}
                     {formData.type === 'linkedin' && ` · Connection requests: ~300 char limit · Messages: ~8,000`}
                   </p>
                 )}
