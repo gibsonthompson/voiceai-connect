@@ -11,6 +11,7 @@
 // with no test client yet becomes the test client; after that, a regular client.
 // ============================================================================
 
+// redeploy marker: v2
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowUp, Loader2, Sparkles, ArrowRight, Phone, Package } from 'lucide-react';
