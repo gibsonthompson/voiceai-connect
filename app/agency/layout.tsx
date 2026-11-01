@@ -71,6 +71,7 @@ const AGENCY_HREF_ROUTE: Record<string, NavRoute> = {
   '/agency/payments': 'payments',
   '/agency/marketing': 'website',
   '/agency/demo-phone': 'live',
+  '/agency/ai-lab': 'ailab',
   '/agency/templates': 'ailab',
   '/agency/branding': 'branding',
   '/agency/referrals': 'referrals',
@@ -171,7 +172,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     { href: '/agency/payments', label: 'Payments', icon: CreditCard, permissionKey: 'billing' },
     { href: '/agency/marketing', label: 'Website', icon: Globe, locked: !canUseMarketingSite, upgradeRequired: 'Pro', permissionKey: 'marketing' },
     { href: '/agency/demo-phone', label: 'Demo Phone', icon: Phone, locked: !isOnTrial && !canUseDemoPhoneNumber, upgradeRequired: 'Pro' },
-    { href: '/agency/templates', label: 'AI Lab', icon: Cpu, locked: !canUseAiLab, upgradeRequired: 'Pro' },
+    { href: '/agency/ai-lab', label: 'AI Lab', icon: Cpu, locked: !canUseAiLab, upgradeRequired: 'Pro' },
     { href: '/agency/branding', label: 'Branding', icon: Paintbrush, locked: !hasWhiteLabel, upgradeRequired: 'Pro' },
     { href: '/agency/referrals', label: 'Referrals', icon: Gift, locked: !canUseLeadFinder, upgradeRequired: 'Pro' },
     { href: '/agency/settings', label: 'Settings', icon: Settings },
@@ -334,7 +335,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     window.location.href = '/agency/login';
   };
 
-  const isActive = (href: string) => { if (href === '/agency/dashboard') return pathname === '/agency/dashboard' || pathname === '/agency'; if (href === '/agency/settings') return pathname?.startsWith('/agency/settings'); if (href === '/agency/templates') return pathname?.startsWith('/agency/templates'); if (href === '/agency/outreach') return pathname?.startsWith('/agency/outreach') || pathname?.startsWith('/agency/marketing-kit'); if (href === '/agency/marketing') return pathname === '/agency/marketing' || pathname?.startsWith('/agency/marketing/'); return pathname?.startsWith(href); };
+  const isActive = (href: string) => { if (href === '/agency/dashboard') return pathname === '/agency/dashboard' || pathname === '/agency'; if (href === '/agency/settings') return pathname?.startsWith('/agency/settings'); if (href === '/agency/ai-lab') return pathname?.startsWith('/agency/ai-lab') || pathname?.startsWith('/agency/templates'); if (href === '/agency/outreach') return pathname?.startsWith('/agency/outreach') || pathname?.startsWith('/agency/marketing-kit'); if (href === '/agency/marketing') return pathname === '/agency/marketing' || pathname?.startsWith('/agency/marketing/'); return pathname?.startsWith(href); };
 
   // ── LOADING SKELETON ────────────────────────────────────────────────
   // Only renders on the FIRST dashboard load (or hard refresh), when the
