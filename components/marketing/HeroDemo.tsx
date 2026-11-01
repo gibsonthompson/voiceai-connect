@@ -77,7 +77,8 @@ export default function HeroDemo() {
       v.on('error', (e: any) => { stopTimer(); setError(e?.message || 'The call dropped. Try again.'); setPhase('ended'); });
       v.on('message', (m: any) => {
         if (m?.type === 'transcript' && m.transcriptType === 'final' && m.transcript) {
-          setLines((prev) => [...prev, { role: m.role === 'user' ? 'user' : 'assistant', text: String(m.transcript) }].slice(-8));
+          const role: 'user' | 'assistant' = m.role === 'user' ? 'user' : 'assistant';
+          setLines((prev) => [...prev, { role, text: String(m.transcript) }].slice(-8));
         }
       });
       await v.start(assistant);
