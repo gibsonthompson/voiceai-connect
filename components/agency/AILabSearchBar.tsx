@@ -11,7 +11,6 @@
 // with no test client yet becomes the test client; after that, a regular client.
 // ============================================================================
 
-// redeploy marker: v2
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowUp, Loader2, Sparkles, ArrowRight, Phone, Package } from 'lucide-react';
@@ -33,7 +32,7 @@ interface MatchResult {
 
 const EXAMPLES = ['Dental office', 'HVAC company', 'Med spa', 'Law firm'];
 
-export default function AILabSearchBar({ agencyId, api, theme }: { agencyId: string; api: string; theme: any }) {
+export default function AILabSearchBar({ agencyId, api, theme, logoUrl }: { agencyId: string; api: string; theme: any; logoUrl?: string | null }) {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
@@ -107,8 +106,13 @@ export default function AILabSearchBar({ agencyId, api, theme }: { agencyId: str
   }
 
   return (
-    <div className="min-h-[75vh] flex flex-col items-center justify-center px-6">
+    <div className="min-h-[88vh] flex flex-col items-center px-6 pt-[26vh]">
       <div className="w-full" style={{ maxWidth: 640 }}>
+        {logoUrl && (
+          <div className="flex justify-center mb-6">
+            <img src={logoUrl} alt="" className="object-contain" style={{ maxHeight: 40, maxWidth: 200 }} />
+          </div>
+        )}
         <h1 className="text-center font-semibold tracking-tight mb-7" style={{ color: theme.text, fontSize: 'clamp(24px, 4.5vw, 34px)', lineHeight: 1.15 }}>
           Let’s build your receptionist
         </h1>
