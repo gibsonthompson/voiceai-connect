@@ -123,7 +123,7 @@ export default function AILabSearchBar({ agencyId, api, theme, logoUrl }: { agen
             ref={inputRef}
             value={query}
             onChange={(e) => { setQuery(e.target.value); setError(''); }}
-            placeholder="Describe the business, like a dental office in Austin that does emergency visits"
+            placeholder="Describe the business, or paste its website"
             autoComplete="off"
             autoFocus
             className="w-full rounded-[26px] pl-5 pr-14 py-4 text-[15px] transition-colors focus:outline-none"
@@ -147,9 +147,16 @@ export default function AILabSearchBar({ agencyId, api, theme, logoUrl }: { agen
           </button>
         </form>
 
+        {/* Hint — paste a link and we read the site */}
+        {!result && !loading && (
+          <p className="text-center text-[12px] mt-3" style={{ color: theme.textMuted }}>
+            Paste a website and we’ll read it to fill in the details.
+          </p>
+        )}
+
         {/* Suggestions — clean, centered pills */}
         {!result && !loading && (
-          <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
+          <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
             {EXAMPLES.map((ex) => (
               <button
                 key={ex}
