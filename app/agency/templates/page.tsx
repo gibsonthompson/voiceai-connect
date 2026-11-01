@@ -588,8 +588,6 @@ export default function AILabPage() {
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="flex items-center justify-between mb-6"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: theme.primary15 }}><FlaskConical className="h-5 w-5" style={{ color: theme.primary }} /></div><div><h1 data-tour="tour-templates" className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>AI Lab</h1><p className="text-sm sm:text-sm" style={{ color: theme.textMuted }}>Configure, test, and ship AI receptionists</p></div></div></div>
 
-        <div className="mb-6"><IndustryGating /></div>
-
         {showScaleTrialNote && (
           <div className="mb-6 rounded-xl p-4 flex items-start gap-3" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.border}` }}>
             <Sparkles className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: theme.primary }} />
@@ -808,6 +806,7 @@ export default function AILabPage() {
             </div>
           </div>
         )}
+        <div className="mt-8"><IndustryGating collapsible defaultOpen={false} /></div>
       </div>
       {showAddIndustry && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => { if (!addingIndustry) setShowAddIndustry(false); }}>

@@ -16,18 +16,20 @@
 // ============================================================================
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { Check, Loader2, Info, Store, Lock, Layers } from 'lucide-react';
+import { Check, Loader2, Info, Store, Lock, Layers, ChevronDown } from 'lucide-react';
 import { useAgency } from '@/app/agency/context';
 import { useTheme } from '@/hooks/useTheme';
 import { SELECTABLE_INDUSTRIES } from '@/lib/industries';
 
 interface Opt { value: string; label: string; custom?: boolean }
 
-export default function IndustryGating() {
+function IndustryGatingBody({ hideHeader, embedded }: { hideHeader?: boolean; embedded?: boolean }) {
   const { agency, effectivePlan, refreshAgency } = useAgency();
   const theme = useTheme();
   const api = process.env.NEXT_PUBLIC_API_URL || '';
   const isPro = effectivePlan !== 'free';
+  const outerClass = embedded ? '' : 'rounded-xl p-4 sm:p-5';
+  const outerStyle = embedded ? {} : { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` };
 
   const customs: { key: string; label: string }[] = Array.isArray((agency as any)?.custom_industries) ? (agency as any).custom_industries : [];
   const savedAllowed: string[] = Array.isArray((agency as any)?.allowed_industries) ? (agency as any).allowed_industries : [];
@@ -86,7 +88,7 @@ export default function IndustryGating() {
 
   if (!agency) return null;
 
-  const Header = (
+  const Header = hideHeader ? null : (
     <div className="flex items-center gap-2 mb-1">
       <Store className="h-4 w-4" style={{ color: theme.primary }} />
       <h4 className="font-medium text-sm sm:text-base" style={{ color: theme.text }}>Industries you sell to</h4>
@@ -96,7 +98,7 @@ export default function IndustryGating() {
   // Pro+ gate.
   if (!isPro) {
     return (
-      <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+      <div className={outerClass} style={outerStyle}>
         {Header}
         <p className="text-[11px] sm:text-xs mb-3" style={{ color: theme.textMuted }}>
           Limit which industries clients can choose at signup, or lock your agency to a single vertical.
@@ -110,7 +112,7 @@ export default function IndustryGating() {
   }
 
   return (
-    <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+    <div className={outerClass} style={outerStyle}>
       {Header}
       <p className="text-[11px] sm:text-xs mb-3" style={{ color: theme.textMuted }}>
         Control which industries a client can pick when they sign up on your site.
@@ -173,6 +175,28 @@ export default function IndustryGating() {
         </button>
         {err && <span className="text-xs" style={{ color: '#dc2626' }}>{err}</span>}
       </div>
+    </div>
+  );
+}
+
+// Default export: optionally wrap the body in a collapsible disclosure. Settings
+// renders it open and inline (no props); the templates page passes collapsible
+// with defaultOpen=false so it sits quietly at the bottom.
+export default function IndustryGating({ collapsible = false, defaultOpen = true }: { collapsible?: boolean; defaultOpen?: boolean } = {}) {
+  const theme = useTheme();
+  const [open, setOpen] = useState(defaultOpen);
+  if (!collapsible) return <IndustryGatingBody />;
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open}
+        className="w-full flex items-center justify-between px-4 sm:px-5 py-3.5 transition-colors">
+        <span className="flex items-center gap-2">
+          <Store className="h-4 w-4" style={{ color: theme.primary }} />
+          <span className="font-medium text-sm sm:text-base" style={{ color: theme.text }}>Industries you sell to</span>
+        </span>
+        <ChevronDown className="h-4 w-4 transition-transform" style={{ color: theme.textMuted, transform: open ? 'rotate(180deg)' : 'none' }} />
+      </button>
+      {open && <div className="px-4 sm:px-5 pb-4 sm:pb-5"><IndustryGatingBody hideHeader embedded /></div>}
     </div>
   );
 }

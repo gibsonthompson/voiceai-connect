@@ -9,7 +9,7 @@
 import { useAgency } from '@/app/agency/context';
 import { useTheme } from '@/hooks/useTheme';
 import { Loader2 } from 'lucide-react';
-import AILabSearchBar from '@/components/agency/AILabSearchBar';
+import AILabBuilder from '@/components/agency/AILabBuilder';
 
 export default function AILabHomePage() {
   const { agency, branding, loading } = useAgency();
@@ -24,5 +24,5 @@ export default function AILabHomePage() {
     );
   }
 
-  return <AILabSearchBar agencyId={agency.id} api={api} theme={theme} logoUrl={branding?.logoUrl || agency.logo_url || null} />;
+  return <AILabBuilder agencyId={agency.id} api={api} theme={theme} logoUrl={branding?.logoUrl || agency.logo_url || null} />;
 }
