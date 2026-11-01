@@ -1,23 +1,24 @@
 'use client';
 
 // ============================================================================
-// HeroDemo — the marketing-site "describe your business, then talk to its
-// receptionist" demo. Lives in the homepage hero. Public and anonymous:
-//   1. Visitor types their business or pastes their website.
-//   2. POST /api/public/demo-receptionist reads the site and returns an inline,
-//      transient VAPI assistant config grounded in that business.
-//   3. "Talk to it" starts a live browser web call (vapi.start(assistant)) with
-//      the visitor's mic, capped at 4 minutes. No number, nothing persisted.
-//   4. On end, the CTA pushes them to start a free trial.
-// Styled for the dark hero (white text, mint #00E3AA accent), not the dashboard.
+// HeroDemo — a full marketing-site SECTION: a large, centered, ChatGPT-style
+// prompt bar where a visitor describes their business (or pastes their site),
+// we build a receptionist for it, and they have a live browser voice call with
+// it. Public and anonymous.
+//   1. POST /api/public/demo-receptionist reads the site -> inline transient
+//      VAPI assistant grounded in that business.
+//   2. "Talk to it" starts a live web call (vapi.start(assistant)), 4-min cap.
+//   3. On end, CTA to start a free trial.
+// Styled for the dark marketing site (white text, mint #00E3AA accent).
 // ============================================================================
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { ArrowUpRight, Mic, Phone, PhoneOff, Loader2, Sparkles, AlertTriangle } from 'lucide-react';
+import { ArrowUp, Mic, Phone, PhoneOff, Loader2, Sparkles, AlertTriangle, ArrowUpRight } from 'lucide-react';
 
 const EM = '#00E3AA';
 const MAX_SECONDS = 240; // 4-minute demo cap
+const EXAMPLES = ['A dental office in Austin', 'An HVAC company', 'A law firm', 'A med spa'];
 
 type Phase = 'idle' | 'building' | 'ready' | 'connecting' | 'live' | 'ended' | 'error';
 interface Line { role: 'user' | 'assistant'; text: string }
@@ -69,9 +70,7 @@ export default function HeroDemo() {
       v.on('call-start', () => {
         setPhase('live');
         stopTimer();
-        timerRef.current = setInterval(() => {
-          setSeconds((s) => { if (s + 1 >= MAX_SECONDS) { endCall(); return MAX_SECONDS; } return s + 1; });
-        }, 1000);
+        timerRef.current = setInterval(() => { setSeconds((s) => { if (s + 1 >= MAX_SECONDS) { endCall(); return MAX_SECONDS; } return s + 1; }); }, 1000);
       });
       v.on('call-end', () => { stopTimer(); setPhase('ended'); });
       v.on('error', (e: any) => { stopTimer(); setError(e?.message || 'The call dropped. Try again.'); setPhase('ended'); });
@@ -89,120 +88,118 @@ export default function HeroDemo() {
   const reset = () => { endCall(); setPhase('idle'); setBiz(null); setAssistant(null); setQuery(''); setLines([]); setSeconds(0); setError(''); };
   const mmss = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
   const remaining = `${Math.floor((MAX_SECONDS - seconds) / 60)}:${String((MAX_SECONDS - seconds) % 60).padStart(2, '0')}`;
+  const hasText = !!query.trim();
 
   return (
-    <div className="mt-10 max-w-2xl">
-      <p className="font-mono text-[11px] tracking-[0.14em] uppercase mb-3" style={{ color: EM }}>
-        Try it now · build a receptionist in seconds
-      </p>
+    <section className="relative bg-ink py-24 lg:py-36 border-t border-white/[0.04] overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(1100px 520px at 50% 0%, rgba(0,227,170,0.10), transparent 70%)' }} />
+      <div className="max-w-[860px] mx-auto px-6 relative text-center">
+        <p className="font-mono text-[11px] tracking-[0.14em] uppercase mb-5" style={{ color: EM }}>Try it live · no signup</p>
+        <h2 className="t-h1 text-white mx-auto" style={{ maxWidth: '20ch' }}>Build a receptionist for your business. Then call it.</h2>
+        <p className="t-body mt-6 max-w-xl mx-auto">Type your business or paste your website. In seconds you get a working AI receptionist that already knows it, and you can pick up the phone and talk to it. This is exactly what your clients get.</p>
 
-      {/* IDLE / BUILDING: the prompt bar */}
-      {(phase === 'idle' || phase === 'building') && (
-        <>
-          <form onSubmit={(e) => { e.preventDefault(); build(query); }} className="relative">
-            <input
-              value={query}
-              onChange={(e) => { setQuery(e.target.value); setError(''); }}
-              placeholder="Describe your business, or paste your website"
-              autoComplete="off"
-              disabled={phase === 'building'}
-              className="w-full rounded-2xl pl-5 pr-14 py-4 text-[15px] text-white placeholder-white/40 focus:outline-none transition-colors"
-              style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = EM)}
-              onBlur={(e) => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)')}
-            />
-            <button type="submit" aria-label="Build" disabled={phase === 'building' || !query.trim()}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 h-9 w-9 rounded-xl inline-flex items-center justify-center transition-all disabled:opacity-50"
-              style={{ backgroundColor: EM, color: '#04110D' }}>
-              {phase === 'building' ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUpRight className="h-4 w-4" />}
-            </button>
-          </form>
-          <p className="text-[12px] mt-2.5 text-white/40">
-            {phase === 'building' ? 'Reading the site and building the receptionist…' : 'We read your site and build a working receptionist you can actually call. No signup.'}
-          </p>
-        </>
-      )}
+        {/* IDLE / BUILDING: the big centered prompt bar */}
+        {(phase === 'idle' || phase === 'building') && (
+          <div className="mt-10">
+            <form onSubmit={(e) => { e.preventDefault(); build(query); }} className="relative max-w-2xl mx-auto">
+              <input
+                value={query}
+                onChange={(e) => { setQuery(e.target.value); setError(''); }}
+                placeholder="Describe your business, or paste your website"
+                autoComplete="off"
+                disabled={phase === 'building'}
+                className="w-full rounded-[28px] pl-6 pr-16 py-5 text-[16px] text-white placeholder-white/40 focus:outline-none transition-colors text-left"
+                style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.14)' }}
+                onFocus={(e) => (e.currentTarget.style.borderColor = EM)}
+                onBlur={(e) => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)')}
+              />
+              <button type="submit" aria-label="Build" disabled={phase === 'building' || !hasText}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 h-11 w-11 rounded-full inline-flex items-center justify-center transition-all disabled:opacity-50"
+                style={{ backgroundColor: EM, color: '#04110D' }}>
+                {phase === 'building' ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowUp className="h-5 w-5" />}
+              </button>
+            </form>
 
-      {/* READY / CALL: the demo card */}
-      {biz && phase !== 'idle' && phase !== 'building' && (
-        <div className="rounded-2xl p-5 sm:p-6" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
-          <div className="flex items-start gap-3">
-            <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(0,227,170,0.12)' }}>
-              <Sparkles className="h-5 w-5" style={{ color: EM }} />
-            </div>
-            <div className="min-w-0">
-              <p className="text-white font-semibold text-[16px] leading-tight">{biz.name}&rsquo;s receptionist</p>
-              {biz.industry && <p className="text-[12px] mt-0.5" style={{ color: EM }}>{biz.industry}</p>}
-            </div>
-            {(phase === 'live' || phase === 'connecting') && (
-              <span className="ml-auto font-mono text-[12px] text-white/60">{phase === 'connecting' ? 'connecting…' : `${mmss} · ${remaining} left`}</span>
-            )}
-          </div>
-
-          {biz.greeting && (phase === 'ready' || phase === 'ended') && (
-            <p className="text-white/70 text-[14px] mt-4 italic">&ldquo;{biz.greeting}&rdquo;</p>
-          )}
-
-          {/* live transcript */}
-          {(phase === 'live' || phase === 'connecting') && (
-            <div ref={transcriptRef} className="mt-4 max-h-40 overflow-y-auto space-y-2 pr-1">
-              {lines.length === 0 ? (
-                <p className="text-white/40 text-[13px]">{phase === 'connecting' ? 'Connecting your call…' : 'Say hello, ask about hours, or try to book an appointment.'}</p>
-              ) : lines.map((l, i) => (
-                <p key={i} className="text-[13px] leading-snug" style={{ color: l.role === 'user' ? 'rgba(255,255,255,0.55)' : '#fff' }}>
-                  <span className="font-mono text-[10px] uppercase tracking-wide mr-2" style={{ color: l.role === 'user' ? 'rgba(255,255,255,0.35)' : EM }}>{l.role === 'user' ? 'You' : 'AI'}</span>{l.text}
-                </p>
-              ))}
-            </div>
-          )}
-
-          {error && <p className="text-[13px] mt-3" style={{ color: '#ff6b6b' }}>{error}</p>}
-
-          {/* controls */}
-          <div className="mt-5 flex flex-wrap items-center gap-3">
-            {phase === 'ready' && (
-              <>
-                <button onClick={startCall} className="inline-flex items-center gap-2 rounded-xl px-5 py-3 text-[14px] font-semibold transition-all hover:opacity-90 active:scale-[0.98]" style={{ backgroundColor: EM, color: '#04110D' }}>
-                  <Phone className="h-4 w-4" /> Talk to it
-                </button>
-                <button onClick={reset} className="text-[13px] text-white/50 hover:text-white/80 transition-colors">Try another business</button>
-              </>
-            )}
-            {(phase === 'connecting' || phase === 'live') && (
-              <>
-                <button onClick={endCall} className="inline-flex items-center gap-2 rounded-xl px-5 py-3 text-[14px] font-semibold transition-colors" style={{ backgroundColor: 'rgba(255,107,107,0.15)', color: '#ff6b6b', border: '1px solid rgba(255,107,107,0.3)' }}>
-                  <PhoneOff className="h-4 w-4" /> End call
-                </button>
-                {phase === 'live' && (
-                  <button onClick={toggleMute} className="inline-flex items-center gap-2 rounded-xl px-4 py-3 text-[14px] font-medium transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: muted ? EM : '#fff', border: '1px solid rgba(255,255,255,0.12)' }}>
-                    <Mic className="h-4 w-4" /> {muted ? 'Unmute' : 'Mute'}
+            {phase === 'building' ? (
+              <p className="text-[13px] mt-4 text-white/50">Reading the site and building the receptionist…</p>
+            ) : (
+              <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
+                {EXAMPLES.map((ex) => (
+                  <button key={ex} type="button" onClick={() => { setQuery(ex); build(ex); }}
+                    className="rounded-full px-4 py-2 text-[13px] text-white/60 transition-colors"
+                    style={{ border: '1px solid rgba(255,255,255,0.14)' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = EM; e.currentTarget.style.color = '#fff'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; }}>
+                    {ex}
                   </button>
-                )}
-              </>
+                ))}
+              </div>
             )}
-            {phase === 'ended' && (
-              <>
-                <Link href="/signup" className="inline-flex items-center gap-2 rounded-xl px-5 py-3 text-[14px] font-semibold transition-all hover:opacity-90" style={{ backgroundColor: EM, color: '#04110D' }}>
-                  Start your free trial <ArrowUpRight className="h-4 w-4" />
-                </Link>
-                <button onClick={startCall} className="text-[13px] text-white/60 hover:text-white transition-colors">Call again</button>
-                <button onClick={reset} className="text-[13px] text-white/50 hover:text-white/80 transition-colors">Try another business</button>
-              </>
-            )}
+            {error && <p className="text-[13px] mt-4" style={{ color: '#ff6b6b' }}>{error}</p>}
           </div>
+        )}
 
-          {phase === 'ready' && (
-            <p className="text-[12px] mt-3 text-white/40">Uses your microphone. Up to 4 minutes, no signup. This is the same experience your clients&rsquo; callers get.</p>
-          )}
-        </div>
-      )}
+        {/* READY / CALL: the demo card, centered */}
+        {biz && phase !== 'idle' && phase !== 'building' && (
+          <div className="mt-10 max-w-xl mx-auto rounded-2xl p-6 sm:p-8 text-left" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <div className="flex items-start gap-3">
+              <div className="h-11 w-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(0,227,170,0.12)' }}><Sparkles className="h-5 w-5" style={{ color: EM }} /></div>
+              <div className="min-w-0">
+                <p className="text-white font-semibold text-[17px] leading-tight">{biz.name}&rsquo;s receptionist</p>
+                {biz.industry && <p className="text-[12px] mt-0.5" style={{ color: EM }}>{biz.industry}</p>}
+              </div>
+              {(phase === 'live' || phase === 'connecting') && <span className="ml-auto font-mono text-[12px] text-white/60">{phase === 'connecting' ? 'connecting…' : `${mmss} · ${remaining} left`}</span>}
+            </div>
 
-      {phase === 'error' && (
-        <div className="rounded-2xl p-4 flex items-start gap-3" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
-          <AlertTriangle className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: '#f59e0b' }} />
-          <div><p className="text-white text-[14px]">{error || 'The live demo is unavailable right now.'}</p><button onClick={reset} className="text-[13px] mt-1" style={{ color: EM }}>Try again</button></div>
-        </div>
-      )}
-    </div>
+            {biz.greeting && (phase === 'ready' || phase === 'ended') && <p className="text-white/70 text-[15px] mt-4 italic">&ldquo;{biz.greeting}&rdquo;</p>}
+
+            {(phase === 'live' || phase === 'connecting') && (
+              <div ref={transcriptRef} className="mt-4 max-h-44 overflow-y-auto space-y-2 pr-1">
+                {lines.length === 0 ? (
+                  <p className="text-white/40 text-[13px]">{phase === 'connecting' ? 'Connecting your call…' : 'Say hello, ask about hours, or try to book an appointment.'}</p>
+                ) : lines.map((l, i) => (
+                  <p key={i} className="text-[14px] leading-snug" style={{ color: l.role === 'user' ? 'rgba(255,255,255,0.55)' : '#fff' }}>
+                    <span className="font-mono text-[10px] uppercase tracking-wide mr-2" style={{ color: l.role === 'user' ? 'rgba(255,255,255,0.35)' : EM }}>{l.role === 'user' ? 'You' : 'AI'}</span>{l.text}
+                  </p>
+                ))}
+              </div>
+            )}
+
+            {error && <p className="text-[13px] mt-3" style={{ color: '#ff6b6b' }}>{error}</p>}
+
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              {phase === 'ready' && (
+                <>
+                  <button onClick={startCall} className="inline-flex items-center gap-2 rounded-xl px-6 py-3.5 text-[15px] font-semibold transition-all hover:opacity-90 active:scale-[0.98]" style={{ backgroundColor: EM, color: '#04110D' }}><Phone className="h-5 w-5" /> Talk to it</button>
+                  <button onClick={reset} className="text-[13px] text-white/50 hover:text-white/80 transition-colors">Try another business</button>
+                </>
+              )}
+              {(phase === 'connecting' || phase === 'live') && (
+                <>
+                  <button onClick={endCall} className="inline-flex items-center gap-2 rounded-xl px-5 py-3.5 text-[15px] font-semibold transition-colors" style={{ backgroundColor: 'rgba(255,107,107,0.15)', color: '#ff6b6b', border: '1px solid rgba(255,107,107,0.3)' }}><PhoneOff className="h-5 w-5" /> End call</button>
+                  {phase === 'live' && <button onClick={toggleMute} className="inline-flex items-center gap-2 rounded-xl px-4 py-3.5 text-[15px] font-medium transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: muted ? EM : '#fff', border: '1px solid rgba(255,255,255,0.12)' }}><Mic className="h-5 w-5" /> {muted ? 'Unmute' : 'Mute'}</button>}
+                </>
+              )}
+              {phase === 'ended' && (
+                <>
+                  <Link href="/signup" className="inline-flex items-center gap-2 rounded-xl px-6 py-3.5 text-[15px] font-semibold transition-all hover:opacity-90" style={{ backgroundColor: EM, color: '#04110D' }}>Start your free trial <ArrowUpRight className="h-4 w-4" /></Link>
+                  <button onClick={startCall} className="text-[13px] text-white/60 hover:text-white transition-colors">Call again</button>
+                  <button onClick={reset} className="text-[13px] text-white/50 hover:text-white/80 transition-colors">Try another business</button>
+                </>
+              )}
+            </div>
+
+            {phase === 'ready' && <p className="text-[12px] mt-4 text-white/40">Uses your microphone. Up to 4 minutes, no signup.</p>}
+          </div>
+        )}
+
+        {phase === 'error' && (
+          <div className="mt-10 max-w-xl mx-auto rounded-2xl p-4 flex items-start gap-3 text-left" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <AlertTriangle className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: '#f59e0b' }} />
+            <div><p className="text-white text-[14px]">{error || 'The live demo is unavailable right now.'}</p><button onClick={reset} className="text-[13px] mt-1" style={{ color: EM }}>Try again</button></div>
+          </div>
+        )}
+      </div>
+    </section>
   );
 }

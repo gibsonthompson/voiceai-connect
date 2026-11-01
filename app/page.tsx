@@ -293,9 +293,8 @@ export default function HomePage() {
               <Link href="/signup" className="btn btn-em">Get started free <ArrowUpRight className="w-3.5 h-3.5" /></Link>
               <Link href="#earnings" className="btn btn-ghost-dark">Project earnings <ArrowDown className="w-3.5 h-3.5" /></Link>
             </div>
-            <HeroDemo />
-            <Link href="/interactive-demo" className="inline-flex items-center gap-1.5 font-mono text-[11px] tracking-[0.14em] uppercase text-em mt-8 hover:opacity-80 transition-opacity">
-              Or see the full interactive demo <ArrowRight className="w-3 h-3" />
+            <Link href="/interactive-demo" className="inline-flex items-center gap-1.5 font-mono text-[11px] tracking-[0.14em] uppercase text-em mt-6 hover:opacity-80 transition-opacity">
+              Or try the interactive demo <ArrowRight className="w-3 h-3" />
             </Link>
             <p className="font-mono text-[11px] text-white/35 mt-7">Start free · no card to begin · upgrade anytime</p>
           </div>
@@ -338,6 +337,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <HeroDemo />
 
       {/* ════════ HEAR IT LIVE (concierge demo) ════════ */}
       <section className="relative bg-ink py-20 lg:py-28 border-t border-white/[0.04] overflow-hidden">
