@@ -385,6 +385,27 @@ export default function AgencyClientDetailPage() {
     } catch (err: any) { setCustomMsg(err.message || 'Failed to save'); }
     finally { setSavingCustom(false); }
   };
+
+  // ── Collect payment (Connect clients): generate a hosted checkout link the
+  // client opens on their phone to enter a card. In person (scan the QR) or sent.
+  const [collectBusy, setCollectBusy] = useState(false);
+  const [collectUrl, setCollectUrl] = useState<string | null>(null);
+  const [collectErr, setCollectErr] = useState<string | null>(null);
+  const [collectCopied, setCollectCopied] = useState(false);
+  const collectPayment = async () => {
+    if (!clientId) return; setCollectBusy(true); setCollectErr(null);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/client/checkout`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ client_id: clientId, plan: client?.plan_type }) });
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 409) { setCollectErr(data.message || 'This client already has an active subscription.'); return; }
+      if (!res.ok || !data.url) throw new Error(data.message || data.error || 'Could not start checkout.');
+      setCollectUrl(data.url); setCollectCopied(false);
+    } catch (err: any) { setCollectErr(err.message || 'Could not start checkout.'); }
+    finally { setCollectBusy(false); }
+  };
+  const copyCollectLink = async () => { if (!collectUrl) return; try { await navigator.clipboard.writeText(collectUrl); setCollectCopied(true); setTimeout(() => setCollectCopied(false), 2500); } catch { /* ignore */ } };
+
   const handleSaveTimezone = async (tz: string) => { if (!clientId || !tz) return; setTzSaving(true); setTzSaved(false); try { const token = localStorage.getItem('auth_token'); const res = await fetch(`${backendUrl}/api/client/${clientId}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ timezone: tz }) }); if (!res.ok) throw new Error('Failed to update timezone'); setTzSaved(true); setTimeout(() => setTzSaved(false), 3000); fetchClientData(); } catch (err) { console.error('Failed to save timezone:', err); } finally { setTzSaving(false); } };
   const handleSaveIndustry = async (newIndustry: string) => { if (!agency || !clientId || !newIndustry) return; setIndustrySaving(true); setIndustrySaved(false); try { const token = localStorage.getItem('auth_token'); const res = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}/industry`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ industry: newIndustry }) }); if (!res.ok) throw new Error('Failed to update industry'); setIndustryValue(newIndustry); setIndustrySaved(true); setTimeout(() => setIndustrySaved(false), 3000); fetchClientData(); } catch (err) { console.error('Failed to save industry:', err); } finally { setIndustrySaving(false); } };
 
@@ -874,6 +895,45 @@ export default function AgencyClientDetailPage() {
         </div>
         <div className="space-y-4 sm:space-y-6">
 
+          {/* Collect payment (Connect clients not yet on a paying subscription).
+              Generates a hosted Stripe Checkout the client opens on their phone,
+              in person via the QR or sent to them. Respects custom pricing. */}
+          {!isManualClient && !['active', 'trialing', 'trial'].includes((client.subscription_status || '').toLowerCase()) && (
+            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+              <div className="p-4 sm:p-6">
+                <div className="flex items-center gap-2 mb-1">
+                  <CreditCard className="h-4 w-4" style={{ color: theme.primary }} />
+                  <h2 className="font-semibold text-sm sm:text-base">Collect payment</h2>
+                </div>
+                <p className="text-xs mb-3" style={{ color: theme.textMuted }}>
+                  Put {client.business_name} on a paying plan. Generate a secure checkout link they open on their phone to enter a card, sitting with you in person (scan the code) or sent to them. They&apos;re billed ${(((client as any).effective_price_cents ?? getPlanPrice(client.plan_type, client)) / 100).toFixed(0)}/mo. Change the amount in Custom pricing below first if needed.
+                </p>
+                <button onClick={collectPayment} disabled={collectBusy} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+                  {collectBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />} Generate payment link
+                </button>
+                {collectErr && <p className="text-xs mt-2" style={{ color: '#ef4444' }}>{collectErr}</p>}
+              </div>
+            </div>
+          )}
+
+          {collectUrl && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => setCollectUrl(null)}>
+              <div className="rounded-2xl p-5 sm:p-6 w-full max-w-sm" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center gap-2 mb-1"><CreditCard className="h-5 w-5" style={{ color: theme.primary }} /><h3 className="font-semibold text-base" style={{ color: theme.text }}>Collect payment</h3></div>
+                <p className="text-sm mb-4" style={{ color: theme.textMuted }}>Have the client scan this with their phone camera, or send them the link. They enter their card on Stripe&apos;s secure page.</p>
+                <div className="flex justify-center mb-4">
+                  <img alt="Payment link QR code" width={200} height={200} className="rounded-lg" style={{ backgroundColor: '#fff', padding: 8 }} src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data=${encodeURIComponent(collectUrl)}`} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                </div>
+                <div className="flex items-center gap-2 mb-2">
+                  <input readOnly value={collectUrl} className="flex-1 rounded-lg px-3 py-2 text-xs min-w-0" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }} />
+                  <button onClick={copyCollectLink} className="px-3 py-2 rounded-lg text-sm font-medium flex-shrink-0" style={{ backgroundColor: theme.primary15, color: theme.primary }}>{collectCopied ? 'Copied' : 'Copy'}</button>
+                </div>
+                <a href={collectUrl} target="_blank" rel="noopener noreferrer" className="block text-center rounded-lg px-4 py-2.5 text-sm font-semibold mb-2" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>Open checkout</a>
+                <button onClick={() => { setCollectUrl(null); fetchClientData(); }} className="w-full text-center text-sm py-2" style={{ color: theme.textMuted }}>Done</button>
+              </div>
+            </div>
+          )}
+
           {/* Manual billing: free-access window controls (manual-billing clients only) */}
           {isManualClient && (
             <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
@@ -925,7 +985,7 @@ export default function AgencyClientDetailPage() {
                 <CreditCard className="h-4 w-4" style={{ color: theme.primary }} />
                 <h2 className="font-semibold text-sm sm:text-base">Custom pricing</h2>
               </div>
-              <p className="text-xs mb-3" style={{ color: theme.textMuted }}>Set a bespoke price for this client only. They&apos;re billed exactly these amounts and never see your standard plans, use it for white-glove deals. Applies at their next checkout.</p>
+              <p className="text-xs mb-3" style={{ color: theme.textMuted }}>Set a bespoke price for this client only, for white-glove deals. This is the amount they&apos;re charged when you collect payment above (or at their next checkout), instead of your standard plan price. Save it before generating the payment link.</p>
               <div className="inline-flex rounded-lg p-0.5 mb-3" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                 {(['plan', 'custom'] as const).map((m) => (
                   <button key={m} onClick={() => setPricingMode(m)} className="px-3 py-1.5 rounded-md text-xs font-medium transition-colors" style={pricingMode === m ? { backgroundColor: theme.primary, color: theme.primaryText } : { color: theme.textMuted }}>{m === 'plan' ? 'Use a plan' : 'Custom'}</button>
