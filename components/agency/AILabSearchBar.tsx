@@ -123,7 +123,7 @@ export default function AILabSearchBar({ agencyId, api, theme, logoUrl }: { agen
             ref={inputRef}
             value={query}
             onChange={(e) => { setQuery(e.target.value); setError(''); }}
-            placeholder="an AI receptionist for a dental office in Austin"
+            placeholder="Describe the business, like a dental office in Austin that does emergency visits"
             autoComplete="off"
             autoFocus
             className="w-full rounded-[26px] pl-5 pr-14 py-4 text-[15px] transition-colors focus:outline-none"
