@@ -101,11 +101,11 @@ export default function PlanUpgrade({ agencyId, currentPlan, theme, token, backe
   async function startCheckout(plan: PlanKey) {
     const successUrl = window.location.origin + '/agency/settings?tab=billing&upgraded=' + plan;
     const cancelUrl = window.location.origin + '/agency/settings?tab=billing&canceled=true';
-    // An in-app upgrade from the billing tab is an explicit purchase (the agency
-    // is already using the product), not a new signup, so charge immediately
-    // with no fresh trial. New-signup trials still happen via the signup flow.
-    // Drop skipTrial here if you'd rather offer the 14-day trial on upgrade.
-    const json = await post('/api/agency/checkout', { agency_id: agencyId, plan, successUrl, cancelUrl, skipTrial: true });
+    // A free agency upgrading to a paid plan gets the same 14-day free trial new
+    // signups get (skipTrial:false -> backend attaches trial_period_days=14, $0
+    // today). Only an edge-case resubscribe of an already-paid agency whose
+    // subscription vanished keeps skipTrial (immediate charge, no new trial).
+    const json = await post('/api/agency/checkout', { agency_id: agencyId, plan, successUrl, cancelUrl, skipTrial: !onFree });
     if (json.url) { window.location.href = json.url; return; }
     throw new Error('Could not start checkout.');
   }
@@ -115,9 +115,9 @@ export default function PlanUpgrade({ agencyId, currentPlan, theme, token, backe
     const name = planByKey(plan).name;
     if (onFree) {
       return {
-        title: 'Start your ' + name + ' plan?',
-        body: 'Your plan changes to ' + name + ' right away. If you don\u2019t have a payment method on file yet, you\u2019ll add one on Stripe first.',
-        cta: 'Start ' + name,
+        title: 'Start your 14-day free trial?',
+        body: 'Full ' + name + ' access free for 14 days. $0 today, then ' + planByKey(plan).price + '/mo after the trial. Cancel anytime before it ends. You add a card on Stripe to start.',
+        cta: 'Start free trial',
       };
     }
     if (RANK[plan] > RANK[cur]) {
