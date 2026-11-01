@@ -1,20 +1,19 @@
 'use client';
 
 // ============================================================================
-// AILabSearchBar — the clean, ChatGPT-style landing for AI Lab.
+// AILabSearchBar — the clean, ChatGPT/Claude-style landing for AI Lab.
 // ----------------------------------------------------------------------------
-// One centered prompt bar. The owner types what the business is ("an AI
-// receptionist for a nail salon in Atlanta"); the matcher
-// (POST /api/agency/:id/ai-lab/match) picks the right template (or custom) and
-// extracts the business name / city / website. On confirm, /ai-lab/build
-// creates a receptionist SKELETON (assistant + optional website scrape + a
-// number) as a client, then opens it. First build with no test client yet
-// becomes the test client; after that, a regular client.
+// One centered headline + one input. Type the business ("an AI receptionist for
+// a nail salon in Atlanta"); the matcher (POST /api/agency/:id/ai-lab/match)
+// picks the template (or custom) and pulls out the business name / city /
+// website. On confirm, /ai-lab/build creates a receptionist skeleton (assistant
+// + optional website scrape + a number) as a client, then opens it. First build
+// with no test client yet becomes the test client; after that, a regular client.
 // ============================================================================
 
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Sparkles, ArrowRight, Loader2, Wand2, Package, Phone } from 'lucide-react';
+import { ArrowUp, Loader2, Sparkles, ArrowRight, Phone, Package } from 'lucide-react';
 
 type Mode = 'matched' | 'disambiguate' | 'custom' | 'clarify';
 interface IndustryRef { value: string; label: string; description: string }
@@ -31,7 +30,7 @@ interface MatchResult {
   query: string;
 }
 
-const EXAMPLES = ['a dental office', 'an HVAC company', 'a nail salon in Atlanta', 'a personal injury law firm', 'a med spa', 'a plumbing company'];
+const EXAMPLES = ['Dental office', 'HVAC company', 'Med spa', 'Law firm'];
 
 export default function AILabSearchBar({ agencyId, api, theme }: { agencyId: string; api: string; theme: any }) {
   const router = useRouter();
@@ -61,7 +60,6 @@ export default function AILabSearchBar({ agencyId, api, theme }: { agencyId: str
     }
   }
 
-  // Create the receptionist skeleton for a known industry key, then open it.
   async function build(industry: string, r: MatchResult) {
     setBuilding(true); setError('');
     try {
@@ -70,26 +68,21 @@ export default function AILabSearchBar({ agencyId, api, theme }: { agencyId: str
         body: JSON.stringify({ industry, business_name: r.business_name, city: r.city, website_url: r.website_url, sub_vertical: r.sub_vertical }),
       });
       const json = await res.json().catch(() => ({}));
-      if (res.status === 403 && json.upgrade_required) {
-        setError(`${json.title || 'Paid feature'}. ${json.message || ''}`); setBuilding(false); return;
-      }
+      if (res.status === 403 && json.upgrade_required) { setError(`${json.title || 'Paid feature'}. ${json.message || ''}`); setBuilding(false); return; }
       if (!res.ok || !json.client_id) throw new Error(json.error || 'Could not build it.');
-      router.push(`/agency/clients/${json.client_id}`); // navigating away; keep building state
+      router.push(`/agency/clients/${json.client_id}`);
     } catch (e: any) {
       setError(e?.message || 'Build failed.'); setBuilding(false);
     }
   }
 
-  // Generate a custom industry first (its KB), then build a receptionist from it.
   async function generateCustomThenBuild(r: MatchResult) {
     const payload = r.suggested_custom || { label: r.sub_vertical || r.query, description: `AI receptionist for: ${r.query}` };
     setBuilding(true); setError('');
     try {
       const res = await fetch(`${api}/api/agency/${agencyId}/custom-industries`, { method: 'POST', headers: headers(), body: JSON.stringify(payload) });
       const json = await res.json().catch(() => ({}));
-      if (res.status === 403 && json.upgrade_required) {
-        setError(`${json.title || 'Custom industries are a Scale feature'}. Start your free trial in Billing to generate it.`); setBuilding(false); return;
-      }
+      if (res.status === 403 && json.upgrade_required) { setError(`${json.title || 'Custom industries are a Scale feature'}. Start your free trial in Billing to generate it.`); setBuilding(false); return; }
       if (!res.ok) throw new Error(json.error || 'Could not generate that industry.');
       const key = json.key || (json.industry && json.industry.key);
       if (!key) throw new Error('Custom industry was not created.');
@@ -99,58 +92,69 @@ export default function AILabSearchBar({ agencyId, api, theme }: { agencyId: str
     }
   }
 
-  const card: React.CSSProperties = { backgroundColor: theme.card, border: `1px solid ${theme.border}` };
   const label = result?.sub_vertical ? `"${result.sub_vertical}"` : (result?.business_name ? `"${result.business_name}"` : 'that business');
+  const hasText = !!query.trim();
 
-  // Full-screen building state.
   if (building) {
     return (
-      <div className="min-h-[78vh] flex flex-col items-center justify-center px-4 text-center">
-        <Loader2 className="h-8 w-8 animate-spin mb-4" style={{ color: theme.primary }} />
-        <p className="text-base font-medium" style={{ color: theme.text }}>Building your receptionist…</p>
-        <p className="text-sm mt-1" style={{ color: theme.textMuted }}>Setting up the AI, pulling in your info, and assigning a number.</p>
+      <div className="min-h-[75vh] flex flex-col items-center justify-center px-6 text-center">
+        <Loader2 className="h-7 w-7 animate-spin mb-4" style={{ color: theme.primary }} />
+        <p className="text-[15px] font-medium" style={{ color: theme.text }}>Building your receptionist</p>
+        <p className="text-sm mt-1" style={{ color: theme.textMuted }}>Setting up the AI, pulling in your details, and assigning a number.</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-[78vh] flex flex-col items-center justify-center px-4">
-      <div className="w-full max-w-2xl mx-auto text-center">
-        <div className="inline-flex items-center gap-2 mb-5 px-3 py-1 rounded-full" style={{ backgroundColor: theme.primary15 }}>
-          <Sparkles className="h-3.5 w-3.5" style={{ color: theme.primary }} />
-          <span className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: theme.primary }}>AI Lab</span>
-        </div>
-        <h1 className="text-2xl sm:text-4xl font-semibold tracking-tight mb-3" style={{ color: theme.text }}>
-          What are we building a receptionist for?
+    <div className="min-h-[75vh] flex flex-col items-center justify-center px-6">
+      <div className="w-full" style={{ maxWidth: 640 }}>
+        <h1 className="text-center font-semibold tracking-tight mb-7" style={{ color: theme.text, fontSize: 'clamp(24px, 4.5vw, 34px)', lineHeight: 1.15 }}>
+          Let’s build your receptionist
         </h1>
-        <p className="text-sm sm:text-base mb-7" style={{ color: theme.textMuted }}>
-          Describe the business in a sentence. We match it to the right template, or build a custom one.
-        </p>
 
+        {/* Input — soft, rounded, inline send (ChatGPT/Claude style) */}
         <form onSubmit={(e) => { e.preventDefault(); runMatch(query); }} className="relative">
           <input
             ref={inputRef}
             value={query}
             onChange={(e) => { setQuery(e.target.value); setError(''); }}
-            placeholder="an AI receptionist for a dental office in Austin…"
+            placeholder="an AI receptionist for a dental office in Austin"
             autoComplete="off"
             autoFocus
-            className="w-full rounded-2xl pl-5 pr-32 py-4 text-[15px] sm:text-base transition-all focus:outline-none focus:ring-2 shadow-sm"
-            style={{ backgroundColor: theme.input || theme.card, border: `1px solid ${theme.inputBorder || theme.border}`, color: theme.text, ['--tw-ring-color' as any]: `${theme.primary}30` }}
+            className="w-full rounded-[26px] pl-5 pr-14 py-4 text-[15px] transition-colors focus:outline-none"
+            style={{
+              backgroundColor: theme.card,
+              border: `1px solid ${theme.border}`,
+              color: theme.text,
+              boxShadow: theme.isDark ? 'none' : '0 1px 2px rgba(0,0,0,0.04)',
+            }}
+            onFocus={(e) => (e.currentTarget.style.borderColor = theme.primary + '66')}
+            onBlur={(e) => (e.currentTarget.style.borderColor = theme.border)}
           />
-          <button type="submit" disabled={loading || !query.trim()}
-            className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
-            style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-            {loading ? 'Thinking' : 'Build it'}
+          <button
+            type="submit"
+            aria-label="Build"
+            disabled={loading || !hasText}
+            className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full inline-flex items-center justify-center transition-all disabled:cursor-default"
+            style={{ backgroundColor: hasText ? theme.primary : theme.hover, color: hasText ? theme.primaryText : theme.textMuted, opacity: loading ? 0.7 : 1 }}
+          >
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
           </button>
         </form>
 
+        {/* Suggestions — clean, centered pills */}
         {!result && !loading && (
-          <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
+          <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
             {EXAMPLES.map((ex) => (
-              <button key={ex} type="button" onClick={() => { setQuery(ex); runMatch(ex); }} className="rounded-full px-3 py-1.5 text-[13px] transition-colors"
-                style={{ backgroundColor: theme.hover, color: theme.textMuted, border: `1px solid ${theme.border}` }}>
+              <button
+                key={ex}
+                type="button"
+                onClick={() => { setQuery(ex); runMatch(ex); }}
+                className="rounded-full px-3.5 py-1.5 text-[13px] transition-colors"
+                style={{ backgroundColor: 'transparent', color: theme.textMuted, border: `1px solid ${theme.border}` }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.primary + '66'; e.currentTarget.style.color = theme.text; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.color = theme.textMuted; }}
+              >
                 {ex}
               </button>
             ))}
@@ -158,13 +162,14 @@ export default function AILabSearchBar({ agencyId, api, theme }: { agencyId: str
         )}
 
         {error && (
-          <div className="mt-4 text-sm rounded-xl p-3 text-left" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444' }}>
+          <div className="mt-5 text-sm rounded-xl p-3" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444' }}>
             {error}
           </div>
         )}
 
+        {/* Result */}
         {result && !loading && (
-          <div className="mt-5 rounded-2xl p-5 text-left" style={card}>
+          <div className="mt-5 rounded-2xl p-5" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
             {result.mode === 'clarify' && (
               <div>
                 <p className="text-sm font-medium mb-1" style={{ color: theme.text }}>{result.clarifying_question}</p>
@@ -219,9 +224,11 @@ export default function AILabSearchBar({ agencyId, api, theme }: { agencyId: str
         )}
 
         {!result && (
-          <button onClick={() => router.push('/agency/templates')} className="inline-flex items-center gap-1.5 text-sm mt-8 transition-colors hover:opacity-80" style={{ color: theme.textMuted }}>
-            <Package className="h-3.5 w-3.5" /> Or browse all industry templates
-          </button>
+          <div className="text-center mt-9">
+            <button onClick={() => router.push('/agency/templates')} className="inline-flex items-center gap-1.5 text-[13px] transition-colors hover:opacity-80" style={{ color: theme.textMuted }}>
+              <Package className="h-3.5 w-3.5" /> Browse all industry templates
+            </button>
+          </div>
         )}
       </div>
     </div>
