@@ -91,16 +91,22 @@ export default function HeroDemo() {
   const hasText = !!query.trim();
 
   return (
-    <section className="relative bg-ink py-24 lg:py-36 border-t border-white/[0.04] overflow-hidden">
+    <section className="relative bg-ink py-16 sm:py-24 lg:py-32 border-t border-white/[0.04] overflow-hidden">
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(1100px 520px at 50% 0%, rgba(0,227,170,0.10), transparent 70%)' }} />
-      <div className="max-w-[860px] mx-auto px-6 relative text-center">
-        <p className="font-mono text-[11px] tracking-[0.14em] uppercase mb-5" style={{ color: EM }}>Try it live · no signup</p>
-        <h2 className="t-h1 text-white mx-auto" style={{ maxWidth: '20ch' }}>Build a receptionist for your business. Then call it.</h2>
-        <p className="t-body mt-6 max-w-xl mx-auto">Type your business or paste your website. In seconds you get a working AI receptionist that already knows it, and you can pick up the phone and talk to it. This is exactly what your clients get.</p>
+      <div className="max-w-[760px] mx-auto px-5 sm:px-6 relative text-center">
+        <span className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 mb-5 text-[12px] font-medium text-white/85" style={{ border: '1px solid rgba(0,227,170,0.28)', backgroundColor: 'rgba(0,227,170,0.08)' }}>
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping" style={{ backgroundColor: EM }} />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full" style={{ backgroundColor: EM }} />
+          </span>
+          Try it live · no signup
+        </span>
+        <h2 className="t-h2 text-white mx-auto" style={{ fontSize: 'clamp(1.45rem, 3.1vw, 2.05rem)', lineHeight: 1.1, maxWidth: '26ch' }}>Build a receptionist for your business. Then call it.</h2>
+        <p className="mt-4 sm:mt-5 text-[14px] sm:text-[15px] leading-relaxed text-white/55 max-w-lg mx-auto">Type your business or paste your website. In seconds you get a working AI receptionist that already knows it, then pick up and talk to it. This is exactly what your clients get.</p>
 
-        {/* IDLE / BUILDING: the big centered prompt bar */}
+        {/* IDLE / BUILDING: the centered prompt bar */}
         {(phase === 'idle' || phase === 'building') && (
-          <div className="mt-10">
+          <div className="mt-7 sm:mt-10">
             <form onSubmit={(e) => { e.preventDefault(); build(query); }} className="relative max-w-2xl mx-auto">
               <input
                 value={query}
@@ -108,13 +114,13 @@ export default function HeroDemo() {
                 placeholder="Describe your business, or paste your website"
                 autoComplete="off"
                 disabled={phase === 'building'}
-                className="w-full rounded-[28px] pl-6 pr-16 py-5 text-[16px] text-white placeholder-white/40 focus:outline-none transition-colors text-left"
+                className="w-full rounded-2xl sm:rounded-[26px] pl-5 pr-14 sm:pr-16 py-4 sm:py-[18px] text-[14px] sm:text-[15px] text-white placeholder-white/40 focus:outline-none transition-colors text-left"
                 style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.14)' }}
                 onFocus={(e) => (e.currentTarget.style.borderColor = EM)}
                 onBlur={(e) => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)')}
               />
               <button type="submit" aria-label="Build" disabled={phase === 'building' || !hasText}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 h-11 w-11 rounded-full inline-flex items-center justify-center transition-all disabled:opacity-50"
+                className="absolute right-2 sm:right-2.5 top-1/2 -translate-y-1/2 h-10 w-10 sm:h-11 sm:w-11 rounded-full inline-flex items-center justify-center transition-all disabled:opacity-50"
                 style={{ backgroundColor: EM, color: '#04110D' }}>
                 {phase === 'building' ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowUp className="h-5 w-5" />}
               </button>
@@ -123,10 +129,10 @@ export default function HeroDemo() {
             {phase === 'building' ? (
               <p className="text-[13px] mt-4 text-white/50">Reading the site and building the receptionist…</p>
             ) : (
-              <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
+              <div className="flex flex-wrap items-center justify-center gap-2 mt-4 sm:mt-5">
                 {EXAMPLES.map((ex) => (
                   <button key={ex} type="button" onClick={() => { setQuery(ex); build(ex); }}
-                    className="rounded-full px-4 py-2 text-[13px] text-white/60 transition-colors"
+                    className="rounded-full px-3.5 py-1.5 sm:py-2 text-[12.5px] sm:text-[13px] text-white/60 transition-colors"
                     style={{ border: '1px solid rgba(255,255,255,0.14)' }}
                     onMouseEnter={(e) => { e.currentTarget.style.borderColor = EM; e.currentTarget.style.color = '#fff'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; }}>
@@ -141,7 +147,7 @@ export default function HeroDemo() {
 
         {/* READY / CALL: the demo card, centered */}
         {biz && phase !== 'idle' && phase !== 'building' && (
-          <div className="mt-10 max-w-xl mx-auto rounded-2xl p-6 sm:p-8 text-left" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
+          <div className="mt-7 sm:mt-10 max-w-xl mx-auto rounded-2xl p-5 sm:p-8 text-left" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
             <div className="flex items-start gap-3">
               <div className="h-11 w-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(0,227,170,0.12)' }}><Sparkles className="h-5 w-5" style={{ color: EM }} /></div>
               <div className="min-w-0">
@@ -194,7 +200,7 @@ export default function HeroDemo() {
         )}
 
         {phase === 'error' && (
-          <div className="mt-10 max-w-xl mx-auto rounded-2xl p-4 flex items-start gap-3 text-left" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
+          <div className="mt-7 sm:mt-10 max-w-xl mx-auto rounded-2xl p-4 flex items-start gap-3 text-left" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
             <AlertTriangle className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: '#f59e0b' }} />
             <div><p className="text-white text-[14px]">{error || 'The live demo is unavailable right now.'}</p><button onClick={reset} className="text-[13px] mt-1" style={{ color: EM }}>Try again</button></div>
           </div>
