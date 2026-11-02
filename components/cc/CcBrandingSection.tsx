@@ -155,9 +155,9 @@ export default function CcBrandingSection({ agency, refreshAgency, theme, hideHe
     if (!agency?.id) return;
     setRemovingLogo(true); setErr(null);
     try {
-      const r = await fetch(`${API()}/api/agency/${agency.id}/settings`, {
+      const r = await fetch(`${API()}/api/agency/${agency.id}/cc/account`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` },
-        body: JSON.stringify({ logo_url: null, favicon_url: null, logo_background_color: null, primary_color: '#00a19b', secondary_color: '#007e77', accent_color: '#01f5d1', branding_overrides: null }),
+        body: JSON.stringify({ logo_url: null, primary_color: '#00a19b', secondary_color: '#007e77', accent_color: '#01f5d1' }),
       });
       if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error || 'Failed to remove logo'); }
       setLogoUrl(''); setLogoPreview(null); setColors({ primary: '#00a19b', secondary: '#007e77', accent: '#01f5d1' });
@@ -191,7 +191,7 @@ export default function CcBrandingSection({ agency, refreshAgency, theme, hideHe
     if (!agency?.id) return;
     setSaving(true); setErr(null); setSaved(false);
     try {
-      const r = await fetch(`${API()}/api/agency/${agency.id}/settings`, {
+      const r = await fetch(`${API()}/api/agency/${agency.id}/cc/account`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` },
         body: JSON.stringify({
           logo_url: logoUrl || null,

@@ -11,9 +11,6 @@ import Link from 'next/link';
 import { Settings as SettingsIcon, Save, Loader2, Check, Headset, Building2, ChevronRight, HelpCircle, ChevronDown, Phone, PlusCircle, Palette } from 'lucide-react';
 import { useAgency } from '../../agency/context';
 import { useTheme } from '../../../hooks/useTheme';
-import ApiKeysTab from '@/components/agency/ApiKeysTab';
-import WebhooksTab from '@/components/agency/WebhooksTab';
-import CcManagersSection from '@/components/cc/CcManagersSection';
 import CcAgentSettings from '@/components/cc/CcAgentSettings';
 
 const HELP = [
@@ -59,7 +56,7 @@ function ManagerSettings() {
     try {
       const token = localStorage.getItem('auth_token');
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const r = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
+      const r = await fetch(`${backendUrl}/api/agency/${agency.id}/cc/account`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ name: name.trim(), support_email: supportEmail.trim() || null, support_phone: supportPhone.trim() || null, phone: phone.trim() || null }),
@@ -119,9 +116,6 @@ function ManagerSettings() {
           </div>
         </div>
 
-        {/* Managers (owner / manage-team only; self-gates, renders nothing otherwise) */}
-        <CcManagersSection theme={theme} />
-
         {/* Branding (deep-links to its own page) */}
         <Link href="/cc/branding" className="flex items-center gap-3 rounded-2xl p-5 sm:p-6 transition-colors" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
           onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = theme.hover; }} onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = theme.card; }}>
@@ -132,16 +126,6 @@ function ManagerSettings() {
           </span>
           <ChevronRight className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted }} />
         </Link>
-
-        {/* API access */}
-        <div className="rounded-2xl p-5 sm:p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-          <ApiKeysTab agency={agency} theme={theme} />
-        </div>
-
-        {/* Webhooks */}
-        <div className="rounded-2xl p-5 sm:p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-          <WebhooksTab agency={agency} theme={theme} />
-        </div>
 
         {/* Quick links */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
