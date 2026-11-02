@@ -2,24 +2,24 @@
 
 // ============================================================================
 // HeroDemo — a centered, full-width marketing SECTION: a clean, modern prompt
-// box (the kind the top AI products use) where a visitor describes a business
-// or pastes its site, we build a working AI receptionist from it, and they have
-// a live browser voice call with it. Public and anonymous.
+// box where a visitor describes a business or pastes its site, we build a
+// working AI receptionist from it, SHOW what the scraper learned, and then they
+// have a live browser voice call with it. Public and anonymous.
 //
-// Visual language here is deliberately soft and modern (rounded prompt box with
-// a focus glow, regular Plus Jakarta type, generous spacing). No mono labels,
-// no "engineered" eyebrow/racing-line, and no dash/hyphen motifs.
+// Phase flow:
+//   idle/building -> ready (shows "What your receptionist already knows" from
+//   the scrape, BEFORE calling) -> connecting -> live (improved live transcript
+//   with interim text + merged bubbles) -> ended -> (error)
 //
-// Flow (unchanged):
-//   1. POST /api/public/demo-receptionist reads the site -> inline transient
-//      VAPI assistant grounded in that business.
-//   2. "Talk to it" starts a live web call (vapi.start(assistant)), 4 minute cap.
-//   3. On end, CTA to start a free trial.
+// Backend returns (POST /api/public/demo-receptionist):
+//   { success, business_name, industry, city, greeting, read_website,
+//     website_url, facts[], assistant }
+//   `assistant` is a full inline transient VAPI assistant (no number, no acct).
 // ============================================================================
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { ArrowUp, Globe, Mic, Phone, PhoneOff, Loader2, Sparkles, AlertTriangle, ArrowUpRight } from 'lucide-react';
+import { ArrowUp, Globe, Mic, Phone, PhoneOff, Loader2, Sparkles, AlertTriangle, ArrowUpRight, Check } from 'lucide-react';
 
 const EM = '#01f5d1';        // primary brand accent (matches --color-em-400 / text-em / btn-em)
 const EM_INK = '#04120f';    // text on top of the teal accent
@@ -34,6 +34,12 @@ const STEPS: [string, string, string][] = [
 
 type Phase = 'idle' | 'building' | 'ready' | 'connecting' | 'live' | 'ended' | 'error';
 interface Line { role: 'user' | 'assistant'; text: string }
+interface Biz { name: string; industry: string; city: string; greeting: string; facts: string[]; readWebsite: boolean; websiteUrl: string | null }
+
+function domainOf(url: string | null): string {
+  if (!url) return '';
+  return url.replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/\/.*$/, '');
+}
 
 export default function HeroDemo() {
   const api = process.env.NEXT_PUBLIC_API_URL || '';
@@ -42,11 +48,12 @@ export default function HeroDemo() {
   const [phase, setPhase] = useState<Phase>('idle');
   const [query, setQuery] = useState('');
   const [error, setError] = useState('');
-  const [biz, setBiz] = useState<{ name: string; industry: string; greeting: string } | null>(null);
+  const [biz, setBiz] = useState<Biz | null>(null);
   const [assistant, setAssistant] = useState<any>(null);
   const [seconds, setSeconds] = useState(0);
   const [muted, setMuted] = useState(false);
   const [lines, setLines] = useState<Line[]>([]);
+  const [interim, setInterim] = useState<Line | null>(null);
 
   const vapiRef = useRef<any>(null);
   const timerRef = useRef<any>(null);
@@ -56,17 +63,21 @@ export default function HeroDemo() {
   const stopTimer = () => { if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; } };
   const endCall = useCallback(() => { try { vapiRef.current?.stop(); } catch { /* ignore */ } stopTimer(); }, []);
   useEffect(() => () => { endCall(); }, [endCall]);
-  useEffect(() => { if (transcriptRef.current) transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight; }, [lines]);
+  useEffect(() => { if (transcriptRef.current) transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight; }, [lines, interim]);
 
   async function build(q: string) {
     const text = (q || '').trim();
     if (!text) return;
-    setPhase('building'); setError(''); setLines([]);
+    setPhase('building'); setError(''); setLines([]); setInterim(null);
     try {
       const res = await fetch(`${api}/api/public/demo-receptionist`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: text }) });
       const j = await res.json().catch(() => ({}));
       if (!res.ok || !j.assistant) throw new Error(j.error || 'Could not build the demo. Try rephrasing.');
-      setBiz({ name: j.business_name, industry: j.industry || '', greeting: j.greeting || '' });
+      setBiz({
+        name: j.business_name, industry: j.industry || '', city: j.city || '', greeting: j.greeting || '',
+        facts: Array.isArray(j.facts) ? j.facts.filter(Boolean) : [],
+        readWebsite: !!j.read_website, websiteUrl: j.website_url || null,
+      });
       setAssistant(j.assistant);
       setPhase('ready');
     } catch (e: any) { setError(e?.message || 'Something went wrong.'); setPhase('idle'); }
@@ -75,7 +86,7 @@ export default function HeroDemo() {
   async function startCall() {
     if (!assistant) return;
     if (!vapiKey) { setError('Live demo is not configured yet.'); setPhase('error'); return; }
-    setPhase('connecting'); setError(''); setLines([]); setSeconds(0); setMuted(false);
+    setPhase('connecting'); setError(''); setLines([]); setInterim(null); setSeconds(0); setMuted(false);
     try {
       const { default: Vapi } = await import('@vapi-ai/web');
       const v = new Vapi(vapiKey);
@@ -85,12 +96,29 @@ export default function HeroDemo() {
         stopTimer();
         timerRef.current = setInterval(() => { setSeconds((s) => { if (s + 1 >= MAX_SECONDS) { endCall(); return MAX_SECONDS; } return s + 1; }); }, 1000);
       });
-      v.on('call-end', () => { stopTimer(); setPhase('ended'); });
-      v.on('error', (e: any) => { stopTimer(); setError(e?.message || 'The call dropped. Try again.'); setPhase('ended'); });
+      v.on('call-end', () => { stopTimer(); setInterim(null); setPhase('ended'); });
+      v.on('error', (e: any) => { stopTimer(); setInterim(null); setError(e?.message || 'The call dropped. Try again.'); setPhase('ended'); });
       v.on('message', (m: any) => {
-        if (m?.type === 'transcript' && m.transcriptType === 'final' && m.transcript) {
-          const role: 'user' | 'assistant' = m.role === 'user' ? 'user' : 'assistant';
-          setLines((prev) => [...prev, { role, text: String(m.transcript) }].slice(-8));
+        if (m?.type !== 'transcript' || !m.transcript) return;
+        const role: 'user' | 'assistant' = m.role === 'user' ? 'user' : 'assistant';
+        const text = String(m.transcript).trim();
+        if (!text) return;
+        if (m.transcriptType === 'partial') {
+          // Interim text updates live as the speaker talks (keeps the transcript current).
+          setInterim({ role, text });
+        } else if (m.transcriptType === 'final') {
+          // Merge a finalized chunk into the previous bubble when the same speaker
+          // is still talking, so one sentence is never split across lines.
+          setLines((prev) => {
+            const last = prev[prev.length - 1];
+            if (last && last.role === role) {
+              const merged = prev.slice();
+              merged[merged.length - 1] = { role, text: `${last.text} ${text}`.replace(/\s+/g, ' ').trim() };
+              return merged.slice(-24);
+            }
+            return [...prev, { role, text }].slice(-24);
+          });
+          setInterim(null);
         }
       });
       await v.start(assistant);
@@ -98,16 +126,17 @@ export default function HeroDemo() {
   }
 
   const toggleMute = () => { if (!vapiRef.current) return; const n = !muted; vapiRef.current.setMuted(n); setMuted(n); };
-  const reset = () => { endCall(); setPhase('idle'); setBiz(null); setAssistant(null); setQuery(''); setLines([]); setSeconds(0); setError(''); };
+  const reset = () => { endCall(); setPhase('idle'); setBiz(null); setAssistant(null); setQuery(''); setLines([]); setInterim(null); setSeconds(0); setError(''); };
   const remaining = `${Math.floor((MAX_SECONDS - seconds) / 60)}:${String((MAX_SECONDS - seconds) % 60).padStart(2, '0')}`;
   const hasText = !!query.trim();
   const onConsole = phase === 'idle' || phase === 'building';
+  const inCall = phase === 'connecting' || phase === 'live';
+  const domain = domainOf(biz?.websiteUrl ?? null);
 
   return (
     <section className="relative bg-ink py-24 sm:py-32 lg:py-40">
-      {/* Soft ambient teal glow. Positioned to bleed UP past the top of this
-          section (no hard divider line), so the green wash carries into the
-          section above instead of starting at a seam. */}
+      {/* Soft ambient teal glow. Bleeds UP past the top of this section (no hard
+          divider) so the green wash carries into the section above. */}
       <div className="absolute left-0 right-0 pointer-events-none" style={{ top: '-260px', height: '860px', background: 'radial-gradient(1100px 560px at 50% 38%, rgba(1,245,209,0.13), transparent 72%)' }} />
 
       <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative text-center">
@@ -154,7 +183,6 @@ export default function HeroDemo() {
               </div>
             </form>
 
-            {/* Example chips, balanced (2 per row on mobile, one row on desktop) */}
             <div className="mt-7">
               <p className="text-[13px] text-white/40 mb-3">No website handy? Try one</p>
               <div className="grid grid-cols-2 gap-2.5 max-w-sm mx-auto sm:flex sm:flex-wrap sm:justify-center sm:max-w-none">
@@ -171,7 +199,6 @@ export default function HeroDemo() {
 
             {error && <p className="text-[13px] mt-5" style={{ color: '#ff6b6b' }}>{error}</p>}
 
-            {/* Framing: three steps, the agency value, and the CTA */}
             {phase === 'idle' && (
               <div className="mt-20 lg:mt-28">
                 <div className="grid sm:grid-cols-3 gap-12 sm:gap-10 lg:gap-16 text-center max-w-5xl mx-auto">
@@ -199,46 +226,89 @@ export default function HeroDemo() {
           </div>
         )}
 
-        {/* ── READY / CALL: the receptionist card ─────────────────────────── */}
+        {/* ── READY / CALL: knowledge panel, then the live call ───────────── */}
         {biz && !onConsole && phase !== 'error' && (
-          <div className="mt-11 max-w-[600px] mx-auto rounded-2xl p-6 sm:p-8 text-left" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
-            <div className="flex items-start gap-3">
+          <div className="mt-11 max-w-[660px] mx-auto rounded-2xl text-left overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
+
+            {/* Header: who it is, and that it read the site */}
+            <div className="flex items-start gap-3 p-6 sm:p-7 pb-5">
               <div className="h-11 w-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(1,245,209,0.12)' }}><Sparkles className="h-5 w-5" style={{ color: EM }} /></div>
               <div className="min-w-0 flex-1">
                 <p className="text-white font-semibold text-[17px] leading-tight">{biz.name}&rsquo;s receptionist</p>
-                {biz.industry && <p className="text-[12px] mt-0.5" style={{ color: EM }}>{biz.industry}</p>}
+                <p className="text-[13px] mt-0.5 text-white/55">
+                  {[biz.industry, biz.city].filter(Boolean).join(' · ') || 'Ready to take calls'}
+                </p>
               </div>
-              {(phase === 'live' || phase === 'connecting') && <span className="ml-auto text-[12.5px] font-medium text-white/60 whitespace-nowrap">{phase === 'connecting' ? 'connecting' : `${remaining} left`}</span>}
+              {inCall ? (
+                <span className="inline-flex items-center gap-2 flex-shrink-0">
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: phase === 'live' ? '#ff6b6b' : 'rgba(255,255,255,0.4)', boxShadow: phase === 'live' ? '0 0 0 3px rgba(255,107,107,0.2)' : 'none' }} />
+                  <span className="text-[12.5px] font-medium text-white/60 whitespace-nowrap">{phase === 'connecting' ? 'Connecting' : `${remaining} left`}</span>
+                </span>
+              ) : biz.readWebsite && domain ? (
+                <span className="inline-flex items-center gap-1.5 flex-shrink-0 rounded-full px-2.5 py-1 text-[11.5px]" style={{ backgroundColor: 'rgba(1,245,209,0.1)', color: EM, border: '1px solid rgba(1,245,209,0.22)' }}>
+                  <Check className="h-3 w-3" /> Read {domain}
+                </span>
+              ) : null}
             </div>
 
-            {biz.greeting && (phase === 'ready' || phase === 'ended') && (
-              <p className="text-white/75 text-[15px] mt-4 leading-relaxed rounded-xl px-4 py-3" style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                &ldquo;{biz.greeting}&rdquo;
-              </p>
-            )}
+            {/* READY: what it already knows + the greeting */}
+            {phase === 'ready' && (
+              <div className="px-6 sm:px-7">
+                {biz.facts.length > 0 && (
+                  <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                    <p className="text-[12px] font-semibold uppercase tracking-wide text-white/45 mb-3">What it already knows</p>
+                    <ul className="space-y-2.5">
+                      {biz.facts.map((f, i) => (
+                        <li key={i} className="flex items-start gap-2.5 text-[14px] leading-relaxed text-white/80">
+                          <Check className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: EM }} strokeWidth={2.5} />
+                          <span>{f}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
-            {(phase === 'live' || phase === 'connecting') && (
-              <div ref={transcriptRef} className="mt-4 max-h-44 overflow-y-auto space-y-2.5 pr-1">
-                {lines.length === 0 ? (
-                  <p className="text-white/40 text-[13px]">{phase === 'connecting' ? 'Connecting your call.' : 'Say hello, ask about hours, or try to book an appointment.'}</p>
-                ) : lines.map((l, i) => (
-                  <p key={i} className="text-[14px] leading-snug" style={{ color: l.role === 'user' ? 'rgba(255,255,255,0.55)' : '#fff' }}>
-                    <span className="text-[11px] font-semibold mr-2" style={{ color: l.role === 'user' ? 'rgba(255,255,255,0.4)' : EM }}>{l.role === 'user' ? 'You' : 'AI'}</span>{l.text}
-                  </p>
-                ))}
+                {biz.greeting && (
+                  <div className="mt-4">
+                    <p className="text-[12px] text-white/40 mb-1.5">It answers the phone with</p>
+                    <p className="text-white/85 text-[15px] leading-relaxed rounded-xl px-4 py-3" style={{ backgroundColor: 'rgba(1,245,209,0.06)', border: '1px solid rgba(1,245,209,0.16)' }}>
+                      &ldquo;{biz.greeting}&rdquo;
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
-            {error && <p className="text-[13px] mt-3" style={{ color: '#ff6b6b' }}>{error}</p>}
+            {/* CALL: the live transcript */}
+            {(inCall || phase === 'ended') && (
+              <div className="px-6 sm:px-7">
+                <div ref={transcriptRef} className="max-h-[300px] overflow-y-auto space-y-3 py-1">
+                  {lines.length === 0 && !interim ? (
+                    <p className="text-white/45 text-[14px] text-center py-8">
+                      {phase === 'connecting' ? 'Connecting your call.' : phase === 'ended' ? 'Call ended. Build another, or start your trial.' : 'Say hello, ask about hours, or try to book an appointment.'}
+                    </p>
+                  ) : (
+                    <>
+                      {lines.map((l, i) => <Bubble key={i} line={l} />)}
+                      {interim && <Bubble line={interim} live />}
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
 
-            <div className="mt-6 flex flex-wrap items-center gap-3">
+            {error && <p className="text-[13px] px-6 sm:px-7 mt-2" style={{ color: '#ff6b6b' }}>{error}</p>}
+
+            {/* Controls */}
+            <div className="flex flex-wrap items-center gap-3 p-6 sm:p-7 pt-5">
               {phase === 'ready' && (
                 <>
                   <button onClick={startCall} className="inline-flex items-center gap-2 rounded-xl px-6 py-3.5 text-[15px] font-semibold transition-all hover:brightness-105 active:scale-[0.98]" style={{ backgroundColor: EM, color: EM_INK, boxShadow: '0 10px 28px -12px rgba(1,245,209,0.6)' }}><Phone className="h-5 w-5" /> Talk to it</button>
                   <button onClick={reset} className="text-[13px] text-white/50 hover:text-white/80 transition-colors">Try another business</button>
+                  <span className="ml-auto text-[12px] text-white/40 hidden sm:block">Uses your mic. 4 minutes, no signup.</span>
                 </>
               )}
-              {(phase === 'connecting' || phase === 'live') && (
+              {inCall && (
                 <>
                   <button onClick={endCall} className="inline-flex items-center gap-2 rounded-xl px-5 py-3.5 text-[15px] font-semibold transition-colors" style={{ backgroundColor: 'rgba(255,107,107,0.15)', color: '#ff6b6b', border: '1px solid rgba(255,107,107,0.3)' }}><PhoneOff className="h-5 w-5" /> End call</button>
                   {phase === 'live' && <button onClick={toggleMute} className="inline-flex items-center gap-2 rounded-xl px-4 py-3.5 text-[15px] font-medium transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: muted ? EM : '#fff', border: '1px solid rgba(255,255,255,0.12)' }}><Mic className="h-5 w-5" /> {muted ? 'Unmute' : 'Mute'}</button>}
@@ -252,8 +322,6 @@ export default function HeroDemo() {
                 </>
               )}
             </div>
-
-            {phase === 'ready' && <p className="mt-5 text-[12px] text-white/40">Uses your microphone. Up to 4 minutes, no signup.</p>}
           </div>
         )}
 
@@ -266,5 +334,27 @@ export default function HeroDemo() {
         )}
       </div>
     </section>
+  );
+}
+
+// A single transcript turn, as a chat bubble aligned by speaker.
+function Bubble({ line, live }: { line: Line; live?: boolean }) {
+  const isUser = line.role === 'user';
+  return (
+    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+      <div
+        className="max-w-[84%] rounded-2xl px-4 py-2.5"
+        style={{
+          backgroundColor: isUser ? 'rgba(255,255,255,0.06)' : 'rgba(1,245,209,0.08)',
+          border: `1px solid ${isUser ? 'rgba(255,255,255,0.1)' : 'rgba(1,245,209,0.18)'}`,
+          opacity: live ? 0.72 : 1,
+        }}
+      >
+        <p className="text-[11px] font-semibold mb-1" style={{ color: isUser ? 'rgba(255,255,255,0.4)' : EM }}>{isUser ? 'You' : 'Receptionist'}</p>
+        <p className="text-[14.5px] leading-relaxed" style={{ color: isUser ? 'rgba(255,255,255,0.85)' : '#fff' }}>
+          {line.text}{live && <span className="inline-block ml-1 animate-pulse">…</span>}
+        </p>
+      </div>
+    </div>
   );
 }
