@@ -188,7 +188,10 @@ export default function WhiteLabelStack() {
       {/* ───────── Animated (desktop, motion allowed) ───────── */}
       <div ref={wrapRef} className="wls-anim relative" style={{ height: '460vh' }}>
         <div className="sticky top-0 h-screen overflow-hidden flex items-center">
-          <div className="w-full grid lg:grid-cols-12 gap-16 items-center">
+          {/* Full-bleed teal light streak that crosses the whole section, behind
+              BOTH the copy and the pile, so it never hard-cuts at the column edge. */}
+          <div className="wls-beam" aria-hidden />
+          <div className="w-full grid lg:grid-cols-12 gap-16 items-center relative" style={{ zIndex: 1 }}>
 
             {/* Beat copy (left). All five are in the DOM; they crossfade. */}
             <div className="lg:col-span-5 relative min-h-[300px]">
