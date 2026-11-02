@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   ChevronDown, ChevronRight, Save, Loader2, Check, Plus, Trash2,
   Phone, Type, AlertTriangle, BarChart3, Lightbulb, ListOrdered,
-  LayoutGrid, DollarSign, HelpCircle, FileText, Star
+  LayoutGrid, DollarSign, HelpCircle, FileText, Star, Building2
 } from 'lucide-react';
+import { CustomSelect } from '@/components/ui/custom-select';
 
 // ────────────────────────────────────────────────────────────────────────────
 // Types — aligned with types/marketing.ts
@@ -50,6 +51,14 @@ interface FeatureConfig {
   icon: string;
 }
 
+interface IndustryConfig {
+  icon: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  result: string;
+}
+
 interface PricingTier {
   name: string;
   price: number;
@@ -69,7 +78,7 @@ interface FooterConfig {
 }
 
 // What the editor manages — subset of full MarketingConfig
-// Benefits, industries, testimonials are preserved on save but not edited here
+// Benefits and testimonials are preserved on save but not edited here
 interface EditorConfig {
   hero: HeroConfig;
   stats: StatsConfig;
@@ -79,6 +88,8 @@ interface EditorConfig {
   stepsHeading?: string;
   stepsSubheading?: string;
   features: FeatureConfig[];
+  industries: IndustryConfig[];
+  showIndustries?: boolean;
   pricing: PricingTier[];
   faqs: FAQItem[];
   footer: FooterConfig;
@@ -125,6 +136,14 @@ const DEFAULT_CONFIG: EditorConfig = {
     { title: '24/7 Coverage', description: '3am on a Sunday? Holiday weekend? Your AI never sleeps.', icon: 'moon' },
     { title: 'Natural Conversations', description: "Sounds human, not robotic. Speaks English and Spanish — automatically detects the caller's language.", icon: 'mic' },
   ],
+  industries: [
+    { icon: 'wrench', title: 'Home Services', subtitle: 'Plumbers, HVAC, Electricians, Roofers', description: "Answer every call while you're out on a job, and get a text summary so you can call qualified leads back on your own time.", result: "→ Never miss a job while you're on-site" },
+    { icon: 'medical', title: 'Medical & Dental', subtitle: 'Clinics, Dentists, Therapists', description: 'Let patients book appointments around the clock, so they schedule when it is on their mind instead of waiting for office hours.', result: '→ Appointments can be booked around the clock' },
+    { icon: 'restaurant', title: 'Restaurants', subtitle: 'Restaurants, Catering, Food Services', description: 'Capture reservation requests during the dinner rush and handle catering inquiries professionally, even when every line is busy.', result: '→ Reservations and catering inquiries captured after hours' },
+    { icon: 'briefcase', title: 'Professional Services', subtitle: 'Lawyers, Accountants, Consultants', description: 'Give callers a professional answer instead of voicemail, so every first impression reflects well on your firm.', result: '→ A professional first impression on every call' },
+    { icon: 'store', title: 'Retail & Local Business', subtitle: 'Shops, Salons, Gyms, Studios', description: 'Handle routine questions about hours, availability, and pricing so your staff can focus on customers in the store.', result: '→ Staff freed up for in-store customers' },
+    { icon: 'pet', title: 'Pet Services', subtitle: 'Vets, Groomers, Pet Sitters', description: 'Triage calls at any hour, so urgent situations reach you and routine requests get booked for the morning.', result: '→ Urgent calls triaged day or night' },
+  ],
   pricing: [
     { name: 'Starter', price: 49, subtitle: 'For solo operators', features: ['1 AI phone number', 'Up to 50 calls/month', 'Calendar integration', 'Text summaries', 'Call recordings'], isPopular: false },
     { name: 'Professional', price: 99, subtitle: 'For growing businesses', features: ['Everything in Starter', 'Up to 150 calls/month', 'Lead qualification', 'Call transfer rules', 'Analytics dashboard'], isPopular: true },
@@ -141,6 +160,7 @@ const DEFAULT_CONFIG: EditorConfig = {
     email: '',
     tagline: 'Professional AI that answers every call, books appointments, and sends instant summaries — 24/7.',
   },
+  showIndustries: true,
 };
 
 const ICON_OPTIONS = [
@@ -150,6 +170,17 @@ const ICON_OPTIONS = [
   { value: 'training', label: 'Location/Training' },
   { value: 'moon', label: 'Moon/24-7' },
   { value: 'mic', label: 'Microphone' },
+];
+
+// Industry icons supported by every marketing template (classic, beside,
+// editorial); unknown keys fall back to the briefcase icon in the renderers.
+const INDUSTRY_ICON_OPTIONS = [
+  { value: 'wrench', label: 'Wrench (Home Services)' },
+  { value: 'medical', label: 'Medical / Dental' },
+  { value: 'restaurant', label: 'Restaurant / Food' },
+  { value: 'briefcase', label: 'Briefcase (Professional)' },
+  { value: 'store', label: 'Store / Retail' },
+  { value: 'pet', label: 'Pet Services' },
 ];
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -231,6 +262,16 @@ export default function MarketingContentEditor({
         stepsHeading: mc.stepsHeading ?? prev.stepsHeading,
         stepsSubheading: mc.stepsSubheading ?? prev.stepsSubheading,
         features: mc.features?.length ? mc.features : prev.features,
+        industries: mc.industries?.length
+          ? mc.industries.map((it: any) => ({
+              icon: it.icon || 'briefcase',
+              title: it.title || '',
+              subtitle: it.subtitle || '',
+              description: it.description || '',
+              result: it.result || '',
+            }))
+          : prev.industries,
+        showIndustries: typeof mc.showIndustries === 'boolean' ? mc.showIndustries : prev.showIndustries,
         pricing: mc.pricing?.length ? mc.pricing.map((t: any) => ({ ...t, price: typeof t.price === 'number' ? t.price : parseInt(t.price) || 0 })) : prev.pricing,
         faqs: mc.faqs?.length ? mc.faqs.map((f: any) => ({ question: f.question || '', answer: f.answer || '' })) : prev.faqs,
         footer: { ...prev.footer, email: mc.footer?.email || prev.footer.email, tagline: mc.footer?.tagline || prev.footer.tagline },
@@ -270,6 +311,19 @@ export default function MarketingContentEditor({
   const labelStyle = { color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' };
   const labelClass = "block text-xs sm:text-sm font-medium mb-1.5";
 
+  // Theming for the shared CustomSelect (icon pickers), so it matches whichever
+  // dashboard theme this editor renders inside, no native <select> anywhere.
+  const dropdownUI = {
+    inputStyle,
+    text: textColor,
+    muted: mutedTextColor,
+    panelBg: cardBg,
+    panelBorder: borderColor,
+    hover: isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6',
+    accent: agencyPrimaryColor,
+    isDark,
+  };
+
   // Save handler — deep merges with existing marketing_config to preserve
   // sections this editor doesn't manage (benefits, industries, testimonials, etc.)
   const handleSave = async () => {
@@ -289,6 +343,8 @@ export default function MarketingContentEditor({
         stepsHeading: config.stepsHeading,
         stepsSubheading: config.stepsSubheading,
         features: config.features,
+        industries: config.industries,
+        showIndustries: config.showIndustries !== false,
         pricing: config.pricing,
         faqs: config.faqs,
         footer: { ...(existing.footer || {}), email: config.footer.email, tagline: config.footer.tagline },
@@ -521,11 +577,12 @@ export default function MarketingContentEditor({
               <input type="text" value={feat.title} placeholder="Feature title"
                 onChange={e => update(p => ({ ...p, features: p.features.map((f, j) => j === i ? { ...f, title: e.target.value } : f) }))}
                 className={inputClass} style={inputStyle} />
-              <select value={feat.icon}
-                onChange={e => update(p => ({ ...p, features: p.features.map((f, j) => j === i ? { ...f, icon: e.target.value } : f) }))}
-                className={inputClass} style={inputStyle}>
-                {ICON_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
+              <CustomSelect
+                value={feat.icon}
+                onChange={v => update(p => ({ ...p, features: p.features.map((f, j) => j === i ? { ...f, icon: v } : f) }))}
+                options={ICON_OPTIONS}
+                ui={dropdownUI}
+              />
             </div>
             <textarea value={feat.description} placeholder="Feature description" rows={2}
               onChange={e => update(p => ({ ...p, features: p.features.map((f, j) => j === i ? { ...f, description: e.target.value } : f) }))}
@@ -539,6 +596,58 @@ export default function MarketingContentEditor({
             <Plus className="h-3.5 w-3.5" />Add Feature
           </button>
         )}
+      </Section>
+
+      {/* ── INDUSTRIES ────────────────────────────────────────────────── */}
+      <Section title="Industries" icon={Building2} description="Industry cards shown on your website"
+        anchorId="industries" isOpen={openSections.has('industries')} onToggle={() => toggleSection('industries')} {...sectionTheme}>
+        <label className="flex items-center gap-2 text-xs sm:text-sm cursor-pointer" style={{ color: textColor }}>
+          <input type="checkbox" checked={config.showIndustries !== false}
+            onChange={e => update(p => ({ ...p, showIndustries: e.target.checked }))} />
+          Show the Industries section on your website
+        </label>
+        <p className="text-xs" style={{ color: mutedTextColor }}>
+          Turn this on to display these cards on your marketing site. Your edits are always saved either way.
+        </p>
+        {config.industries.map((ind, i) => (
+          <div key={i} className="rounded-lg p-3 space-y-2" style={subCardStyle}>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium" style={{ color: mutedTextColor }}>Industry {i + 1}</span>
+              {config.industries.length > 1 && (
+                <button onClick={() => update(p => ({ ...p, industries: p.industries.filter((_, j) => j !== i) }))}
+                  className="p-1 rounded" style={{ color: '#ef4444' }}><Trash2 className="h-3.5 w-3.5" /></button>
+              )}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr_150px] gap-2">
+              <input type="text" value={ind.title} placeholder="Industry name (e.g. Home Services)"
+                onChange={e => update(p => ({ ...p, industries: p.industries.map((it, j) => j === i ? { ...it, title: e.target.value } : it) }))}
+                className={inputClass} style={inputStyle} />
+              <CustomSelect
+                value={ind.icon}
+                onChange={v => update(p => ({ ...p, industries: p.industries.map((it, j) => j === i ? { ...it, icon: v } : it) }))}
+                options={INDUSTRY_ICON_OPTIONS}
+                ui={dropdownUI}
+              />
+            </div>
+            <input type="text" value={ind.subtitle} placeholder="Who it's for (e.g. Plumbers, HVAC, Electricians)"
+              onChange={e => update(p => ({ ...p, industries: p.industries.map((it, j) => j === i ? { ...it, subtitle: e.target.value } : it) }))}
+              className={inputClass} style={inputStyle} />
+            <textarea value={ind.description} placeholder="How your AI helps this type of business" rows={2}
+              onChange={e => update(p => ({ ...p, industries: p.industries.map((it, j) => j === i ? { ...it, description: e.target.value } : it) }))}
+              className={inputClass + ' resize-none'} style={inputStyle} />
+            <input type="text" value={ind.result} placeholder="Result line (e.g. Never miss a job while you're on-site)"
+              onChange={e => update(p => ({ ...p, industries: p.industries.map((it, j) => j === i ? { ...it, result: e.target.value } : it) }))}
+              className={inputClass} style={inputStyle} />
+          </div>
+        ))}
+        {config.industries.length < 8 && (
+          <button onClick={() => update(p => ({ ...p, industries: [...p.industries, { icon: 'briefcase', title: '', subtitle: '', description: '', result: '' }] }))}
+            className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg"
+            style={{ color: agencyPrimaryColor, backgroundColor: `${agencyPrimaryColor}10` }}>
+            <Plus className="h-3.5 w-3.5" />Add Industry
+          </button>
+        )}
+        <p className="text-xs" style={{ color: mutedTextColor }}>The result line shows in bold under each card. Leave it blank to hide it.</p>
       </Section>
 
       {/* ── PRICING ───────────────────────────────────────────────────── */}
