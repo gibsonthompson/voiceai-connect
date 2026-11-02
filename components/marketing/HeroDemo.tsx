@@ -27,9 +27,9 @@ const MAX_SECONDS = 240;     // 4 minute demo cap
 const EXAMPLES = ['Dental office', 'HVAC company', 'Med spa', 'Law firm'];
 
 const STEPS: [string, string, string][] = [
-  ['1', 'Paste the website', 'It reads the site and pulls the real details. No forms, no questionnaire.'],
-  ['2', 'It builds itself', 'Greeting, services, and knowledge, assembled on the spot.'],
-  ['3', 'Call it live', 'Pick up and talk to it, exactly what a caller hears on day one.'],
+  ['1', 'Paste a website', 'We read the site and pull the real business details. No forms, nothing to fill in.'],
+  ['2', 'It builds in seconds', 'Greeting, services, hours, and the questions it gets asked, all from what the site says.'],
+  ['3', 'Call it and hear it', 'Pick up and talk to the receptionist, the same thing a caller gets on day one.'],
 ];
 
 type Phase = 'idle' | 'building' | 'ready' | 'connecting' | 'live' | 'ended' | 'error';
@@ -104,17 +104,19 @@ export default function HeroDemo() {
   const onConsole = phase === 'idle' || phase === 'building';
 
   return (
-    <section className="relative bg-ink py-20 sm:py-28 lg:py-32 border-t border-white/[0.04] overflow-hidden">
-      {/* Soft ambient teal glow behind the prompt box. */}
-      <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(760px 420px at 50% 8%, rgba(1,245,209,0.10), transparent 70%)' }} />
+    <section className="relative bg-ink py-20 sm:py-28 lg:py-32">
+      {/* Soft ambient teal glow. Positioned to bleed UP past the top of this
+          section (no hard divider line), so the green wash carries into the
+          section above instead of starting at a seam. */}
+      <div className="absolute left-0 right-0 pointer-events-none" style={{ top: '-240px', height: '780px', background: 'radial-gradient(900px 520px at 50% 40%, rgba(1,245,209,0.13), transparent 72%)' }} />
 
       <div className="max-w-[760px] mx-auto px-5 sm:px-6 relative text-center">
 
-        <h2 className="t-h2 text-white mx-auto max-w-[18ch]">Build the product you&rsquo;ll resell.</h2>
+        <h2 className="t-h2 text-white mx-auto max-w-[16ch]">Build a receptionist. Then call it.</h2>
 
         {onConsole && (
           <p className="mt-5 text-[15px] sm:text-[16px] leading-relaxed text-white/55 max-w-xl mx-auto">
-            Paste any local business&rsquo;s website and talk to the AI receptionist it builds, live, in under a minute. No signup, no card. It&rsquo;s the demo that closes your clients.
+            Paste any local business&rsquo;s website and its AI receptionist is answering the phone in under a minute. This is the exact product you&rsquo;d resell, and the demo that gets a business owner to sign up.
           </p>
         )}
 
@@ -129,7 +131,7 @@ export default function HeroDemo() {
                   ref={inputRef}
                   value={query}
                   onChange={(e) => { setQuery(e.target.value); setError(''); }}
-                  placeholder="Paste a website, or describe the business"
+                  placeholder="Paste a business website, or describe the business"
                   autoComplete="off"
                   disabled={phase === 'building'}
                   className="w-full bg-transparent text-[16px] text-white placeholder-white/35 focus:outline-none"
@@ -137,7 +139,7 @@ export default function HeroDemo() {
                 <div className="flex items-center justify-between gap-3 mt-3">
                   <span className="inline-flex items-center gap-2 text-[12.5px] text-white/40 min-w-0">
                     <Globe className="h-[15px] w-[15px] flex-shrink-0" style={{ color: 'rgba(255,255,255,0.35)' }} />
-                    <span className="truncate">{phase === 'building' ? 'Reading the site and building the receptionist' : 'Paste a URL and it reads the site for you'}</span>
+                    <span className="truncate">{phase === 'building' ? 'Reading the site and building the receptionist' : 'Paste a link and it reads the site for you'}</span>
                   </span>
                   <button
                     type="submit" aria-label="Build" disabled={phase === 'building' || !hasText}
@@ -152,7 +154,7 @@ export default function HeroDemo() {
 
             {/* Example chips, balanced (2 per row on mobile, one row on desktop) */}
             <div className="mt-6">
-              <p className="text-[13px] text-white/40 mb-3">Try one</p>
+              <p className="text-[13px] text-white/40 mb-3">No website handy? Try one</p>
               <div className="grid grid-cols-2 gap-2.5 max-w-sm mx-auto sm:flex sm:flex-wrap sm:justify-center sm:max-w-none">
                 {EXAMPLES.map((ex) => (
                   <button
@@ -181,13 +183,13 @@ export default function HeroDemo() {
                 </div>
 
                 <p className="mt-14 text-[15px] sm:text-[16px] leading-relaxed text-white/60 max-w-2xl mx-auto">
-                  Onboarding a real client runs on these same steps. Sixty seconds from a website to a receptionist that sounds like it has worked there for years.
+                  Signing up a paying client works exactly the same way. You paste their website, the receptionist builds itself, and it is ready to answer calls in about a minute. They hear it before they buy it.
                 </p>
 
                 <div className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-x-5 gap-y-3">
                   <Link href="/signup" className="btn btn-em">Start your free trial <ArrowUpRight className="w-3.5 h-3.5" /></Link>
                   <button type="button" onClick={() => inputRef.current?.focus()} className="text-[14px] text-white/55 hover:text-white transition-colors">
-                    or build one above, free
+                    or build one above first, free
                   </button>
                 </div>
               </div>
