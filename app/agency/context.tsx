@@ -78,6 +78,11 @@ interface User {
   email: string;
   role: string;
   agency_id: string;
+  // Set for call-center users (roles cc_owner / cc_manager / cc_agent). When
+  // present, this session is a call-center account and the provider loads the
+  // call_centers record as `agency` (with is_call_center=true) so the /cc tree
+  // works unchanged.
+  call_center_id?: string | null;
   first_name?: string;
   last_name?: string;
   permissions?: Record<string, boolean> | null;
@@ -233,7 +238,7 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
           const path = window.location.pathname || '';
           if (!path.includes('/login')) {
             try { localStorage.removeItem('auth_token'); localStorage.removeItem('user'); localStorage.removeItem('agency'); } catch {}
-            window.location.href = '/agency/login?expired=true';
+            window.location.href = path.startsWith('/cc') ? '/cc/login?expired=true' : '/agency/login?expired=true';
           }
         }
       } catch {}
@@ -326,9 +331,16 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      if (!storedUser || !storedUser.agency_id) {
+      // Account type: a call-center session (cc_* role + call_center_id) loads
+      // the call_centers record as `agency`; everything else is a normal agency.
+      const CC_ROLES = ['cc_owner', 'cc_manager', 'cc_agent'];
+      const isCC = !!(storedUser && storedUser.call_center_id && CC_ROLES.includes(storedUser.role));
+      const accountId = isCC ? storedUser.call_center_id : (storedUser && storedUser.agency_id);
+      const loginPath = isCC ? '/cc/login' : '/agency/login';
+
+      if (!storedUser || !accountId) {
         wipeSession();
-        window.location.href = '/agency/login';
+        window.location.href = loginPath;
         return;
       }
 
@@ -342,7 +354,7 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
       if (storedAgencyRaw) {
         try {
           const cached = JSON.parse(storedAgencyRaw);
-          if (cached?.id && cached.id === storedUser.agency_id) {
+          if (cached?.id && cached.id === accountId) {
             cacheMatchesSession = true;
             setAgency(cached);
             setBranding(buildBranding(cached));
@@ -368,7 +380,9 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch(`${backendUrl}/api/agency/${storedUser.agency_id}/settings`, {
+        fetch(isCC
+          ? `${backendUrl}/api/agency/${accountId}/cc/account`
+          : `${backendUrl}/api/agency/${accountId}/settings`, {
           headers: { Authorization: `Bearer ${token}` },
           cache: 'no-store',
         }),
@@ -379,7 +393,7 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
       // letting individual pages fail one at a time.
       if (!verifyResponse.ok) {
         wipeSession();
-        window.location.href = '/agency/login?expired=true';
+        window.location.href = `${loginPath}?expired=true`;
         return;
       }
 
@@ -396,12 +410,12 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
           return;
         }
         wipeSession();
-        window.location.href = '/agency/login';
+        window.location.href = loginPath;
         return;
       }
 
       const data = await response.json();
-      const freshAgency = data.agency;
+      const freshAgency = data.agency || data.account;
 
       if (freshAgency) {
         setAgency(freshAgency);
@@ -445,7 +459,7 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
 
   const hasPermission = (key: string): boolean => {
     if (!user) return false;
-    if (user.role === 'agency_owner' || user.role === 'super_admin') return true;
+    if (user.role === 'agency_owner' || user.role === 'super_admin' || user.role === 'cc_owner') return true;
     // Staff are governed by their Page Access permissions. A missing object
     // means no grants were loaded, so fail closed rather than open. An absent
     // individual key on an existing object is allowed (only an explicit false
@@ -461,10 +475,12 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
   //    focused agent nav (wallboard + assigned businesses) only.
   //  - canManageTeam: may create/edit managers & agents. Owner always; a manager
   //    only with the manage_team permission.
-  const isManager = !!(user && (user.role === 'agency_owner' || user.role === 'super_admin'
+  const isManager = !!(user && (user.role === 'agency_owner' || user.role === 'super_admin' || user.role === 'cc_owner'
+    || user.role === 'cc_manager'
     || (agency?.is_call_center && user.role === 'agency_staff' && user.is_manager === true)));
-  const isAgent = !!(agency?.is_call_center && user?.role === 'agency_staff' && user?.is_manager !== true);
-  const canManageTeam = !!(user && (user.role === 'agency_owner' || user.role === 'super_admin'
+  const isAgent = !!(user?.role === 'cc_agent'
+    || (agency?.is_call_center && user?.role === 'agency_staff' && user?.is_manager !== true));
+  const canManageTeam = !!(user && (user.role === 'agency_owner' || user.role === 'super_admin' || user.role === 'cc_owner'
     || (isManager && user.permissions?.manage_team === true)));
   const assignedClientIds = Array.isArray(user?.assigned_client_ids) ? user!.assigned_client_ids! : null;
 

@@ -40,7 +40,7 @@ export default function CallCenterBusinesses() {
     try {
       const token = localStorage.getItem('auth_token');
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const r = await fetch(`${backendUrl}/api/agency/${agency.id}/clients`, { headers: { Authorization: `Bearer ${token}` } });
+      const r = await fetch(`${backendUrl}/api/agency/${agency.id}/cc/businesses`, { headers: { Authorization: `Bearer ${token}` } });
       if (r.ok) {
         const d = await r.json();
         const list: Biz[] = (d.clients || []).map((c: any) => ({

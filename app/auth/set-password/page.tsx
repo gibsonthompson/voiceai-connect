@@ -214,6 +214,8 @@ function SetPasswordContent() {
         target = returnTo;
       } else if (data.user?.role === 'client') {
         target = '/client/dashboard';
+      } else if (data.user?.role === 'cc_owner' || data.user?.role === 'cc_manager' || data.user?.role === 'cc_agent') {
+        target = '/cc/dashboard';
       } else if (data.user?.role === 'agency_owner' || data.user?.role === 'agency_staff') {
         target = '/agency/dashboard';
       }
