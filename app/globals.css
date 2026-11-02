@@ -171,8 +171,9 @@ body {
 }
 
 .t-numeric {
-  font-family: 'Geist Mono', ui-monospace, monospace;
-  font-feature-settings: "tnum", "zero";
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
 }
 
 .t-muted {
