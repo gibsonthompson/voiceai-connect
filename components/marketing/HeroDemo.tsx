@@ -239,17 +239,6 @@ export default function HeroDemo() {
                     </div>
                   ))}
                 </div>
-
-                <p className="mt-16 text-[15px] leading-relaxed text-white/55 max-w-2xl mx-auto">
-                  Signing up a paying client works exactly the same way. You paste their website, the receptionist builds itself, and it is ready to answer calls in about a minute. They hear it before they buy it.
-                </p>
-
-                <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-x-5 gap-y-3">
-                  <Link href="/signup" className="btn btn-em">Start your free trial <ArrowUpRight className="w-3.5 h-3.5" /></Link>
-                  <button type="button" onClick={() => inputRef.current?.focus()} className="text-[14px] text-white/55 hover:text-white transition-colors">
-                    or build one above first, free
-                  </button>
-                </div>
               </div>
             )}
           </div>
