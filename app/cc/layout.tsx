@@ -381,6 +381,14 @@ function CallCenterShell({ children }: { children: ReactNode }) {
 }
 
 export default function CallCenterLayout({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  // The call-center auth pages live under /cc but must NOT be wrapped by the
+  // signed-in shell. Otherwise a cached agency session loads here, the shell's
+  // "not a call center -> /agency/dashboard" guard fires, and the visitor is
+  // redirected away before signup/login can render. Render these bare.
+  if (pathname === '/cc/login' || pathname === '/cc/signup') {
+    return <>{children}</>;
+  }
   return (
     <AgencyProvider>
       <CallCenterShell>{children}</CallCenterShell>
