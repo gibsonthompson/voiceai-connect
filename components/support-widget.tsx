@@ -39,6 +39,22 @@ const em = '#10b981';
 // Shared text treatment for solid green buttons: bold white with a crisp black outline.
 const greenBtnText = { color: '#04120f', fontWeight: 800 } as React.CSSProperties;
 
+// Render plain bot text with any http(s) links (e.g. a YouTube walkthrough the
+// bot shares from the knowledge base) as clickable links.
+function linkify(text: string): React.ReactNode[] {
+  const re = /(https?:\/\/[^\s<>()]+)/g;
+  const out: React.ReactNode[] = [];
+  let last = 0, k = 0, m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) out.push(text.slice(last, m.index));
+    const url = m[1].replace(/[.,;:]+$/, '');
+    out.push(<a key={k++} href={url} target="_blank" rel="noopener noreferrer" style={{ color: em, textDecoration: 'underline' }}>{url}</a>);
+    last = m.index + m[1].length;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out;
+}
+
 function WIcon({ type }: { type: string }) {
   const p = { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.5, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
   switch (type) {
@@ -413,7 +429,7 @@ export default function SupportWidget() {
                   ...(m.role === 'user' ? { borderRadius: '14px 14px 4px 14px', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.14)', color: 'rgba(255,255,255,0.85)' }
                     : { borderRadius: '14px 14px 14px 4px', background: 'linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.008))', border: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.65)' }),
                 }}>
-                  {m.content || (streaming && i === messages.length - 1 ? '...' : '')}
+                  {m.content ? linkify(m.content) : (streaming && i === messages.length - 1 ? '...' : '')}
                 </div>
               ))}
               {streaming && messages[messages.length - 1]?.role === 'user' && (

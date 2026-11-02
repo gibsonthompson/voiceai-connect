@@ -38,6 +38,7 @@ function hexToRgba(hex: string, alpha: number): string {
 
 function formatMarkdown(text: string): string {
   return text
+    .replace(/(https?:\/\/[^\s<>]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:underline">$1</a>')
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/`(.*?)`/g, '<code style="background:rgba(128,128,128,0.15);padding:1px 5px;border-radius:4px;font-size:0.85em">$1</code>')
     .replace(/\n/g, '<br/>');
