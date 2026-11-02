@@ -105,6 +105,10 @@ interface FormData {
   websiteUrl: string;
   planType: string;
   tempPassword: string;
+  // BYOC (bring your own carrier). Default 'telnyx' = provision a new number.
+  numberSource: string;
+  byoNumber: string;
+  carrierId: string;
 }
 
 export default function AddClientPage() {
@@ -137,8 +141,23 @@ export default function AddClientPage() {
     businessCountry: defaultCountry,
     websiteUrl: '',
     planType: 'starter',
-    tempPassword: generateTempPassword()
+    tempPassword: generateTempPassword(),
+    numberSource: 'telnyx',
+    byoNumber: '',
+    carrierId: ''
   });
+
+  // Carriers available to this agency (for the bring-your-own-carrier option).
+  const [carriers, setCarriers] = useState<{ id: string; name: string }[]>([]);
+  useEffect(() => {
+    if (!agency?.id) return;
+    const token = localStorage.getItem('auth_token');
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    fetch(`${backendUrl}/api/agency/${agency.id}/carriers`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (d && Array.isArray(d.carriers)) setCarriers(d.carriers.map((c: { id: string; name: string }) => ({ id: c.id, name: c.name }))); })
+      .catch(() => {});
+  }, [agency?.id]);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -436,6 +455,8 @@ export default function AddClientPage() {
           businessCountry: form.businessCountry,
           websiteUrl: form.websiteUrl.trim() || undefined,
           planType: form.planType,
+          number_source: form.numberSource,
+          ...(form.numberSource !== 'telnyx' ? { byo_number: form.byoNumber.trim(), carrier_id: form.carrierId || null } : {}),
           pricingMode: cPricingMode,
           ...(cPricingMode === 'custom' ? { customPricing: {
             priceCents: Math.round(parseFloat(cMonthly || '0') * 100),
@@ -595,7 +616,8 @@ export default function AddClientPage() {
                   businessName: '', industry: '', firstName: '', lastName: '',
                   email: '', phone: '', businessCity: '', businessState: '',
                   businessCountry: defaultCountry,
-                  websiteUrl: '', planType: 'starter', tempPassword: generateTempPassword()
+                  websiteUrl: '', planType: 'starter', tempPassword: generateTempPassword(),
+                  numberSource: 'telnyx', byoNumber: '', carrierId: ''
                 });
               }}
               className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
@@ -956,6 +978,75 @@ export default function AddClientPage() {
                   disabled={submitting}
                 />
               </div>
+            </div>
+
+            {/* AI phone number source (BYOC). Default 'telnyx' provisions a new
+                number (unchanged). The two BYO options let the client keep its
+                existing number on its own carrier. The source selector spans the
+                full row on its own; the carrier + number detail fields appear as
+                a balanced two-up row only when a BYO option is chosen. */}
+            <div>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: labelColor }}>
+                AI phone number
+              </label>
+              <CustomSelect
+                value={form.numberSource}
+                onChange={(v) => updateForm('numberSource', v)}
+                options={[
+                  { value: 'telnyx', label: 'Provision a new number for this client' },
+                  { value: 'byo_vapi', label: 'Keep existing number + carrier (SIP, direct)' },
+                  { value: 'byo_telnyx_cc', label: 'Keep existing number + carrier (full call control)' },
+                ]}
+                disabled={submitting}
+                ui={ui}
+              />
+              {form.numberSource !== 'telnyx' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5" style={{ color: labelColor }}>
+                      Existing phone number <span style={{ color: errorText }}>*</span>
+                    </label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: mutedTextColor }} />
+                      <input
+                        type="text"
+                        placeholder="+1 441 555 0100"
+                        value={form.byoNumber}
+                        onChange={(e) => updateForm('byoNumber', e.target.value)}
+                        className="w-full rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none transition-colors"
+                        style={inputStyle}
+                        disabled={submitting}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5" style={{ color: labelColor }}>
+                      Carrier <span style={{ color: errorText }}>*</span>
+                    </label>
+                    {carriers.length > 0 ? (
+                      <CustomSelect
+                        value={form.carrierId}
+                        onChange={(v) => updateForm('carrierId', v)}
+                        options={carriers.map((c) => ({ value: c.id, label: c.name }))}
+                        placeholder="Select carrier..."
+                        disabled={submitting}
+                        ui={ui}
+                      />
+                    ) : (
+                      <p className="text-xs py-2.5" style={{ color: mutedTextColor }}>
+                        No carriers yet. Add one under Settings, Carriers first.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+              <p className="mt-2 text-xs" style={{ color: mutedTextColor }}>
+                {form.numberSource === 'telnyx'
+                  ? 'A new local number is provisioned and the AI answers it.'
+                  : form.numberSource === 'byo_vapi'
+                    ? 'The client keeps its number and carrier; the AI answers over the carrier SIP trunk. VAPI-native warm transfer applies.'
+                    : 'The carrier routes the existing number into full call control, keeping custom whisper, live monitor, and recording.'}
+              </p>
             </div>
           </div>
         </div>

@@ -11,6 +11,7 @@ import EmailDomainCard from '@/components/agency/EmailDomainCard';
 import { PLAN_NAMES } from '@/lib/plan-limits';
 import { FEATURE_LABELS, FEATURE_ORDER, CORE_CLIENT_FEATURES } from '@/lib/plan-features-meta';
 import BYOTSettings from '@/components/BYOTSettings';
+import CarrierSettings from '@/components/CarrierSettings';
 import AgencyTeamTab from '@/components/agency/AgencyTeamTab';
 import UpgradeGate from '@/components/agency/UpgradeGate';
 import ApiKeysTab from '@/components/agency/ApiKeysTab';
@@ -2047,6 +2048,9 @@ function AgencySettingsContent() {
                   </div>
                 </div>
                 <BYOTSettings agencyId={agency?.id || ''} planType={agency?.plan_type || ''} subscriptionStatus={agency?.subscription_status || ''} theme={theme} />
+                <div className="mt-6 pt-6" style={{ borderTop: `1px solid ${theme.inputBorder}` }}>
+                  <CarrierSettings agencyId={agency?.id || ''} theme={theme} />
+                </div>
               </div>
             )}
 
