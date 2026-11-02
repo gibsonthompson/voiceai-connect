@@ -39,7 +39,7 @@ const EXTRAS: string[] = [
   'Two-way texting, so callers can reply and the AI keeps the conversation going.',
   'Books appointments into Google Calendar during the call.',
   'Answers in English and Spanish automatically.',
-  'Follow-up workflows you set up for new leads, missed calls, and bookings.',
+  'Follow-up workflows you set up for new leads, bookings, and the messages it takes.',
 ];
 
 type Phase = 'idle' | 'building' | 'ready' | 'connecting' | 'live' | 'ended' | 'error';
