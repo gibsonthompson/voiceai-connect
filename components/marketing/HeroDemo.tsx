@@ -39,6 +39,7 @@ export default function HeroDemo() {
   const vapiRef = useRef<any>(null);
   const timerRef = useRef<any>(null);
   const transcriptRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const stopTimer = () => { if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; } };
   const endCall = useCallback(() => { try { vapiRef.current?.stop(); } catch { /* ignore */ } stopTimer(); }, []);
@@ -94,38 +95,39 @@ export default function HeroDemo() {
     <section className="relative bg-ink py-16 sm:py-24 lg:py-32 border-t border-white/[0.04] overflow-hidden">
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(1100px 520px at 50% 0%, rgba(0,227,170,0.10), transparent 70%)' }} />
       <div className="max-w-[760px] mx-auto px-5 sm:px-6 relative text-center">
-        {/* LANDING (idle/building): a literal copy of the AI Lab builder's
-            prompt screen — headline, prompt bar, helper line, example chips. */}
+        {/* LANDING (idle/building): AI Lab builder replica, sized down a touch. */}
         {(phase === 'idle' || phase === 'building') && (
-          <div className="w-full mx-auto" style={{ maxWidth: 680 }}>
-            <h2 className="text-center font-bold tracking-tight mb-8 text-white" style={{ fontSize: 'clamp(30px, 5vw, 42px)', lineHeight: 1.1 }}>
+          <div className="w-full mx-auto" style={{ maxWidth: 640 }}>
+            <p className="font-mono text-[11px] tracking-[0.18em] uppercase mb-4" style={{ color: EM }}>The 60-second build</p>
+            <h2 className="text-center font-bold tracking-tight mb-6 text-white" style={{ fontSize: 'clamp(25px, 4.2vw, 34px)', lineHeight: 1.12 }}>
               Let&rsquo;s Build Your Receptionist
             </h2>
             <form onSubmit={(e) => { e.preventDefault(); build(query); }} className="relative">
               <input
+                ref={inputRef}
                 value={query}
                 onChange={(e) => { setQuery(e.target.value); setError(''); }}
                 placeholder="Describe the business, or paste its website"
                 autoComplete="off"
                 disabled={phase === 'building'}
-                className="w-full rounded-[28px] pl-6 pr-16 py-5 text-[16px] text-white placeholder-white/40 focus:outline-none transition-colors text-left"
+                className="w-full rounded-[24px] pl-5 pr-14 py-4 text-[15px] text-white placeholder-white/40 focus:outline-none transition-colors text-left"
                 style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.14)' }}
                 onFocus={(e) => (e.currentTarget.style.borderColor = EM)}
                 onBlur={(e) => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)')}
               />
               <button type="submit" aria-label="Build" disabled={phase === 'building' || !hasText}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full inline-flex items-center justify-center transition-all disabled:cursor-default"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full inline-flex items-center justify-center transition-all disabled:cursor-default"
                 style={{ backgroundColor: hasText ? EM : 'rgba(255,255,255,0.08)', color: hasText ? '#04110D' : 'rgba(255,255,255,0.5)', opacity: phase === 'building' ? 0.7 : 1 }}>
-                {phase === 'building' ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowUp className="h-5 w-5" />}
+                {phase === 'building' ? <Loader2 className="h-[18px] w-[18px] animate-spin" /> : <ArrowUp className="h-[18px] w-[18px]" />}
               </button>
             </form>
-            <p className="text-center text-[13px] mt-4 text-white/50">
+            <p className="text-center text-[13px] mt-3.5 text-white/50">
               {phase === 'building' ? 'Reading the site and building the receptionist…' : 'Paste a website and we’ll read it to fill in the details.'}
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
+            <div className="grid grid-cols-2 justify-items-center gap-2 mt-4 sm:flex sm:flex-wrap sm:items-center sm:justify-center">
               {EXAMPLES.map((ex) => (
                 <button key={ex} type="button" onClick={() => { setQuery(ex); build(ex); }} disabled={phase === 'building'}
-                  className="rounded-full px-4 py-2 text-[14px] text-white/60 transition-colors disabled:opacity-50"
+                  className="rounded-full px-3.5 py-1.5 text-[13px] text-white/60 transition-colors disabled:opacity-50"
                   style={{ border: '1px solid rgba(255,255,255,0.14)' }}
                   onMouseEnter={(e) => { e.currentTarget.style.borderColor = EM; e.currentTarget.style.color = '#fff'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; }}>
@@ -134,6 +136,43 @@ export default function HeroDemo() {
               ))}
             </div>
             {error && <p className="text-center text-[13px] mt-4" style={{ color: '#ff6b6b' }}>{error}</p>}
+          </div>
+        )}
+
+        {/* FRAMING (idle only): what this is, why it matters to the agency,
+            how it works, and the CTA. Collapses once a receptionist is built. */}
+        {phase === 'idle' && (
+          <div className="mt-14 sm:mt-16">
+            <p className="text-[15px] sm:text-[16px] leading-relaxed text-white/60 max-w-2xl mx-auto">
+              This is the product you&rsquo;ll resell. Paste any local business&rsquo;s website and a working AI receptionist is on the phone in under a minute, trained on what that business actually does: its services, its hours, the way it talks. It&rsquo;s the demo that closes clients, they hear their own receptionist before they ever pay you.
+            </p>
+
+            <div className="mt-11 grid sm:grid-cols-3 gap-8 sm:gap-0 text-left max-w-3xl mx-auto">
+              {([
+                ['01', 'Paste the website', 'It reads the site and pulls the business’s real details. No forms, no questionnaire.'],
+                ['02', 'It builds itself', 'Greeting, services, and knowledge, assembled on the spot. No scripting, no setup.'],
+                ['03', 'Call it live', 'Pick up and talk to it, exactly what a caller hears on day one.'],
+              ] as [string, string, string][]).map(([n, t, d], i) => (
+                <div key={n} className={`px-0 ${i > 0 ? 'sm:pl-7 sm:border-l' : 'sm:pr-7'}`} style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+                  <div className="font-mono text-[13px] mb-2.5" style={{ color: EM }}>{n}</div>
+                  <div className="text-white font-semibold text-[15px] mb-1.5">{t}</div>
+                  <div className="text-[13.5px] leading-relaxed text-white/50">{d}</div>
+                </div>
+              ))}
+            </div>
+
+            <p className="mt-11 text-[15px] sm:text-[16px] leading-relaxed text-white/70 max-w-2xl mx-auto">
+              Onboarding a real client runs on these same three steps. No call scripts to write, no numbers to wire up by hand, sixty seconds from a website to a receptionist that sounds like it has worked there for years.
+            </p>
+
+            <div className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-x-5 gap-y-3">
+              <Link href="/signup" className="inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-[15px] font-semibold transition-all hover:opacity-90" style={{ backgroundColor: EM, color: '#04110D' }}>
+                Start your free trial <ArrowUpRight className="h-4 w-4" />
+              </Link>
+              <button type="button" onClick={() => inputRef.current?.focus()} className="text-[14px] text-white/55 hover:text-white transition-colors">
+                or build one above, free
+              </button>
+            </div>
           </div>
         )}
 
