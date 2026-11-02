@@ -67,6 +67,7 @@ type Pkg = {
   services: { name: string; description?: string }[]; faqs: { q: string; a: string }[];
   staff: { name: string; role?: string }[]; additional_info: string; hours: any;
   voice_id: string | null; voice_name: string | null; greeting: string; read_website: boolean; customGen: boolean;
+  client_email: string;
 };
 
 export default function AILabBuilder({ agencyId, api, theme, logoUrl }: { agencyId: string; api: string; theme: any; logoUrl?: string | null }) {
@@ -103,6 +104,7 @@ export default function AILabBuilder({ agencyId, api, theme, logoUrl }: { agency
         services: Array.isArray(j.services) ? j.services : [], faqs: Array.isArray(j.faqs) ? j.faqs : [],
         staff: Array.isArray(j.staff) ? j.staff : [], additional_info: '', hours: { ...DEFAULT_HOURS },
         voice_id: null, voice_name: null, greeting: '', read_website: !!j.read_website, customGen: !j.industry,
+        client_email: '',
       });
       setStep(0); setDone({}); setPhase('chat');
     } catch (e: any) { setError(e?.message || 'Something went wrong.'); } finally { setReading(false); }
@@ -133,7 +135,7 @@ export default function AILabBuilder({ agencyId, api, theme, logoUrl }: { agency
         body: JSON.stringify({
           industry: industryValue, business_name: pkg.business_name, city: pkg.city, website_url: pkg.website_url,
           sub_vertical: pkg.sub_vertical, hours: pkg.hours, services: pkg.services, faqs: pkg.faqs, staff: pkg.staff,
-          additional_info: pkg.additional_info, voice_id: pkg.voice_id, greeting: pkg.greeting,
+          additional_info: pkg.additional_info, voice_id: pkg.voice_id, greeting: pkg.greeting, client_email: pkg.client_email,
         }),
       });
       const j = await res.json().catch(() => ({}));
@@ -337,6 +339,10 @@ function BusinessStep({ pkg, theme, update, onNext }: any) {
         <Field theme={theme} label="City" value={pkg.city} onChange={(v: string) => update({ city: v })} placeholder="Austin" />
       </div>
       <div className="mt-4">
+        <Field theme={theme} label="Client email (for billing & receipts)" value={pkg.client_email} onChange={(v: string) => update({ client_email: v })} placeholder="owner@acmedental.com" />
+        <p className="text-[12px] mt-1.5" style={{ color: theme.textMuted }}>The client&rsquo;s own email. Used for their receipts and checkout, so your email never shows up in their payment.</p>
+      </div>
+      <div className="mt-4">
         <span className="text-[13px] font-medium" style={{ color: theme.textMuted }}>Industry template</span>
         <div className="mt-1.5 relative">
           <button onClick={() => setPickOpen((o) => !o)} className="w-full flex items-center justify-between rounded-xl px-3.5 py-3 text-[15px] transition-colors" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.text }}>
@@ -408,74 +414,83 @@ function HoursStep({ pkg, theme, update, onNext, onBack }: any) {
   );
 }
 
-// Services
+// Services (each row editable inline)
 function ServicesStep({ pkg, theme, update, onNext, onBack }: any) {
   const [draft, setDraft] = useState('');
   const add = () => { const n = draft.trim(); if (!n) return; update({ services: [...pkg.services, { name: n, description: '' }] }); setDraft(''); };
   const remove = (i: number) => update({ services: pkg.services.filter((_: any, idx: number) => idx !== i) });
+  const edit = (i: number, name: string) => update({ services: pkg.services.map((s: any, idx: number) => idx === i ? { ...s, name } : s) });
   return (
     <Card theme={theme}>
-      <div className="flex flex-wrap gap-2">
+      <div className="space-y-2">
         {pkg.services.map((s: any, i: number) => (
-          <span key={i} className="inline-flex items-center gap-1.5 rounded-full pl-3.5 pr-2 py-2 text-[14px]" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.text }}>
-            {s.name}<button onClick={() => remove(i)} aria-label="Remove" className="rounded-full p-0.5 hover:opacity-70" style={{ color: theme.textMuted }}><X className="h-3.5 w-3.5" /></button>
-          </span>
+          <div key={i} className="flex items-center gap-2">
+            <input value={s.name} onChange={(e) => edit(i, e.target.value)} className="flex-1 rounded-xl px-3.5 py-2.5 text-[15px] focus:outline-none transition-colors" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.text }} onFocus={(e) => (e.currentTarget.style.borderColor = theme.primary + '66')} onBlur={(e) => (e.currentTarget.style.borderColor = theme.border)} />
+            <button onClick={() => remove(i)} aria-label="Remove" className="h-9 w-9 rounded-lg inline-flex items-center justify-center hover:opacity-70 flex-shrink-0" style={{ color: theme.textMuted }}><X className="h-4 w-4" /></button>
+          </div>
         ))}
-        {pkg.services.length === 0 && <span className="text-[14px]" style={{ color: theme.textMuted }}>No services yet, add a few below.</span>}
+        {pkg.services.length === 0 && <p className="text-[14px]" style={{ color: theme.textMuted }}>No services yet, add a few below.</p>}
       </div>
-      <div className="mt-3.5 flex items-center gap-2">
+      <div className="mt-3 flex items-center gap-2">
         <input value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } }} placeholder="Add a service" className="flex-1 rounded-xl px-3.5 py-3 text-[15px] focus:outline-none" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.text }} />
-        <button onClick={add} className="h-11 w-11 rounded-xl inline-flex items-center justify-center" style={{ backgroundColor: theme.primary15, color: theme.primary }}><Plus className="h-5 w-5" /></button>
+        <button onClick={add} className="h-11 w-11 rounded-xl inline-flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.primary15, color: theme.primary }}><Plus className="h-5 w-5" /></button>
       </div>
       <NavRow theme={theme} onBack={onBack}><PrimaryBtn theme={theme} onClick={onNext}>Continue</PrimaryBtn></NavRow>
     </Card>
   );
 }
 
-// Knowledge
+// Knowledge (each FAQ's question and answer editable inline)
 function KnowledgeStep({ pkg, theme, update, onNext, onBack }: any) {
   const removeFaq = (i: number) => update({ faqs: pkg.faqs.filter((_: any, idx: number) => idx !== i) });
+  const editFaq = (i: number, field: 'q' | 'a', val: string) => update({ faqs: pkg.faqs.map((f: any, idx: number) => idx === i ? { ...f, [field]: val } : f) });
+  const addFaq = () => update({ faqs: [...pkg.faqs, { q: '', a: '' }] });
+  const inputStyle = { backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.text };
   return (
     <Card theme={theme}>
-      {pkg.faqs.length > 0 && (
-        <div className="space-y-2 mb-4">
-          {pkg.faqs.map((f: any, i: number) => (
-            <div key={i} className="flex items-start gap-2 rounded-xl px-3.5 py-2.5" style={{ backgroundColor: theme.hover }}>
-              <div className="flex-1"><p className="text-[14px] font-medium" style={{ color: theme.text }}>{f.q}</p>{f.a && <p className="text-[13px] mt-0.5" style={{ color: theme.textMuted }}>{f.a}</p>}</div>
-              <button onClick={() => removeFaq(i)} aria-label="Remove" className="p-0.5 hover:opacity-70" style={{ color: theme.textMuted }}><X className="h-4 w-4" /></button>
+      <div className="space-y-3 mb-3">
+        {pkg.faqs.map((f: any, i: number) => (
+          <div key={i} className="rounded-xl p-3 space-y-2" style={{ backgroundColor: theme.hover }}>
+            <div className="flex items-center gap-2">
+              <input value={f.q} onChange={(e) => editFaq(i, 'q', e.target.value)} placeholder="What do callers ask?" className="flex-1 rounded-lg px-3 py-2.5 text-[14px] font-medium focus:outline-none" style={{ ...inputStyle, backgroundColor: theme.card }} />
+              <button onClick={() => removeFaq(i)} aria-label="Remove" className="h-8 w-8 rounded-lg inline-flex items-center justify-center hover:opacity-70 flex-shrink-0" style={{ color: theme.textMuted }}><X className="h-4 w-4" /></button>
             </div>
-          ))}
-        </div>
-      )}
+            <textarea value={f.a} onChange={(e) => editFaq(i, 'a', e.target.value)} rows={2} placeholder="The answer the AI should give" className="w-full rounded-lg px-3 py-2.5 text-[14px] focus:outline-none resize-none" style={{ ...inputStyle, backgroundColor: theme.card }} />
+          </div>
+        ))}
+      </div>
+      <button onClick={addFaq} className="inline-flex items-center gap-1.5 text-[14px] font-medium mb-5" style={{ color: theme.primary }}><Plus className="h-4 w-4" /> Add a question</button>
       <label className="text-[13px] font-medium" style={{ color: theme.textMuted }}>Anything else it should know</label>
-      <textarea value={pkg.additional_info} onChange={(e) => update({ additional_info: e.target.value })} rows={4} placeholder="e.g. We offer free estimates, we do not service apartments, parking is behind the building." className="mt-1.5 w-full rounded-xl px-3.5 py-3 text-[15px] focus:outline-none resize-none" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.text }} />
+      <textarea value={pkg.additional_info} onChange={(e) => update({ additional_info: e.target.value })} rows={4} placeholder="e.g. We offer free estimates, we do not service apartments, parking is behind the building." className="mt-1.5 w-full rounded-xl px-3.5 py-3 text-[15px] focus:outline-none resize-none" style={inputStyle} />
       <NavRow theme={theme} onBack={onBack}><PrimaryBtn theme={theme} onClick={onNext}>Continue</PrimaryBtn></NavRow>
     </Card>
   );
 }
 
-// Staff
+// Staff (each member's name and role editable inline)
 function StaffStep({ pkg, theme, update, onNext, onBack }: any) {
   const [name, setName] = useState(''); const [role, setRole] = useState('');
   const add = () => { const n = name.trim(); if (!n) return; update({ staff: [...pkg.staff, { name: n, role: role.trim() }] }); setName(''); setRole(''); };
   const remove = (i: number) => update({ staff: pkg.staff.filter((_: any, idx: number) => idx !== i) });
+  const edit = (i: number, field: 'name' | 'role', val: string) => update({ staff: pkg.staff.map((s: any, idx: number) => idx === i ? { ...s, [field]: val } : s) });
+  const inputStyle = { backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.text };
   return (
     <Card theme={theme}>
       {pkg.staff.length > 0 && (
         <div className="space-y-2 mb-4">
           {pkg.staff.map((s: any, i: number) => (
-            <div key={i} className="flex items-center gap-2 rounded-xl px-3.5 py-2.5" style={{ backgroundColor: theme.hover }}>
-              <Users className="h-4 w-4" style={{ color: theme.textMuted }} />
-              <span className="text-[14px] flex-1" style={{ color: theme.text }}>{s.name}{s.role ? <span style={{ color: theme.textMuted }}> · {s.role}</span> : null}</span>
-              <button onClick={() => remove(i)} aria-label="Remove" className="p-0.5 hover:opacity-70" style={{ color: theme.textMuted }}><X className="h-4 w-4" /></button>
+            <div key={i} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <input value={s.name} onChange={(e) => edit(i, 'name', e.target.value)} placeholder="Name" className="flex-1 rounded-xl px-3.5 py-2.5 text-[15px] focus:outline-none" style={inputStyle} />
+              <input value={s.role || ''} onChange={(e) => edit(i, 'role', e.target.value)} placeholder="Role (optional)" className="flex-1 rounded-xl px-3.5 py-2.5 text-[15px] focus:outline-none" style={inputStyle} />
+              <button onClick={() => remove(i)} aria-label="Remove" className="h-9 w-9 rounded-lg inline-flex items-center justify-center hover:opacity-70 flex-shrink-0 self-end sm:self-auto" style={{ color: theme.textMuted }}><X className="h-4 w-4" /></button>
             </div>
           ))}
         </div>
       )}
       <div className="flex flex-col sm:flex-row gap-2">
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" className="flex-1 rounded-xl px-3.5 py-3 text-[15px] focus:outline-none" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.text }} />
-        <input value={role} onChange={(e) => setRole(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } }} placeholder="Role (optional)" className="flex-1 rounded-xl px-3.5 py-3 text-[15px] focus:outline-none" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.text }} />
-        <button onClick={add} className="h-11 rounded-xl px-4 inline-flex items-center justify-center gap-1.5 text-[14px] font-medium" style={{ backgroundColor: theme.primary15, color: theme.primary }}><Plus className="h-4 w-4" /> Add</button>
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Add a name" className="flex-1 rounded-xl px-3.5 py-3 text-[15px] focus:outline-none" style={inputStyle} />
+        <input value={role} onChange={(e) => setRole(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } }} placeholder="Role (optional)" className="flex-1 rounded-xl px-3.5 py-3 text-[15px] focus:outline-none" style={inputStyle} />
+        <button onClick={add} className="h-11 rounded-xl px-4 inline-flex items-center justify-center gap-1.5 text-[14px] font-medium flex-shrink-0" style={{ backgroundColor: theme.primary15, color: theme.primary }}><Plus className="h-4 w-4" /> Add</button>
       </div>
       <p className="text-[13px] mt-3" style={{ color: theme.textMuted }}>Optional. Skip it if it is just you.</p>
       <NavRow theme={theme} onBack={onBack}><PrimaryBtn theme={theme} onClick={onNext}>Continue</PrimaryBtn></NavRow>

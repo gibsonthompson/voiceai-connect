@@ -392,15 +392,35 @@ export default function AgencyClientDetailPage() {
   const [collectUrl, setCollectUrl] = useState<string | null>(null);
   const [collectErr, setCollectErr] = useState<string | null>(null);
   const [collectCopied, setCollectCopied] = useState(false);
+  const [collectEmail, setCollectEmail] = useState('');
+  // Pre-fill the billing email with the client's own, but NOT if it is just the
+  // agency's email (the AI Lab default) — that is the thing we want to replace.
+  useEffect(() => {
+    if (!client) return;
+    const ce = (client as any).email || '';
+    const ae = (agency as any)?.email || '';
+    setCollectEmail(ce && ce.toLowerCase() !== ae.toLowerCase() ? ce : '');
+  }, [client, agency]);
   const collectPayment = async () => {
-    if (!clientId) return; setCollectBusy(true); setCollectErr(null);
+    if (!clientId) return;
+    const email = collectEmail.trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { setCollectErr('Enter the client’s email first, so the receipt and checkout are theirs, not yours.'); return; }
+    setCollectBusy(true); setCollectErr(null);
     try {
       const token = localStorage.getItem('auth_token');
+      // 1) Make sure the client's billing email is their own (updates the Stripe
+      //    customer too), so their checkout never shows your Link account.
+      if (agency?.id && email.toLowerCase() !== ((client as any).email || '').toLowerCase()) {
+        const eRes = await fetch(`${backendUrl}/api/agency/${agency.id}/ai-lab/${clientId}/client-email`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ email }) });
+        if (!eRes.ok) { const ej = await eRes.json().catch(() => ({})); throw new Error(ej.error || 'Could not save the client email.'); }
+      }
+      // 2) Create the checkout.
       const res = await fetch(`${backendUrl}/api/client/checkout`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ client_id: clientId, plan: client?.plan_type }) });
       const data = await res.json().catch(() => ({}));
       if (res.status === 409) { setCollectErr(data.message || 'This client already has an active subscription.'); return; }
       if (!res.ok || !data.url) throw new Error(data.message || data.error || 'Could not start checkout.');
       setCollectUrl(data.url); setCollectCopied(false);
+      fetchClientData();
     } catch (err: any) { setCollectErr(err.message || 'Could not start checkout.'); }
     finally { setCollectBusy(false); }
   };
@@ -908,9 +928,14 @@ export default function AgencyClientDetailPage() {
                 <p className="text-xs mb-3" style={{ color: theme.textMuted }}>
                   Put {client.business_name} on a paying plan. Generate a secure checkout link they open on their phone to enter a card, sitting with you in person (scan the code) or sent to them. They&apos;re billed ${(((client as any).effective_price_cents ?? getPlanPrice(client.plan_type, client)) / 100).toFixed(0)}/mo. Change the amount in Custom pricing below first if needed.
                 </p>
-                <button onClick={collectPayment} disabled={collectBusy} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
-                  {collectBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />} Generate payment link
-                </button>
+                <label className="block text-xs font-medium mb-1" style={{ color: theme.textMuted }}>Client&apos;s email (their receipt and checkout)</label>
+                <input value={collectEmail} onChange={(e) => { setCollectEmail(e.target.value); setCollectErr(null); }} placeholder="owner@theirbusiness.com" inputMode="email"
+                  className="w-full sm:max-w-sm rounded-lg px-3 py-2 text-sm mb-3" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                <div>
+                  <button onClick={collectPayment} disabled={collectBusy} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+                    {collectBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />} Generate payment link
+                  </button>
+                </div>
                 {collectErr && <p className="text-xs mt-2" style={{ color: '#ef4444' }}>{collectErr}</p>}
               </div>
             </div>

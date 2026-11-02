@@ -1311,22 +1311,25 @@ details[open] .faq-chev { transform: rotate(45deg); }
   transform-origin: center;
 }
 
-/* A slow band of TEAL light crossing the pile. Extended well past the scene
-   top and bottom so the beam reads as a full-height shaft instead of being
-   hard-cut partway down the section. */
+/* A soft teal livery streak crossing the pile. Masked top-and-bottom so it
+   fades out at both ends instead of hard-cutting mid-section, blurred so it
+   reads as a glow of brand turquoise (#01F5D1 / #00A19B), not a flat band. */
 .wls-sheen-clip {
   position: absolute;
-  left: 0; right: 0;
-  top: -40vh; bottom: -40vh;
+  inset: 0;
+  top: -22vh; bottom: -22vh;
   overflow: hidden;
   pointer-events: none;
   z-index: 3;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 20%, #000 80%, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 20%, #000 80%, transparent 100%);
 }
 .wls-sheen {
   position: absolute;
   top: 0; bottom: 0;
-  width: 46%;
-  background: linear-gradient(90deg, transparent, rgba(1, 245, 209, 0.14), transparent);
+  width: 44%;
+  background: linear-gradient(90deg, transparent, rgba(1, 245, 209, 0.22) 46%, rgba(0, 161, 155, 0.12) 58%, transparent);
+  filter: blur(8px);
 }
 
 
