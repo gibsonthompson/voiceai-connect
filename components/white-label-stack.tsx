@@ -188,9 +188,6 @@ export default function WhiteLabelStack() {
       {/* ───────── Animated (desktop, motion allowed) ───────── */}
       <div ref={wrapRef} className="wls-anim relative" style={{ height: '460vh' }}>
         <div className="sticky top-0 h-screen overflow-hidden flex items-center">
-          {/* Full-bleed teal light streak that crosses the whole section, behind
-              BOTH the copy and the pile, so it never hard-cuts at the column edge. */}
-          <div className="wls-beam" aria-hidden />
           <div className="w-full grid lg:grid-cols-12 gap-16 items-center relative" style={{ zIndex: 1 }}>
 
             {/* Beat copy (left). All five are in the DOM; they crossfade. */}
@@ -290,11 +287,6 @@ export default function WhiteLabelStack() {
                 </div>
               </div>
 
-              {/* Light sheen across the pile */}
-              <div className="wls-sheen-clip" aria-hidden>
-                <div ref={set('sheen')} className="wls-sheen" style={{ transform: 'translateX(-60%) skewX(-18deg)' }} />
-              </div>
-
               {/* Flows revealed on pull-back. Hairlines draw themselves. No glyphs. */}
               <div ref={set('flows')} className="absolute -left-4 top-2 bottom-2 hidden xl:flex flex-col justify-between py-8" style={{ opacity: 0 }}>
                 <div className="flex items-center gap-3">
@@ -307,6 +299,12 @@ export default function WhiteLabelStack() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Light sheen that sweeps the WHOLE section as you scroll, lighting
+              each element as it appears. Full-width, across the copy and the pile. */}
+          <div className="wls-sheen-clip" aria-hidden>
+            <div ref={set('sheen')} className="wls-sheen" style={{ transform: 'translateX(-60%) skewX(-18deg)' }} />
           </div>
 
           {/* Progress rail */}
