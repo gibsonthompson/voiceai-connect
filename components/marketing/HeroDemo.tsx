@@ -8,13 +8,13 @@
 //
 // Phase flow:
 //   idle/building -> ready (shows "What your receptionist already knows" from
-//   the scrape, BEFORE calling) -> connecting -> live (improved live transcript
-//   with interim text + merged bubbles) -> ended -> (error)
+//   the scrape, BEFORE calling) -> connecting -> live (live transcript with
+//   interim text merged into the active bubble) -> ended (shows a count recap
+//   plus the platform capabilities an agency resells) -> (error)
 //
 // Backend returns (POST /api/public/demo-receptionist):
 //   { success, business_name, industry, city, greeting, read_website,
 //     website_url, facts[], assistant }
-//   `assistant` is a full inline transient VAPI assistant (no number, no acct).
 // ============================================================================
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -23,7 +23,7 @@ import { ArrowUp, Globe, Mic, Phone, PhoneOff, Loader2, Sparkles, AlertTriangle,
 
 const EM = '#01f5d1';        // primary brand accent (matches --color-em-400 / text-em / btn-em)
 const EM_INK = '#04120f';    // text on top of the teal accent
-const MAX_SECONDS = 240;     // 4 minute demo cap
+const MAX_SECONDS = 240;     // silent 4 minute cap on the public demo (no countdown shown)
 const EXAMPLES = ['Dental office', 'HVAC company', 'Med spa', 'Law firm'];
 
 const STEPS: [string, string, string][] = [
@@ -32,8 +32,19 @@ const STEPS: [string, string, string][] = [
   ['3', 'Call it and hear it', 'Pick up and talk to the receptionist, the same thing a caller gets on day one.'],
 ];
 
+// Shown after the call: the highest-value things an agency is actually reselling.
+const EXTRAS: string[] = [
+  'No A2P registration or carrier approval. Every client is live in under a minute.',
+  'Texts the business owner a summary after every call.',
+  'Two-way texting, so callers can reply and the AI keeps the conversation going.',
+  'Books appointments into Google Calendar during the call.',
+  'Answers in English and Spanish automatically.',
+  'Follow-up workflows you set up for new leads, missed calls, and bookings.',
+];
+
 type Phase = 'idle' | 'building' | 'ready' | 'connecting' | 'live' | 'ended' | 'error';
 interface Line { role: 'user' | 'assistant'; text: string }
+interface Turn { role: 'user' | 'assistant'; text: string; tail?: string }
 interface Biz { name: string; industry: string; city: string; greeting: string; facts: string[]; readWebsite: boolean; websiteUrl: string | null }
 
 function domainOf(url: string | null): string {
@@ -59,11 +70,21 @@ export default function HeroDemo() {
   const timerRef = useRef<any>(null);
   const transcriptRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const stopTimer = () => { if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; } };
   const endCall = useCallback(() => { try { vapiRef.current?.stop(); } catch { /* ignore */ } stopTimer(); }, []);
   useEffect(() => () => { endCall(); }, [endCall]);
   useEffect(() => { if (transcriptRef.current) transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight; }, [lines, interim]);
+
+  // Keep the demo card in view across the result/call transitions, so clicking
+  // "Talk to it" (which changes the card's height) never leaves the viewport
+  // parked in the next section.
+  useEffect(() => {
+    if ((phase === 'ready' || phase === 'connecting') && cardRef.current) {
+      cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [phase]);
 
   async function build(q: string) {
     const text = (q || '').trim();
@@ -104,7 +125,6 @@ export default function HeroDemo() {
         const text = String(m.transcript).trim();
         if (!text) return;
         if (m.transcriptType === 'partial') {
-          // Interim text updates live as the speaker talks (keeps the transcript current).
           setInterim({ role, text });
         } else if (m.transcriptType === 'final') {
           // Merge a finalized chunk into the previous bubble when the same speaker
@@ -127,11 +147,20 @@ export default function HeroDemo() {
 
   const toggleMute = () => { if (!vapiRef.current) return; const n = !muted; vapiRef.current.setMuted(n); setMuted(n); };
   const reset = () => { endCall(); setPhase('idle'); setBiz(null); setAssistant(null); setQuery(''); setLines([]); setInterim(null); setSeconds(0); setError(''); };
-  const remaining = `${Math.floor((MAX_SECONDS - seconds) / 60)}:${String((MAX_SECONDS - seconds) % 60).padStart(2, '0')}`;
+  const mmss = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
   const hasText = !!query.trim();
   const onConsole = phase === 'idle' || phase === 'building';
   const inCall = phase === 'connecting' || phase === 'live';
   const domain = domainOf(biz?.websiteUrl ?? null);
+
+  // Build the rendered transcript: finalized turns, with the live interim text
+  // folded into the active speaker's bubble (never a separate flickering bubble).
+  const turns: Turn[] = lines.map((l) => ({ role: l.role, text: l.text }));
+  if (interim && interim.text) {
+    const last = turns[turns.length - 1];
+    if (last && last.role === interim.role) last.tail = interim.text;
+    else turns.push({ role: interim.role, text: '', tail: interim.text });
+  }
 
   return (
     <section className="relative bg-ink py-24 sm:py-32 lg:py-40">
@@ -226,102 +255,120 @@ export default function HeroDemo() {
           </div>
         )}
 
-        {/* ── READY / CALL: knowledge panel, then the live call ───────────── */}
+        {/* ── READY / CALL / ENDED ────────────────────────────────────────── */}
         {biz && !onConsole && phase !== 'error' && (
-          <div className="mt-11 max-w-[660px] mx-auto rounded-2xl text-left overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
+          <div className="mt-11">
+            <div ref={cardRef} className="scroll-mt-28 max-w-[660px] mx-auto rounded-2xl text-left overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
 
-            {/* Header: who it is, and that it read the site */}
-            <div className="flex items-start gap-3 p-6 sm:p-7 pb-5">
-              <div className="h-11 w-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(1,245,209,0.12)' }}><Sparkles className="h-5 w-5" style={{ color: EM }} /></div>
-              <div className="min-w-0 flex-1">
-                <p className="text-white font-semibold text-[17px] leading-tight">{biz.name}&rsquo;s receptionist</p>
-                <p className="text-[13px] mt-0.5 text-white/55">
-                  {[biz.industry, biz.city].filter(Boolean).join(' · ') || 'Ready to take calls'}
-                </p>
+              {/* Header */}
+              <div className="flex items-start gap-3 p-6 sm:p-7 pb-5">
+                <div className="h-11 w-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(1,245,209,0.12)' }}><Sparkles className="h-5 w-5" style={{ color: EM }} /></div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-white font-semibold text-[17px] leading-tight">{biz.name}&rsquo;s receptionist</p>
+                  <p className="text-[13px] mt-0.5 text-white/55">{[biz.industry, biz.city].filter(Boolean).join(' · ') || 'Ready to take calls'}</p>
+                </div>
+                {inCall ? (
+                  <span className="inline-flex items-center gap-2 flex-shrink-0">
+                    <span className="h-2 w-2 rounded-full animate-pulse" style={{ backgroundColor: phase === 'live' ? '#ff6b6b' : 'rgba(255,255,255,0.4)', boxShadow: phase === 'live' ? '0 0 0 3px rgba(255,107,107,0.2)' : 'none' }} />
+                    <span className="text-[12.5px] font-medium text-white/65 whitespace-nowrap tabular-nums">{phase === 'connecting' ? 'Connecting' : mmss}</span>
+                  </span>
+                ) : biz.readWebsite && domain ? (
+                  <span className="inline-flex items-center gap-1.5 flex-shrink-0 rounded-full px-2.5 py-1 text-[11.5px]" style={{ backgroundColor: 'rgba(1,245,209,0.1)', color: EM, border: '1px solid rgba(1,245,209,0.22)' }}>
+                    <Check className="h-3 w-3" /> Read {domain}
+                  </span>
+                ) : null}
               </div>
-              {inCall ? (
-                <span className="inline-flex items-center gap-2 flex-shrink-0">
-                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: phase === 'live' ? '#ff6b6b' : 'rgba(255,255,255,0.4)', boxShadow: phase === 'live' ? '0 0 0 3px rgba(255,107,107,0.2)' : 'none' }} />
-                  <span className="text-[12.5px] font-medium text-white/60 whitespace-nowrap">{phase === 'connecting' ? 'Connecting' : `${remaining} left`}</span>
-                </span>
-              ) : biz.readWebsite && domain ? (
-                <span className="inline-flex items-center gap-1.5 flex-shrink-0 rounded-full px-2.5 py-1 text-[11.5px]" style={{ backgroundColor: 'rgba(1,245,209,0.1)', color: EM, border: '1px solid rgba(1,245,209,0.22)' }}>
-                  <Check className="h-3 w-3" /> Read {domain}
-                </span>
-              ) : null}
+
+              {/* READY: what it already knows + the greeting */}
+              {phase === 'ready' && (
+                <div className="px-6 sm:px-7">
+                  {biz.facts.length > 0 && (
+                    <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                      <p className="text-[12px] font-semibold uppercase tracking-wide text-white/45 mb-3">What it already knows</p>
+                      <ul className="space-y-2.5">
+                        {biz.facts.map((f, i) => (
+                          <li key={i} className="flex items-start gap-2.5 text-[14px] leading-relaxed text-white/80">
+                            <Check className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: EM }} strokeWidth={2.5} />
+                            <span>{f}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {biz.greeting && (
+                    <div className="mt-4">
+                      <p className="text-[12px] text-white/40 mb-1.5">It answers the phone with</p>
+                      <p className="text-white/85 text-[15px] leading-relaxed rounded-xl px-4 py-3" style={{ backgroundColor: 'rgba(1,245,209,0.06)', border: '1px solid rgba(1,245,209,0.16)' }}>
+                        &ldquo;{biz.greeting}&rdquo;
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* CALL / ENDED: the live transcript */}
+              {(inCall || phase === 'ended') && (
+                <div className="px-6 sm:px-7">
+                  <div ref={transcriptRef} className="min-h-[240px] max-h-[340px] overflow-y-auto space-y-3 py-1">
+                    {turns.length === 0 ? (
+                      <div className="min-h-[240px] flex items-center justify-center">
+                        <p className="text-white/45 text-[14px] text-center">
+                          {phase === 'connecting' ? 'Connecting your call.' : phase === 'ended' ? 'Call ended.' : 'Say hello, ask about hours, or try to book an appointment.'}
+                        </p>
+                      </div>
+                    ) : (
+                      turns.map((t, i) => <Bubble key={i} turn={t} />)
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {error && <p className="text-[13px] px-6 sm:px-7 mt-2" style={{ color: '#ff6b6b' }}>{error}</p>}
+
+              {/* Controls */}
+              <div className="flex flex-wrap items-center gap-3 p-6 sm:p-7 pt-5">
+                {phase === 'ready' && (
+                  <>
+                    <button onClick={startCall} className="inline-flex items-center gap-2 rounded-xl px-6 py-3.5 text-[15px] font-semibold transition-all hover:brightness-105 active:scale-[0.98]" style={{ backgroundColor: EM, color: EM_INK, boxShadow: '0 10px 28px -12px rgba(1,245,209,0.6)' }}><Phone className="h-5 w-5" /> Talk to it</button>
+                    <button onClick={reset} className="text-[13px] text-white/50 hover:text-white/80 transition-colors">Try another business</button>
+                    <span className="ml-auto text-[12px] text-white/40 hidden sm:block">Uses your mic. No signup.</span>
+                  </>
+                )}
+                {inCall && (
+                  <>
+                    <button onClick={endCall} className="inline-flex items-center gap-2 rounded-xl px-5 py-3.5 text-[15px] font-semibold transition-colors" style={{ backgroundColor: 'rgba(255,107,107,0.15)', color: '#ff6b6b', border: '1px solid rgba(255,107,107,0.3)' }}><PhoneOff className="h-5 w-5" /> End call</button>
+                    {phase === 'live' && <button onClick={toggleMute} className="inline-flex items-center gap-2 rounded-xl px-4 py-3.5 text-[15px] font-medium transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: muted ? EM : '#fff', border: '1px solid rgba(255,255,255,0.12)' }}><Mic className="h-5 w-5" /> {muted ? 'Unmute' : 'Mute'}</button>}
+                  </>
+                )}
+                {phase === 'ended' && (
+                  <>
+                    <button onClick={startCall} className="inline-flex items-center gap-2 rounded-xl px-5 py-3 text-[14px] font-semibold transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: '#fff', border: '1px solid rgba(255,255,255,0.12)' }}><Phone className="h-4 w-4" /> Call again</button>
+                    <button onClick={reset} className="text-[13px] text-white/50 hover:text-white/80 transition-colors">Try another business</button>
+                  </>
+                )}
+              </div>
             </div>
 
-            {/* READY: what it already knows + the greeting */}
-            {phase === 'ready' && (
-              <div className="px-6 sm:px-7">
-                {biz.facts.length > 0 && (
-                  <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                    <p className="text-[12px] font-semibold uppercase tracking-wide text-white/45 mb-3">What it already knows</p>
-                    <ul className="space-y-2.5">
-                      {biz.facts.map((f, i) => (
-                        <li key={i} className="flex items-start gap-2.5 text-[14px] leading-relaxed text-white/80">
-                          <Check className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: EM }} strokeWidth={2.5} />
-                          <span>{f}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {biz.greeting && (
-                  <div className="mt-4">
-                    <p className="text-[12px] text-white/40 mb-1.5">It answers the phone with</p>
-                    <p className="text-white/85 text-[15px] leading-relaxed rounded-xl px-4 py-3" style={{ backgroundColor: 'rgba(1,245,209,0.06)', border: '1px solid rgba(1,245,209,0.16)' }}>
-                      &ldquo;{biz.greeting}&rdquo;
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* CALL: the live transcript */}
-            {(inCall || phase === 'ended') && (
-              <div className="px-6 sm:px-7">
-                <div ref={transcriptRef} className="max-h-[300px] overflow-y-auto space-y-3 py-1">
-                  {lines.length === 0 && !interim ? (
-                    <p className="text-white/45 text-[14px] text-center py-8">
-                      {phase === 'connecting' ? 'Connecting your call.' : phase === 'ended' ? 'Call ended. Build another, or start your trial.' : 'Say hello, ask about hours, or try to book an appointment.'}
-                    </p>
-                  ) : (
-                    <>
-                      {lines.map((l, i) => <Bubble key={i} line={l} />)}
-                      {interim && <Bubble line={interim} live />}
-                    </>
-                  )}
+            {/* ENDED: the extra value, what every client they onboard also gets */}
+            {phase === 'ended' && (
+              <div className="mt-12 max-w-3xl mx-auto">
+                <p className="font-display font-medium text-white mx-auto" style={{ fontSize: 'clamp(1.375rem, 2.6vw, 1.9rem)', letterSpacing: '-0.02em', lineHeight: 1.15 }}>
+                  That was one call. Every client you onboard also gets:
+                </p>
+                <div className="mt-7 grid sm:grid-cols-2 gap-x-8 gap-y-4 text-left">
+                  {EXTRAS.map((x) => (
+                    <div key={x} className="flex items-start gap-3">
+                      <span className="h-6 w-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ backgroundColor: 'rgba(1,245,209,0.1)', border: '1px solid rgba(1,245,209,0.25)' }}><Check className="h-3.5 w-3.5" style={{ color: EM }} strokeWidth={2.5} /></span>
+                      <span className="text-[14.5px] leading-relaxed text-white/75">{x}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-x-5 gap-y-3">
+                  <Link href="/signup" className="btn btn-em">Start your free trial <ArrowUpRight className="w-3.5 h-3.5" /></Link>
+                  <span className="text-[14px] text-white/50">It is the same build you just did, for real.</span>
                 </div>
               </div>
             )}
-
-            {error && <p className="text-[13px] px-6 sm:px-7 mt-2" style={{ color: '#ff6b6b' }}>{error}</p>}
-
-            {/* Controls */}
-            <div className="flex flex-wrap items-center gap-3 p-6 sm:p-7 pt-5">
-              {phase === 'ready' && (
-                <>
-                  <button onClick={startCall} className="inline-flex items-center gap-2 rounded-xl px-6 py-3.5 text-[15px] font-semibold transition-all hover:brightness-105 active:scale-[0.98]" style={{ backgroundColor: EM, color: EM_INK, boxShadow: '0 10px 28px -12px rgba(1,245,209,0.6)' }}><Phone className="h-5 w-5" /> Talk to it</button>
-                  <button onClick={reset} className="text-[13px] text-white/50 hover:text-white/80 transition-colors">Try another business</button>
-                  <span className="ml-auto text-[12px] text-white/40 hidden sm:block">Uses your mic. 4 minutes, no signup.</span>
-                </>
-              )}
-              {inCall && (
-                <>
-                  <button onClick={endCall} className="inline-flex items-center gap-2 rounded-xl px-5 py-3.5 text-[15px] font-semibold transition-colors" style={{ backgroundColor: 'rgba(255,107,107,0.15)', color: '#ff6b6b', border: '1px solid rgba(255,107,107,0.3)' }}><PhoneOff className="h-5 w-5" /> End call</button>
-                  {phase === 'live' && <button onClick={toggleMute} className="inline-flex items-center gap-2 rounded-xl px-4 py-3.5 text-[15px] font-medium transition-colors" style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: muted ? EM : '#fff', border: '1px solid rgba(255,255,255,0.12)' }}><Mic className="h-5 w-5" /> {muted ? 'Unmute' : 'Mute'}</button>}
-                </>
-              )}
-              {phase === 'ended' && (
-                <>
-                  <Link href="/signup" className="inline-flex items-center gap-2 rounded-xl px-6 py-3.5 text-[15px] font-semibold transition-all hover:brightness-105" style={{ backgroundColor: EM, color: EM_INK, boxShadow: '0 10px 28px -12px rgba(1,245,209,0.6)' }}>Start your free trial <ArrowUpRight className="h-4 w-4" /></Link>
-                  <button onClick={startCall} className="text-[13px] text-white/60 hover:text-white transition-colors">Call again</button>
-                  <button onClick={reset} className="text-[13px] text-white/50 hover:text-white/80 transition-colors">Try another business</button>
-                </>
-              )}
-            </div>
           </div>
         )}
 
@@ -337,9 +384,10 @@ export default function HeroDemo() {
   );
 }
 
-// A single transcript turn, as a chat bubble aligned by speaker.
-function Bubble({ line, live }: { line: Line; live?: boolean }) {
-  const isUser = line.role === 'user';
+// A single transcript turn as a chat bubble aligned by speaker. `tail` is the
+// live (not-yet-final) text, shown faded and continuous with the bubble.
+function Bubble({ turn }: { turn: Turn }) {
+  const isUser = turn.role === 'user';
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div
@@ -347,12 +395,12 @@ function Bubble({ line, live }: { line: Line; live?: boolean }) {
         style={{
           backgroundColor: isUser ? 'rgba(255,255,255,0.06)' : 'rgba(1,245,209,0.08)',
           border: `1px solid ${isUser ? 'rgba(255,255,255,0.1)' : 'rgba(1,245,209,0.18)'}`,
-          opacity: live ? 0.72 : 1,
         }}
       >
         <p className="text-[11px] font-semibold mb-1" style={{ color: isUser ? 'rgba(255,255,255,0.4)' : EM }}>{isUser ? 'You' : 'Receptionist'}</p>
         <p className="text-[14.5px] leading-relaxed" style={{ color: isUser ? 'rgba(255,255,255,0.85)' : '#fff' }}>
-          {line.text}{live && <span className="inline-block ml-1 animate-pulse">…</span>}
+          {turn.text}
+          {turn.tail ? <span style={{ opacity: 0.55 }}>{turn.text ? ' ' : ''}{turn.tail}</span> : null}
         </p>
       </div>
     </div>
