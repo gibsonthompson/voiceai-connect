@@ -234,7 +234,27 @@ export default function DemoPage() {
   const demoPhone = formatPhoneDisplay(rawDemo);
   const demoHref = telHref(rawDemo);
   const cs = agency.display_currency === 'GBP' ? '£' : agency.display_currency === 'EUR' ? '€' : '$';
-  const lowestPrice = agency.price_starter ? Math.round(agency.price_starter / 100) : 49;
+  // "Starting at" must reflect the agency's REAL lowest plan, the same source the
+  // marketing site uses (agency.plans, visible + priced) rather than the legacy
+  // price_starter column, which goes stale and is what showed a wrong $99 here.
+  // Falls back to the marketing_config pricing tiers, then price_starter, then 49,
+  // so a brand-new agency with no plans configured still shows something sane.
+  const _plans: any[] = Array.isArray((agency as any)?.plans) ? (agency as any).plans : [];
+  const _visiblePlanPrices = _plans
+    .filter((p: any) => p && p.visible && p.price_cents != null)
+    .map((p: any) => Math.round(p.price_cents / 100));
+  const _cfgPrices = Array.isArray((agency as any)?.marketing_config?.pricing)
+    ? (agency as any).marketing_config.pricing
+        .map((t: any) => Number(t?.price))
+        .filter((n: number) => Number.isFinite(n) && n > 0)
+    : [];
+  const lowestPrice = _visiblePlanPrices.length > 0
+    ? Math.min(..._visiblePlanPrices)
+    : _cfgPrices.length > 0
+      ? Math.min(..._cfgPrices)
+      : agency.price_starter
+        ? Math.round(agency.price_starter / 100)
+        : 49;
   const homeUrl = resolveHomepageUrl(agency);
 
   const themeVars = {

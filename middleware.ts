@@ -180,6 +180,10 @@ export async function middleware(request: NextRequest) {
     requestHeaders.set('x-agency-id', agency.id);
     requestHeaders.set('x-agency-name', agency.name);
     requestHeaders.set('x-agency-slug', agency.slug || '');
+    // Original public path (before the /agency-site rewrite) so the agency-site
+    // layout can emit a per-page canonical on the agency's own host instead of
+    // the platform's. Without this the layout only knows the rewritten path.
+    requestHeaders.set('x-pathname', pathname);
 
     // Static marketing routes that live under /agency-site/.
     //

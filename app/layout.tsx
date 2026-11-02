@@ -116,7 +116,6 @@ export default function RootLayout({
         {/* Static favicon links for marketing site. DynamicFavicon overrides href on dashboard pages. */}
         <link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png" />
         <link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png" />
-        <link rel="alternate" type="application/rss+xml" title="VoiceAI Connect Blog" href="https://myvoiceaiconnect.com/feed.xml" />
         <meta name="application-name" content="VoiceAI" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />

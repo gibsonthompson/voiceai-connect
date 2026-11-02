@@ -786,7 +786,6 @@ function Footer({ config }: { config: MarketingConfig }) {
         </div>
         <div className="bsd-footer-bottom">
           <p>&copy; {new Date().getFullYear()} {branding.name}. All rights reserved.</p>
-          <p>A2P 10DLC compliant</p>
         </div>
       </div>
     </footer>

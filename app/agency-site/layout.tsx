@@ -82,9 +82,20 @@ export async function generateMetadata(): Promise<Metadata> {
   // on the agency host, not the platform.
   const base = host ? { metadataBase: new URL(`https://${host}`) } : {};
 
+  // Canonical + alternates must point at the AGENCY's own host, not the platform.
+  // The root layout hardcodes the canonical to myvoiceaiconnect.com and a
+  // "VoiceAI Connect Blog" RSS alternate; a white-label page that set no
+  // alternates of its own inherited both, telling Google its canonical home was
+  // the platform and advertising the platform's feed. Setting `alternates` here
+  // replaces that inherited object wholesale, so each agency page gets its own
+  // canonical and the platform RSS alternate is dropped on white-label hosts.
+  const canonicalPath = headersList.get('x-pathname') || '/';
+  const alternates = host ? { alternates: { canonical: `https://${host}${canonicalPath}` } } : {};
+
   if (!agency) {
     return {
       ...base,
+      ...alternates,
       title: { absolute: 'AI Phone Answering' },
       description: 'Professional AI receptionist that answers every call 24/7.',
     };
@@ -104,6 +115,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     ...base,
+    ...alternates,
     title: { absolute: title },
     description,
     openGraph: {
@@ -122,14 +134,12 @@ export async function generateMetadata(): Promise<Metadata> {
       title,
       description,
     },
-    ...(agency.logo_url
-      ? {
-          icons: {
-            icon: agency.logo_url,
-            apple: agency.logo_url,
-          },
-        }
-      : {}),
+    // icons intentionally NOT set here. Pointing them at agency.logo_url emitted
+    // the agency's WIDE wordmark as the browser-tab favicon, squished into the
+    // square tab and unreadable. Omitting the override lets the file-convention
+    // routes (app/agency-site/icon.tsx + apple-icon.tsx) and the host-aware
+    // /api/agency-favicon route render the SQUARE app icon (app_icon_url, falling
+    // back to the contained logo) instead.
     ...(googleVerification.length ? { verification: { google: googleVerify } } : {}),
     ...(Object.keys(otherMeta).length ? { other: otherMeta } : {}),
   };

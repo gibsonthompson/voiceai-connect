@@ -383,7 +383,7 @@ function AppShowcaseSection({ config, contrastColors }: { config: MarketingConfi
                 <strong>{branding.name}</strong>
                 <p>New call from Sarah M. at 2:47pm</p>
                 <p><strong>Requested:</strong> Service estimate<br/><strong>Phone:</strong> (555) 123-4567<br/><strong>Appointment booked:</strong> Thursday at 10am</p>
-                <a href="#" className="sms-link">View Full Call in App →</a>
+                <span className="sms-link">View Full Call in App</span>
               </div>
             </div>
           </div>
@@ -483,7 +483,6 @@ function ComparisonSection({ config }: { config: MarketingConfig }) {
     { label: 'Available', ours: '24/7', human: 'Business hours', ruby: '24/7', vm: '24/7' },
     { label: 'Answers live', ours: '✓', human: 'If free', ruby: 'Usually', vm: '✗' },
     { label: 'Books to Google Calendar', ours: '✓', human: '✓', ruby: '✓', vm: '✗' },
-    { label: 'Google Calendar', ours: '✓', human: '✓', ruby: '✗', vm: '✗' },
     { label: 'Text Summaries', ours: '✓', human: '✗', ruby: '✗', vm: '✗' },
     { label: 'Mobile App', ours: '✓', human: '✗', ruby: '✗', vm: '✗' },
     { label: 'Trained on YOUR Business', ours: '✓', human: 'After weeks', ruby: 'Generic', vm: 'N/A' },
@@ -781,7 +780,6 @@ function Footer({ config }: { config: MarketingConfig }) {
         </div>
         <div className="footer-bottom">
           <p>&copy; {new Date().getFullYear()} {branding.name}. All Rights Reserved.</p>
-          <p>A2P 10DLC Compliant</p>
         </div>
       </div>
     </footer>
