@@ -18,7 +18,7 @@ import { ArrowUp, Mic, Phone, PhoneOff, Loader2, Sparkles, AlertTriangle, ArrowU
 
 const EM = '#00E3AA';
 const MAX_SECONDS = 240; // 4-minute demo cap
-const EXAMPLES = ['A dental office in Austin', 'An HVAC company', 'A law firm', 'A med spa'];
+const EXAMPLES = ['Dental office', 'HVAC company', 'Med spa', 'Law firm'];
 
 type Phase = 'idle' | 'building' | 'ready' | 'connecting' | 'live' | 'ended' | 'error';
 interface Line { role: 'user' | 'assistant'; text: string }
@@ -94,54 +94,46 @@ export default function HeroDemo() {
     <section className="relative bg-ink py-16 sm:py-24 lg:py-32 border-t border-white/[0.04] overflow-hidden">
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(1100px 520px at 50% 0%, rgba(0,227,170,0.10), transparent 70%)' }} />
       <div className="max-w-[760px] mx-auto px-5 sm:px-6 relative text-center">
-        <span className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 mb-5 text-[12px] font-medium text-white/85" style={{ border: '1px solid rgba(0,227,170,0.28)', backgroundColor: 'rgba(0,227,170,0.08)' }}>
-          <span className="relative flex h-1.5 w-1.5">
-            <span className="absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping" style={{ backgroundColor: EM }} />
-            <span className="relative inline-flex h-1.5 w-1.5 rounded-full" style={{ backgroundColor: EM }} />
-          </span>
-          Try it live · no signup
-        </span>
-        <h2 className="t-h2 text-white mx-auto" style={{ fontSize: 'clamp(1.45rem, 3.1vw, 2.05rem)', lineHeight: 1.1, maxWidth: '26ch' }}>Build a receptionist for your business. Then call it.</h2>
-        <p className="mt-4 sm:mt-5 text-[14px] sm:text-[15px] leading-relaxed text-white/55 max-w-lg mx-auto">Type your business or paste your website. In seconds you get a working AI receptionist that already knows it, then pick up and talk to it. This is exactly what your clients get.</p>
-
-        {/* IDLE / BUILDING: the centered prompt bar */}
+        {/* LANDING (idle/building): a literal copy of the AI Lab builder's
+            prompt screen — headline, prompt bar, helper line, example chips. */}
         {(phase === 'idle' || phase === 'building') && (
-          <div className="mt-7 sm:mt-10">
-            <form onSubmit={(e) => { e.preventDefault(); build(query); }} className="relative max-w-2xl mx-auto">
+          <div className="w-full mx-auto" style={{ maxWidth: 680 }}>
+            <h2 className="text-center font-bold tracking-tight mb-8 text-white" style={{ fontSize: 'clamp(30px, 5vw, 42px)', lineHeight: 1.1 }}>
+              Let&rsquo;s Build Your Receptionist
+            </h2>
+            <form onSubmit={(e) => { e.preventDefault(); build(query); }} className="relative">
               <input
                 value={query}
                 onChange={(e) => { setQuery(e.target.value); setError(''); }}
-                placeholder="Describe your business, or paste your website"
+                placeholder="Describe the business, or paste its website"
                 autoComplete="off"
                 disabled={phase === 'building'}
-                className="w-full rounded-2xl sm:rounded-[26px] pl-5 pr-14 sm:pr-16 py-4 sm:py-[18px] text-[14px] sm:text-[15px] text-white placeholder-white/40 focus:outline-none transition-colors text-left"
+                className="w-full rounded-[28px] pl-6 pr-16 py-5 text-[16px] text-white placeholder-white/40 focus:outline-none transition-colors text-left"
                 style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.14)' }}
                 onFocus={(e) => (e.currentTarget.style.borderColor = EM)}
                 onBlur={(e) => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)')}
               />
               <button type="submit" aria-label="Build" disabled={phase === 'building' || !hasText}
-                className="absolute right-2 sm:right-2.5 top-1/2 -translate-y-1/2 h-10 w-10 sm:h-11 sm:w-11 rounded-full inline-flex items-center justify-center transition-all disabled:opacity-50"
-                style={{ backgroundColor: EM, color: '#04110D' }}>
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full inline-flex items-center justify-center transition-all disabled:cursor-default"
+                style={{ backgroundColor: hasText ? EM : 'rgba(255,255,255,0.08)', color: hasText ? '#04110D' : 'rgba(255,255,255,0.5)', opacity: phase === 'building' ? 0.7 : 1 }}>
                 {phase === 'building' ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowUp className="h-5 w-5" />}
               </button>
             </form>
-
-            {phase === 'building' ? (
-              <p className="text-[13px] mt-4 text-white/50">Reading the site and building the receptionist…</p>
-            ) : (
-              <div className="flex flex-wrap items-center justify-center gap-2 mt-4 sm:mt-5">
-                {EXAMPLES.map((ex) => (
-                  <button key={ex} type="button" onClick={() => { setQuery(ex); build(ex); }}
-                    className="rounded-full px-3.5 py-1.5 sm:py-2 text-[12.5px] sm:text-[13px] text-white/60 transition-colors"
-                    style={{ border: '1px solid rgba(255,255,255,0.14)' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = EM; e.currentTarget.style.color = '#fff'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; }}>
-                    {ex}
-                  </button>
-                ))}
-              </div>
-            )}
-            {error && <p className="text-[13px] mt-4" style={{ color: '#ff6b6b' }}>{error}</p>}
+            <p className="text-center text-[13px] mt-4 text-white/50">
+              {phase === 'building' ? 'Reading the site and building the receptionist…' : 'Paste a website and we’ll read it to fill in the details.'}
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
+              {EXAMPLES.map((ex) => (
+                <button key={ex} type="button" onClick={() => { setQuery(ex); build(ex); }} disabled={phase === 'building'}
+                  className="rounded-full px-4 py-2 text-[14px] text-white/60 transition-colors disabled:opacity-50"
+                  style={{ border: '1px solid rgba(255,255,255,0.14)' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = EM; e.currentTarget.style.color = '#fff'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; }}>
+                  {ex}
+                </button>
+              ))}
+            </div>
+            {error && <p className="text-center text-[13px] mt-4" style={{ color: '#ff6b6b' }}>{error}</p>}
           </div>
         )}
 
