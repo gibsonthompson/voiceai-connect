@@ -1317,39 +1317,34 @@ details[open] .faq-chev { transform: rotate(45deg); }
    with no hard edge or column seam anywhere. */
 .wls-beam {
   position: absolute;
-  inset: -10% -5%;
+  inset: -10% 0;
   z-index: 0;
   pointer-events: none;
   background:
-    linear-gradient(104deg,
-      transparent 40%,
-      rgba(1, 245, 209, 0.18) 49%,
-      rgba(0, 227, 170, 0.14) 52%,
-      rgba(0, 161, 155, 0.08) 56%,
-      transparent 64%);
-  -webkit-mask-image: radial-gradient(135% 120% at 54% 22%, #000 30%, transparent 86%);
-  mask-image: radial-gradient(135% 120% at 54% 22%, #000 30%, transparent 86%);
-  filter: blur(14px);
+    linear-gradient(102deg,
+      transparent 22%,
+      rgba(1, 245, 209, 0.13) 40%,
+      rgba(0, 227, 170, 0.18) 50%,
+      rgba(0, 161, 155, 0.10) 60%,
+      transparent 80%);
+  -webkit-mask-image: radial-gradient(150% 130% at 50% 25%, #000 42%, transparent 92%);
+  mask-image: radial-gradient(150% 130% at 50% 25%, #000 42%, transparent 92%);
+  filter: blur(22px);
 }
 
-/* The original band that swept the pile — kept very subtle now that the
-   full-bleed .wls-beam carries the light, so it no longer boxes the column. */
+/* The original band that swept the pile is retired — the full-bleed .wls-beam
+   now carries all the light. The element stays (the scroll script references it)
+   but paints nothing, so it never boxes the column again. */
 .wls-sheen-clip {
   position: absolute;
   inset: 0;
-  top: -22vh; bottom: -22vh;
-  overflow: hidden;
   pointer-events: none;
   z-index: 3;
-  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 20%, #000 80%, transparent 100%);
-  mask-image: linear-gradient(180deg, transparent 0%, #000 20%, #000 80%, transparent 100%);
 }
 .wls-sheen {
   position: absolute;
-  top: 0; bottom: 0;
-  width: 44%;
-  background: linear-gradient(90deg, transparent, rgba(1, 245, 209, 0.08) 48%, transparent);
-  filter: blur(10px);
+  inset: 0;
+  background: none;
 }
 
 
