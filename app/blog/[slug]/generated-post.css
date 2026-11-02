@@ -144,7 +144,7 @@
   position: absolute;
   left: 0;
   top: 0;
-  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   font-weight: 500;
   font-size: 0.95rem;
   color: #0a5a54;
@@ -174,7 +174,7 @@
 
 /* ── INLINE CODE ── */
 .article-content div code {
-  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   font-size: 0.9em;
   padding: 0.15em 0.4em;
   background: rgba(0, 0, 0, 0.05);
@@ -254,7 +254,7 @@
   background: rgba(0, 161, 155, 0.08);
   border: 1px solid rgba(0, 161, 155, 0.22);
   border-radius: 6px;
-  font-family: 'Geist Mono', ui-monospace, monospace;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   font-size: 0.92em;
   font-weight: 500;
   color: #0a5a54;

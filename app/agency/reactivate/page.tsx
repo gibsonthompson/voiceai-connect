@@ -251,7 +251,7 @@ export default function AgencyReactivatePage() {
 
           <span
             className="inline-flex items-center gap-2 mb-5"
-            style={{ fontFamily: "'Geist Mono', ui-monospace, monospace", fontSize: '11px', letterSpacing: '0.14em', textTransform: 'uppercase', color: t.textFaint, padding: '5px 12px', borderRadius: '999px', border: `1px solid ${t.cardBorder}` }}
+            style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", fontSize: '11px', letterSpacing: '0.14em', textTransform: 'uppercase', color: t.textFaint, padding: '5px 12px', borderRadius: '999px', border: `1px solid ${t.cardBorder}` }}
           >
             <span style={{ width: '6px', height: '6px', borderRadius: '999px', backgroundColor: '#fbbf24', display: 'inline-block' }} />
             Account paused

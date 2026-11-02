@@ -34,7 +34,7 @@ interface ChatMessage { role: 'user' | 'assistant'; content: string; }
    ═══════════════════════════════════════════════════════════════════════════ */
 
 const font = "'Geist', system-ui, sans-serif";
-const mono = "'Geist Mono', ui-monospace, monospace";
+const mono = "'Plus Jakarta Sans', system-ui, sans-serif";
 const em = '#10b981';
 // Shared text treatment for solid green buttons: bold white with a crisp black outline.
 const greenBtnText = { color: '#04120f', fontWeight: 800 } as React.CSSProperties;
