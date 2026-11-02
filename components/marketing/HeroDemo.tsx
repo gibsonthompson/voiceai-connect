@@ -104,18 +104,20 @@ export default function HeroDemo() {
   const onConsole = phase === 'idle' || phase === 'building';
 
   return (
-    <section className="relative bg-ink py-20 sm:py-28 lg:py-32">
+    <section className="relative bg-ink py-24 sm:py-32 lg:py-40">
       {/* Soft ambient teal glow. Positioned to bleed UP past the top of this
           section (no hard divider line), so the green wash carries into the
           section above instead of starting at a seam. */}
-      <div className="absolute left-0 right-0 pointer-events-none" style={{ top: '-240px', height: '780px', background: 'radial-gradient(900px 520px at 50% 40%, rgba(1,245,209,0.13), transparent 72%)' }} />
+      <div className="absolute left-0 right-0 pointer-events-none" style={{ top: '-260px', height: '860px', background: 'radial-gradient(1100px 560px at 50% 38%, rgba(1,245,209,0.13), transparent 72%)' }} />
 
-      <div className="max-w-[760px] mx-auto px-5 sm:px-6 relative text-center">
+      <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative text-center">
 
-        <h2 className="t-h2 text-white mx-auto max-w-[16ch]">Build a receptionist. Then call it.</h2>
+        <h2 className="font-display font-medium text-white mx-auto" style={{ fontSize: 'clamp(2.25rem, 5.6vw, 4.75rem)', lineHeight: 1.03, letterSpacing: '-0.04em' }}>
+          Build a receptionist.<br />Then call it.
+        </h2>
 
         {onConsole && (
-          <p className="mt-5 text-[15px] sm:text-[16px] leading-relaxed text-white/55 max-w-xl mx-auto">
+          <p className="mt-6 text-[15px] leading-relaxed text-white/50 max-w-[34rem] mx-auto">
             Paste any local business&rsquo;s website and its AI receptionist is answering the phone in under a minute. This is the exact product you&rsquo;d resell, and the demo that gets a business owner to sign up.
           </p>
         )}
@@ -123,9 +125,9 @@ export default function HeroDemo() {
         {/* ── IDLE / BUILDING: the prompt box ─────────────────────────────── */}
         {onConsole && (
           <div>
-            <form onSubmit={(e) => { e.preventDefault(); build(query); }} className="mt-9 max-w-[620px] mx-auto">
+            <form onSubmit={(e) => { e.preventDefault(); build(query); }} className="mt-11 max-w-[720px] mx-auto">
               <div
-                className="rounded-[22px] bg-white/[0.03] px-5 pt-4 pb-3 text-left transition-all duration-200 border border-white/10 focus-within:border-[rgba(1,245,209,0.7)] focus-within:bg-white/[0.045] focus-within:shadow-[0_0_0_4px_rgba(1,245,209,0.10),0_20px_60px_-28px_rgba(1,245,209,0.5)]"
+                className="rounded-[24px] bg-white/[0.03] px-6 pt-5 pb-4 text-left transition-all duration-200 border border-white/10 focus-within:border-[rgba(1,245,209,0.7)] focus-within:bg-white/[0.045] focus-within:shadow-[0_0_0_4px_rgba(1,245,209,0.10),0_20px_60px_-28px_rgba(1,245,209,0.5)]"
               >
                 <input
                   ref={inputRef}
@@ -153,7 +155,7 @@ export default function HeroDemo() {
             </form>
 
             {/* Example chips, balanced (2 per row on mobile, one row on desktop) */}
-            <div className="mt-6">
+            <div className="mt-7">
               <p className="text-[13px] text-white/40 mb-3">No website handy? Try one</p>
               <div className="grid grid-cols-2 gap-2.5 max-w-sm mx-auto sm:flex sm:flex-wrap sm:justify-center sm:max-w-none">
                 {EXAMPLES.map((ex) => (
@@ -171,22 +173,22 @@ export default function HeroDemo() {
 
             {/* Framing: three steps, the agency value, and the CTA */}
             {phase === 'idle' && (
-              <div className="mt-16 sm:mt-20">
-                <div className="grid sm:grid-cols-3 gap-10 sm:gap-8 text-center max-w-3xl mx-auto">
+              <div className="mt-20 lg:mt-28">
+                <div className="grid sm:grid-cols-3 gap-12 sm:gap-10 lg:gap-16 text-center max-w-5xl mx-auto">
                   {STEPS.map(([n, t, d]) => (
                     <div key={n}>
-                      <div className="mx-auto h-9 w-9 rounded-full flex items-center justify-center text-[14px] font-semibold" style={{ backgroundColor: 'rgba(1,245,209,0.1)', color: EM, border: '1px solid rgba(1,245,209,0.25)' }}>{n}</div>
-                      <p className="text-white font-semibold text-[15px] mt-4">{t}</p>
-                      <p className="text-[13.5px] leading-relaxed text-white/50 mt-1.5 max-w-[26ch] mx-auto">{d}</p>
+                      <div className="mx-auto h-10 w-10 rounded-full flex items-center justify-center text-[15px] font-semibold" style={{ backgroundColor: 'rgba(1,245,209,0.1)', color: EM, border: '1px solid rgba(1,245,209,0.25)' }}>{n}</div>
+                      <p className="text-white font-semibold text-[16px] mt-5">{t}</p>
+                      <p className="text-[14px] leading-relaxed text-white/50 mt-2 max-w-[30ch] mx-auto">{d}</p>
                     </div>
                   ))}
                 </div>
 
-                <p className="mt-14 text-[15px] sm:text-[16px] leading-relaxed text-white/60 max-w-2xl mx-auto">
+                <p className="mt-16 text-[15px] leading-relaxed text-white/55 max-w-2xl mx-auto">
                   Signing up a paying client works exactly the same way. You paste their website, the receptionist builds itself, and it is ready to answer calls in about a minute. They hear it before they buy it.
                 </p>
 
-                <div className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-x-5 gap-y-3">
+                <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-x-5 gap-y-3">
                   <Link href="/signup" className="btn btn-em">Start your free trial <ArrowUpRight className="w-3.5 h-3.5" /></Link>
                   <button type="button" onClick={() => inputRef.current?.focus()} className="text-[14px] text-white/55 hover:text-white transition-colors">
                     or build one above first, free
@@ -199,7 +201,7 @@ export default function HeroDemo() {
 
         {/* ── READY / CALL: the receptionist card ─────────────────────────── */}
         {biz && !onConsole && phase !== 'error' && (
-          <div className="mt-9 max-w-[560px] mx-auto rounded-2xl p-6 sm:p-7 text-left" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
+          <div className="mt-11 max-w-[600px] mx-auto rounded-2xl p-6 sm:p-8 text-left" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
             <div className="flex items-start gap-3">
               <div className="h-11 w-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(1,245,209,0.12)' }}><Sparkles className="h-5 w-5" style={{ color: EM }} /></div>
               <div className="min-w-0 flex-1">
@@ -257,7 +259,7 @@ export default function HeroDemo() {
 
         {/* ── ERROR ───────────────────────────────────────────────────────── */}
         {phase === 'error' && (
-          <div className="mt-9 max-w-[560px] mx-auto rounded-2xl p-5 flex items-start gap-3 text-left" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
+          <div className="mt-11 max-w-[600px] mx-auto rounded-2xl p-5 flex items-start gap-3 text-left" style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}>
             <AlertTriangle className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: '#f59e0b' }} />
             <div><p className="text-white text-[14px]">{error || 'The live demo is unavailable right now.'}</p><button onClick={reset} className="text-[13px] mt-1" style={{ color: EM }}>Try again</button></div>
           </div>
