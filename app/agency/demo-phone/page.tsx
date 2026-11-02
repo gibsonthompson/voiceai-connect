@@ -132,18 +132,32 @@ function AudioPlayer({ url, theme }: { url: string; theme: any }) {
 // DEMO CALL DETAIL MODAL
 // ============================================================================
 function DemoCallDetailModal({ call, theme, onClose }: { call: DemoCall; theme: any; onClose: () => void }) {
+  const InfoCell = ({ icon: Icon, label, value, cap }: any) => (
+    <div className="flex items-center gap-2.5 min-w-0">
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.hover }}>
+        <Icon className="h-3.5 w-3.5" style={{ color: theme.textMuted }} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[10px]" style={{ color: theme.textMuted }}>{label}</p>
+        <p className={`text-sm font-medium truncate ${cap ? 'capitalize' : ''}`}>{value}</p>
+      </div>
+    </div>
+  );
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto"
-      style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4"
+      style={{ backgroundColor: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
+      {/* Solid, elevated panel that fits one screen: two columns on desktop
+          (details + summary | recording + transcript), stacked + scrollable on mobile. */}
       <div
-        className="w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl my-8"
-        style={{ backgroundColor: theme.card, border: `2px solid ${theme.border}` }}
+        className="w-full max-w-5xl max-h-[92vh] rounded-2xl overflow-hidden shadow-2xl flex flex-col"
+        style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: `1px solid ${theme.border}` }}>
+        <div className="flex items-center justify-between px-5 py-4 flex-shrink-0" style={{ borderBottom: `1px solid ${theme.border}` }}>
           <div className="min-w-0">
             <h2 className="text-base font-semibold truncate">
               {call.business_name || call.caller_name || 'Demo Call'}
@@ -165,108 +179,66 @@ function DemoCallDetailModal({ call, theme, onClose }: { call: DemoCall; theme: 
           </div>
         </div>
 
-        {/* Body */}
-        <div className="p-5 space-y-5">
-          {/* Caller Info */}
-          <div className="grid grid-cols-2 gap-3">
-            {call.caller_phone && (
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.hover }}>
-                  <Phone className="h-3.5 w-3.5" style={{ color: theme.textMuted }} />
-                </div>
-                <div>
-                  <p className="text-[10px]" style={{ color: theme.textMuted }}>Caller</p>
-                  <p className="text-sm font-medium">{formatPhoneDisplay(call.caller_phone)}</p>
-                </div>
+        {/* Body: single scroll on mobile, two independent columns on desktop */}
+        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 overflow-y-auto lg:overflow-hidden">
+
+          {/* LEFT: details, tags, AI summary */}
+          <div className="p-5 space-y-4 lg:min-h-0 lg:overflow-y-auto" style={{ borderBottom: `1px solid ${theme.border}` }}>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+              {call.caller_phone && <InfoCell icon={Phone} label="Caller" value={formatPhoneDisplay(call.caller_phone)} />}
+              {call.business_name && <InfoCell icon={Building2} label="Business" value={call.business_name} />}
+              {call.business_type && <InfoCell icon={Zap} label="Industry" value={call.business_type.replace(/_/g, ' ')} cap />}
+              {call.caller_location && <InfoCell icon={MapPin} label="Location" value={call.caller_location} />}
+            </div>
+
+            {(call.service_discussed || call.asked_questions || (call.caller_name && call.caller_name !== 'Unknown')) && (
+              <div className="flex flex-wrap gap-2">
+                {call.service_discussed && (
+                  <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs" style={{ backgroundColor: theme.primary + '12', color: theme.primary, textTransform: 'capitalize' }}>{call.service_discussed}</span>
+                )}
+                {call.asked_questions && (
+                  <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs" style={{ backgroundColor: theme.primary + '12', color: theme.primary }}>Asked follow-up questions</span>
+                )}
+                {call.caller_name && call.caller_name !== 'Unknown' && (
+                  <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>{call.caller_name}</span>
+                )}
               </div>
             )}
-            {call.business_name && (
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.hover }}>
-                  <Building2 className="h-3.5 w-3.5" style={{ color: theme.textMuted }} />
+
+            {call.summary && (
+              <div className="rounded-xl p-4" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <Bot className="h-4 w-4" style={{ color: theme.primary }} />
+                  <h3 className="text-xs font-semibold" style={{ color: theme.text }}>AI Summary</h3>
                 </div>
-                <div>
-                  <p className="text-[10px]" style={{ color: theme.textMuted }}>Business</p>
-                  <p className="text-sm font-medium">{call.business_name}</p>
-                </div>
-              </div>
-            )}
-            {call.business_type && (
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.hover }}>
-                  <Zap className="h-3.5 w-3.5" style={{ color: theme.textMuted }} />
-                </div>
-                <div>
-                  <p className="text-[10px]" style={{ color: theme.textMuted }}>Industry</p>
-                  <p className="text-sm font-medium capitalize">{call.business_type.replace(/_/g, ' ')}</p>
-                </div>
-              </div>
-            )}
-            {call.caller_location && (
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.hover }}>
-                  <MapPin className="h-3.5 w-3.5" style={{ color: theme.textMuted }} />
-                </div>
-                <div>
-                  <p className="text-[10px]" style={{ color: theme.textMuted }}>Location</p>
-                  <p className="text-sm font-medium">{call.caller_location}</p>
-                </div>
+                <p className="text-sm leading-relaxed" style={{ color: theme.textMuted }}>{call.summary}</p>
               </div>
             )}
           </div>
 
-          {/* Tags row */}
-          <div className="flex flex-wrap gap-2">
-            {call.service_discussed && (
-              <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs" style={{ backgroundColor: theme.primary + '12', color: theme.primary, textTransform: 'capitalize' }}>
-                {call.service_discussed}
-              </span>
+          {/* RIGHT: recording + transcript (transcript fills and scrolls) */}
+          <div className="p-5 flex flex-col gap-4 lg:min-h-0" style={{ borderLeft: `1px solid ${theme.border}` }}>
+            {call.recording_url && (
+              <div className="rounded-xl p-4 flex-shrink-0" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
+                <h3 className="text-xs font-semibold mb-3" style={{ color: theme.text }}>Call Recording</h3>
+                <AudioPlayer url={call.recording_url} theme={theme} />
+              </div>
             )}
-            {call.asked_questions && (
-              <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs" style={{ backgroundColor: theme.primary + '12', color: theme.primary, textTransform: 'capitalize' }}>
-                Asked follow-up questions
-              </span>
-            )}
-            {call.caller_name && call.caller_name !== 'Unknown' && (
-              <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>
-                {call.caller_name}
-              </span>
+
+            {call.transcript && (
+              <div className="rounded-xl p-4 flex flex-col flex-1 min-h-0" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
+                <h3 className="text-xs font-semibold mb-3 flex-shrink-0" style={{ color: theme.text }}>Full Transcript</h3>
+                <div
+                  className="rounded-lg p-3 flex-1 min-h-0 overflow-y-auto"
+                  style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, maxHeight: 'none' }}
+                >
+                  <p className="text-xs whitespace-pre-wrap leading-relaxed font-mono" style={{ color: theme.textMuted }}>
+                    {call.transcript}
+                  </p>
+                </div>
+              </div>
             )}
           </div>
-
-          {/* Summary */}
-          {call.summary && (
-            <div className="rounded-xl p-4" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
-              <div className="flex items-center gap-2 mb-2">
-                <Bot className="h-4 w-4" style={{ color: theme.primary }} />
-                <h3 className="text-xs font-semibold" style={{ color: theme.text }}>AI Summary</h3>
-              </div>
-              <p className="text-sm leading-relaxed" style={{ color: theme.textMuted }}>{call.summary}</p>
-            </div>
-          )}
-
-          {/* Recording */}
-          {call.recording_url && (
-            <div className="rounded-xl p-4" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
-              <h3 className="text-xs font-semibold mb-3" style={{ color: theme.text }}>Call Recording</h3>
-              <AudioPlayer url={call.recording_url} theme={theme} />
-            </div>
-          )}
-
-          {/* Transcript */}
-          {call.transcript && (
-            <div className="rounded-xl p-4" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
-              <h3 className="text-xs font-semibold mb-3" style={{ color: theme.text }}>Full Transcript</h3>
-              <div
-                className="rounded-lg p-3 max-h-64 overflow-y-auto"
-                style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}
-              >
-                <p className="text-xs whitespace-pre-wrap leading-relaxed font-mono" style={{ color: theme.textMuted }}>
-                  {call.transcript}
-                </p>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
