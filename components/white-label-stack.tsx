@@ -65,7 +65,6 @@ export default function WhiteLabelStack() {
     let active = mq.matches;
     let ticking = false;
     let last = -1;
-    let lastBeat = -1;
 
     const DROP = 110;
     // isometric lean: each lower layer sits a little further left
@@ -86,13 +85,8 @@ export default function WhiteLabelStack() {
       fade(r.l0, win(p, 0.00, 0.03, 0.16, 0.22));
       fade(r.l1, win(p, 0.20, 0.26, 0.38, 0.44));
       fade(r.l2, win(p, 0.42, 0.48, 0.62, 0.68));
-      fade(r.l3, win(p, 0.68, 0.74, 0.90, 0.94));
-      fade(r.l4, win(p, 0.93, 0.98, 1.01, 1.02));
-
-      // Beat counter (large, faint telemetry)
-      const beat = p < 0.20 ? 0 : p < 0.42 ? 1 : p < 0.68 ? 2 : 3;
-      if (beat !== lastBeat && r.counter) { r.counter.textContent = `0${beat + 1}`; lastBeat = beat; }
-      fade(r.counter, eo(seg(p, 0.0, 0.08)) * (1 - 0.6 * eo(seg(p, 0.92, 1.0))));
+      fade(r.l3, win(p, 0.68, 0.74, 0.93, 0.96));
+      fade(r.l4, win(p, 0.96, 0.985, 1.01, 1.02));
 
       // Weight: layers beneath compress briefly as each new layer lands
       const press0 = 1 - 0.014 * (bump(p, 0.38) + bump(p, 0.54) + bump(p, 0.78));
@@ -125,31 +119,29 @@ export default function WhiteLabelStack() {
       fade(r.cost, 1 - eo(seg(p, 0.58, 0.68)));
       fade(r.price, eo(seg(p, 0.58, 0.68)));
 
-      // End business: the call completes. Ring, answer, book, summarize, notify.
-      const ring = seg(p, 0.74, 0.82);
-      if (r.phone) r.phone.style.transform = `scale(${1 + 0.07 * Math.sin(ring * Math.PI * 3) * (1 - eo(seg(p, 0.80, 0.84)))})`;
-      fade(r.ringing, 1 - eo(seg(p, 0.80, 0.85)));
-      fade(r.answered, win(p, 0.80, 0.85, 0.87, 0.91));
-      fade(r.done, eo(seg(p, 0.88, 0.92)));
+      // End business: the call completes. Ringing holds a good beat, then answer,
+      // then book/summarize/notify — each given room so nothing flashes past.
+      const ring = seg(p, 0.74, 0.86);
+      if (r.phone) r.phone.style.transform = `scale(${1 + 0.06 * Math.sin(ring * Math.PI * 5) * (1 - eo(seg(p, 0.86, 0.90)))})`;
+      fade(r.ringing, 1 - eo(seg(p, 0.85, 0.89)));
+      fade(r.answered, win(p, 0.85, 0.89, 0.92, 0.95));
+      fade(r.done, eo(seg(p, 0.93, 0.96)));
       const chip = (el: HTMLElement | null, a: number, b: number) => {
         if (!el) return;
         const t = eo(seg(p, a, b));
         el.style.opacity = String(t);
         el.style.transform = `translateY(${(1 - t) * 6}px) scale(${0.94 + 0.06 * t})`;
       };
-      chip(r.cal, 0.82, 0.87);
-      chip(r.summary, 0.85, 0.90);
-      chip(r.notified, 0.88, 0.93);
+      chip(r.cal, 0.87, 0.91);
+      chip(r.summary, 0.90, 0.93);
+      chip(r.notified, 0.92, 0.96);
 
-      // A slow light sheen crosses the pile with scroll
-      if (r.sheen) r.sheen.style.transform = `translateX(${-60 + 200 * p}%) skewX(-18deg)`;
+      // The light sheen sweeps across with scroll, finishing over the right side.
+      if (r.sheen) r.sheen.style.transform = `translateX(${-60 + 220 * p}%) skewX(-18deg)`;
 
-      // Pull back: the whole pile eases out to reveal the flows
-      const back = eo(seg(p, 0.92, 1.0));
-      if (r.stack) r.stack.style.transform = `perspective(1500px) rotateX(${12 - 6 * back}deg) scale(${1 - 0.12 * back}) translateY(${-14 * back}px)`;
-      fade(r.flows, back);
-      if (r.flowA) r.flowA.style.transform = `scaleX(${eo(seg(p, 0.93, 0.98))})`;
-      if (r.flowB) r.flowB.style.transform = `scaleX(${eo(seg(p, 0.96, 1.0))})`;
+      // Pull back: the whole pile eases out gently at the very end.
+      const back = eo(seg(p, 0.96, 1.0));
+      if (r.stack) r.stack.style.transform = `perspective(1500px) rotateX(${12 - 6 * back}deg) scale(${1 - 0.1 * back}) translateY(${-12 * back}px)`;
 
       // Progress rail
       if (r.rail) r.rail.style.transform = `scaleX(${p})`;
@@ -186,9 +178,9 @@ export default function WhiteLabelStack() {
   return (
     <>
       {/* ───────── Animated (desktop, motion allowed) ───────── */}
-      <div ref={wrapRef} className="wls-anim relative" style={{ height: '460vh' }}>
+      <div ref={wrapRef} className="wls-anim relative" style={{ height: '680vh', width: '100vw', marginLeft: 'calc(50% - 50vw)' }}>
         <div className="sticky top-0 h-screen overflow-hidden flex items-center">
-          <div className="w-full grid lg:grid-cols-12 gap-16 items-center relative" style={{ zIndex: 1 }}>
+          <div className="w-full max-w-[1440px] mx-auto px-6 lg:px-16 grid lg:grid-cols-12 gap-16 items-center relative" style={{ zIndex: 1 }}>
 
             {/* Beat copy (left). All five are in the DOM; they crossfade. */}
             <div className="lg:col-span-5 relative min-h-[300px]">
@@ -209,11 +201,6 @@ export default function WhiteLabelStack() {
               <div ref={set('pool')} className="wls-pool" style={{ opacity: 0.25 }} aria-hidden />
               {/* Teal bloom at the brand moment */}
               <div ref={set('bloom')} className="wls-bloom" style={{ opacity: 0, transform: 'scale(0.8)' }} aria-hidden />
-              {/* Beat counter */}
-              <div className="absolute -top-2 right-0 flex items-baseline gap-2 select-none" aria-hidden>
-                <span ref={set('counter')} className="font-display text-[72px] leading-none font-medium tracking-tight" style={{ color: 'rgba(255,255,255,0.07)', opacity: 0 }}>01</span>
-                <span className="telemetry text-[11px]" style={{ color: 'var(--steel-700)' }}>/ 04</span>
-              </div>
 
               <div ref={set('stack')} className="wls-stack relative" style={{ transform: 'perspective(1500px) rotateX(12deg)' }}>
 
@@ -284,18 +271,6 @@ export default function WhiteLabelStack() {
                   <p ref={set('vendors')} className="telemetry text-[12px] mt-3 leading-[1.9]" style={{ color: 'var(--steel-500)' }}>
                     {VENDORS.join(' · ')}
                   </p>
-                </div>
-              </div>
-
-              {/* Flows revealed on pull-back. Hairlines draw themselves. No glyphs. */}
-              <div ref={set('flows')} className="absolute -left-4 top-2 bottom-2 hidden xl:flex flex-col justify-between py-8" style={{ opacity: 0 }}>
-                <div className="flex items-center gap-3">
-                  <span ref={set('flowA')} className="block w-12 h-px origin-left" style={{ background: 'var(--color-em-400)', transform: 'scaleX(0)' }} />
-                  <span className="telemetry text-[11px] uppercase" style={{ color: 'var(--color-em-400)' }}>Money flows up</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span ref={set('flowB')} className="block w-12 h-px origin-left" style={{ background: 'var(--steel-500)', transform: 'scaleX(0)' }} />
-                  <span className="telemetry text-[11px] uppercase">Brand flows down</span>
                 </div>
               </div>
             </div>
