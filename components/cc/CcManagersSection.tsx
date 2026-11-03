@@ -81,7 +81,7 @@ export default function CcManagersSection({ theme }: { theme: any }) {
   const load = useCallback(async () => {
     if (!agencyId) return;
     try {
-      const r = await fetch(`${API()}/api/agency/${agencyId}/team`, { headers: { Authorization: `Bearer ${TOKEN()}` } });
+      const r = await fetch(`${API()}/api/agency/${agencyId}/cc/team`, { headers: { Authorization: `Bearer ${TOKEN()}` } });
       if (r.ok) { const d = await r.json(); if (d.success) setManagers((d.members || []).filter((m: Manager) => m.is_manager === true)); }
     } catch { /* keep last good */ } finally { setLoading(false); }
   }, [agencyId]);
@@ -91,7 +91,7 @@ export default function CcManagersSection({ theme }: { theme: any }) {
     if (!aName.trim() || !aEmail.trim()) { setError('Name and email are required.'); return; }
     setAdding(true); setError(null); setSuccess(null);
     try {
-      const r = await fetch(`${API()}/api/agency/${agencyId}/team`, {
+      const r = await fetch(`${API()}/api/agency/${agencyId}/cc/team`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` },
         body: JSON.stringify({ name: aName.trim(), email: aEmail.trim(), phone: aPhone.trim() || null, is_manager: true, permissions: aPerms }),
       });
@@ -111,7 +111,7 @@ export default function CcManagersSection({ theme }: { theme: any }) {
     const prev = managers;
     setManagers((list) => list.filter((x) => x.id !== m.id));
     try {
-      const r = await fetch(`${API()}/api/agency/${agencyId}/team/${m.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${TOKEN()}` } });
+      const r = await fetch(`${API()}/api/agency/${agencyId}/cc/team/${m.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${TOKEN()}` } });
       if (!r.ok) throw new Error();
     } catch { setManagers(prev); setError('Could not remove the manager.'); }
   };
@@ -120,14 +120,14 @@ export default function CcManagersSection({ theme }: { theme: any }) {
     const cur = (m.permissions && typeof m.permissions === 'object') ? m.permissions : {};
     const next = { ...cur, [key]: !cur[key] };
     setManagers((list) => list.map((x) => (x.id === m.id ? { ...x, permissions: next } : x)));
-    try { const r = await fetch(`${API()}/api/agency/${agencyId}/team/${m.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` }, body: JSON.stringify({ permissions: next }) }); if (!r.ok) throw new Error(); }
+    try { const r = await fetch(`${API()}/api/agency/${agencyId}/cc/team/${m.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` }, body: JSON.stringify({ permissions: next }) }); if (!r.ok) throw new Error(); }
     catch { setManagers((list) => list.map((x) => (x.id === m.id ? { ...x, permissions: cur } : x))); setError('Could not update permissions.'); }
   };
 
   const resetPassword = async (m: Manager) => {
     setResetting(m.id);
     try {
-      const r = await fetch(`${API()}/api/agency/${agencyId}/team/${m.id}/reset-password`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` }, body: JSON.stringify({}) });
+      const r = await fetch(`${API()}/api/agency/${agencyId}/cc/team/${m.id}/reset-password`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` }, body: JSON.stringify({}) });
       const d = await r.json();
       if (r.ok && d.success) { setManagers((list) => list.map((x) => (x.id === m.id ? { ...x, visible_password: d.visible_password } : x))); setRevealPw((pw) => ({ ...pw, [m.id]: true })); setSuccess('New password generated. Reveal and share it.'); setTimeout(() => setSuccess(null), 6000); }
       else throw new Error();

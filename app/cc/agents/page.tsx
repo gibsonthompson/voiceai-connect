@@ -141,7 +141,7 @@ export default function CallCenterAgents() {
   const loadTeam = useCallback(async () => {
     if (!agencyId) return;
     try {
-      const r = await fetch(`${API()}/api/agency/${agencyId}/team`, { headers: { Authorization: `Bearer ${TOKEN()}` } });
+      const r = await fetch(`${API()}/api/agency/${agencyId}/cc/team`, { headers: { Authorization: `Bearer ${TOKEN()}` } });
       if (r.ok) { const d = await r.json(); if (d.success) setMembers((d.members || []).filter((m: Member) => m.is_manager !== true && Array.isArray(m.assigned_client_ids))); }
     } catch { /* keep last good */ } finally { setLoading(false); }
   }, [agencyId]);
@@ -149,7 +149,7 @@ export default function CallCenterAgents() {
   const loadClients = useCallback(async () => {
     if (!agencyId) return;
     try {
-      const r = await fetch(`${API()}/api/agency/${agencyId}/clients`, { headers: { Authorization: `Bearer ${TOKEN()}` } });
+      const r = await fetch(`${API()}/api/agency/${agencyId}/cc/businesses`, { headers: { Authorization: `Bearer ${TOKEN()}` } });
       if (r.ok) { const d = await r.json(); setClients((d.clients || []).map((c: any) => ({ id: c.id, business_name: c.business_name || 'Business' })).sort((a: Biz, b: Biz) => a.business_name.localeCompare(b.business_name))); }
     } catch { /* non-fatal */ }
   }, [agencyId]);
@@ -198,7 +198,7 @@ export default function CallCenterAgents() {
     if (!aName.trim() || !aEmail.trim()) { setError('Name and email are required.'); return; }
     setAdding(true); setError(null); setSuccess(null);
     try {
-      const r = await fetch(`${API()}/api/agency/${agencyId}/team`, {
+      const r = await fetch(`${API()}/api/agency/${agencyId}/cc/team`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` },
         body: JSON.stringify({
           name: aName.trim(), email: aEmail.trim(), phone: aPhone.trim() || null,
@@ -224,7 +224,7 @@ export default function CallCenterAgents() {
     const prev = members;
     setMembers((list) => list.filter((x) => x.id !== m.id));
     try {
-      const r = await fetch(`${API()}/api/agency/${agencyId}/team/${m.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${TOKEN()}` } });
+      const r = await fetch(`${API()}/api/agency/${agencyId}/cc/team/${m.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${TOKEN()}` } });
       if (!r.ok) throw new Error();
     } catch { setMembers(prev); setError('Could not remove the agent.'); }
   };
@@ -234,7 +234,7 @@ export default function CallCenterAgents() {
     const next = current.includes(clientId) ? current.filter((id) => id !== clientId) : [...current, clientId];
     setMembers((list) => list.map((x) => (x.id === m.id ? { ...x, assigned_client_ids: next } : x)));
     try {
-      const r = await fetch(`${API()}/api/agency/${agencyId}/team/${m.id}`, {
+      const r = await fetch(`${API()}/api/agency/${agencyId}/cc/team/${m.id}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` },
         body: JSON.stringify({ assigned_client_ids: next }),
       });
@@ -247,7 +247,7 @@ export default function CallCenterAgents() {
     const phone = call_delivery === 'phone' ? (agent_phone ?? m.agent_phone ?? '') : null;
     setMembers((list) => list.map((x) => (x.id === m.id ? { ...x, call_delivery, agent_phone: phone } : x)));
     try {
-      const r = await fetch(`${API()}/api/agency/${agencyId}/team/${m.id}`, {
+      const r = await fetch(`${API()}/api/agency/${agencyId}/cc/team/${m.id}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` },
         body: JSON.stringify({ call_delivery, agent_phone: phone }),
       });
@@ -272,7 +272,7 @@ export default function CallCenterAgents() {
     if (!confirm(`Reset ${m.display_name}'s password? Their current one stops working immediately.`)) return;
     setResetting(m.id); setError(null);
     try {
-      const r = await fetch(`${API()}/api/agency/${agencyId}/team/${m.id}/reset-password`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` }, body: JSON.stringify({}) });
+      const r = await fetch(`${API()}/api/agency/${agencyId}/cc/team/${m.id}/reset-password`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` }, body: JSON.stringify({}) });
       const d = await r.json();
       if (r.ok && d.success) { setMembers((list) => list.map((x) => (x.id === m.id ? { ...x, visible_password: d.visible_password } : x))); setRevealPw((pw) => ({ ...pw, [m.id]: true })); setSuccess('New password generated. Reveal and share it.'); setTimeout(() => setSuccess(null), 6000); }
       else setError(d.error || 'Could not reset the password.');
@@ -285,7 +285,7 @@ export default function CallCenterAgents() {
     if ((next || '') === (m.phone || '')) return;
     const prev = m.phone;
     setMembers((list) => list.map((x) => (x.id === m.id ? { ...x, phone: next } : x)));
-    try { const r = await fetch(`${API()}/api/agency/${agencyId}/team/${m.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` }, body: JSON.stringify({ phone: next }) }); if (!r.ok) throw new Error(); }
+    try { const r = await fetch(`${API()}/api/agency/${agencyId}/cc/team/${m.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` }, body: JSON.stringify({ phone: next }) }); if (!r.ok) throw new Error(); }
     catch { setMembers((list) => list.map((x) => (x.id === m.id ? { ...x, phone: prev } : x))); setError('Could not update the contact number.'); }
   };
 
@@ -293,7 +293,7 @@ export default function CallCenterAgents() {
     const cur = (m.permissions && typeof m.permissions === 'object') ? m.permissions : {};
     const next = { ...cur, [key]: !cur[key] };
     setMembers((list) => list.map((x) => (x.id === m.id ? { ...x, permissions: next } : x)));
-    try { const r = await fetch(`${API()}/api/agency/${agencyId}/team/${m.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` }, body: JSON.stringify({ permissions: next }) }); if (!r.ok) throw new Error(); }
+    try { const r = await fetch(`${API()}/api/agency/${agencyId}/cc/team/${m.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` }, body: JSON.stringify({ permissions: next }) }); if (!r.ok) throw new Error(); }
     catch { setMembers((list) => list.map((x) => (x.id === m.id ? { ...x, permissions: cur } : x))); setError('Could not update permissions.'); }
   };
 
@@ -336,7 +336,7 @@ export default function CallCenterAgents() {
     if (next === undefined) return;
     setHoursSaving(m.id); setError(null);
     try {
-      const r = await fetch(`${API()}/api/agency/${agencyId}/team/${m.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` }, body: JSON.stringify({ availability_hours: next }) });
+      const r = await fetch(`${API()}/api/agency/${agencyId}/cc/team/${m.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` }, body: JSON.stringify({ availability_hours: next }) });
       if (!r.ok) throw new Error();
       setMembers((list) => list.map((x) => (x.id === m.id ? { ...x, availability_hours: next } : x)));
       setHoursDraft((d) => { const c = { ...d }; delete c[m.id]; return c; });
@@ -357,7 +357,7 @@ export default function CallCenterAgents() {
     setMembers((list) => list.map((x) => (x.id === m.id ? { ...x, availability_hours: next } : x)));
     setHoursDraft((d) => (d[m.id] !== undefined ? { ...d, [m.id]: { ...d[m.id], override: nextOverride } } : d));
     try {
-      const r = await fetch(`${API()}/api/agency/${agencyId}/team/${m.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` }, body: JSON.stringify({ availability_hours: next }) });
+      const r = await fetch(`${API()}/api/agency/${agencyId}/cc/team/${m.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` }, body: JSON.stringify({ availability_hours: next }) });
       if (!r.ok) throw new Error();
     } catch {
       setMembers((list) => list.map((x) => (x.id === m.id ? { ...x, availability_hours: prev } : x)));
