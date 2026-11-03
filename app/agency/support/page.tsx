@@ -120,9 +120,14 @@ export default function SupportPage() {
     setInput('');
     setSending(true);
 
-    try {
+    // A stalled request or a backend restart can drop a single call, surfacing
+    // as a network/CORS error or a 502/503/504. Those are transient, so retry
+    // once after a short backoff before showing an error. Real errors (4xx, 500)
+    // are not retried.
+    const RETRYABLE = new Set([408, 502, 503, 504]);
+    const callChat = () => {
       const token = localStorage.getItem('auth_token') || '';
-      const r = await fetch(`${api}/api/agency/${agency.id}/support/chat`, {
+      return fetch(`${api}/api/agency/${agency.id}/support/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -131,8 +136,22 @@ export default function SupportPage() {
           agencyPlan: effectivePlan,
         }),
       });
+    };
 
-      if (r.ok) {
+    try {
+      let r: Response | null = null;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          r = await callChat();
+          if (r.ok || !RETRYABLE.has(r.status)) break;
+        } catch (err) {
+          r = null;
+          if (attempt === 1) throw err;
+        }
+        if (attempt === 0) await new Promise(res => setTimeout(res, 1200));
+      }
+
+      if (r && r.ok) {
         const d = await r.json();
         setMessages(prev => [...prev, { id: `a-${Date.now()}`, role: 'assistant', content: d.reply, timestamp: Date.now() }]);
       } else {
