@@ -116,7 +116,7 @@ export default function CcBrandingSection({ agency, refreshAgency, theme, hideHe
     const HEX6 = /^#([0-9a-fA-F]{6})$/;
     try {
       const palette = await extractPalette(logoSrc).catch(() => null);
-      const r = await fetch(`${API()}/api/agency/${agency.id}/branding/analyze-logo`, {
+      const r = await fetch(`${API()}/api/agency/${agency.id}/cc/branding/analyze-logo`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` },
         body: JSON.stringify({ logo: logoSrc, palette, name: agency?.name || undefined }),
       });

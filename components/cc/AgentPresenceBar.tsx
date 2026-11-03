@@ -81,7 +81,7 @@ export default function AgentPresenceBar({ agencyId }: { agencyId: string | unde
     try {
       const token = localStorage.getItem('auth_token');
       const base = process.env.NEXT_PUBLIC_API_URL || '';
-      const r = await fetch(`${base}/api/cc/${agencyId}/agents/presence`, { headers: { Authorization: `Bearer ${token}` } });
+      const r = await fetch(`${base}/api/cc/${agencyId}/cc/presence`, { headers: { Authorization: `Bearer ${token}` } });
       if (r.ok) {
         const d = await r.json();
         if (d.success) {

@@ -73,7 +73,12 @@ export default function AgencyLiveWallboard() {
     try {
       const token = localStorage.getItem('auth_token');
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const r = await fetch(`${backendUrl}/api/agency/${agency.id}/live-calls`, {
+      // A call-center account reads its own wallboard (scoped by call_center_id);
+      // a normal agency reads the agency wallboard. Same response shape.
+      const liveCallsUrl = (agency as any)?.is_call_center
+        ? `${backendUrl}/api/agency/${agency.id}/cc/live-calls`
+        : `${backendUrl}/api/agency/${agency.id}/live-calls`;
+      const r = await fetch(liveCallsUrl, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (r.ok) {

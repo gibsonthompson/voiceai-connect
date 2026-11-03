@@ -157,7 +157,7 @@ export default function CallCenterAgents() {
   const loadPresence = useCallback(async () => {
     if (!agencyId) return;
     try {
-      const r = await fetch(`${API()}/api/cc/${agencyId}/agents/presence`, { headers: { Authorization: `Bearer ${TOKEN()}` } });
+      const r = await fetch(`${API()}/api/cc/${agencyId}/cc/presence`, { headers: { Authorization: `Bearer ${TOKEN()}` } });
       if (r.ok) { const d = await r.json(); if (d.success) setPresence(Object.fromEntries((d.agents || []).map((a: Presence) => [a.memberUserId, a]))); }
     } catch { /* presence is best-effort */ }
   }, [agencyId]);

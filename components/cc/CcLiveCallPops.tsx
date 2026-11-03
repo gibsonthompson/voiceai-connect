@@ -74,7 +74,7 @@ export default function CcLiveCallPops({ agencyId }: { agencyId?: string }) {
   const load = useCallback(async () => {
     if (!agencyId) return;
     try {
-      const r = await fetch(`${API()}/api/agency/${agencyId}/live-calls`, { headers: { Authorization: `Bearer ${TOKEN()}` } });
+      const r = await fetch(`${API()}/api/agency/${agencyId}/cc/live-calls`, { headers: { Authorization: `Bearer ${TOKEN()}` } });
       if (!r.ok) return;
       const d = await r.json();
       const list: LiveCall[] = Array.isArray(d.calls) ? d.calls : [];
