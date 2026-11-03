@@ -143,6 +143,17 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
 
+      // /login has no page of its own and was 404ing, which people hit often
+      // since it's the obvious guess. Agency owners are the primary audience, so
+      // the bare /login goes to the agency login. Client and admin logins keep
+      // their own /client/login and /admin/login paths. Temporary (not cached
+      // hard by browsers) in case the login routing changes later.
+      {
+        source: "/login",
+        destination: "/agency/login",
+        permanent: false,
+      },
+
       // SEO consolidation, Phase 1 (cannibalization).
       ...CANNIBALIZATION_REDIRECTS.map((r) => ({
         source: r.source,
