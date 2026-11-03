@@ -44,7 +44,13 @@ function CallCenterLoginForm() {
       try {
         localStorage.setItem('auth_token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        if (data.call_center) localStorage.setItem('agency', JSON.stringify(data.call_center));
+        // Stamp is_call_center on the cached account. The raw call_centers row
+        // has no such column, and both the /cc shell and the /agency layout key
+        // off agency.is_call_center. Without this, the first paint after login
+        // sees it falsy and the cc shell bounces to /agency/dashboard, into the
+        // agency billing walls. The /cc/account fetch returns it set, but the
+        // login cache must carry it so that first paint is correct.
+        if (data.call_center) localStorage.setItem('agency', JSON.stringify({ ...data.call_center, is_call_center: true }));
       } catch {}
       if (data.requires_upgrade) { window.location.href = data.redirect || '/cc/reactivate'; return; }
       window.location.href = '/cc/dashboard';

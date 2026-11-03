@@ -3,7 +3,7 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe, Phone, Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Zap, Paintbrush, Clock, Headphones, Headset, Check, Crown, Shield, Inbox, Compass, LifeBuoy, type LucideIcon } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe, Phone, Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Zap, Paintbrush, Clock, Headphones, Headset, Check, Crown, Shield, Inbox, Compass, type LucideIcon } from 'lucide-react';
 import { AgencyProvider, useAgency } from './context';
 import { usePlanFeatures } from '../../hooks/usePlanFeatures';
 import { useTheme } from '../../hooks/useTheme';
@@ -24,8 +24,13 @@ function WaveformIcon({ className, color }: { className?: string; color?: string
 function isTrialStatus(status: string | null | undefined): boolean { return status === 'trial' || status === 'trialing'; }
 function isPaymentFailed(status: string | null | undefined): boolean { return status === 'past_due' || status === 'unpaid' || status === 'canceled' || status === 'cancelled'; }
 function isSuspended(status: string | null | undefined): boolean { return status === 'suspended' || status === 'canceled' || status === 'cancelled'; }
-function needsPlanSelection(agency: any): boolean { if (!agency) return false; if (agency.subscription_status === 'pending' || agency.status === 'pending_payment') { if (isTrialStatus(agency.subscription_status) || agency.subscription_status === 'active') return false; return true; } return false; }
-function isTrialExpiredNoCard(agency: any): boolean { if (!agency) return false; if (agency.stripe_subscription_id) return false; if (!isTrialStatus(agency.subscription_status)) return false; if (!agency.trial_ends_at) return false; return new Date(agency.trial_ends_at) < new Date(); }
+// Call centers bill manually (no Stripe plan, no trial), so the agency plan /
+// trial gates never apply to them. Returning false for a call-center account
+// keeps a cc session from ever seeing an agency billing wall (the "Finish
+// Setting Up Your Agency / 14-day free trial" screen), even for a frame while
+// is_call_center is resolving. Real agencies are unaffected.
+function needsPlanSelection(agency: any): boolean { if (!agency) return false; if (agency.is_call_center) return false; if (agency.subscription_status === 'pending' || agency.status === 'pending_payment') { if (isTrialStatus(agency.subscription_status) || agency.subscription_status === 'active') return false; return true; } return false; }
+function isTrialExpiredNoCard(agency: any): boolean { if (!agency) return false; if (agency.is_call_center) return false; if (agency.stripe_subscription_id) return false; if (!isTrialStatus(agency.subscription_status)) return false; if (!agency.trial_ends_at) return false; return new Date(agency.trial_ends_at) < new Date(); }
 function getTrialDaysLeft(trialEndsAt: string | null | undefined): number | null { if (!trialEndsAt) return null; const endDate = new Date(trialEndsAt); const now = new Date(); const diffTime = endDate.getTime() - now.getTime(); const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); return Math.max(0, diffDays); }
 
 const ALWAYS_ACCESSIBLE_ROUTES = ['/agency/settings', '/agency/login'];
@@ -152,7 +157,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   // standalone /agency/reactivate page (below), NOT the payment-required wall,
   // so they are excluded here. Payment-failed (past_due/unpaid) agencies keep
   // the existing in-shell wall.
-  const shouldBlockAccess = hasPaymentIssue && !isAccessibleRoute && !agencyIsSuspended;
+  const shouldBlockAccess = hasPaymentIssue && !isAccessibleRoute && !agencyIsSuspended && !agency?.is_call_center;
 
   const navItems: NavItem[] = [
     { href: '/agency/dashboard', label: 'Dashboard', icon: LayoutDashboard, permissionKey: 'dashboard' },
@@ -175,7 +180,6 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     { href: '/agency/ai-lab', label: 'AI Lab', icon: Cpu, locked: !canUseAiLab, upgradeRequired: 'Pro' },
     { href: '/agency/branding', label: 'Branding', icon: Paintbrush, locked: !hasWhiteLabel, upgradeRequired: 'Pro' },
     { href: '/agency/referrals', label: 'Referrals', icon: Gift, locked: !canUseLeadFinder, upgradeRequired: 'Pro' },
-    { href: '/agency/support', label: 'Support', icon: LifeBuoy },
     { href: '/agency/settings', label: 'Settings', icon: Settings },
   ];
 

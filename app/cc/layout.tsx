@@ -225,7 +225,7 @@ function CallCenterShell({ children }: { children: ReactNode }) {
     const subs = NAV_SUBPAGES[href];
     return !!(subs && subs.some((s) => pathname === s || pathname?.startsWith(s + '/')));
   };
-  const handleSignOut = () => { try { localStorage.clear(); } catch {} window.location.href = '/agency/login'; };
+  const handleSignOut = () => { try { localStorage.clear(); } catch {} window.location.href = '/cc/login'; };
 
   if (loading) {
     // Theme-neutral: no explicit background (inherit the html bg the pre-paint

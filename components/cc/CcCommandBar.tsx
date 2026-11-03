@@ -114,14 +114,14 @@ export default function CcCommandBar() {
     const headers = { Authorization: `Bearer ${tok()}` };
     try {
       if (hasPermission('clients')) {
-        const r = await fetch(`${API}/api/agency/${agency.id}/clients`, { headers });
+        const r = await fetch(`${API}/api/agency/${agency.id}/cc/businesses`, { headers });
         const d = await r.json().catch(() => ({}));
         if (Array.isArray(d.clients)) setBiz(d.clients.map((c: any) => ({ id: c.id, name: c.business_name || 'Business', phone: c.vapi_phone_number || null })));
       }
     } catch { /* best effort */ }
     try {
       if (canManageTeam || hasPermission('settings')) {
-        const r = await fetch(`${API}/api/agency/${agency.id}/team`, { headers });
+        const r = await fetch(`${API}/api/agency/${agency.id}/cc/team`, { headers });
         const d = await r.json().catch(() => ({}));
         if (Array.isArray(d.members)) {
           setAgents(d.members

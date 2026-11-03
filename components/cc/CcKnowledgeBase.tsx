@@ -69,7 +69,7 @@ export default function CcKnowledgeBase({ agencyId, clientId, theme }: { agencyI
     if (!agencyId || !clientId) return;
     setLoading(true);
     try {
-      const r = await fetch(`${API()}/api/agency/${agencyId}/clients/${clientId}/knowledge-base`, { headers: { Authorization: `Bearer ${TOKEN()}` } });
+      const r = await fetch(`${API()}/api/agency/${agencyId}/cc/businesses/${clientId}/knowledge-base`, { headers: { Authorization: `Bearer ${TOKEN()}` } });
       if (r.ok) {
         const d = await r.json();
         if (d.success) {
@@ -130,7 +130,7 @@ export default function CcKnowledgeBase({ agencyId, clientId, theme }: { agencyI
   const save = async () => {
     setSaving(true); setSaved(false);
     try {
-      const r = await fetch(`${API()}/api/agency/${agencyId}/clients/${clientId}/knowledge-base`, {
+      const r = await fetch(`${API()}/api/agency/${agencyId}/cc/businesses/${clientId}/knowledge-base`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` },
         body: JSON.stringify({ websiteUrl: website, faqs: formatFAQs(faqs), additionalInfo }),
       });
@@ -146,7 +146,7 @@ export default function CcKnowledgeBase({ agencyId, clientId, theme }: { agencyI
     if (!website.trim()) { showMsg('Add the business website address first.', true); return; }
     setLearning(true);
     try {
-      const r = await fetch(`${API()}/api/agency/${agencyId}/clients/${clientId}/knowledge-base`, {
+      const r = await fetch(`${API()}/api/agency/${agencyId}/cc/businesses/${clientId}/knowledge-base`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN()}` },
         body: JSON.stringify({ websiteUrl: website, faqs: formatFAQs(faqs), additionalInfo, scrapeWebsite: true }),
       });
