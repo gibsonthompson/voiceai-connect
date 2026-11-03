@@ -327,15 +327,15 @@ function DemoCallsList({ agencyId, theme }: { agencyId: string; theme: any }) {
   return (
     <>
       {/* Count strip: each demo call is a warm lead (someone heard the AI). */}
-      <div className="flex items-center gap-5 px-1 pb-3 mb-1">
-        <div>
-          <span className="text-2xl font-bold tabular-nums" style={{ color: theme.text }}>{total}</span>
-          <span className="text-xs ml-1.5" style={{ color: theme.textMuted }}>all-time</span>
+      <div className="flex items-center gap-4 px-1 pb-3 mb-1">
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-lg font-semibold tabular-nums leading-none" style={{ color: theme.text }}>{total}</span>
+          <span className="text-xs" style={{ color: theme.textMuted }}>all-time</span>
         </div>
-        <div style={{ width: 1, height: 24, backgroundColor: theme.border }} />
-        <div>
-          <span className="text-2xl font-bold tabular-nums" style={{ color: theme.success }}>{thisWeek}</span>
-          <span className="text-xs ml-1.5" style={{ color: theme.textMuted }}>this week</span>
+        <div style={{ width: 1, height: 16, backgroundColor: theme.border }} />
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-lg font-semibold tabular-nums leading-none" style={{ color: theme.success }}>{thisWeek}</span>
+          <span className="text-xs" style={{ color: theme.textMuted }}>this week</span>
         </div>
       </div>
       <div className="divide-y" style={{ borderColor: theme.border }}>
@@ -852,6 +852,9 @@ export default function DemoPhonePage() {
           </div>
         </div>
 
+        {/* How the demo works, shown at the very top of the page. */}
+        <HowItWorksCard theme={theme} />
+
         {/* Active Demo Card */}
         <div
           className="rounded-xl p-5 sm:p-6 mb-6"
@@ -982,11 +985,6 @@ export default function DemoPhonePage() {
           </div>
         </div>
 
-        {/* ══════════════════════════════════════════════════════════════════
-            DEMO CALLS SECTION, Shows call history with full detail access
-           ══════════════════════════════════════════════════════════════════ */}
-        <HowItWorksCard theme={theme} />
-
         {agency?.id && <DemoCustomizer agencyId={agency.id} theme={theme} />}
 
         {/* Extra demo numbers (Pro/Scale): each with its own greeting/experience. */}
@@ -994,6 +992,9 @@ export default function DemoPhonePage() {
           <AdditionalDemoNumbers agencyId={agency.id} theme={theme} country={agencyCountry} byotEnabled={byotEnabled} />
         )}
 
+        {/* ══════════════════════════════════════════════════════════════════
+            DEMO CALLS SECTION, Shows call history with full detail access
+           ══════════════════════════════════════════════════════════════════ */}
         <div
           className="rounded-xl overflow-hidden mb-6"
           style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}

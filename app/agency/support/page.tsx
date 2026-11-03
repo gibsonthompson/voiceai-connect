@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import {
   Loader2, Send, Bot, User, Phone, MessageCircle,
   HelpCircle, Zap, AlertCircle, Wrench, CreditCard, ArrowRight,
-  Headphones, CheckCircle2, Inbox
+  Headphones, CheckCircle2, Inbox, PlayCircle, ExternalLink, Sparkles
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAgency } from '@/app/agency/context';
@@ -157,32 +157,28 @@ export default function SupportPage() {
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] md:h-screen" style={{ backgroundColor: theme.bg }}>
       {/* Header */}
-      <div className="flex-shrink-0 px-4 sm:px-6 py-4 border-b" style={{ borderColor: theme.border }}>
-        <div className="flex items-center justify-between max-w-3xl mx-auto">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: theme.primary15 }}>
-              <MessageCircle className="h-5 w-5" style={{ color: theme.primary }} />
+      <div className="flex-shrink-0 px-4 sm:px-6 py-4 sm:py-5 border-b" style={{ borderColor: theme.border }}>
+        <div className="flex items-center justify-between gap-3 max-w-3xl mx-auto">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="relative flex h-11 w-11 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>
+              <Bot className="h-5 w-5" style={{ color: theme.primary }} />
+              <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full" style={{ backgroundColor: '#22c55e', boxShadow: `0 0 0 2px ${theme.bg}` }} />
             </div>
-            <div>
-              <h1 className="text-base sm:text-lg font-semibold" style={{ color: theme.text }}>Support</h1>
-              <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>AI-powered help for your agency</p>
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-xl font-semibold tracking-tight" style={{ color: theme.text }}>Support</h1>
+              <p className="text-xs sm:text-[13px]" style={{ color: theme.textMuted }}>AI assistant, usually replies instantly</p>
             </div>
           </div>
-
-          <div className="flex items-center gap-2">
-            {/* Phone — fades in after threshold (secondary) */}
+          <div className="flex items-center gap-2 flex-shrink-0">
             <a href={`tel:${SUPPORT_PHONE.replace(/\D/g, '')}`}
-              className={`hidden sm:flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition hover:opacity-80 ${showPhone ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+              className={`hidden sm:inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-medium transition hover:opacity-80 ${showPhone ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
               style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.1 : 0.06), color: theme.primary, border: `1px solid ${hexToRgba(theme.primary, 0.2)}` }}>
-              <Phone className="h-3.5 w-3.5" />
-              {SUPPORT_PHONE}
+              <Phone className="h-3.5 w-3.5" /> {SUPPORT_PHONE}
             </a>
-
-            {/* Talk to a human — always available, routes into the Inbox */}
             <button onClick={escalateToHuman} disabled={!canEscalate}
-              className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition disabled:opacity-40 hover:opacity-80"
-              style={{ backgroundColor: 'transparent', color: theme.primary, border: `1px solid ${hexToRgba(theme.primary, 0.3)}` }}>
-              {escalating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : escalated ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Headphones className="h-3.5 w-3.5" />}
+              className="inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-medium transition disabled:opacity-40 hover:opacity-90"
+              style={{ backgroundColor: theme.card, color: theme.text, border: `1px solid ${theme.border}` }}>
+              {escalating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : escalated ? <CheckCircle2 className="h-3.5 w-3.5" style={{ color: theme.primary }} /> : <Headphones className="h-3.5 w-3.5" style={{ color: theme.primary }} />}
               <span>{escalated ? 'Sent' : 'Talk to a human'}</span>
             </button>
           </div>
@@ -193,28 +189,43 @@ export default function SupportPage() {
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
           {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 sm:py-20">
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ backgroundColor: theme.primary15 }}>
-                <Bot className="h-8 w-8" style={{ color: theme.primary }} />
+            <div className="mx-auto max-w-2xl">
+              <div className="text-center">
+                <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl" style={{ backgroundColor: theme.primary15 }}>
+                  <Sparkles className="h-8 w-8" style={{ color: theme.primary }} />
+                </div>
+                <h2 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>How can I help?</h2>
+                <p className="mt-2 text-sm sm:text-[15px] leading-relaxed mx-auto max-w-md" style={{ color: theme.textMuted }}>
+                  Ask about your dashboard, onboarding clients, billing, branding, or troubleshooting. I answer from the VoiceAI Connect knowledge base.
+                </p>
               </div>
-              <h2 className="text-lg font-semibold mb-1" style={{ color: theme.text }}>How can I help?</h2>
-              <p className="text-sm mb-8 text-center max-w-sm" style={{ color: theme.textMuted }}>
-                Ask me anything about VoiceAI Connect — setup, troubleshooting, features, billing, or best practices.
-              </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
+              <a href="https://youtu.be/nHNHPCgaPB4" target="_blank" rel="noopener noreferrer"
+                className="mt-8 flex items-center gap-4 rounded-2xl p-4 sm:p-5 transition-all hover:opacity-95"
+                style={{ background: theme.isDark ? `linear-gradient(to right, ${theme.primary}14, transparent)` : `linear-gradient(to right, ${theme.primary}0a, transparent)`, border: `1px solid ${theme.primary30}` }}>
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>
+                  <PlayCircle className="h-6 w-6" style={{ color: theme.primary }} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm sm:text-[15px] font-semibold" style={{ color: theme.text }}>Watch the full dashboard walkthrough</p>
+                  <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>A complete tour of every part of your dashboard, 25 minutes</p>
+                </div>
+                <ExternalLink className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted }} />
+              </a>
+
+              <p className="mt-8 mb-3 text-[11px] font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Popular questions</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {QUICK_PROMPTS.map(qp => (
                   <button key={qp.label} onClick={() => sendMessage(qp.prompt)}
-                    className="flex items-center gap-3 rounded-xl p-3 text-left text-sm transition-all group"
+                    className="group flex items-center gap-3 rounded-xl p-3.5 text-left text-sm transition-all"
                     style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
-                    onMouseEnter={e => (e.currentTarget.style.borderColor = theme.primary + '60')}
-                    onMouseLeave={e => (e.currentTarget.style.borderColor = theme.border)}>
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#f5f5f5' }}>
-                      <qp.icon className="h-4 w-4" style={{ color: theme.textMuted }} />
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = `${theme.primary}55`; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = 'none'; }}>
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>
+                      <qp.icon className="h-4 w-4" style={{ color: theme.primary }} />
                     </div>
-                    <span style={{ color: theme.text }}>{qp.label}</span>
-                    <ArrowRight className="h-3.5 w-3.5 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: theme.primary }} />
+                    <span className="flex-1 font-medium" style={{ color: theme.text }}>{qp.label}</span>
+                    <ArrowRight className="h-4 w-4 flex-shrink-0 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" style={{ color: theme.primary }} />
                   </button>
                 ))}
               </div>
@@ -318,35 +329,31 @@ export default function SupportPage() {
       </div>
 
       {/* Input */}
-      <div className="flex-shrink-0 border-t px-4 sm:px-6 py-3" style={{ borderColor: theme.border, backgroundColor: theme.bg }}>
-        <div className="max-w-3xl mx-auto flex gap-2">
-          <textarea
-            ref={inputRef}
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Ask a question..."
-            rows={1}
-            className="flex-1 rounded-xl px-4 py-3 text-sm resize-none focus:outline-none transition"
-            style={{
-              backgroundColor: theme.input,
-              border: `1px solid ${theme.inputBorder}`,
-              color: theme.text,
-              maxHeight: '120px',
-            }}
-            onFocus={e => { e.currentTarget.style.border = `1px solid ${theme.primary}`; e.currentTarget.style.boxShadow = `0 0 0 2px ${theme.primary}30`; }}
-            onBlur={e => { e.currentTarget.style.border = `1px solid ${theme.inputBorder}`; e.currentTarget.style.boxShadow = 'none'; }}
-            onInput={e => {
-              const el = e.currentTarget;
-              el.style.height = 'auto';
-              el.style.height = Math.min(el.scrollHeight, 120) + 'px';
-            }}
-          />
-          <button onClick={() => sendMessage(input)} disabled={!input.trim() || sending}
-            className="flex items-center justify-center w-11 h-11 rounded-xl transition-all disabled:opacity-30 flex-shrink-0 self-end"
-            style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
-            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          </button>
+      <div className="flex-shrink-0 border-t px-4 sm:px-6 py-3 sm:py-4" style={{ borderColor: theme.border, backgroundColor: theme.bg }}>
+        <div className="max-w-3xl mx-auto">
+          <div className="flex items-end gap-2 rounded-2xl p-2 pl-4 transition-all" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask a question..."
+              rows={1}
+              className="flex-1 bg-transparent py-2 text-sm resize-none focus:outline-none"
+              style={{ color: theme.text, maxHeight: '140px' }}
+              onFocus={e => { const box = e.currentTarget.parentElement as HTMLElement | null; if (box) { box.style.borderColor = theme.primary; box.style.boxShadow = `0 0 0 3px ${hexToRgba(theme.primary, 0.12)}`; } }}
+              onBlur={e => { const box = e.currentTarget.parentElement as HTMLElement | null; if (box) { box.style.borderColor = theme.inputBorder; box.style.boxShadow = 'none'; } }}
+              onInput={e => { const el = e.currentTarget; el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 140) + 'px'; }}
+            />
+            <button onClick={() => sendMessage(input)} disabled={!input.trim() || sending}
+              className="flex items-center justify-center w-9 h-9 rounded-xl transition-all disabled:opacity-30 flex-shrink-0"
+              style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+              {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            </button>
+          </div>
+          <p className="mt-2 text-center text-[11px]" style={{ color: theme.textMuted }}>
+            Press Enter to send, Shift and Enter for a new line. The assistant can occasionally be wrong, so confirm anything important.
+          </p>
         </div>
       </div>
     </div>
