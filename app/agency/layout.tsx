@@ -3,7 +3,7 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe, Phone, Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Zap, Paintbrush, Clock, Headphones, Headset, Check, Crown, Shield, Inbox, Compass, type LucideIcon } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe, Phone, Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Zap, Paintbrush, Clock, Headphones, Headset, Check, Crown, Shield, Inbox, LifeBuoy, Compass, type LucideIcon } from 'lucide-react';
 import { AgencyProvider, useAgency } from './context';
 import { usePlanFeatures } from '../../hooks/usePlanFeatures';
 import { useTheme } from '../../hooks/useTheme';
@@ -180,6 +180,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     { href: '/agency/ai-lab', label: 'AI Lab', icon: Cpu, locked: !canUseAiLab, upgradeRequired: 'Pro' },
     { href: '/agency/branding', label: 'Branding', icon: Paintbrush, locked: !hasWhiteLabel, upgradeRequired: 'Pro' },
     { href: '/agency/referrals', label: 'Referrals', icon: Gift, locked: !canUseLeadFinder, upgradeRequired: 'Pro' },
+    { href: '/agency/support', label: 'Support', icon: LifeBuoy },
     { href: '/agency/settings', label: 'Settings', icon: Settings },
   ];
 
