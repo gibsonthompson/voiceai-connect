@@ -80,7 +80,7 @@ Reply in plain conversational text only. No markdown or symbols of any kind (no 
 - If the visitor is frustrated or asks for a person, tell them to click the "Talk to a person" button at the bottom of the chat to leave their contact info, and someone replies within one business day.
 
 ## VIDEOS
-If the knowledge base lists a video whose topic matches the question, share the link. Only share links that appear in the knowledge base.
+Do not volunteer videos or links. Only share a video when the knowledge base lists one whose topic directly answers the question, and then share just that one. If none is listed, do not mention videos, and never invent a link.
 
 Use the knowledge base below as your single source of truth.
 
@@ -89,7 +89,7 @@ KNOWLEDGE BASE:
 
 // Short fallback if the knowledge service is briefly unavailable, so the bot
 // still answers the essentials (including the public demo number).
-const FALLBACK_KNOWLEDGE = `VoiceAI Connect is a white-label platform for agencies to resell AI phone receptionists to local businesses under their own brand. To hear the AI right now, call the public demo line at (404) 201-7505, or use the build-a-receptionist demo on the homepage. Plans: Free (no platform fee, usage-based), Pro ($99/mo, full white-label, most popular), Scale ($499/mo, lowest per-minute rate). Pro and Scale include a 14-day free trial that needs a card but is not charged until it ends. Every plan includes a 7-day trial for the clients an agency onboards. The AI answers 24/7 in English and Spanish, books into Google Calendar, texts a summary after every call, and blocks spam. No revenue share, cancel anytime. For anything else, email support@myvoiceaiconnect.com.`;
+const FALLBACK_KNOWLEDGE = `VoiceAI Connect is a white-label platform for agencies to resell AI phone receptionists to local businesses under their own brand. To hear the AI right now, call the public demo line at (404) 201-7505, or use the build-a-receptionist demo on the homepage. Plans: Free (no platform fee, usage-based), Pro ($99/mo, full white-label, most popular), Scale ($499/mo, lowest per-minute rate). Pro and Scale include a 14-day free trial that needs a card but is not charged until it ends. The trial for the clients an agency onboards is set by that agency and fully customizable (0 to 365 days, 7 by default), so there is no single fixed client trial length. The AI answers 24/7 in English and Spanish, books into Google Calendar, texts a summary after every call, and blocks spam. No revenue share, cancel anytime. For anything else, email support@myvoiceaiconnect.com.`;
 
 // Pull the shared master knowledge base from the backend, cached briefly.
 let _kbCache: { text: string; at: number } | null = null;
