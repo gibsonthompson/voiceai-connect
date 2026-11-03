@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
-  Settings, Upload, Check, AlertCircle, ExternalLink, CreditCard, Building, Loader2, DollarSign, AlertTriangle, RefreshCw, Trash2, Receipt, XCircle, Eye, EyeOff, Phone, Users, Globe, Info, MessageSquare, Send, Sparkles, Lock, Code, Search, ChevronDown, LifeBuoy, Plus, Webhook, Smartphone, PlayCircle} from 'lucide-react';
+  Settings, Upload, Check, AlertCircle, CreditCard, Building, Loader2, DollarSign, AlertTriangle, RefreshCw, Trash2, Receipt, XCircle, Eye, EyeOff, Phone, Users, Globe, Info, MessageSquare, Send, Sparkles, Lock, Code, Search, ChevronDown, Plus, Webhook, Smartphone} from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
 import DiscountCodesManager from '@/components/agency/DiscountCodesManager';
@@ -21,12 +21,11 @@ import PlansEditor, { UiPlan } from '@/components/agency/PlansEditor';
 import IndustryGating from '@/components/agency/IndustryGating';
 import PlanUpgrade from '@/components/agency/PlanUpgrade';
 
-type SettingsTab = 'profile' | 'pricing' | 'payments' | 'billing' | 'twilio' | 'embed' | 'team' | 'demo' | 'support' | 'developer' | 'webhooks';
+type SettingsTab = 'profile' | 'pricing' | 'payments' | 'billing' | 'twilio' | 'embed' | 'team' | 'demo' | 'developer' | 'webhooks';
 
 // Agency-wide booking-window defaults. '' = platform default (30 min / 60 days).
 // A client can still override either value on its own AI Settings.
 interface StripeStatus { connected: boolean; account_id?: string; onboarding_complete: boolean; charges_enabled: boolean; payouts_enabled: boolean; details_submitted?: boolean; }
-interface FeedbackItem { id: string; message: string; created_at: string; }
 function isTrialStatus(status: string | null | undefined): boolean { return status === 'trial' || status === 'trialing'; }
 
 const PLAN_PRICING: Record<string, number> = { free: 0, pro: 99, scale: 499, starter: 0, professional: 99, enterprise: 499 };
@@ -310,7 +309,7 @@ function AgencySettingsContent() {
   const [cardOnFile, setCardOnFile] = useState<boolean | null>(null);
   const cardAdded = cardOnFile === true || cardAddedParam;
   const initialTab = (searchParams.get('tab') as SettingsTab) || 'profile';
-  const validTabs: SettingsTab[] = ['profile', 'pricing', 'payments', 'billing', 'twilio', 'embed', 'team', 'demo', 'support', 'developer', 'webhooks'];
+  const validTabs: SettingsTab[] = ['profile', 'pricing', 'payments', 'billing', 'twilio', 'embed', 'team', 'demo', 'developer', 'webhooks'];
   const [activeTab, setActiveTab] = useState<SettingsTab>(validTabs.includes(initialTab) ? initialTab : 'profile');
   const [saving, setSaving] = useState(false); const [saved, setSaved] = useState(false); const [error, setError] = useState<string | null>(null);
   const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null); const [loadingStripeStatus, setLoadingStripeStatus] = useState(false);
@@ -433,8 +432,6 @@ function AgencySettingsContent() {
   const [planProDescription, setPlanProDescription] = useState('');
   const [planGrowthDescription, setPlanGrowthDescription] = useState('');
 
-  const [feedbackMessage, setFeedbackMessage] = useState(''); const [sendingFeedback, setSendingFeedback] = useState(false); const [feedbackSent, setFeedbackSent] = useState(false); const [feedbackError, setFeedbackError] = useState<string | null>(null);
-  const [feedbackHistory, setFeedbackHistory] = useState<FeedbackItem[]>([]); const [loadingFeedback, setLoadingFeedback] = useState(false);
 
   // Change password (self-service, logged-in agency user). Posts to
   // /api/auth/change-password, which reads the caller from the Bearer JWT and
@@ -516,15 +513,12 @@ function AgencySettingsContent() {
   useEffect(() => { if (activeTab === 'payments' && agency?.id) fetchStripeStatus(); }, [activeTab, agency?.id]);
   useEffect(() => { const onFocus = () => { if (activeTab === 'payments' && agency?.id) fetchStripeStatus(); }; window.addEventListener('focus', onFocus); return () => window.removeEventListener('focus', onFocus); }, [activeTab, agency?.id]);
   useEffect(() => { if (agency) setConnectCountry(((((agency as any).country as string) || 'US')).toUpperCase()); }, [agency?.id]);
-  useEffect(() => { if (activeTab === 'support' && agency?.id) fetchFeedbackHistory(); }, [activeTab, agency?.id]);
   useEffect(() => { if (activeTab === 'billing' && agency?.id) fetchUsageData(); }, [activeTab, agency?.id]);
 
   const handleTabChange = (tab: SettingsTab) => { setActiveTab(tab); const url = new URL(window.location.href); url.searchParams.set('tab', tab); window.history.replaceState({}, '', url.toString()); };
   const fetchStripeStatus = async () => { if (!agency) return; setLoadingStripeStatus(true); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/connect/status/${agency.id}`, { headers: { 'Authorization': `Bearer ${token}` } }); if (response.ok) setStripeStatus(await response.json()); } catch (err) { console.error('Failed to fetch Stripe status:', err); } finally { setLoadingStripeStatus(false); } };
-  const fetchFeedbackHistory = async () => { if (!agency) return; setLoadingFeedback(true); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/feedback`, { headers: { 'Authorization': `Bearer ${token}` } }); if (response.ok) { const data = await response.json(); setFeedbackHistory(data.feedback || []); } } catch (err) { console.error('Failed to fetch feedback:', err); } finally { setLoadingFeedback(false); } };
   const fetchUsageData = async () => { if (!agency) return; setUsageLoading(true); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/usage`, { headers: { 'Authorization': `Bearer ${token}` } }); if (response.ok) { const data = await response.json(); setUsageData(data.usage); } } catch (err) { console.error('Failed to fetch usage:', err); } finally { setUsageLoading(false); } };
   const handleUpgrade = async (targetPlan: string) => { if (!agency) return; setUpgradeLoading(targetPlan); setError(null); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/checkout`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ agency_id: agency.id, plan: targetPlan }) }); const data = await response.json(); if (data.url) { window.location.href = data.url; } else if (data.success || data.converted) { window.location.href = `/agency/dashboard?upgraded=${targetPlan}`; } else setError(data.error || data.message || 'Failed to start upgrade'); } catch (err) { setError('Failed to connect to billing'); } finally { setUpgradeLoading(null); } };
-  const handleSendFeedback = async () => { if (!agency || !feedbackMessage.trim()) return; setSendingFeedback(true); setFeedbackError(null); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/feedback`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ message: feedbackMessage.trim() }) }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to send feedback'); } const data = await response.json(); setFeedbackSent(true); setFeedbackMessage(''); if (data.feedback) setFeedbackHistory(prev => [data.feedback, ...prev]); setTimeout(() => setFeedbackSent(false), 3000); } catch (err) { setFeedbackError(err instanceof Error ? err.message : 'Failed to send feedback'); } finally { setSendingFeedback(false); } };
 
   const handleChangePassword = async () => {
     setPasswordError(null);
@@ -611,7 +605,7 @@ function AgencySettingsContent() {
     }
   };
 
-  const settingsTabs = [{ id: 'profile' as SettingsTab, label: 'Profile', icon: Building }, { id: 'pricing' as SettingsTab, label: 'Pricing', icon: DollarSign }, { id: 'payments' as SettingsTab, label: 'Payments', icon: CreditCard }, { id: 'billing' as SettingsTab, label: 'Billing', icon: Receipt }, { id: 'twilio' as SettingsTab, label: 'Twilio', icon: Globe }, { id: 'embed' as SettingsTab, label: 'Embed', icon: Code }, { id: 'team' as SettingsTab, label: 'Team', icon: Users }, { id: 'demo' as SettingsTab, label: 'Demo Mode', icon: Eye }, { id: 'support' as SettingsTab, label: 'Support', icon: LifeBuoy }, { id: 'developer' as SettingsTab, label: 'API', icon: Code }, { id: 'webhooks' as SettingsTab, label: 'Webhooks', icon: Webhook }].filter(tab => { if (tab.id === 'team' && user?.role === 'agency_staff') return false; if (tab.id === 'team' && agency?.is_call_center) return false; if (tab.id === 'embed' && !isFreePlan) return false; if (tab.id === 'billing') return hasPermission('billing'); return hasPermission('settings'); });
+  const settingsTabs = [{ id: 'profile' as SettingsTab, label: 'Profile', icon: Building }, { id: 'pricing' as SettingsTab, label: 'Pricing', icon: DollarSign }, { id: 'payments' as SettingsTab, label: 'Payments', icon: CreditCard }, { id: 'billing' as SettingsTab, label: 'Billing', icon: Receipt }, { id: 'twilio' as SettingsTab, label: 'Twilio', icon: Globe }, { id: 'embed' as SettingsTab, label: 'Embed', icon: Code }, { id: 'team' as SettingsTab, label: 'Team', icon: Users }, { id: 'demo' as SettingsTab, label: 'Demo Mode', icon: Eye }, { id: 'developer' as SettingsTab, label: 'API', icon: Code }, { id: 'webhooks' as SettingsTab, label: 'Webhooks', icon: Webhook }].filter(tab => { if (tab.id === 'team' && user?.role === 'agency_staff') return false; if (tab.id === 'team' && agency?.is_call_center) return false; if (tab.id === 'embed' && !isFreePlan) return false; if (tab.id === 'billing') return hasPermission('billing'); return hasPermission('settings'); });
 
   // If the requested tab (e.g. from a ?tab= URL) isn't one this member is
   // allowed to see, fall back to the first permitted tab so the gated content
@@ -2092,36 +2086,6 @@ function AgencySettingsContent() {
 
             {activeTab === 'developer' && <ApiKeysTab agency={agency} theme={theme} />}
             {activeTab === 'webhooks' && <WebhooksTab agency={agency} theme={theme} />}
-            {activeTab === 'support' && (
-              <div className="space-y-4 sm:space-y-6">
-                {/* Full dashboard walkthrough: the permanent, always-findable home for the video. */}
-                <a href="https://youtu.be/nHNHPCgaPB4" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 sm:gap-4 rounded-xl p-3 sm:p-4 transition-colors" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: `${theme.primary}22` }}>
-                    <PlayCircle className="h-5 w-5" style={{ color: theme.primary }} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium" style={{ color: theme.text }}>Full dashboard walkthrough</p>
-                    <p className="text-xs" style={{ color: theme.textMuted }}>A complete tour of every part of your dashboard (25 min)</p>
-                  </div>
-                  <ExternalLink className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted }} />
-                </a>
-                <div><h3 className="text-base sm:text-lg font-medium mb-1">Contact Support</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Questions or need a hand? Send us a message and our team will get back to you.</p></div>
-                {feedbackError && (<div className="rounded-xl p-3 sm:p-4 flex items-center gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.errorText }} /><p className="text-sm" style={{ color: theme.errorText }}>{feedbackError}</p></div>)}
-                {feedbackSent && (<div className="rounded-xl p-3 sm:p-4 flex items-center gap-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><Check className="h-4 w-4" style={{ color: theme.primary }} /><p className="text-sm" style={{ color: theme.primary }}>Message sent, we'll get back to you!</p></div>)}
-                <div>
-                  <textarea value={feedbackMessage} onChange={(e) => setFeedbackMessage(e.target.value)} placeholder="How can we help?" rows={5} maxLength={2000} className="w-full rounded-xl px-3 sm:px-4 py-2.5 text-sm resize-none transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="text-xs" style={{ color: theme.textMuted }}>{feedbackMessage.length}/2000</span>
-                    <button onClick={handleSendFeedback} disabled={sendingFeedback || !feedbackMessage.trim()} className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{sendingFeedback ? <><Loader2 className="h-4 w-4 animate-spin" />Sending...</> : <><Send className="h-4 w-4" />Send</>}</button>
-                  </div>
-                </div>
-                {loadingFeedback ? (
-                  <div className="flex items-center justify-center py-6"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.primary }} /></div>
-                ) : feedbackHistory.length > 0 ? (
-                  <div><p className="text-sm font-medium mb-3">Your previous messages</p><div className="space-y-2">{feedbackHistory.map((item) => (<div key={item.id} className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}><p className="text-sm">{item.message}</p><p className="text-[10px] sm:text-xs mt-2" style={{ color: theme.textMuted }}>{new Date(item.created_at).toLocaleDateString()}</p></div>))}</div></div>
-                ) : null}
-              </div>
-            )}
 
             {/* Save button - profile & pricing tabs only. Password change,
                 subdomain, cancel, feedback, Stripe, per-minute billing, client
