@@ -312,13 +312,23 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
   const fetchAgencyData = async () => {
     let cacheMatchesSession = false;
 
+    // Path-based login fallback for the branches that run BEFORE we can read the
+    // stored user (missing token / unparseable cache) and for the catch block,
+    // where the user-derived loginPath below is out of scope. A call-center
+    // visitor is on a /cc route, so bounce them to /cc/login, never the agency
+    // door (which rejects cc_* roles and was the "sent me to the agency login"
+    // bug for agents).
+    const fallbackLoginPath = (typeof window !== 'undefined' && window.location.pathname.startsWith('/cc'))
+      ? '/cc/login'
+      : '/agency/login';
+
     try {
       const token = localStorage.getItem('auth_token');
       const storedUserRaw = localStorage.getItem('user');
 
       if (!token || !storedUserRaw) {
         wipeSession();
-        window.location.href = '/agency/login';
+        window.location.href = fallbackLoginPath;
         return;
       }
 
@@ -327,7 +337,7 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
         storedUser = JSON.parse(storedUserRaw);
       } catch {
         wipeSession();
-        window.location.href = '/agency/login';
+        window.location.href = fallbackLoginPath;
         return;
       }
 
@@ -433,7 +443,7 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
       // cache → wipe and bounce so they can't see another account's data.
       if (!cacheMatchesSession) {
         wipeSession();
-        window.location.href = '/agency/login';
+        window.location.href = fallbackLoginPath;
       } else {
         setLoading(false);
       }
