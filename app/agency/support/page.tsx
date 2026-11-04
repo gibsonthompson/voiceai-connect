@@ -219,7 +219,7 @@ export default function SupportPage() {
                 <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full" style={{ backgroundColor: '#22c55e', boxShadow: `0 0 0 2px ${theme.card}` }} />
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-semibold leading-tight" style={{ color: theme.text }}>VoiceAI Assistant</p>
+                <p className="text-sm font-semibold leading-tight" style={{ color: theme.text }}>Support Assistant</p>
                 <p className="text-xs leading-tight mt-0.5" style={{ color: theme.textMuted }}>Trained on your dashboard · replies instantly</p>
               </div>
             </div>
@@ -346,13 +346,10 @@ export default function SupportPage() {
                 </span>
               </div>
               <div className="p-4">
-                <p className="text-sm font-semibold" style={{ color: theme.text }}>Full dashboard walkthrough</p>
+                <p className="text-sm font-semibold" style={{ color: theme.text }}>Full Dashboard Walkthrough</p>
                 <p className="mt-1 text-xs leading-relaxed" style={{ color: theme.textMuted }}>
-                  A guided tour through every tab, from onboarding your first client to getting paid.
+                  A complete tour of your dashboard, tab by tab.
                 </p>
-                <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold" style={{ color: theme.primary }}>
-                  <Play className="h-3.5 w-3.5" style={{ fill: theme.primary }} /> Watch the walkthrough
-                </span>
               </div>
             </a>
 
