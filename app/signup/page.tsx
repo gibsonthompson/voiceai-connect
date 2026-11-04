@@ -785,6 +785,9 @@ function AgencySignupForm({ isEmbed }: { isEmbed: boolean }) {
           lastName: formData.lastName, country: formData.country,
           referralCode: referralCode,
           is_call_center: isCallCenter,
+          // Receptionist the visitor built on the marketing demo (if any). The
+          // backend seeds it onto the new agency as a one-click Test AI.
+          demo_token: searchParams.get('demo') || undefined,
         }),
       });
 

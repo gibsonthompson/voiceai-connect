@@ -48,6 +48,9 @@ export default function AgencyClientsPage() {
   // Test client provisioning state
   const [provisioningTestClient, setProvisioningTestClient] = useState(false);
   const [provisionError, setProvisionError] = useState<string | null>(null);
+  // Receptionist the owner built on the marketing demo and carried through
+  // signup, waiting to be activated as their Test AI (null when none).
+  const [pendingTestClient, setPendingTestClient] = useState<{ business_name?: string; industry?: string; city?: string; greeting?: string } | null>(null);
 
   useEffect(() => {
     if (!agency) return;
@@ -83,6 +86,17 @@ export default function AgencyClientsPage() {
         const data = await response.json();
         setClients(data.clients || []);
       }
+      // Pull the seeded demo receptionist, if the owner built one before signup,
+      // so we can offer a one-click "Activate" instead of a blank setup card.
+      try {
+        const tcRes = await fetch(`${backendUrl}/api/agency/${agency.id}/test-client`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (tcRes.ok) {
+          const tc = await tcRes.json();
+          setPendingTestClient(tc && tc.pending ? tc.pending : null);
+        }
+      } catch { /* non-fatal: fall back to the generic setup card */ }
     } catch (error) {
       console.error('Failed to fetch clients:', error);
     } finally {
@@ -415,8 +429,10 @@ export default function AgencyClientsPage() {
         <div className="mb-6">
           <PaidFeatureNotice
             theme={theme}
-            title="Test AI is a paid feature"
-            message="Activate a working AI receptionist with its own phone number so you can call it and hear exactly what your clients get. Upgrade to Pro or Scale to unlock your test line."
+            title={pendingTestClient?.business_name ? `Activate ${pendingTestClient.business_name}` : 'Test AI is a paid feature'}
+            message={pendingTestClient?.business_name
+              ? `The receptionist you built for ${pendingTestClient.business_name} is saved and ready. Upgrade to Pro or Scale to give it a real phone number and call it live.`
+              : 'Activate a working AI receptionist with its own phone number so you can call it and hear exactly what your clients get. Upgrade to Pro or Scale to unlock your test line.'}
             cta="Upgrade to unlock Test AI"
             icon={<FlaskConical className="h-4 w-4" style={{ color: theme.primary }} />}
           />
@@ -444,7 +460,7 @@ export default function AgencyClientsPage() {
                   <FlaskConical className="h-4 w-4" style={{ color: theme.primary }} />
                 </div>
                 <h3 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>
-                  Set up your test client
+                  {pendingTestClient?.business_name ? `Activate ${pendingTestClient.business_name}` : 'Set up your test client'}
                 </h3>
                 <span 
                   className="text-[10px] px-2 py-0.5 rounded-full font-medium uppercase tracking-wider" 
@@ -454,8 +470,15 @@ export default function AgencyClientsPage() {
                 </span>
               </div>
               <p className="text-xs sm:text-sm mb-3 sm:max-w-[640px]" style={{ color: theme.textMuted }}>
-                Activate a working AI receptionist with its own phone number so you can call it and experience exactly what your clients get. Doesn&apos;t count toward your client limit and isn&apos;t billed.
+                {pendingTestClient?.business_name
+                  ? <>This is the receptionist you built on our site. Activate it to give it a real phone number and call it live, set up exactly as you configured. Doesn&apos;t count toward your client limit and isn&apos;t billed.</>
+                  : <>Activate a working AI receptionist with its own phone number so you can call it and experience exactly what your clients get. Doesn&apos;t count toward your client limit and isn&apos;t billed.</>}
               </p>
+              {pendingTestClient?.greeting && (
+                <div className="mb-3 rounded-lg px-3 py-2 text-xs sm:text-sm italic sm:max-w-[640px]" style={{ backgroundColor: theme.primary15, color: theme.text }}>
+                  &ldquo;{pendingTestClient.greeting}&rdquo;
+                </div>
+              )}
               {provisionError && (
                 <p 
                   className="text-xs mb-3 rounded-lg px-3 py-2" 
@@ -482,7 +505,7 @@ export default function AgencyClientsPage() {
                 ) : (
                   <>
                     <Phone className="h-3.5 w-3.5" />
-                    Set Up Test Client
+                    {pendingTestClient?.business_name ? `Activate ${pendingTestClient.business_name} free` : 'Set Up Test Client'}
                   </>
                 )}
               </button>

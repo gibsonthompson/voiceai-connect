@@ -18,7 +18,6 @@
 // ============================================================================
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import Link from 'next/link';
 import { ArrowUp, Globe, Mic, Phone, PhoneOff, Loader2, Sparkles, AlertTriangle, ArrowUpRight, Check } from 'lucide-react';
 
 const EM = '#01f5d1';        // primary brand accent (matches --color-em-400 / text-em / btn-em)
@@ -61,6 +60,7 @@ export default function HeroDemo() {
   const [error, setError] = useState('');
   const [biz, setBiz] = useState<Biz | null>(null);
   const [assistant, setAssistant] = useState<any>(null);
+  const [activating, setActivating] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [muted, setMuted] = useState(false);
   const [lines, setLines] = useState<Line[]>([]);
@@ -102,6 +102,33 @@ export default function HeroDemo() {
       setAssistant(j.assistant);
       setPhase('ready');
     } catch (e: any) { setError(e?.message || 'Something went wrong.'); setPhase('idle'); }
+  }
+
+  // Carry the exact receptionist they just built into signup. We save it to a
+  // token and pass it to /signup, where it rides through to their dashboard as a
+  // one-click "Activate" Test AI. A save failure never blocks the funnel: we send
+  // them to /signup regardless.
+  async function activate() {
+    if (activating) return;
+    setActivating(true);
+    let dest = '/signup';
+    try {
+      if (biz) {
+        const res = await fetch(`${api}/api/public/demo-receptionist/claim`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            business_name: biz.name, industry: biz.industry, city: biz.city,
+            greeting: biz.greeting, facts: biz.facts, website_url: biz.websiteUrl,
+            // Carry the exact voice they just heard so the activated receptionist sounds identical.
+            voice: assistant?.voice || undefined,
+          }),
+        });
+        const j = await res.json().catch(() => ({}));
+        if (res.ok && j.token) dest = `/signup?demo=${encodeURIComponent(j.token)}`;
+      }
+    } catch { /* fall through to plain /signup */ }
+    window.location.href = dest;
   }
 
   async function startCall() {
@@ -353,8 +380,10 @@ export default function HeroDemo() {
                   ))}
                 </div>
                 <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-x-5 gap-y-3">
-                  <Link href="/signup" className="btn btn-em">Start your free trial <ArrowUpRight className="w-3.5 h-3.5" /></Link>
-                  <span className="text-[14px] text-white/50">It is the same build you just did, for real.</span>
+                  <button onClick={activate} disabled={activating} className="btn btn-em disabled:opacity-70">
+                    {activating ? 'Activating...' : <>Activate {biz?.name ? (biz.name.length > 28 ? biz.name.slice(0, 28).trim() : biz.name) : 'this receptionist'} free <ArrowUpRight className="w-3.5 h-3.5" /></>}
+                  </button>
+                  <span className="text-[14px] text-white/50">It keeps this exact receptionist in your dashboard.</span>
                 </div>
               </div>
             )}
