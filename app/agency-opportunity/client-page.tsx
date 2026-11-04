@@ -135,7 +135,7 @@ function Step({ n, last, kicker, title, inputs, result }: {
       {/* body */}
       <div className={last ? '' : 'pb-16 lg:pb-20'}>
         <p className="font-mono text-[11px] tracking-[0.14em] uppercase text-em-deep mb-3">{kicker}</p>
-        <h3 className="font-display text-[26px] lg:text-[30px] font-medium text-black tracking-tight leading-tight max-w-[22ch]">{title}</h3>
+        <h3 className="font-display text-[24px] lg:text-[28px] font-semibold text-black tracking-tight leading-tight max-w-[26ch]">{title}</h3>
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center mt-9">
           <div className="flex flex-col gap-8">{inputs}</div>
           <div>{result}</div>
@@ -150,7 +150,7 @@ function MasterCalculator() {
   const [calls, setCalls] = useState(PRESETS.plumbing.calls);
   const [job, setJob] = useState(PRESETS.plumbing.job);
   const [price, setPrice] = useState(297);
-  const [clients, setClients] = useState(15);
+  const [clients, setClients] = useState(25);
   const [plan, setPlan] = useState<PlanId>('pro');
 
   const applyPreset = (k: PresetKey) => { const p = PRESETS[k]; setPreset(k); setCalls(p.calls); setJob(p.job); };
@@ -205,7 +205,7 @@ function MasterCalculator() {
       <Step
         n={1}
         kicker="Start here"
-        title="Pick a business in your city. Watch what it's quietly losing."
+        title="Pick A Business. See What It Quietly Loses."
         inputs={
           <>
             <div>
@@ -242,27 +242,40 @@ function MasterCalculator() {
       {/* STEP 2 */}
       <Step
         n={2}
-        kicker="So you offer to fix it"
-        title="You put your AI receptionist on their phone. They can't say no."
+        kicker="So you step in"
+        title="You Answer Their Calls. They Still Profit."
         inputs={
           <>
             <Slider label="What you charge them / mo" value={price} min={99} max={1000} step={1} onChange={setPrice} format={money0} hint="Your monthly price for their AI receptionist. You set it, you keep the spread." />
             <div className="rounded-2xl p-5" style={{ background: 'rgba(0,198,178,0.06)', border: '1px solid rgba(0,198,178,0.18)' }}>
               <p className="text-[13.5px] text-black/60 leading-relaxed">
-                The AI answers every call, 24/7, books the job and texts them the details. You never pick up a phone. You just set the price and collect.
+                Your AI answers every call 24/7, books the job, and texts them the details. You never pick up a phone. You set the price and collect.
               </p>
             </div>
           </>
         }
         result={
           <div className="ao-res">
-            <p className="font-mono text-[11px] tracking-[0.14em] uppercase text-white/40 mb-5">They pay you {money0(price)}/mo, and still come out ahead</p>
-            <div className="flex items-end gap-2.5">
-              <p className="t-stat text-em" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.25rem)' }}>{money0(clientNetA)}</p>
-              <span className="font-mono text-sm text-white/45 mb-3">/mo they keep</span>
+            <p className="font-mono text-[11px] tracking-[0.14em] uppercase text-white/40 mb-6">Here&apos;s the business&apos;s math, each month</p>
+            <div className="space-y-5">
+              <div className="flex items-baseline justify-between gap-4">
+                <span className="text-[15px] text-white/60">Calls your AI saves them</span>
+                <span className="tabular-nums text-em font-semibold text-[23px]">+{money0(recoveredA)}</span>
+              </div>
+              <div className="flex items-baseline justify-between gap-4">
+                <span className="text-[15px] text-white/60">What they pay you</span>
+                <span className="tabular-nums text-white/70 text-[21px]">- {money0(price)}</span>
+              </div>
             </div>
-            <p className="text-[15px] text-white/60 mt-4 leading-relaxed">
-              Your AI recovers about <span className="text-em font-medium">{money0(recoveredA)}/mo</span> of the calls that were going to voicemail. After your fee, that's money back in their pocket that used to walk out the door. For them, you pay for yourself many times over.
+            <div className="mt-7 pt-7" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+              <p className="font-mono text-[11px] tracking-[0.14em] uppercase text-white/40 mb-3">So they keep</p>
+              <div className="flex items-end gap-2.5">
+                <p className="t-stat text-em" style={{ fontSize: 'clamp(2.5rem, 6vw, 4.25rem)' }}>{money0(clientNetA)}</p>
+                <span className="font-mono text-sm text-white/45 mb-3">/mo</span>
+              </div>
+            </div>
+            <p className="text-[14.5px] text-white/55 mt-6 leading-relaxed">
+              You hand them back thousands they were losing, for a few hundred. That is why the answer is yes.
             </p>
           </div>
         }
@@ -273,10 +286,15 @@ function MasterCalculator() {
         n={3}
         last
         kicker="Then do it again, and again"
-        title="Each client is recurring revenue you barely have to service."
+        title="Each Client Is Recurring Revenue You Barely Service."
         inputs={
           <>
             <Slider label="Clients like this" value={clients} min={1} max={100} step={1} onChange={setClients} format={(v) => `${v}`} hint="How many you sign. Drag it up and watch your income move." />
+            <div className="rounded-2xl p-5" style={{ background: 'rgba(0,198,178,0.06)', border: '1px solid rgba(0,198,178,0.18)' }}>
+              <p className="text-[13.5px] text-black/60 leading-relaxed">
+                All of them together take you about an hour a week. VoiceAI Connect answers the calls, books the jobs, and texts the details. Adding a client adds income, not hours.
+              </p>
+            </div>
             <div>
               <p className="font-mono text-[11px] tracking-[0.12em] uppercase text-black/45 mb-3.5">Your plan</p>
               <div className="inline-flex rounded-full border border-black/[0.08] bg-black/[0.03] p-1">
@@ -316,6 +334,11 @@ function MasterCalculator() {
                 </p>
               </div>
             )}
+            <div className="mt-6 rounded-xl p-5" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <p className="text-[13.5px] text-white/60 leading-relaxed">
+                Real numbers, no inflated promises. Every platform cost is already subtracted above, nothing here is padded. And {clients} clients barely touches the market: there are more than <span className="text-white font-medium">33 million</span> small businesses in the US, with roughly <span className="text-white font-medium">5 million</span> new ones opening every year. {clients} is your side of town.
+              </p>
+            </div>
             <Link href="/signup" className="btn btn-em mt-8 self-start">Start your 14-day free trial <ArrowUpRight className="w-3.5 h-3.5" /></Link>
           </div>
         }
@@ -335,7 +358,7 @@ export default function AgencyOpportunityPage() {
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative">
           <FadeIn className="max-w-4xl">
             <p className="t-eyebrow text-em mb-8">Build your own AI receptionist agency</p>
-            <h1 className="t-h1 text-white max-w-[20ch] leading-[1.05]">Every missed call is money. You&apos;re the one who catches it.</h1>
+            <h1 className="t-h1 text-white max-w-[20ch] leading-[1.05]">Every Missed Call Is Money. You&apos;re The One Who Catches It.</h1>
             <p className="t-body mt-10 max-w-2xl text-[1.05rem] leading-relaxed">
               Local businesses lose thousands every month to calls they never pick up. You put your own AI receptionist in front of them, it answers every call around the clock, and you keep the margin. No code, no call center, no answering a single phone yourself.
             </p>
@@ -352,7 +375,7 @@ export default function AgencyOpportunityPage() {
         <div className="max-w-[1180px] mx-auto px-6 lg:px-10">
           <FadeIn className="max-w-2xl mb-20 lg:mb-28">
             <p className="t-eyebrow text-em-deep mb-7">See it in real numbers</p>
-            <h2 className="t-h2 text-black leading-tight">Their losses become your income. Watch it happen.</h2>
+            <h2 className="t-h2 text-black leading-tight">Their Losses Become Your Income. Watch It Happen.</h2>
             <p className="t-body mt-7 leading-relaxed">
               Three steps. Set a real business&apos;s numbers, set what you&apos;d charge, then set how many clients you sign. Every number updates live as you drag.
             </p>
@@ -362,7 +385,7 @@ export default function AgencyOpportunityPage() {
           </FadeIn>
           <FadeIn>
             <p className="text-[12px] text-black/40 mt-16 max-w-3xl leading-relaxed">
-              Estimates for illustration. Missed-call figures use industry benchmarks (small businesses miss 20 to 62% of calls; the average missed call to a home-services business is worth roughly $1,200 in lifetime value; about 8 in 10 callers who hit voicemail never leave a message, per Invoca, CallRail, and a Forbes SMB study, 2024 to 2025). We assume the AI recovers 60% of missed calls and about {MIN_PER_CLIENT} answered minutes per client per month. Platform costs are VoiceAI Connect&apos;s published rates (Pro: $99/mo + $9.99/client + $0.10/min; Scale: $499/mo + $0.05/min). Your real profit depends on what you charge and actual usage, and does not include your own costs like outreach or payment processing.
+              Estimates for illustration. Missed-call figures use industry benchmarks (small businesses miss 20 to 62% of calls; the average missed call to a home-services business is worth roughly $1,200 in lifetime value; about 8 in 10 callers who hit voicemail never leave a message, per Invoca, CallRail, and a Forbes SMB study, 2024 to 2025). We assume the AI recovers 60% of missed calls and about {MIN_PER_CLIENT} answered minutes per client per month. Platform costs are VoiceAI Connect&apos;s published rates (Pro: $99/mo + $9.99/client + $0.10/min; Scale: $499/mo + $0.05/min). Your real profit depends on what you charge and actual usage, and does not include your own costs like outreach or payment processing. Business counts: U.S. SBA Office of Advocacy (about 33 million small businesses) and U.S. Census Business Formation Statistics (roughly 5 million new business applications a year).
             </p>
           </FadeIn>
         </div>
@@ -373,7 +396,7 @@ export default function AgencyOpportunityPage() {
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
           <FadeIn className="max-w-2xl mb-20">
             <p className="t-eyebrow text-em mb-7">Why this is the easiest sale you&apos;ll make</p>
-            <h2 className="t-h2 text-white leading-tight">Every business in your city is already losing this money. They just can&apos;t see it.</h2>
+            <h2 className="t-h2 text-white leading-tight">Every Business In Your City Is Already Losing This Money. They Just Can&apos;t See It.</h2>
             <p className="t-body mt-8 max-w-xl text-white/55 leading-relaxed">
               You don&apos;t have to convince anyone a problem exists. The phone is already ringing while they&apos;re on a job, closed for the night, or stuck on another call. You just show them the number, and offer to answer it.
             </p>
@@ -400,7 +423,7 @@ export default function AgencyOpportunityPage() {
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
           <FadeIn className="max-w-2xl mb-20">
             <p className="t-eyebrow text-em-deep mb-7">Why it actually pays you</p>
-            <h2 className="t-h2 text-black leading-tight">Recurring revenue with almost no work per client.</h2>
+            <h2 className="t-h2 text-black leading-tight">Recurring Revenue With Almost No Work Per Client.</h2>
           </FadeIn>
           <FadeIn>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 lg:gap-6">
@@ -427,7 +450,7 @@ export default function AgencyOpportunityPage() {
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
           <FadeIn className="max-w-2xl mb-20">
             <p className="t-eyebrow text-em mb-7">Everything is already built</p>
-            <h2 className="t-h2 text-white leading-tight">You bring the clients. We run everything behind your brand.</h2>
+            <h2 className="t-h2 text-white leading-tight">You Bring The Clients. We Run Everything Behind Your Brand.</h2>
           </FadeIn>
           <FadeIn>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 lg:gap-6">
@@ -467,7 +490,7 @@ export default function AgencyOpportunityPage() {
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative z-10">
           <FadeIn className="max-w-3xl">
             <p className="t-eyebrow text-em mb-7">Start today</p>
-            <h2 className="t-h1 text-white leading-[1.05]">The calls are already being missed. Go be the one who answers.</h2>
+            <h2 className="t-h1 text-white leading-[1.05]">The Calls Are Already Being Missed. Go Be The One Who Answers.</h2>
             <p className="t-body mt-9 max-w-lg leading-relaxed">
               Launch your white-label agency, grab your demo line, and sign your first client. Your first 14 days are free.
             </p>
