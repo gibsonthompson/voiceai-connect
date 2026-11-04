@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import {
   X, Search, ChevronLeft, ChevronRight,
   Send, Loader2, Bot, User, ArrowUpRight, Sparkles, MessageSquare,
   HelpCircle, Phone, CreditCard, Users, FlaskConical, BookOpen,
   Target, Wrench, Palette, UserPlus, PhoneCall, Receipt, Check,
-  Calendar,
+  Calendar, Inbox,
 } from 'lucide-react';
 import { KB_CATEGORIES, KB_ARTICLES, searchKB, getKBContextText, type KBArticle } from '@/lib/support-kb';
 
@@ -17,6 +18,8 @@ const ICON_MAP: Record<string, React.ElementType> = {
 
 type WidgetView = 'home' | 'category' | 'article' | 'chat' | 'escalation';
 interface ChatMessage { role: 'user' | 'assistant'; content: string; }
+
+const CHAT_GREETING = "Hi! Ask me anything about your dashboard, clients, billing, branding, or troubleshooting, and I'll find the answer for you.";
 
 interface SupportWidgetProps {
   theme: any;
@@ -32,7 +35,11 @@ interface SupportWidgetProps {
 export default function SupportWidget({ theme, userType = 'agency', openSignal, hideLauncher, openToView, agencyId, collectContact, defaultEmail }: SupportWidgetProps) {
   const [open, setOpen] = useState(false);
   useEffect(() => { if (openSignal) { setOpen(true); if (openToView) setView(openToView); if (defaultEmail) setEscalationEmail(e => e || defaultEmail); } }, [openSignal]);
-  const [view, setView] = useState<WidgetView>('home');
+  // For the agency dashboard the widget is a chatbot first: it opens straight
+  // into the AI chat (its "home"), rather than a help-center browse page. Other
+  // surfaces keep the browse home.
+  const homeView: WidgetView = userType === 'agency' ? 'chat' : 'home';
+  const [view, setView] = useState<WidgetView>(homeView);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<KBArticle[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -50,14 +57,14 @@ export default function SupportWidget({ theme, userType = 'agency', openSignal, 
   // scoped to the signed-in agency). Marketing visitors have no token / no
   // persistent identity, so they stay session-only.
   useEffect(() => {
-    if (view !== 'chat' || chatHistoryLoaded || !agencyId) return;
+    if (view !== 'chat' || chatHistoryLoaded) return;
     let cancelled = false;
     (async () => {
       try {
-        const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+        const base = process.env.NEXT_PUBLIC_API_URL || '';
         const token = localStorage.getItem('auth_token') || '';
-        if (token) {
-          const res = await fetch(`${backendUrl}/api/help/history`, { headers: { Authorization: `Bearer ${token}` } });
+        if (agencyId && token) {
+          const res = await fetch(`${base}/api/help/history`, { headers: { Authorization: `Bearer ${token}` } });
           if (res.ok && !cancelled) {
             const d = await res.json();
             if (Array.isArray(d.messages) && d.messages.length) setChatMessages(d.messages);
@@ -68,6 +75,14 @@ export default function SupportWidget({ theme, userType = 'agency', openSignal, 
     })();
     return () => { cancelled = true; };
   }, [view, chatHistoryLoaded, agencyId]);
+
+  // Once the chat is open and history has resolved with nothing to show, seed
+  // the assistant greeting so an empty chat always opens with a friendly intro.
+  useEffect(() => {
+    if (view === 'chat' && chatHistoryLoaded && chatMessages.length === 0) {
+      setChatMessages([{ role: 'assistant', content: CHAT_GREETING }]);
+    }
+  }, [view, chatHistoryLoaded, chatMessages.length]);
 
   // Escalation state
   const [escalationMessage, setEscalationMessage] = useState('');
@@ -107,7 +122,7 @@ export default function SupportWidget({ theme, userType = 'agency', openSignal, 
 
   // Navigate
   const goHome = () => {
-    setView('home');
+    setView(homeView);
     setSelectedCategory(null);
     setSelectedArticle(null);
     setSearchQuery('');
@@ -126,12 +141,7 @@ export default function SupportWidget({ theme, userType = 'agency', openSignal, 
 
   const openChat = () => {
     setView('chat');
-    if (chatMessages.length === 0) {
-      setChatMessages([{
-        role: 'assistant',
-        content: "Hi! I'm the VoiceAI Connect assistant. Ask me anything about the platform (plans, features, setup, troubleshooting) and I'll find the answer for you.",
-      }]);
-    }
+    // The greeting is seeded by the effect above once history has resolved.
     setTimeout(() => chatInputRef.current?.focus(), 200);
   };
 
@@ -272,7 +282,7 @@ export default function SupportWidget({ theme, userType = 'agency', openSignal, 
       <div className="flex items-center justify-between px-5 py-4 flex-shrink-0"
         style={{ borderBottom: `1px solid ${theme.border}` }}>
         <div className="flex items-center gap-3">
-          {view !== 'home' && (
+          {view !== homeView && (
             <button onClick={goHome} className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
               style={{ backgroundColor: theme.hover, color: theme.textMuted }}>
               <ChevronLeft className="h-4 w-4" />
@@ -288,6 +298,9 @@ export default function SupportWidget({ theme, userType = 'agency', openSignal, 
             </h3>
             {view === 'home' && (
               <p className="text-[10px]" style={{ color: theme.textMuted }}>Search or browse help topics</p>
+            )}
+            {view === 'chat' && (
+              <p className="text-[10px]" style={{ color: theme.textMuted }}>Ask anything about your dashboard</p>
             )}
           </div>
         </div>
@@ -525,16 +538,23 @@ export default function SupportWidget({ theme, userType = 'agency', openSignal, 
                 </div>
                 <h4 className="text-base font-semibold mb-2" style={{ color: theme.text }}>Message sent!</h4>
                 <p className="text-sm" style={{ color: theme.textMuted }}>
-                  {collectContact ? "We'll reply to the email you provided, usually within a few hours." : "We typically respond within a few hours. You'll receive a text message with our reply."}
+                  {collectContact ? "We'll reply to the email you provided, usually within a few hours." : "We'll reply right in your Inbox, usually within a few hours, and text you a heads-up."}
                 </p>
-                <button onClick={goHome} className="mt-4 text-xs font-medium" style={{ color: theme.primary }}>
-                  ← Back to Help Center
+                {!collectContact && userType === 'agency' && (
+                  <Link href="/agency/inbox?channel=platform" onClick={() => setOpen(false)}
+                    className="mt-4 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition hover:opacity-90"
+                    style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+                    <Inbox className="h-4 w-4" /> Go to Inbox
+                  </Link>
+                )}
+                <button onClick={goHome} className="mt-4 block mx-auto text-xs font-medium" style={{ color: theme.textMuted }}>
+                  {userType === 'agency' ? '← Back to chat' : '← Back to Help Center'}
                 </button>
               </div>
             ) : (
               <>
                 <p className="text-sm mb-4" style={{ color: theme.textMuted }}>
-                  {collectContact ? "Send us a message and we'll get back to you by email, usually within a few hours." : "Send a message to our team. We'll respond via text message, typically within a few hours."}
+                  {collectContact ? "Send us a message and we'll get back to you by email, usually within a few hours." : "Send a message to our team and we'll reply right in your Inbox, usually within a few hours."}
                 </p>
                 {collectContact && (
                   <div className="space-y-2 mb-3">
