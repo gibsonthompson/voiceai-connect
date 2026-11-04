@@ -54,6 +54,7 @@ export default function SupportPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
 
   // Human escalation hands the conversation to the team (support_requests),
   // which lands in the admin inbox and the agency's own Inbox platform thread.
@@ -115,6 +116,32 @@ export default function SupportPage() {
     } catch { /* ignore */ }
   }, []);
 
+  // Load the full conversation history from the server so it is always here:
+  // across refreshes, new devices, and sign-outs. The owner can scroll up
+  // through everything they have ever asked. New turns are logged server-side
+  // as they happen, so this stays complete without any manual saving.
+  useEffect(() => {
+    if (!agency) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = localStorage.getItem('auth_token') || '';
+        const r = await fetch(`${api}/api/agency/${agency.id}/support/history`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (r.ok && !cancelled) {
+          const d = await r.json();
+          if (Array.isArray(d.messages)) setMessages(d.messages);
+        }
+      } catch { /* keep whatever is already on screen */ }
+      finally { if (!cancelled) setHistoryLoaded(true); }
+    })();
+    return () => { cancelled = true; };
+    // Keyed on the agency id (stable) so a context re-render never re-fetches
+    // and clobbers a live conversation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agency?.id, api]);
+
   const sendMessage = async (content: string) => {
     if (!content.trim() || sending || !agency) return;
 
@@ -135,7 +162,9 @@ export default function SupportPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          messages: newMessages.map(m => ({ role: m.role, content: m.content })),
+          // Display keeps the full history, but only the recent window is sent
+          // as context so a long history never bloats the prompt.
+          messages: newMessages.slice(-20).map(m => ({ role: m.role, content: m.content })),
           agencyName: agency.name,
           agencyPlan: effectivePlan,
         }),
@@ -227,7 +256,11 @@ export default function SupportPage() {
             {/* Scroll area */}
             <div ref={scrollRef} className="flex-1 overflow-y-auto">
               <div className="px-4 sm:px-8 py-6 sm:py-10">
-                {!hasChat ? (
+                {!historyLoaded && !hasChat ? (
+                  <div className="flex items-center justify-center py-10">
+                    <Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.textMuted }} />
+                  </div>
+                ) : !hasChat ? (
                   <div className="mx-auto max-w-xl text-center">
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl" style={{ backgroundColor: theme.primary15 }}>
                       <Sparkles className="h-8 w-8" style={{ color: theme.primary }} />
