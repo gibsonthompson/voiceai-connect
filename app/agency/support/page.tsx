@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import {
   Loader2, Send, Bot, User, Zap, AlertCircle, Wrench, CreditCard,
-  ArrowRight, Headphones, CheckCircle2, Inbox, PlayCircle, ExternalLink, Sparkles,
+  ArrowRight, Headphones, CheckCircle2, Inbox, Play, Sparkles,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAgency } from '@/app/agency/context';
@@ -24,6 +24,10 @@ const QUICK_PROMPTS = [
   { label: 'How do I set up billing?', prompt: 'How do I set up Stripe Connect so I can charge my clients?', icon: CreditCard },
   { label: 'How do I connect a custom domain?', prompt: 'How do I connect a custom domain to my agency?', icon: Wrench },
 ];
+
+// The dashboard walkthrough shown in the resources rail. id drives the YouTube
+// thumbnail; duration renders as the pill on the thumbnail.
+const WALKTHROUGH = { id: 'nHNHPCgaPB4', url: 'https://youtu.be/nHNHPCgaPB4', duration: '25 min' };
 
 function hexToRgba(hex: string, alpha: number): string {
   try {
@@ -319,25 +323,42 @@ export default function SupportPage() {
           {/* Resources rail */}
           <aside className="lg:col-span-1 flex flex-col gap-4 lg:gap-5">
 
-            {/* Walkthrough video */}
-            <a href="https://youtu.be/nHNHPCgaPB4" target="_blank" rel="noopener noreferrer"
-              className="group block rounded-2xl p-5 transition-all hover:opacity-95"
+            {/* Walkthrough video — real thumbnail, play affordance, duration */}
+            <a href={WALKTHROUGH.url} target="_blank" rel="noopener noreferrer"
+              className="group block overflow-hidden rounded-2xl transition-all duration-200 hover:-translate-y-0.5"
               style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, boxShadow: cardShadow }}>
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ backgroundColor: theme.primary15 }}>
-                <PlayCircle className="h-5 w-5" style={{ color: theme.primary }} />
+              <div className="relative aspect-video w-full overflow-hidden" style={{ backgroundColor: '#000' }}>
+                <img
+                  src={`https://i.ytimg.com/vi/${WALKTHROUGH.id}/maxresdefault.jpg`}
+                  onError={(e) => { const t = e.currentTarget; if (!t.dataset.fb) { t.dataset.fb = '1'; t.src = `https://i.ytimg.com/vi/${WALKTHROUGH.id}/hqdefault.jpg`; } }}
+                  alt="Dashboard walkthrough preview"
+                  loading="lazy"
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.5), rgba(0,0,0,0) 55%)' }} />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-transform duration-300 group-hover:scale-110" style={{ backgroundColor: 'rgba(255,255,255,0.95)' }}>
+                    <Play className="h-6 w-6 translate-x-[1px]" style={{ color: '#0f0f0f', fill: '#0f0f0f' }} />
+                  </div>
+                </div>
+                <span className="absolute bottom-2.5 right-2.5 rounded-md px-1.5 py-0.5 text-[11px] font-semibold tabular-nums" style={{ backgroundColor: 'rgba(0,0,0,0.82)', color: '#ffffff' }}>
+                  {WALKTHROUGH.duration}
+                </span>
               </div>
-              <p className="mt-3.5 text-sm font-semibold" style={{ color: theme.text }}>Watch the full walkthrough</p>
-              <p className="mt-1 text-xs leading-relaxed" style={{ color: theme.textMuted }}>
-                A complete tour of every part of your dashboard. About 25 minutes.
-              </p>
-              <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold" style={{ color: theme.primary }}>
-                Watch now <ExternalLink className="h-3.5 w-3.5" />
-              </span>
+              <div className="p-4">
+                <p className="text-sm font-semibold" style={{ color: theme.text }}>Full dashboard walkthrough</p>
+                <p className="mt-1 text-xs leading-relaxed" style={{ color: theme.textMuted }}>
+                  A guided tour through every tab, from onboarding your first client to getting paid.
+                </p>
+                <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold" style={{ color: theme.primary }}>
+                  <Play className="h-3.5 w-3.5" style={{ fill: theme.primary }} /> Watch the walkthrough
+                </span>
+              </div>
             </a>
 
             {/* Common questions (desktop; mobile shows them in the empty state) */}
             <div className="hidden lg:block rounded-2xl p-5" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, boxShadow: cardShadow }}>
-              <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Common questions</p>
+              <p className="mb-3 text-[13px] font-semibold" style={{ color: theme.text }}>Common questions</p>
               <div className="space-y-2">
                 {QUICK_PROMPTS.map(qp => <QuestionRow key={qp.label} qp={qp} />)}
               </div>
