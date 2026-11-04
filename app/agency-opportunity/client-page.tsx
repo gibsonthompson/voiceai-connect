@@ -336,7 +336,7 @@ function MasterCalculator() {
             )}
             <div className="mt-6 rounded-xl p-5" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
               <p className="text-[13.5px] text-white/60 leading-relaxed">
-                Real numbers, no inflated promises. Every platform cost is already subtracted above, nothing here is padded. And {clients} clients barely touches the market: there are more than <span className="text-white font-medium">33 million</span> small businesses in the US, with roughly <span className="text-white font-medium">5 million</span> new ones opening every year. {clients} is your side of town.
+                Real numbers, no inflated promises. Every platform cost is already subtracted above, nothing here is padded. And {clients} clients barely touches the market: there are more than <span className="text-white font-medium">33 million</span> small businesses in the US, with roughly <span className="text-white font-medium">5 million</span> new ones opening every year.
               </p>
             </div>
             <Link href="/signup" className="btn btn-em mt-8 self-start">Start your 14-day free trial <ArrowUpRight className="w-3.5 h-3.5" /></Link>
@@ -353,11 +353,10 @@ export default function AgencyOpportunityPage() {
       <MarketingNav />
 
       {/* HERO */}
-      <section className="canvas-dot relative pt-44 lg:pt-56 pb-24 lg:pb-36 overflow-hidden">
+      <section className="canvas-dot relative pt-40 lg:pt-48 pb-24 lg:pb-36 overflow-hidden">
         <div className="hero-aurora" />
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative">
           <FadeIn className="max-w-4xl">
-            <p className="t-eyebrow text-em mb-8">Build your own AI receptionist agency</p>
             <h1 className="t-h1 text-white max-w-[20ch] leading-[1.05]">Every Missed Call Is Money. You&apos;re The One Who Catches It.</h1>
             <p className="t-body mt-10 max-w-2xl text-[1.05rem] leading-relaxed">
               Local businesses lose thousands every month to calls they never pick up. You put your own AI receptionist in front of them, it answers every call around the clock, and you keep the margin. No code, no call center, no answering a single phone yourself.
@@ -384,9 +383,17 @@ export default function AgencyOpportunityPage() {
             <MasterCalculator />
           </FadeIn>
           <FadeIn>
-            <p className="text-[12px] text-black/40 mt-16 max-w-3xl leading-relaxed">
-              Estimates for illustration. Missed-call figures use industry benchmarks (small businesses miss 20 to 62% of calls; the average missed call to a home-services business is worth roughly $1,200 in lifetime value; about 8 in 10 callers who hit voicemail never leave a message, per Invoca, CallRail, and a Forbes SMB study, 2024 to 2025). We assume the AI recovers 60% of missed calls and about {MIN_PER_CLIENT} answered minutes per client per month. Platform costs are VoiceAI Connect&apos;s published rates (Pro: $99/mo + $9.99/client + $0.10/min; Scale: $499/mo + $0.05/min). Your real profit depends on what you charge and actual usage, and does not include your own costs like outreach or payment processing. Business counts: U.S. SBA Office of Advocacy (about 33 million small businesses) and U.S. Census Business Formation Statistics (roughly 5 million new business applications a year).
+            <p className="text-[12px] text-black/40 mt-16 max-w-3xl mx-auto text-center leading-relaxed">
+              Estimates for illustration. Missed-call figures use industry benchmarks (small businesses miss 20 to 62% of calls; the average missed call to a home-services business is worth roughly $1,200 in lifetime value; about 8 in 10 callers who hit voicemail never leave a message, per Invoca, CallRail, and a Forbes SMB study, 2024 to 2025). We assume the AI answers the calls that currently go to voicemail and that about 60% of them turn into booked, paying jobs, with each client running roughly {MIN_PER_CLIENT} answered minutes a month. Platform costs are VoiceAI Connect&apos;s published rates (Pro: $99/mo + $9.99/client + $0.10/min; Scale: $499/mo + $0.05/min). Your real profit depends on what you charge and actual usage, and does not include your own costs like outreach or payment processing. Business counts: U.S. SBA Office of Advocacy (about 33 million small businesses) and U.S. Census Business Formation Statistics (roughly 5 million new business applications a year).
             </p>
+          </FadeIn>
+          <FadeIn>
+            <div className="mt-14 flex flex-wrap items-center gap-x-9 gap-y-3 text-[15px]">
+              <span className="text-black/45 font-medium">Go deeper:</span>
+              <Link href="/how-much-can-you-make-ai-receptionist-reseller" className="text-em-deep font-semibold hover:underline">How much you can make</Link>
+              <Link href="/ai-receptionist-agency-pricing" className="text-em-deep font-semibold hover:underline">What to charge your clients</Link>
+              <Link href="/how-to-start-ai-receptionist-agency" className="text-em-deep font-semibold hover:underline">How to land your first client</Link>
+            </div>
           </FadeIn>
         </div>
       </section>
@@ -400,6 +407,7 @@ export default function AgencyOpportunityPage() {
             <p className="t-body mt-8 max-w-xl text-white/55 leading-relaxed">
               You don&apos;t have to convince anyone a problem exists. The phone is already ringing while they&apos;re on a job, closed for the night, or stuck on another call. You just show them the number, and offer to answer it.
             </p>
+            <p className="mt-6 text-[14px] text-white/45">See where these numbers come from in <Link href="/blog/missed-call-cost-small-business" className="text-em font-medium hover:underline">the missed-call cost breakdown</Link>.</p>
           </FadeIn>
           <FadeIn>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 lg:gap-6">
@@ -442,6 +450,9 @@ export default function AgencyOpportunityPage() {
               ))}
             </div>
           </FadeIn>
+          <FadeIn>
+            <p className="mt-10 text-[15px] text-black/50">Want every fee and the full margin breakdown? <Link href="/agency-revenue-calculator" className="text-em-deep font-semibold hover:underline">Run the revenue calculator</Link>.</p>
+          </FadeIn>
         </div>
       </section>
 
@@ -474,8 +485,16 @@ export default function AgencyOpportunityPage() {
           </FadeIn>
 
           <FadeIn>
-            <div className="mt-10 flex items-start gap-4 rounded-2xl p-8 max-w-3xl" style={{ background: 'rgba(1,245,209,0.04)', border: '1px solid rgba(1,245,209,0.14)' }}>
-              <ShieldCheck className="w-5 h-5 text-em shrink-0 mt-0.5" strokeWidth={1.9} />
+            <div className="mt-10 flex flex-wrap gap-3">
+              <Link href="/features" className="btn btn-ghost-dark">See every feature <ArrowRight className="w-3.5 h-3.5" /></Link>
+              <Link href="/demo" className="btn btn-ghost-dark">Hear a live demo <ArrowRight className="w-3.5 h-3.5" /></Link>
+              <Link href="/gohighlevel-ai-receptionist" className="btn btn-ghost-dark">Compare to GoHighLevel <ArrowRight className="w-3.5 h-3.5" /></Link>
+            </div>
+          </FadeIn>
+
+          <FadeIn>
+            <div className="mt-10 flex flex-col items-center text-center gap-4 rounded-2xl p-8 max-w-3xl mx-auto" style={{ background: 'rgba(1,245,209,0.04)', border: '1px solid rgba(1,245,209,0.14)' }}>
+              <ShieldCheck className="w-6 h-6 text-em shrink-0" strokeWidth={1.9} />
               <p className="text-[15px] text-white/70 leading-relaxed">
                 This is a platform, not a program. You find the clients and own the relationship. The AI answers their calls and books their jobs. Because the delivery runs itself, the margin on every client is yours to keep.
               </p>
@@ -490,13 +509,14 @@ export default function AgencyOpportunityPage() {
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative z-10">
           <FadeIn className="max-w-3xl">
             <p className="t-eyebrow text-em mb-7">Start today</p>
-            <h2 className="t-h1 text-white leading-[1.05]">The Calls Are Already Being Missed. Go Be The One Who Answers.</h2>
+            <h2 className="t-h2 text-white leading-tight">The Calls Are Already Being Missed. Go Be The One Who Answers.</h2>
             <p className="t-body mt-9 max-w-lg leading-relaxed">
               Launch your white-label agency, grab your demo line, and sign your first client. Your first 14 days are free.
             </p>
             <div className="flex flex-wrap gap-3 mt-12">
               <Link href="/signup" className="btn btn-em">Start your 14-day free trial <ArrowUpRight className="w-3.5 h-3.5" /></Link>
-              <Link href="#calculator" className="btn btn-ghost-dark">Run your numbers again <ArrowRight className="w-3.5 h-3.5" /></Link>
+              <Link href="/ai-receptionist-agency-pricing" className="btn btn-ghost-dark">See the plans <ArrowRight className="w-3.5 h-3.5" /></Link>
+              <Link href="/how-it-works" className="btn btn-ghost-dark">How it works <ArrowRight className="w-3.5 h-3.5" /></Link>
             </div>
           </FadeIn>
         </div>
