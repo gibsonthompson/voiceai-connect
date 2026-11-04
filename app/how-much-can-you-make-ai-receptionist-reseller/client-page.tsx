@@ -139,7 +139,7 @@ export default function AddAIVoiceToAgencyPage() {
           {/* Answer-First Summary Box */}
           <div className="mt-8 p-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.05]">
             <p className="text-lg sm:text-xl text-[#fafaf9]/80 leading-relaxed">
-              <strong className="text-[#fafaf9]">For marketing, web design, and service agencies:</strong> AI receptionist services are the highest-margin, lowest-effort upsell you can add to your existing client base. Your clients already trust you. Offer them 24/7 AI call coverage under your brand for $149-299/month—no extra delivery work required. Agencies typically convert 20-40% of existing clients, adding $2,000-8,000/month in pure profit.
+              <strong className="text-[#fafaf9]">For marketing, web design, and service agencies:</strong> AI receptionist services are the highest-margin, lowest-effort upsell you can add to your existing client base. Your clients already trust you. Offer them 24/7 AI call coverage under your brand for $149-299/month, with no extra delivery work. Agencies typically convert 20-40% of their existing clients. For a 30-client book that is roughly $700 to $1,600 a month in recurring margin, and it scales from there with a bigger list.
             </p>
           </div>
 
@@ -372,28 +372,28 @@ export default function AddAIVoiceToAgencyPage() {
                   <span className="text-xl font-semibold">$1,432</span>
                 </div>
                 <div className="flex justify-between items-center pb-3 border-b border-white/[0.06]">
-                  <span className="text-[#fafaf9]/60">Platform cost</span>
-                  <span className="text-xl font-semibold text-[#fafaf9]/40">−$199</span>
+                  <span className="text-[#fafaf9]/60">Platform cost (Pro plan)</span>
+                  <span className="text-xl font-semibold text-[#fafaf9]/40">−$419</span>
                 </div>
                 <div className="flex justify-between items-center pt-2">
                   <span className="font-medium">New monthly profit</span>
-                  <span className="text-2xl font-semibold text-emerald-400">$1,233</span>
+                  <span className="text-2xl font-semibold text-emerald-400">$1,013</span>
                 </div>
               </div>
               
               <div className="mt-6 pt-6 border-t border-white/[0.06]">
                 <p className="text-sm text-[#fafaf9]/50">
-                  <strong className="text-[#fafaf9]/70">That's $14,796/year in pure profit</strong> from sending one email to your existing client list. 
-                  No new client acquisition. No extra delivery work. No hiring.
+                  <strong className="text-[#fafaf9]/70">That's $12,156/year in recurring profit</strong> from sending one email to your existing client list. 
+                  No new client acquisition, no extra delivery work, no hiring. (Pro plan at about 300 answered minutes per client, where most agencies land.)
                 </p>
               </div>
             </div>
 
             <div className="grid sm:grid-cols-3 gap-4">
               {[
-                { scenario: 'Conservative (20%)', clients: 6, profit: '$878/mo', annual: '$10,536' },
-                { scenario: 'Moderate (30%)', clients: 9, profit: '$1,412/mo', annual: '$16,944' },
-                { scenario: 'Optimistic (40%)', clients: 12, profit: '$1,949/mo', annual: '$23,388' },
+                { scenario: 'Conservative (20%)', clients: 6, profit: '$735/mo', annual: '$8,820' },
+                { scenario: 'Moderate (30%)', clients: 9, profit: '$1,152/mo', annual: '$13,824' },
+                { scenario: 'Optimistic (40%)', clients: 12, profit: '$1,569/mo', annual: '$18,828' },
               ].map((item) => (
                 <div key={item.scenario} className="p-4 rounded-xl border border-white/[0.06] bg-white/[0.02] text-center">
                   <p className="text-sm text-[#fafaf9]/50">{item.scenario}</p>
@@ -403,6 +403,13 @@ export default function AddAIVoiceToAgencyPage() {
                 </div>
               ))}
             </div>
+          </div>
+
+          <div className="mb-16 -mt-8">
+            <Link href="/agency-opportunity" className="inline-flex items-center gap-2 text-emerald-400 font-medium hover:underline">
+              Run these numbers for your own book in the interactive calculator
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
 
           {/* Integration with Your Stack */}
@@ -622,8 +629,14 @@ export default function AddAIVoiceToAgencyPage() {
                   Start Your Free Trial
                   <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </Link>
-                <Link 
-                  href="/ai-receptionist-agency-pricing" 
+                <Link
+                  href="/agency-opportunity"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-8 py-4 text-base font-medium transition-all hover:bg-white/[0.06]"
+                >
+                  Run the Calculator
+                </Link>
+                <Link
+                  href="/ai-receptionist-agency-pricing"
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-8 py-4 text-base font-medium transition-all hover:bg-white/[0.06]"
                 >
                   See Pricing Strategies

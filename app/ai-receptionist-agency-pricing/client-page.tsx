@@ -139,7 +139,7 @@ export default function PricingModelsPage() {
           {/* Answer-First Summary Box */}
           <div className="mt-8 p-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.05]">
             <p className="text-lg sm:text-xl text-[#fafaf9]/80 leading-relaxed">
-              <strong className="text-[#fafaf9]">Most successful AI receptionist agencies charge $99-299/month</strong> using a tiered pricing model based on call volume or features. The sweet spot for most local businesses is $149-199/month—expensive enough to signal quality, cheap enough to be a no-brainer compared to human receptionists ($3,000+/month) or missed revenue from unanswered calls.
+              <strong className="text-[#fafaf9]">Most successful AI receptionist agencies charge $99-299/month</strong> using a tiered pricing model based on call volume or features. The sweet spot for most local businesses is $149-199/month, expensive enough to signal quality, cheap enough to be a no-brainer compared to human receptionists ($3,000+/month) or missed revenue from unanswered calls.
             </p>
           </div>
 
@@ -194,7 +194,7 @@ export default function PricingModelsPage() {
 
             <div className="p-5 rounded-xl border border-white/[0.06] bg-white/[0.02]">
               <p className="text-[#fafaf9]/70">
-                <strong className="text-[#fafaf9]">The anchor that matters:</strong> Your competition isn't other AI services—it's the cost of the alternative. 
+                <strong className="text-[#fafaf9]">The anchor that matters:</strong> Your competition isn't other AI services, it's the cost of the alternative. 
                 A human receptionist is $3,000-4,000/month. A single missed call costs $200-500 in lost revenue. 
                 At $149/month, you're offering enterprise-grade coverage for less than the cost of one missed opportunity.
               </p>
@@ -561,7 +561,7 @@ export default function PricingModelsPage() {
               },
               {
                 q: 'What about offering a free tier?',
-                a: 'Generally, avoid free tiers for AI receptionist services. Free attracts non-serious users who drain support resources and never convert. A free trial (14 days) is fine—it lets people test quality. But perpetually free users rarely become paying customers.',
+                a: 'Generally, avoid free tiers for AI receptionist services. Free attracts non-serious users who drain support resources and never convert. A free trial (14 days) is fine, it lets people test quality. But perpetually free users rarely become paying customers.',
               },
             ].map((item, i) => (
               <details 
@@ -595,7 +595,7 @@ export default function PricingModelsPage() {
                 </span>
               </h2>
               <p className="mt-4 text-lg text-[#fafaf9]/50">
-                VoiceAI Connect lets you set any price you want—and keep 100% of what you charge.
+                VoiceAI Connect lets you set any price you want, and keep 100% of what you charge.
               </p>
               
               <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -607,10 +607,10 @@ export default function PricingModelsPage() {
                   <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </Link>
                 <Link 
-                  href="/how-much-can-you-make-ai-receptionist-reseller" 
+                  href="/agency-opportunity" 
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-8 py-4 text-base font-medium transition-all hover:bg-white/[0.06]"
                 >
-                  See Revenue Calculator
+                  Run the Calculator
                 </Link>
               </div>
             </div>

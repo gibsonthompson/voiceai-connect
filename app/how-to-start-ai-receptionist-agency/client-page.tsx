@@ -217,7 +217,7 @@ export default function HowToStartAgencyPage() {
                   <p className="font-medium text-amber-200">The Opportunity</p>
                   <p className="text-sm text-[#fafaf9]/60 mt-1">
                     Local businesses desperately need 24/7 call coverage but can't afford $3,000+/month for a human receptionist. 
-                    AI gives them enterprise-level coverage for $99-299/month. You're not selling a nice-to-have—you're solving 
+                    AI gives them enterprise-level coverage for $99-299/month. You're not selling a nice-to-have, you're solving 
                     a painful, expensive problem.
                   </p>
                 </div>
@@ -243,7 +243,7 @@ export default function HowToStartAgencyPage() {
               {[
                 {
                   title: 'White-Label Depth',
-                  description: 'Every touchpoint should show YOUR brand—client dashboard, emails, invoices, phone experience. Partial white-labeling creates a confusing, unprofessional experience.',
+                  description: 'Every touchpoint should show YOUR brand: the client dashboard, emails, invoices, and phone experience. Partial white-labeling creates a confusing, unprofessional experience.',
                   priority: 'Critical',
                 },
                 {
@@ -253,7 +253,7 @@ export default function HowToStartAgencyPage() {
                 },
                 {
                   title: 'Payment Structure',
-                  description: 'Look for platforms where clients pay YOU directly via your Stripe. Avoid revenue sharing—it kills margins at scale. Flat platform fees are ideal.',
+                  description: 'Look for platforms where clients pay YOU directly via your Stripe. Avoid revenue sharing, it kills margins at scale. Flat platform fees are ideal.',
                   priority: 'Critical',
                 },
                 {
@@ -366,7 +366,7 @@ export default function HowToStartAgencyPage() {
             </div>
             
             <p className="text-[#fafaf9]/60 text-lg leading-relaxed mb-6">
-              Pricing is where many new agencies undercharge. Remember: you're not selling "AI software"—you're 
+              Pricing is where many new agencies undercharge. Remember: you're not selling "AI software", you're 
               selling 24/7 call coverage that prevents lost revenue. Price accordingly.
             </p>
 
@@ -431,7 +431,7 @@ export default function HowToStartAgencyPage() {
                   <p className="text-sm text-[#fafaf9]/60 mt-1">
                     A human receptionist costs $3,000-4,000/month. A missed call can cost $500+ in lost business. 
                     Even your highest tier is a massive bargain compared to the alternatives. Don't apologize for 
-                    your pricing—own it.
+                    your pricing, own it.
                   </p>
                 </div>
               </div>
@@ -473,7 +473,7 @@ export default function HowToStartAgencyPage() {
                   Subject: Quick question about [Business Name]<br/><br/>
                   Hi [Name],<br/><br/>
                   I noticed [Business Name] doesn't have 24/7 call coverage. Do you know how many calls you're missing after hours and on weekends?<br/><br/>
-                  For businesses like yours, that's usually 15-20 missed calls per month—each worth $200-500 in potential revenue.<br/><br/>
+                  For businesses like yours, that's usually 15-20 missed calls per month, each worth $200-500 in potential revenue.<br/><br/>
                   We help [industry] businesses capture every call with AI that answers instantly, takes messages, and can even book appointments. All for less than a single missed job would cost you.<br/><br/>
                   Worth a 10-minute call to see if it's a fit?<br/><br/>
                   [Your name]
@@ -532,7 +532,7 @@ export default function HowToStartAgencyPage() {
               <ul className="space-y-2">
                 {[
                   'Bring a tablet so prospects can call your demo line on the spot',
-                  'Focus on one or two industries at first—become "the AI guy" for dentists or plumbers',
+                  'Focus on one or two industries at first, become "the AI guy" for dentists or plumbers',
                   'Ask for referrals explicitly: "Who else in your network struggles with missed calls?"',
                   'Offer a special deal for referrals to create a flywheel effect',
                 ].map((tip) => (
@@ -627,7 +627,7 @@ export default function HowToStartAgencyPage() {
               },
               {
                 q: 'Do I need any technical background?',
-                a: 'No. Modern white-label platforms handle all the technology. If you can use Canva and send emails, you have all the technical skills required. The business skills—sales, marketing, client relationships—matter far more.',
+                a: 'No. Modern white-label platforms handle all the technology. If you can use Canva and send emails, you have all the technical skills required. The business skills (sales, marketing, client relationships) matter far more.',
               },
               {
                 q: 'How do I handle support when clients have issues?',
@@ -635,7 +635,7 @@ export default function HowToStartAgencyPage() {
               },
               {
                 q: 'What if a client wants to cancel?',
-                a: 'Some churn is normal (expect 3-5% monthly). Focus on onboarding clients well and checking in regularly. The businesses that see real value—missed calls captured, appointments booked—rarely cancel. If someone does leave, learn why and improve.',
+                a: 'Some churn is normal (expect 3-5% monthly). Focus on onboarding clients well and checking in regularly. The businesses that see real value (missed calls captured, appointments booked) rarely cancel. If someone does leave, learn why and improve.',
               },
               {
                 q: 'Can I do this part-time while keeping my job?',
@@ -643,7 +643,7 @@ export default function HowToStartAgencyPage() {
               },
               {
                 q: 'How is this different from starting an SMMA?',
-                a: 'Social media marketing agencies require ongoing work for each client—posting, managing ads, reporting. AI receptionist agencies have minimal ongoing work once clients are onboarded. The AI runs 24/7 without your involvement. It\'s much more scalable.',
+                a: 'Social media marketing agencies require ongoing work for each client, posting, managing ads, reporting. AI receptionist agencies have minimal ongoing work once clients are onboarded. The AI runs 24/7 without your involvement. It\'s much more scalable.',
               },
             ].map((item, i) => (
               <details 
@@ -689,6 +689,12 @@ export default function HowToStartAgencyPage() {
                   <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </Link>
                 <Link 
+                  href="/agency-opportunity" 
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-8 py-4 text-base font-medium transition-all hover:bg-white/[0.06]"
+                >
+                  Run the Calculator
+                </Link>
+                <Link 
                   href="/what-is-white-label-ai-receptionist" 
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-8 py-4 text-base font-medium transition-all hover:bg-white/[0.06]"
                 >
@@ -697,7 +703,7 @@ export default function HowToStartAgencyPage() {
               </div>
               
               <p className="mt-6 text-sm text-[#fafaf9]/40">
-                14-day free trial · No credit card required · Cancel anytime
+                14-day free trial · Cancel anytime
               </p>
             </div>
           </div>
