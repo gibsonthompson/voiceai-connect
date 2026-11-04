@@ -43,6 +43,31 @@ export default function SupportWidget({ theme, userType = 'agency', openSignal, 
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
+  const [chatHistoryLoaded, setChatHistoryLoaded] = useState(false);
+
+  // Load the agency's full help history the first time the chat opens, so it is
+  // ALWAYS here: across refreshes, new devices, and sign-outs (server-backed,
+  // scoped to the signed-in agency). Marketing visitors have no token / no
+  // persistent identity, so they stay session-only.
+  useEffect(() => {
+    if (view !== 'chat' || chatHistoryLoaded || !agencyId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+        const token = localStorage.getItem('auth_token') || '';
+        if (token) {
+          const res = await fetch(`${backendUrl}/api/help/history`, { headers: { Authorization: `Bearer ${token}` } });
+          if (res.ok && !cancelled) {
+            const d = await res.json();
+            if (Array.isArray(d.messages) && d.messages.length) setChatMessages(d.messages);
+          }
+        }
+      } catch { /* keep session state */ }
+      finally { if (!cancelled) setChatHistoryLoaded(true); }
+    })();
+    return () => { cancelled = true; };
+  }, [view, chatHistoryLoaded, agencyId]);
 
   // Escalation state
   const [escalationMessage, setEscalationMessage] = useState('');
