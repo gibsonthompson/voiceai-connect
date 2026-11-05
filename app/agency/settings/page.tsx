@@ -432,7 +432,6 @@ function AgencySettingsContent() {
   const [planProDescription, setPlanProDescription] = useState('');
   const [planGrowthDescription, setPlanGrowthDescription] = useState('');
 
-
   // Change password (self-service, logged-in agency user). Posts to
   // /api/auth/change-password, which reads the caller from the Bearer JWT and
   // verifies currentPassword server-side before writing the new hash.
@@ -1384,8 +1383,6 @@ function AgencySettingsContent() {
                   )}
                 </div>
 
-
-
                 <PlansEditor
                   plans={plans}
                   setPlans={setPlans}
@@ -1393,9 +1390,8 @@ function AgencySettingsContent() {
                   featureKeys={[...FEATURE_ORDER.filter((k) => !featureOverrides[k]?.hidden), ...customFeatures.map((f) => f.key)]}
                   featureLabels={{ ...Object.fromEntries(FEATURE_ORDER.map((k) => [k, builtinLabel(k)])), ...Object.fromEntries(customFeatures.map((f) => [f.key, f.label])) }}
                   theme={{ text: theme.text, textMuted: theme.textMuted, input: theme.input, inputBorder: theme.inputBorder, primary: theme.primary, isDark: theme.isDark, card: theme.isDark ? 'rgba(255,255,255,0.02)' : '#ffffff', cardBorder: theme.inputBorder }}
+                  showIncludedMinutes={minutePassThrough}
                 />
-
-                <div className="mt-4"><IndustryGating /></div>
 
                 <div className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                   <div className="flex items-center gap-2 mb-1"><Sparkles className="h-4 w-4" style={{ color: theme.primary }} /><h4 className="font-medium text-sm sm:text-base">Features</h4></div>
@@ -1455,95 +1451,6 @@ function AgencySettingsContent() {
                       </p>
                     </div>
                   </details>
-                </div>
-
-                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm sm:text-base mb-1">Let clients change their own plan</h4>
-                      <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>When on, Stripe-billed clients can upgrade or downgrade their own plan from their dashboard (Stripe prorates the difference). When off, only you can change a client&apos;s plan. Manually-billed clients are never affected.</p>
-                    </div>
-                    <button type="button" onClick={handleTogglePlanChanges} disabled={planChangesToggleSaving} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50" style={{ backgroundColor: allowClientPlanChanges ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
-                      <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out" style={{ transform: allowClientPlanChanges ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm sm:text-base mb-1">Hide billing from client dashboard</h4>
-                      <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>For white-glove clients you bill manually. When on, the client never sees plan, pricing, usage/minutes, upgrade, cancel, or trial/payment prompts anywhere in their dashboard. They just use the software. Turn off to show the normal billing UI.</p>
-                    </div>
-                    <button type="button" onClick={handleToggleHideBilling} disabled={hideBillingSaving} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50" style={{ backgroundColor: hideClientBilling ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
-                      <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out" style={{ transform: hideClientBilling ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm sm:text-base mb-1">Show plan &amp; subscription to clients</h4>
-                      <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>When on, clients see their plan and subscription section, and (if the toggle above is on) can change it. When off, the plan and subscription area is hidden from their dashboard. Ignored when billing is fully hidden above.</p>
-                    </div>
-                    <button type="button" onClick={handleToggleShowSubscription} disabled={subscriptionToggleSaving} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50" style={{ backgroundColor: showClientSubscription ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
-                      <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out" style={{ transform: showClientSubscription ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm sm:text-base mb-1">Show call usage to clients</h4>
-                      <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>When on, clients see their monthly call usage and limit on their dashboard. When off, the usage meter is hidden (useful when you set unlimited calls or do not want clients watching a limit). Ignored when billing is fully hidden above.</p>
-                    </div>
-                    <button type="button" onClick={handleToggleShowCallUsage} disabled={callUsageToggleSaving} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50" style={{ backgroundColor: showClientCallUsage ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
-                      <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out" style={{ transform: showClientCallUsage ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Client upgrade page: show lower plans than the client's current one. */}
-                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm sm:text-base mb-1">Show lower plans on the upgrade page</h4>
-                      <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>When on, a client on a paid plan can see and switch to plans priced below their current one. When off (default), the upgrade page shows only their current plan and higher, so clients upgrade rather than quietly downgrade.</p>
-                    </div>
-                    <button type="button" onClick={handleToggleShowLowerPlans} disabled={lowerPlansToggleSaving} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50" style={{ backgroundColor: showLowerPlans ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
-                      <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out" style={{ transform: showLowerPlans ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Let clients cancel their subscription from the client dashboard. */}
-                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm sm:text-base mb-1">Let clients cancel from their dashboard</h4>
-                      <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>When on, clients can cancel their subscription from their own dashboard. When off, the cancel option is hidden and they are pointed to you instead (the cancel is also blocked on the server, not just hidden).</p>
-                    </div>
-                    <button type="button" onClick={handleToggleAllowClientCancel} disabled={cancelToggleSaving} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50" style={{ backgroundColor: allowClientCancel ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
-                      <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out" style={{ transform: allowClientCancel ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Agency-configurable reassurance badges under the plan tiles (client upgrade + signup pages). */}
-                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                  <h4 className="font-medium text-sm sm:text-base mb-1">Plan page badges</h4>
-                  <p className="text-xs sm:text-sm leading-relaxed mb-3" style={{ color: theme.textMuted }}>The short reassurance lines shown under your plans on the client upgrade and signup pages (they replace the old &quot;Cancel anytime / No setup fees&quot;). Leave one blank to hide it; leave all three blank to use the defaults. Keep each short, e.g. &quot;Instant activation&quot;, &quot;Secure checkout&quot;.</p>
-                  <div className="space-y-2">
-                    <input type="text" maxLength={40} value={planBadge1} onChange={e => setPlanBadge1(e.target.value)} placeholder="Instant activation" className="w-full rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
-                    <input type="text" maxLength={40} value={planBadge2} onChange={e => setPlanBadge2(e.target.value)} placeholder="Secure checkout" className="w-full rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
-                    <input type="text" maxLength={40} value={planBadge3} onChange={e => setPlanBadge3(e.target.value)} placeholder="Optional third badge" className="w-full rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
-                  </div>
-                  <div className="flex items-center gap-3 mt-3">
-                    <button type="button" onClick={handleSavePlanBadges} disabled={badgesSaving} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{badgesSaving ? 'Saving…' : 'Save badges'}</button>
-                    {badgesSaved && <span className="text-xs" style={{ color: theme.primary }}>Saved</span>}
-                  </div>
                 </div>
 
                 {/* Client Per-Minute Billing. Optional: charge your OWN clients
@@ -1680,6 +1587,96 @@ function AgencySettingsContent() {
                   )}
                 </div>
 
+                {/* Agency-configurable reassurance badges under the plan tiles (client upgrade + signup pages). */}
+                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                  <h4 className="font-medium text-sm sm:text-base mb-1">Plan page badges</h4>
+                  <p className="text-xs sm:text-sm leading-relaxed mb-3" style={{ color: theme.textMuted }}>The short reassurance lines shown under your plans on the client upgrade and signup pages (they replace the old &quot;Cancel anytime / No setup fees&quot;). Leave one blank to hide it; leave all three blank to use the defaults. Keep each short, e.g. &quot;Instant activation&quot;, &quot;Secure checkout&quot;.</p>
+                  <div className="space-y-2">
+                    <input type="text" maxLength={40} value={planBadge1} onChange={e => setPlanBadge1(e.target.value)} placeholder="Instant activation" className="w-full rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                    <input type="text" maxLength={40} value={planBadge2} onChange={e => setPlanBadge2(e.target.value)} placeholder="Secure checkout" className="w-full rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                    <input type="text" maxLength={40} value={planBadge3} onChange={e => setPlanBadge3(e.target.value)} placeholder="Optional third badge" className="w-full rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                  </div>
+                  <div className="flex items-center gap-3 mt-3">
+                    <button type="button" onClick={handleSavePlanBadges} disabled={badgesSaving} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{badgesSaving ? 'Saving…' : 'Save badges'}</button>
+                    {badgesSaved && <span className="text-xs" style={{ color: theme.primary }}>Saved</span>}
+                  </div>
+                </div>
+
+                {/* Client self-service plan changes. Master toggle; the "show
+                    lower plans" option is a dependent sub-setting, shown only when
+                    clients are allowed to change their own plan. */}
+                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-sm sm:text-base mb-1">Let clients change their own plan</h4>
+                      <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>When on, Stripe-billed clients can upgrade or downgrade their own plan from their dashboard (Stripe prorates the difference). When off, only you can change a client&apos;s plan. Manually-billed clients are never affected.</p>
+                    </div>
+                    <button type="button" onClick={handleTogglePlanChanges} disabled={planChangesToggleSaving} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50" style={{ backgroundColor: allowClientPlanChanges ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
+                      <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out" style={{ transform: allowClientPlanChanges ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
+                    </button>
+                  </div>
+                  {allowClientPlanChanges && (
+                    <div className="mt-4 pt-4 flex items-start justify-between gap-3" style={{ borderTop: `1px solid ${theme.inputBorder}` }}>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-sm sm:text-base mb-1">Show lower plans on the upgrade page</h4>
+                        <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>When on, a client on a paid plan can see and switch to plans priced below their current one. When off (default), the upgrade page shows only their current plan and higher, so clients upgrade rather than quietly downgrade.</p>
+                      </div>
+                      <button type="button" onClick={handleToggleShowLowerPlans} disabled={lowerPlansToggleSaving} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50" style={{ backgroundColor: showLowerPlans ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
+                        <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out" style={{ transform: showLowerPlans ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-sm sm:text-base mb-1">Hide billing from client dashboard</h4>
+                      <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>For white-glove clients you bill manually. When on, the client never sees plan, pricing, usage/minutes, upgrade, cancel, or trial/payment prompts anywhere in their dashboard. They just use the software. Turn off to show the normal billing UI.</p>
+                    </div>
+                    <button type="button" onClick={handleToggleHideBilling} disabled={hideBillingSaving} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50" style={{ backgroundColor: hideClientBilling ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
+                      <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out" style={{ transform: hideClientBilling ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-sm sm:text-base mb-1">Show plan &amp; subscription to clients</h4>
+                      <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>When on, clients see their plan and subscription section, and (if the toggle above is on) can change it. When off, the plan and subscription area is hidden from their dashboard. Ignored when billing is fully hidden above.</p>
+                    </div>
+                    <button type="button" onClick={handleToggleShowSubscription} disabled={subscriptionToggleSaving} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50" style={{ backgroundColor: showClientSubscription ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
+                      <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out" style={{ transform: showClientSubscription ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-sm sm:text-base mb-1">Show call usage to clients</h4>
+                      <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>When on, clients see their monthly call usage and limit on their dashboard. When off, the usage meter is hidden (useful when you set unlimited calls or do not want clients watching a limit). Ignored when billing is fully hidden above.</p>
+                    </div>
+                    <button type="button" onClick={handleToggleShowCallUsage} disabled={callUsageToggleSaving} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50" style={{ backgroundColor: showClientCallUsage ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
+                      <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out" style={{ transform: showClientCallUsage ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Let clients cancel their subscription from the client dashboard. */}
+                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-sm sm:text-base mb-1">Let clients cancel from their dashboard</h4>
+                      <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>When on, clients can cancel their subscription from their own dashboard. When off, the cancel option is hidden and they are pointed to you instead (the cancel is also blocked on the server, not just hidden).</p>
+                    </div>
+                    <button type="button" onClick={handleToggleAllowClientCancel} disabled={cancelToggleSaving} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50" style={{ backgroundColor: allowClientCancel ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
+                      <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out" style={{ transform: allowClientCancel ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
+                    </button>
+                  </div>
+                </div>
+
                 {/* Show/hide the discount-code field on the client signup page. Lives with
                     the discount codes section since it governs whether clients can enter one. */}
                 <div className="rounded-xl p-4 sm:p-5 mb-4 sm:mb-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
@@ -1695,6 +1692,8 @@ function AgencySettingsContent() {
                 </div>
 
                 <DiscountCodesManager theme={theme} agencyId={agency?.id} isPaid={!isFreePlan} />
+
+                <div className="mt-4"><IndustryGating /></div>
 
                 <div className="mt-4 sm:mt-5">
                   <EmailDomainCard theme={theme} agencyId={agency?.id} />

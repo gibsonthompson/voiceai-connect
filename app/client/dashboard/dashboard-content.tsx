@@ -232,8 +232,9 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
   const minutePassThroughOn = client.agency?.minute_pass_through === true && minuteRateCents > 0;
   const includedMinutesKey = `included_minutes_${client.plan_type}`;
   const includedMinutes = Number(client.agency?.[includedMinutesKey]) || 0;
+  const unlimitedMinutes = includedMinutes < 0; // -1 = unlimited, minutes never billed
   const usedMinutes = Number(client.minutes_this_period) || 0;
-  const overageMinutes = Math.max(0, usedMinutes - includedMinutes);
+  const overageMinutes = unlimitedMinutes ? 0 : Math.max(0, usedMinutes - includedMinutes);
   const overageCostCents = overageMinutes * minuteRateCents;
   const minuteCurrency = client.agency?.display_currency || client.agency?.currency;
   const minutesFreeInTrial = isTrial;
@@ -503,7 +504,7 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
                 {usedMinutes.toLocaleString()}
               </p>
               <p className="text-[11px] mt-1" style={{ color: theme.textMuted }}>
-                {includedMinutes > 0 ? `of ${includedMinutes.toLocaleString()} included minutes` : 'billed per minute'}
+                {unlimitedMinutes ? 'unlimited minutes included' : includedMinutes > 0 ? `of ${includedMinutes.toLocaleString()} included minutes` : 'billed per minute'}
               </p>
             </div>
             <div className="text-right">
@@ -511,6 +512,11 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
                 <>
                   <p className="text-sm font-semibold" style={{ color: theme.success }}>Free during trial</p>
                   <p className="text-[11px] mt-1" style={{ color: theme.textMuted }}>No per-minute charges yet</p>
+                </>
+              ) : unlimitedMinutes ? (
+                <>
+                  <p className="text-sm font-semibold" style={{ color: theme.success }}>Unlimited on your plan</p>
+                  <p className="text-[11px] mt-1" style={{ color: theme.textMuted }}>No per-minute charges</p>
                 </>
               ) : (
                 <>

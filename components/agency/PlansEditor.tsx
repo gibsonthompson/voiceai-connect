@@ -48,6 +48,9 @@ interface Props {
   featureLabels: Record<string, string>;
   maxPlans?: number;
   currencySymbol?: string;
+  // Included minutes only matter when the agency bills clients per minute, so
+  // the field is hidden unless per-minute billing is on. Defaults to shown.
+  showIncludedMinutes?: boolean;
 }
 
 function newUid() {
@@ -71,7 +74,7 @@ export function makeEmptyPlan(): UiPlan {
   };
 }
 
-export default function PlansEditor({ plans, setPlans, theme, featureKeys, featureLabels, maxPlans = 12, currencySymbol = '$' }: Props) {
+export default function PlansEditor({ plans, setPlans, theme, featureKeys, featureLabels, maxPlans = 12, currencySymbol = '$', showIncludedMinutes = true }: Props) {
   const update = (uid: string, patch: Partial<UiPlan>) =>
     setPlans((prev) => prev.map((p) => (p._uid === uid ? { ...p, ...patch } : p)));
 
@@ -187,10 +190,34 @@ export default function PlansEditor({ plans, setPlans, theme, featureKeys, featu
                 </div>
               )}
 
-              <label className={fieldLabel} style={{ color: theme.textMuted }}>Included min / mo</label>
-              <input type="number" min="0" value={p.included_minutes} onChange={(e) => update(p._uid, { included_minutes: e.target.value })}
-                className="w-full rounded-lg px-3 py-2.5 text-sm" style={inputStyle} />
-              <p className="mt-1 mb-3.5 text-[10px] leading-tight" style={{ color: theme.textMuted }}>Minutes bundled into the price. 0 = every minute billed at the per-minute rate.</p>
+              {showIncludedMinutes && (
+                <>
+                  <label className={fieldLabel} style={{ color: theme.textMuted }}>Included min / mo</label>
+                  {Number(p.included_minutes) === -1 ? (
+                    <button type="button" onClick={() => update(p._uid, { included_minutes: '0' })}
+                      title="Click to set a specific number instead"
+                      className="w-full rounded-lg px-3 py-2.5 text-sm font-semibold flex items-center justify-center gap-2"
+                      style={{ backgroundColor: `${theme.primary}18`, color: theme.primary, border: `1px solid ${theme.primary}40` }}>
+                      <InfinityIcon className="h-4 w-4" /> Unlimited
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-1.5">
+                      <input type="number" min="0" value={p.included_minutes} onChange={(e) => update(p._uid, { included_minutes: e.target.value })}
+                        className="flex-1 min-w-0 rounded-lg px-3 py-2.5 text-sm" style={inputStyle} />
+                      <button type="button" onClick={() => update(p._uid, { included_minutes: '-1' })} title="Set to unlimited"
+                        className="rounded-lg px-2.5 py-2.5 flex items-center justify-center flex-shrink-0"
+                        style={{ backgroundColor: `${theme.primary}12`, color: theme.primary, border: `1px solid ${theme.primary}30` }}>
+                        <InfinityIcon className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+                  <p className="mt-1 mb-3.5 text-[10px] leading-tight" style={{ color: theme.textMuted }}>
+                    {Number(p.included_minutes) === -1
+                      ? 'Minutes are never billed on this plan, no matter how many are used.'
+                      : 'Minutes bundled into the price before per-minute charges begin. 0 = every minute billed at the per-minute rate.'}
+                  </p>
+                </>
+              )}
 
               <label className={fieldLabel} style={{ color: theme.textMuted }}>Client team seats</label>
               {Number(p.features.team_members) === -1 ? (
