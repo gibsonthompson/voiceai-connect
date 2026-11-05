@@ -343,7 +343,26 @@ export default function AgencyDashboardPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-                      <span className="rounded-full px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-medium" style={client.subscription_status === 'active' ? { backgroundColor: theme.successBg, color: theme.success } : client.subscription_status === 'trial' || client.subscription_status === 'trialing' ? { backgroundColor: theme.infoBg, color: theme.info } : { backgroundColor: theme.hover, color: theme.textMuted }}>{client.subscription_status === 'trialing' ? 'trial' : (client.subscription_status || 'pending')}</span>
+                      {(() => {
+                        const s = client.subscription_status || 'pending';
+                        const meta = (() => {
+                          switch (s) {
+                            case 'active': return { label: 'Active', bg: theme.primary15, text: theme.primary };
+                            case 'manual': return { label: 'Manual', bg: theme.primary15, text: theme.primary };
+                            case 'trial':
+                            case 'trialing': return { label: 'Trial', bg: theme.warningBg, text: theme.warningText };
+                            case 'pending': return { label: 'Pending payment', bg: theme.warningBg, text: theme.warningText };
+                            case 'past_due': return { label: 'Past due', bg: theme.errorBg, text: theme.errorText };
+                            case 'trial_expired':
+                            case 'expired': return { label: 'Trial expired', bg: theme.hover, text: theme.textMuted };
+                            case 'canceled':
+                            case 'agency_canceled': return { label: 'Canceled', bg: theme.hover, text: theme.textMuted };
+                            case 'suspended': return { label: 'Suspended', bg: theme.errorBg, text: theme.errorText };
+                            default: return { label: s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, ' '), bg: theme.hover, text: theme.textMuted };
+                          }
+                        })();
+                        return <span className="rounded-full px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-medium" style={{ backgroundColor: meta.bg, color: meta.text }}>{meta.label}</span>;
+                      })()}
                       <ArrowUpRight className="h-4 w-4 hidden sm:block" style={{ color: theme.textMuted }} />
                     </div>
                   </a>
