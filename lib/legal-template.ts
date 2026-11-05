@@ -17,7 +17,7 @@
 // (components/LegalPage) and the editor (components/agency/LegalEditor).
 // ============================================================================
 
-export type LegalType = 'terms' | 'privacy';
+export type LegalType = 'terms' | 'privacy' | 'billing';
 
 // Fields an agency may customize. Everything else on the page is fixed.
 export interface LegalFields {
@@ -89,6 +89,13 @@ export const LEGAL_FIELD_SCHEMA: Record<LegalType, Array<{
     { key: 'support_email', label: 'Contact email', help: 'Shown wherever the page says to contact you or exercise data rights. Fills every email reference.', kind: 'email' },
     { key: 'business_name', label: 'Legal / business name', help: 'The entity named throughout the document. Defaults to your agency name.', kind: 'text' },
     { key: 'payment_processor', label: 'Payment processor', help: 'Named in the data-sharing section. Defaults to the provider you have connected.', kind: 'text' },
+  ],
+  billing: [
+    { key: 'support_email', label: 'Contact email', help: 'Shown wherever the page says to contact you about billing or to cancel. Fills every email reference.', kind: 'email' },
+    { key: 'business_name', label: 'Legal / business name', help: 'The entity named throughout the document. Defaults to your agency name.', kind: 'text' },
+    { key: 'payment_processor', label: 'Payment processor', help: 'Named in the billing clauses. Defaults to the provider you have connected.', kind: 'text' },
+    { key: 'trial_terms', label: 'Free trial terms', help: 'The free-trial paragraph.', kind: 'longtext' },
+    { key: 'refund_policy', label: 'Refund policy', help: 'Your refund wording. Pick a preset or write your own.', kind: 'refund' },
   ],
 };
 
@@ -572,7 +579,55 @@ If you have questions about this Privacy Policy or wish to exercise your data ri
 **{{AGENCY_NAME}}**
 Email: {{SUPPORT_EMAIL}}`;
 
-const TEMPLATES: Record<LegalType, string> = { terms: TERMS_TEMPLATE, privacy: PRIVACY_TEMPLATE };
+// ----------------------------------------------------------------------------
+// BILLING & CANCELLATION POLICY
+// A focused, plain-language companion to the Terms that an agency can share with
+// its clients. Composed from the same editable slots; the structure and the
+// "who issues refunds" clause are fixed so the page always states accurately how
+// billing and cancellation actually work on the platform.
+// ----------------------------------------------------------------------------
+export const BILLING_TEMPLATE =
+`# Billing & Cancellation Policy
+
+**Last Updated: {{EFFECTIVE_DATE}}**
+
+This Billing & Cancellation Policy explains how billing, usage charges, cancellations, and refunds work for the AI phone receptionist service (the "Service") provided by {{AGENCY_NAME}} ("we," "us," or "our"). It supplements our Terms of Service; if there is any conflict, the Terms of Service control.
+
+## 1. Subscriptions and billing cycle
+
+Paid plans are billed monthly in advance through our payment processor, {{PAYMENT_PROCESSOR}}. Your plan renews automatically each month on your billing date at the then-current price, and you authorize us to charge your payment method on file for each cycle until you cancel. Plans start at {{CURRENCY_SYMBOL}}{{LOWEST_PRICE}}/month; current pricing is shown on our website.
+
+## 2. Free trial
+
+{{TRIAL_TERMS}}
+
+## 3. Usage and included minutes
+
+Each plan includes a monthly allotment of call minutes. Minutes are measured per call and counted as they are used; spam calls we block for you are not counted. Any minutes beyond your plan's included allotment ("overage") are billed at the per-minute rate shown for your plan. Usage is metered as calls happen, and any overage is totaled and billed on your next monthly invoice rather than charged separately per call. Plans marked as including unlimited minutes are never charged overage.
+
+## 4. Failed or declined payments
+
+If a scheduled payment fails, {{PAYMENT_PROCESSOR}} automatically retries your payment method over the following days on its standard schedule. Your Service stays active while those retries are in progress. If payment still cannot be collected after the retries are exhausted, the subscription is canceled and the associated phone number and assistant are released.
+
+## 5. Cancellation
+
+You may cancel at any time from your dashboard or by contacting us at {{SUPPORT_EMAIL}}. Unless you choose to cancel immediately, cancellation takes effect at the end of your current billing period: you keep full access and your Service stays live until that date, and you are not charged again. You can resume before that date to stay on your plan. If you choose to cancel immediately, access and the Service end right away.
+
+## 6. Refunds
+
+{{REFUND_POLICY}}
+
+Payments are processed by {{PAYMENT_PROCESSOR}} directly to {{AGENCY_NAME}}. Any refund is issued by {{AGENCY_NAME}}, at its discretion and in line with this policy. Refund requests should be sent to {{SUPPORT_EMAIL}}.
+
+## 7. Price changes
+
+We may change plan pricing from time to time. If a change affects your plan, it applies from your next billing cycle, and we will give you reasonable notice before it takes effect so you can cancel if you do not wish to continue.
+
+## 8. Contact
+
+Questions about billing or cancellation? Contact **{{AGENCY_NAME}}** at {{SUPPORT_EMAIL}}.`;
+
+const TEMPLATES: Record<LegalType, string> = { terms: TERMS_TEMPLATE, privacy: PRIVACY_TEMPLATE, billing: BILLING_TEMPLATE };
 
 // Lowest monthly price (whole dollars) shown in "Plans start at ...". Mirrors
 // the marketing/demo page: the agency's real visible, priced plans first, then

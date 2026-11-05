@@ -23,6 +23,9 @@ interface Agency {
   access_plan: string | null;
   subscription_status: string;
   trial_ends_at: string | null;
+  // Set when a period-end cancellation is scheduled: the agency + clients stay
+  // live until this timestamp. Powers the "Plan cancels on <date>" banner.
+  plan_cancel_at?: string | null;
   stripe_account_id: string | null;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;

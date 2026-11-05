@@ -319,7 +319,7 @@ function AgencySettingsContent() {
   // immutable, so it is chosen before connecting and posted to the onboard
   // endpoint. Initialized from the agency's stored country, else US.
   const [connectCountry, setConnectCountry] = useState('US');
-  const [showCancelModal, setShowCancelModal] = useState(false); const [portalLoading, setPortalLoading] = useState(false); const [addCardLoading, setAddCardLoading] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false); const [portalLoading, setPortalLoading] = useState(false); const [addCardLoading, setAddCardLoading] = useState(false); const [resumingCancel, setResumingCancel] = useState(false);
   const [agencyName, setAgencyName] = useState(''); const [agencyPhone, setAgencyPhone] = useState(''); const [logoUrl, setLogoUrl] = useState(''); const [logoPreview, setLogoPreview] = useState<string | null>(null); const [removingLogo, setRemovingLogo] = useState(false);
   // PWA home-screen identity (installed-app name + square app icon). Branded,
   // Pro-gated alongside the logo. app_name/app_icon_url on the agency row.
@@ -1089,6 +1089,31 @@ function AgencySettingsContent() {
   const stripeDisplay = getStripeStatusDisplay();
   const getSubscriptionDisplay = () => { const status = agency?.subscription_status; if (status === 'active') return { label: 'Active', color: '#01f5d1', bgColor: 'rgba(1, 245, 209,0.1)' }; if (isTrialStatus(status)) return { label: 'Trial', color: '#3b82f6', bgColor: 'rgba(59,130,246,0.1)' }; if (status === 'past_due') return { label: 'Past Due', color: '#f59e0b', bgColor: 'rgba(245,158,11,0.1)' }; if (status === 'trial_expired' || status === 'expired') return { label: 'Trial expired', color: '#ef4444', bgColor: 'rgba(239,68,68,0.1)' }; if (status === 'canceled' || status === 'cancelled') return { label: 'Canceled', color: '#ef4444', bgColor: 'rgba(239,68,68,0.1)' }; return { label: (status || 'active').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()), color: theme.textMuted, bgColor: theme.input }; };
   const subscriptionDisplay = getSubscriptionDisplay();
+
+  // Resume (un-schedule) a pending period-end cancellation.
+  const handleResumeCancel = async () => {
+    if (!agency || resumingCancel) return;
+    setResumingCancel(true);
+    setError(null);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/agency/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ agency_id: agency.id, resume: true }),
+      });
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Failed to resume'); }
+      await refreshAgency();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to resume subscription');
+    } finally {
+      setResumingCancel(false);
+    }
+  };
+  const formatCancelDate = (iso?: string | null) => {
+    if (!iso) return 'the end of your billing period';
+    try { return new Date(iso).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }); } catch { return 'the end of your billing period'; }
+  };
   const demoFeatures = [{ label: 'Dashboard', desc: '32 clients, $3,200 MRR, 2,417 total calls' }, { label: 'Clients', desc: '32 realistic service businesses with plans & call data' }, { label: 'Call History', desc: '10 calls with AI summaries, urgency levels, transcripts' }, { label: 'Analytics', desc: 'Revenue charts, plan breakdown, payment history' }, { label: 'Leads', desc: '8 leads across all pipeline stages with follow-ups' }, { label: 'Referrals', desc: '6 referred agencies, commissions, payout history' }];
   const dynamicStyles = `.agency-settings ::selection { background-color: #3b82f640; color: inherit; } .agency-settings input:focus, .agency-settings select:focus, .agency-settings textarea:focus { outline: none; border-color: ${theme.primary} !important; box-shadow: 0 0 0 3px ${theme.primary}20 !important; }`;
   const getFeatureCount = (plan: string) => Object.entries(planFeatures[plan] || {}).filter(([k, v]) => k !== 'team_members' && v === true).length;
@@ -1116,6 +1141,7 @@ function AgencySettingsContent() {
           isOnTrial={isOnTrial}
           theme={theme}
           backendUrl={backendUrl}
+          onScheduled={() => { refreshAgency(); }}
         />
       )}
 
@@ -2077,11 +2103,25 @@ function AgencySettingsContent() {
                 )}
 
                 {/* Cancel sits at the very bottom, separated from the plan options. */}
-                {(isOnTrial || agency?.subscription_status === 'active') && (
+                {agency?.plan_cancel_at ? (
+                  <div className="pt-4 mt-2" style={{ borderTop: `1px solid ${theme.border}` }}>
+                    <div className="rounded-xl p-4" style={{ backgroundColor: theme.warningBg || theme.input, border: `1px solid ${theme.warningBorder || theme.inputBorder}` }}>
+                      <p className="text-sm font-medium" style={{ color: theme.warningText || theme.text }}>
+                        Your {isOnTrial ? 'trial' : 'plan'} is scheduled to cancel on {formatCancelDate(agency.plan_cancel_at)}.
+                      </p>
+                      <p className="text-xs mt-1 leading-relaxed" style={{ color: theme.textMuted }}>
+                        You and your clients keep full access until then. Resume anytime before that date to stay on your plan.
+                      </p>
+                      <button onClick={handleResumeCancel} disabled={resumingCancel} className="mt-3 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors w-full sm:w-auto disabled:opacity-60" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+                        {resumingCancel ? <Loader2 className="h-4 w-4 animate-spin" /> : null}{resumingCancel ? 'Resuming...' : 'Resume Plan'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (isOnTrial || agency?.subscription_status === 'active') ? (
                   <div className="pt-4 mt-2" style={{ borderTop: `1px solid ${theme.border}` }}>
                     <button onClick={() => setShowCancelModal(true)} className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors w-full sm:w-auto" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.errorText }}><XCircle className="h-4 w-4" />Cancel {isOnTrial ? 'Trial' : 'Subscription'}</button>
                   </div>
-                )}
+                ) : null}
               </div>
             )}
 

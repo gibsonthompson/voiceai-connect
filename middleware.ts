@@ -199,7 +199,8 @@ export async function middleware(request: NextRequest) {
       pathname.startsWith('/demo') ||
       pathname.startsWith('/faq') ||
       pathname.startsWith('/terms') ||
-      pathname.startsWith('/privacy')
+      pathname.startsWith('/privacy') ||
+      pathname.startsWith('/billing-policy')
     ) {
       const url = request.nextUrl.clone();
       url.pathname = `/agency-site${pathname}`;

@@ -25,11 +25,11 @@ interface LegalEditorProps {
   agency: LegalAgencyFields & { slug?: string | null; marketing_domain?: string | null; domain_verified?: boolean | null };
 }
 
-const DOC_TITLES: Record<LegalType, string> = { terms: 'Terms of Service', privacy: 'Privacy Policy' };
+const DOC_TITLES: Record<LegalType, string> = { terms: 'Terms of Service', privacy: 'Privacy Policy', billing: 'Billing & Cancellation' };
 
 export default function LegalEditor({ agencyId, backendUrl, theme, agency }: LegalEditorProps) {
-  const [stored, setStored] = useState<Record<LegalType, LegalFields>>({ terms: {}, privacy: {} });
-  const [form, setForm] = useState<Record<LegalType, LegalFields>>({ terms: {}, privacy: {} });
+  const [stored, setStored] = useState<Record<LegalType, LegalFields>>({ terms: {}, privacy: {}, billing: {} });
+  const [form, setForm] = useState<Record<LegalType, LegalFields>>({ terms: {}, privacy: {}, billing: {} });
   const [activeDoc, setActiveDoc] = useState<LegalType>('terms');
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -54,7 +54,7 @@ export default function LegalEditor({ agencyId, backendUrl, theme, agency }: Leg
       }
       return out;
     };
-    return { terms: build('terms'), privacy: build('privacy') };
+    return { terms: build('terms'), privacy: build('privacy'), billing: build('billing') };
   }, [agency]);
 
   const load = useCallback(async () => {
@@ -65,7 +65,7 @@ export default function LegalEditor({ agencyId, backendUrl, theme, agency }: Leg
       const d = await r.json();
       // Ignore any legacy string-shaped override; only field objects are used now.
       const norm = (v: any): LegalFields => (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
-      const s: Record<LegalType, LegalFields> = { terms: norm(d.legal?.terms), privacy: norm(d.legal?.privacy) };
+      const s: Record<LegalType, LegalFields> = { terms: norm(d.legal?.terms), privacy: norm(d.legal?.privacy), billing: norm(d.legal?.billing) };
       setStored(s);
       setForm(seedForm(s));
     } catch { setLoadError('Could not load your legal pages. Please try again.'); }
@@ -115,7 +115,7 @@ export default function LegalEditor({ agencyId, backendUrl, theme, agency }: Leg
     [activeDoc, form, agency]
   );
 
-  const livePath = activeDoc === 'terms' ? '/terms' : '/privacy';
+  const livePath = activeDoc === 'terms' ? '/terms' : activeDoc === 'billing' ? '/billing-policy' : '/privacy';
   const liveUrl = (agency.marketing_domain && agency.domain_verified)
     ? `https://${agency.marketing_domain}${livePath}`
     : (agency.slug ? `https://${agency.slug}.myvoiceaiconnect.com${livePath}` : null);
@@ -149,7 +149,7 @@ export default function LegalEditor({ agencyId, backendUrl, theme, agency }: Leg
 
       {/* Doc switcher: two equal buttons, never a lone item on the row. */}
       <div className="grid grid-cols-2 gap-2">
-        {(['terms', 'privacy'] as LegalType[]).map((t) => {
+        {(['terms', 'privacy', 'billing'] as LegalType[]).map((t) => {
           const active = activeDoc === t;
           return (
             <button key={t} onClick={() => { setActiveDoc(t); setSavedMsg(null); setSaveError(null); setShowPreview(false); }}
@@ -172,6 +172,11 @@ export default function LegalEditor({ agencyId, backendUrl, theme, agency }: Leg
 
       {!showPreview ? (
         <div className="space-y-4">
+          {activeDoc === 'billing' && (
+            <div className="rounded-xl p-3 sm:p-4 text-sm leading-relaxed" style={{ backgroundColor: theme.infoBg || theme.input, border: `1px solid ${theme.infoBorder || theme.border}`, color: theme.text }}>
+              <strong>Heads up:</strong> your clients&rsquo; payments go directly to your own Stripe account, so <strong>you</strong> issue any client refunds from your Stripe dashboard. VoiceAI Connect never holds or refunds your clients&rsquo; money. Set the refund wording below to match how you actually handle refunds.
+            </div>
+          )}
           {schema.map((field) => {
             const val = form[activeDoc][field.key] || '';
             const isDefault = val.trim() === effectiveFieldValue(field.key, {}, agency).trim();

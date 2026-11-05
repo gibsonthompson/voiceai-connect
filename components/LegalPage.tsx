@@ -31,7 +31,7 @@ interface Agency {
 }
 
 interface LegalPageProps {
-  type: 'terms' | 'privacy';
+  type: 'terms' | 'privacy' | 'billing';
 }
 
 // ============================================================================
@@ -137,7 +137,7 @@ export default function LegalPage({ type }: LegalPageProps) {
   useEffect(() => {
     if (!agency) return;
     if (agency.logo_url) setFavicon(agency.logo_url);
-    const pageTitle = type === 'terms' ? 'Terms of Service' : 'Privacy Policy';
+    const pageTitle = type === 'terms' ? 'Terms of Service' : type === 'billing' ? 'Billing & Cancellation Policy' : 'Privacy Policy';
     document.title = `${pageTitle} | ${agency.name}`;
   }, [agency, type]);
 
@@ -337,6 +337,7 @@ export default function LegalPage({ type }: LegalPageProps) {
               <a href="/get-started" style={{ color: 'var(--text-medium)' }}>Get Started</a>
               <a href="/privacy" style={{ color: 'var(--text-medium)', fontWeight: type === 'privacy' ? 700 : 400 }}>Privacy</a>
               <a href="/terms" style={{ color: 'var(--text-medium)', fontWeight: type === 'terms' ? 700 : 400 }}>Terms</a>
+              <a href="/billing-policy" style={{ color: 'var(--text-medium)', fontWeight: type === 'billing' ? 700 : 400 }}>Billing</a>
             </div>
             <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginTop: '1rem' }}>
               © {new Date().getFullYear()} {agency.name}. All Rights Reserved.

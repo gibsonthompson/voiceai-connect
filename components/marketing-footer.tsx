@@ -35,6 +35,7 @@ const COLUMNS: { t: string; l: [string, string][] }[] = [
     l: [
       ['Terms', '/terms'],
       ['Privacy', '/privacy'],
+      ['Billing', '/billing-policy'],
       ['Referral', '/referral-program'],
       ['Contact', 'mailto:support@myvoiceaiconnect.com'],
     ],
