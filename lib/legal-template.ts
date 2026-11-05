@@ -76,26 +76,26 @@ export const LEGAL_FIELD_SCHEMA: Record<LegalType, Array<{
   kind: 'email' | 'text' | 'longtext' | 'refund' | 'disputemode';
 }>> = {
   terms: [
-    { key: 'support_email', label: 'Contact email', help: 'Shown wherever the page says to contact or cancel. Fills every email reference.', kind: 'email' },
-    { key: 'business_name', label: 'Legal / business name', help: 'The entity named throughout the document. Defaults to your agency name.', kind: 'text' },
-    { key: 'payment_processor', label: 'Payment processor', help: 'Named in the billing section. Defaults to the provider you have connected.', kind: 'text' },
-    { key: 'trial_terms', label: 'Free trial terms', help: 'The free-trial paragraph (Section 5).', kind: 'longtext' },
-    { key: 'refund_policy', label: 'Refund policy', help: 'The refund paragraph (Section 6).', kind: 'refund' },
-    { key: 'dispute_mode', label: 'How disputes are resolved', help: 'Section 14. Arbitration (the default) sends disputes to binding AAA arbitration. Courts sends them to the courts in your venue below. The class-action waiver and liability protections stay either way.', kind: 'disputemode' },
-    { key: 'governing_state', label: 'Governing law state', help: 'The state whose law governs (Section 14.2). Leave blank to use the state where your business is headquartered.', kind: 'text' },
-    { key: 'governing_venue', label: 'Court venue', help: 'Used only when you pick Courts above, e.g. "Wake County, North Carolina". Leave blank to use the governing-law state.', kind: 'text' },
+    { key: 'support_email', label: 'Contact Email', help: 'Shown wherever the page says to contact or cancel. Fills every email reference.', kind: 'email' },
+    { key: 'business_name', label: 'Legal / Business Name', help: 'The entity named throughout the document. Defaults to your agency name.', kind: 'text' },
+    { key: 'payment_processor', label: 'Payment Processor', help: 'Named in the billing section. Defaults to the provider you have connected.', kind: 'text' },
+    { key: 'trial_terms', label: 'Free Trial Terms', help: 'The free-trial paragraph (Section 5).', kind: 'longtext' },
+    { key: 'refund_policy', label: 'Refund Policy', help: 'The refund paragraph (Section 6).', kind: 'refund' },
+    { key: 'dispute_mode', label: 'How Disputes Are Resolved', help: 'Most businesses leave this on Arbitration (the default): disputes are settled privately instead of in court, which is faster and cheaper for you. Choose Courts only if you specifically want disputes handled through the court system in your area. Either way, the class-action waiver and liability protections stay in place.', kind: 'disputemode' },
+    { key: 'governing_state', label: 'Governing Law State', help: 'The U.S. state whose laws apply. Leave blank to use the state where your business is based.', kind: 'text' },
+    { key: 'governing_venue', label: 'Court Venue', help: 'Only used if you picked Courts above, e.g. "Fulton County". Leave blank to use your governing-law state.', kind: 'text' },
   ],
   privacy: [
-    { key: 'support_email', label: 'Contact email', help: 'Shown wherever the page says to contact you or exercise data rights. Fills every email reference.', kind: 'email' },
-    { key: 'business_name', label: 'Legal / business name', help: 'The entity named throughout the document. Defaults to your agency name.', kind: 'text' },
-    { key: 'payment_processor', label: 'Payment processor', help: 'Named in the data-sharing section. Defaults to the provider you have connected.', kind: 'text' },
+    { key: 'support_email', label: 'Contact Email', help: 'Shown wherever the page says to contact you or exercise data rights. Fills every email reference.', kind: 'email' },
+    { key: 'business_name', label: 'Legal / Business Name', help: 'The entity named throughout the document. Defaults to your agency name.', kind: 'text' },
+    { key: 'payment_processor', label: 'Payment Processor', help: 'Named in the data-sharing section. Defaults to the provider you have connected.', kind: 'text' },
   ],
   billing: [
-    { key: 'support_email', label: 'Contact email', help: 'Shown wherever the page says to contact you about billing or to cancel. Fills every email reference.', kind: 'email' },
-    { key: 'business_name', label: 'Legal / business name', help: 'The entity named throughout the document. Defaults to your agency name.', kind: 'text' },
-    { key: 'payment_processor', label: 'Payment processor', help: 'Named in the billing clauses. Defaults to the provider you have connected.', kind: 'text' },
-    { key: 'trial_terms', label: 'Free trial terms', help: 'The free-trial paragraph.', kind: 'longtext' },
-    { key: 'refund_policy', label: 'Refund policy', help: 'Your refund wording. Pick a preset or write your own.', kind: 'refund' },
+    { key: 'support_email', label: 'Contact Email', help: 'Shown wherever the page says to contact you about billing or to cancel. Fills every email reference.', kind: 'email' },
+    { key: 'business_name', label: 'Legal / Business Name', help: 'The entity named throughout the document. Defaults to your agency name.', kind: 'text' },
+    { key: 'payment_processor', label: 'Payment Processor', help: 'Named in the billing clauses. Defaults to the provider you have connected.', kind: 'text' },
+    { key: 'trial_terms', label: 'Free Trial Terms', help: 'The free-trial paragraph.', kind: 'longtext' },
+    { key: 'refund_policy', label: 'Refund Policy', help: 'Your refund wording. Pick a quick-fill option or write your own.', kind: 'refund' },
   ],
 };
 

@@ -11,7 +11,7 @@
 // guaranteed. A live preview renders exactly what the hosted page will show.
 // ============================================================================
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { FileText, Shield, Eye, Pencil, Loader2, Check, RotateCcw, AlertCircle, ExternalLink, Lock } from 'lucide-react';
+import { FileText, Shield, Eye, Pencil, Loader2, Check, RotateCcw, AlertCircle, ExternalLink, Lock, Link2, Unlink } from 'lucide-react';
 import { markdownToHtml } from '@/lib/legal-markdown';
 import {
   composeLegalDoc, effectiveFieldValue, LEGAL_FIELD_SCHEMA, REFUND_PRESETS,
@@ -27,6 +27,12 @@ interface LegalEditorProps {
 
 const DOC_TITLES: Record<LegalType, string> = { terms: 'Terms of Service', privacy: 'Privacy Policy', billing: 'Billing & Cancellation' };
 
+// Fields that appear on BOTH the Terms and Billing pages. By default they stay
+// in sync, so editing the wording once updates both pages. An agency can turn
+// sync off for a field to word it differently on each page.
+const SYNCABLE: Array<keyof LegalFields> = ['trial_terms', 'refund_policy'];
+type SyncState = { trial_terms: boolean; refund_policy: boolean };
+
 export default function LegalEditor({ agencyId, backendUrl, theme, agency }: LegalEditorProps) {
   const [stored, setStored] = useState<Record<LegalType, LegalFields>>({ terms: {}, privacy: {}, billing: {} });
   const [form, setForm] = useState<Record<LegalType, LegalFields>>({ terms: {}, privacy: {}, billing: {} });
@@ -37,6 +43,7 @@ export default function LegalEditor({ agencyId, backendUrl, theme, agency }: Leg
   const [saveError, setSaveError] = useState<string | null>(null);
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [sync, setSync] = useState<SyncState>({ trial_terms: true, refund_policy: true });
 
   const authFetch = useCallback((url: string, init?: RequestInit) => {
     let token = '';
@@ -66,8 +73,23 @@ export default function LegalEditor({ agencyId, backendUrl, theme, agency }: Leg
       // Ignore any legacy string-shaped override; only field objects are used now.
       const norm = (v: any): LegalFields => (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
       const s: Record<LegalType, LegalFields> = { terms: norm(d.legal?.terms), privacy: norm(d.legal?.privacy), billing: norm(d.legal?.billing) };
+      // Sync flags default ON (absent => synced), so existing agencies start synced.
+      const sv = (d.legal && typeof d.legal.sync === 'object' && d.legal.sync) || {};
+      const syncState: SyncState = { trial_terms: sv.trial_terms !== false, refund_policy: sv.refund_policy !== false };
+      const seeded = seedForm(s);
+      // Reconcile synced shared fields so both pages show the same value on load.
+      // Handles an agency that customized Terms before the Billing page existed:
+      // the stored Terms value wins and is copied onto both.
+      for (const key of SYNCABLE) {
+        if (!syncState[key as keyof SyncState]) continue;
+        const stored = (s.terms[key] ?? s.billing[key]);
+        const shared = (stored && String(stored).trim()) ? String(stored) : effectiveFieldValue(key, {}, agency);
+        seeded.terms[key] = shared;
+        seeded.billing[key] = shared;
+      }
+      setSync(syncState);
       setStored(s);
-      setForm(seedForm(s));
+      setForm(seeded);
     } catch { setLoadError('Could not load your legal pages. Please try again.'); }
     finally { setLoading(false); }
   }, [agencyId, backendUrl, authFetch, seedForm]);
@@ -76,7 +98,33 @@ export default function LegalEditor({ agencyId, backendUrl, theme, agency }: Leg
 
   const setField = (key: keyof LegalFields, val: string) => {
     setSavedMsg(null); setSaveError(null);
-    setForm(prev => ({ ...prev, [activeDoc]: { ...prev[activeDoc], [key]: val } }));
+    const mirror = (SYNCABLE as string[]).includes(key as string) && sync[key as keyof SyncState];
+    setForm(prev => {
+      const next = { ...prev, [activeDoc]: { ...prev[activeDoc], [key]: val } };
+      // When synced, keep Terms and Billing identical for this field so one edit
+      // updates both pages.
+      if (mirror) {
+        next.terms = { ...next.terms, [key]: val };
+        next.billing = { ...next.billing, [key]: val };
+      }
+      return next;
+    });
+  };
+
+  // Flip sync on/off for a shared field. Turning it ON immediately copies the
+  // value the agency is currently looking at to both pages.
+  const toggleSync = (key: keyof SyncState) => {
+    const nextOn = !sync[key];
+    setSync(prev => ({ ...prev, [key]: nextOn }));
+    setSavedMsg(null); setSaveError(null);
+    if (nextOn) {
+      const val = form[activeDoc][key] || '';
+      setForm(prev => ({
+        ...prev,
+        terms: { ...prev.terms, [key]: val },
+        billing: { ...prev.billing, [key]: val },
+      }));
+    }
   };
   const resetField = (key: keyof LegalFields) => {
     setField(key, effectiveFieldValue(key, {}, agency)); // {} => template default
@@ -98,13 +146,28 @@ export default function LegalEditor({ agencyId, backendUrl, theme, agency }: Leg
     setSaving(true); setSaveError(null); setSavedMsg(null);
     try {
       const fields = buildPayload(activeDoc);
+      // Persist the active page and the current sync flags (flags stick so the
+      // choice survives reloads).
       const r = await authFetch(`${backendUrl}/api/agency/${agencyId}/legal`, {
-        method: 'PUT', body: JSON.stringify({ type: activeDoc, fields }),
+        method: 'PUT', body: JSON.stringify({ type: activeDoc, fields, sync }),
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { setSaveError(d.error || 'Could not save. Please try again.'); return; }
-      setStored(prev => ({ ...prev, [activeDoc]: fields }));
-      setSavedMsg('Saved. Your live page is updated.');
+      const storedUpdate: Partial<Record<LegalType, LegalFields>> = { [activeDoc]: fields };
+
+      // Mirror the synced shared fields onto the other page (Terms <-> Billing)
+      // so both stay identical. Form state is already kept in lockstep, so the
+      // other page's payload already carries the same values.
+      const other: LegalType | null = activeDoc === 'terms' ? 'billing' : activeDoc === 'billing' ? 'terms' : null;
+      if (other && (sync.trial_terms || sync.refund_policy)) {
+        const otherFields = buildPayload(other);
+        const r2 = await authFetch(`${backendUrl}/api/agency/${agencyId}/legal`, {
+          method: 'PUT', body: JSON.stringify({ type: other, fields: otherFields, sync }),
+        });
+        if (r2.ok) storedUpdate[other] = otherFields;
+      }
+      setStored(prev => ({ ...prev, ...storedUpdate }));
+      setSavedMsg('Saved. Your live pages are updated.');
       setTimeout(() => setSavedMsg(null), 4000);
     } catch { setSaveError('Could not save. Please try again.'); }
     finally { setSaving(false); }
@@ -143,12 +206,12 @@ export default function LegalEditor({ agencyId, backendUrl, theme, agency }: Leg
       <div>
         <h3 className="text-base sm:text-lg font-medium mb-1">Legal Pages</h3>
         <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
-          Customize the parts of your Terms and Privacy pages that are yours to set. Everything else is standard protective language that is always published. Changes go live when you save.
+          Customize the parts of your Terms, Privacy, and Billing pages that are yours to set. Everything else is standard protective language that is always published. Changes go live when you save.
         </p>
       </div>
 
-      {/* Doc switcher: two equal buttons, never a lone item on the row. */}
-      <div className="grid grid-cols-2 gap-2">
+      {/* Doc switcher: all three pages in one even row. */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         {(['terms', 'privacy', 'billing'] as LegalType[]).map((t) => {
           const active = activeDoc === t;
           return (
@@ -190,11 +253,25 @@ export default function LegalEditor({ agencyId, backendUrl, theme, agency }: Leg
                 </div>
                 <p className="text-[11px] sm:text-xs mb-2" style={{ color: theme.textMuted }}>{field.help}</p>
 
+                {(SYNCABLE as string[]).includes(field.key as string) && (
+                  <button type="button" onClick={() => toggleSync(field.key as keyof SyncState)}
+                    className="inline-flex items-center gap-1.5 mb-2.5 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors"
+                    style={sync[field.key as keyof SyncState]
+                      ? { backgroundColor: theme.primary15, color: theme.primary }
+                      : { backgroundColor: theme.input, color: theme.textMuted, border: `1px solid ${theme.inputBorder}` }}>
+                    {sync[field.key as keyof SyncState] ? <Link2 className="h-3 w-3" /> : <Unlink className="h-3 w-3" />}
+                    {sync[field.key as keyof SyncState] ? 'Synced across Terms & Billing' : 'Separate on each page'}
+                  </button>
+                )}
+
                 {field.kind === 'refund' && (
-                  <div className="flex flex-wrap gap-1.5 mb-2">
-                    {REFUND_PRESETS.map((p) => (
-                      <button key={p.key} onClick={() => setField(field.key, p.text)} className="rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors" style={{ backgroundColor: theme.primary15, color: theme.primary }}>{p.label}</button>
-                    ))}
+                  <div className="mb-2">
+                    <p className="text-[11px] mb-1.5" style={{ color: theme.textMuted }}>Quick fill:</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {REFUND_PRESETS.map((p) => (
+                        <button key={p.key} onClick={() => setField(field.key, p.text)} className="rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors" style={{ backgroundColor: theme.primary15, color: theme.primary }}>{p.label}</button>
+                      ))}
+                    </div>
                   </div>
                 )}
 
