@@ -94,10 +94,18 @@ function FeatureToggle({ featureKey, enabled, onToggle, theme }: { featureKey: s
 // trust and completion versus a generic themed button.
 // Verified Stripe mark (Bootstrap Icons path): the rounded-square "S". Renders
 // reliably at any size. `color` fills the square; the S is the cut-out.
-function StripeMark({ className = '', color = '#635BFF' }: { className?: string; color?: string }) {
+// The Stripe mark is one path: a rounded square with the "S" knocked out as a
+// hole, so the S shows whatever is behind the icon. On the blurple connect
+// BUTTON that hole correctly reveals the blurple button (white-looking S). On a
+// dark CARD the hole revealed the dark background, making the S look near-black.
+// `knockout` paints a solid layer behind the square so the S always shows that
+// color (pass "#fff" on the card for a white S); omit it to keep the old
+// see-through behavior for the button.
+function StripeMark({ className = '', color = '#635BFF', knockout }: { className?: string; color?: string; knockout?: string }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill={color} className={className} role="img" aria-label="Stripe">
-      <path d="M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm6.226 5.385c-.584 0-.937.164-.937.593 0 .468.607.674 1.36.93 1.228.415 2.844.963 2.851 2.993C11.5 11.868 9.924 13 7.63 13a7.7 7.7 0 0 1-3.009-.626V9.758c.926.506 2.095.88 3.01.88.617 0 1.058-.165 1.058-.671 0-.518-.658-.755-1.453-1.041C6.026 8.49 4.5 7.94 4.5 6.11 4.5 4.165 5.988 3 8.226 3a7.3 7.3 0 0 1 2.734.505v2.583c-.838-.45-1.896-.703-2.734-.703"/>
+      {knockout ? <rect x="0" y="0" width="16" height="16" rx="2" fill={knockout} /> : null}
+      <path fill={color} d="M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm6.226 5.385c-.584 0-.937.164-.937.593 0 .468.607.674 1.36.93 1.228.415 2.844.963 2.851 2.993C11.5 11.868 9.924 13 7.63 13a7.7 7.7 0 0 1-3.009-.626V9.758c.926.506 2.095.88 3.01.88.617 0 1.058-.165 1.058-.671 0-.518-.658-.755-1.453-1.041C6.026 8.49 4.5 7.94 4.5 6.11 4.5 4.165 5.988 3 8.226 3a7.3 7.3 0 0 1 2.734.505v2.583c-.838-.45-1.896-.703-2.734-.703"/>
     </svg>
   );
 }
@@ -319,7 +327,7 @@ function AgencySettingsContent() {
   // immutable, so it is chosen before connecting and posted to the onboard
   // endpoint. Initialized from the agency's stored country, else US.
   const [connectCountry, setConnectCountry] = useState('US');
-  const [showCancelModal, setShowCancelModal] = useState(false); const [portalLoading, setPortalLoading] = useState(false); const [addCardLoading, setAddCardLoading] = useState(false); const [resumingCancel, setResumingCancel] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false); const [portalLoading, setPortalLoading] = useState(false); const [addCardLoading, setAddCardLoading] = useState(false);
   const [agencyName, setAgencyName] = useState(''); const [agencyPhone, setAgencyPhone] = useState(''); const [logoUrl, setLogoUrl] = useState(''); const [logoPreview, setLogoPreview] = useState<string | null>(null); const [removingLogo, setRemovingLogo] = useState(false);
   // PWA home-screen identity (installed-app name + square app icon). Branded,
   // Pro-gated alongside the logo. app_name/app_icon_url on the agency row.
@@ -413,6 +421,8 @@ function AgencySettingsContent() {
   const [lowerPlansToggleSaving, setLowerPlansToggleSaving] = useState(false);
   const [allowClientCancel, setAllowClientCancel] = useState(true);
   const [cancelToggleSaving, setCancelToggleSaving] = useState(false);
+  const [clientCancelMode, setClientCancelMode] = useState<'period_end' | 'immediate'>('period_end');
+  const [cancelModeSaving, setCancelModeSaving] = useState(false);
   const [planBadge1, setPlanBadge1] = useState('');
   const [planBadge2, setPlanBadge2] = useState('');
   const [planBadge3, setPlanBadge3] = useState('');
@@ -506,6 +516,7 @@ function AgencySettingsContent() {
     if (!agency) return;
     setShowLowerPlans((agency as any).show_lower_plans_on_upgrade === true);
     setAllowClientCancel((agency as any).allow_client_cancel !== false);
+    setClientCancelMode((agency as any).client_cancel_mode === 'immediate' ? 'immediate' : 'period_end');
     setPlanBadge1((agency as any).plan_badge_1 ?? '');
     setPlanBadge2((agency as any).plan_badge_2 ?? '');
     setPlanBadge3((agency as any).plan_badge_3 ?? '');
@@ -988,6 +999,24 @@ function AgencySettingsContent() {
     finally { setCancelToggleSaving(false); }
   };
 
+  // When a client cancels, end their service at period end (default) or now.
+  const handleSetClientCancelMode = async (mode: 'period_end' | 'immediate') => {
+    if (!agency || cancelModeSaving || mode === clientCancelMode) return;
+    const prev = clientCancelMode;
+    setCancelModeSaving(true);
+    setClientCancelMode(mode); // optimistic
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ client_cancel_mode: mode }),
+      });
+      if (!res.ok) setClientCancelMode(prev);
+    } catch (e) { setClientCancelMode(prev); }
+    finally { setCancelModeSaving(false); }
+  };
+
   const handleSavePlanBadges = async () => {
     if (!agency) return;
     setBadgesSaving(true); setBadgesSaved(false);
@@ -1089,31 +1118,6 @@ function AgencySettingsContent() {
   const stripeDisplay = getStripeStatusDisplay();
   const getSubscriptionDisplay = () => { const status = agency?.subscription_status; if (status === 'active') return { label: 'Active', color: '#01f5d1', bgColor: 'rgba(1, 245, 209,0.1)' }; if (isTrialStatus(status)) return { label: 'Trial', color: '#3b82f6', bgColor: 'rgba(59,130,246,0.1)' }; if (status === 'past_due') return { label: 'Past Due', color: '#f59e0b', bgColor: 'rgba(245,158,11,0.1)' }; if (status === 'trial_expired' || status === 'expired') return { label: 'Trial expired', color: '#ef4444', bgColor: 'rgba(239,68,68,0.1)' }; if (status === 'canceled' || status === 'cancelled') return { label: 'Canceled', color: '#ef4444', bgColor: 'rgba(239,68,68,0.1)' }; return { label: (status || 'active').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()), color: theme.textMuted, bgColor: theme.input }; };
   const subscriptionDisplay = getSubscriptionDisplay();
-
-  // Resume (un-schedule) a pending period-end cancellation.
-  const handleResumeCancel = async () => {
-    if (!agency || resumingCancel) return;
-    setResumingCancel(true);
-    setError(null);
-    try {
-      const token = localStorage.getItem('auth_token');
-      const res = await fetch(`${backendUrl}/api/agency/cancel`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ agency_id: agency.id, resume: true }),
-      });
-      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Failed to resume'); }
-      await refreshAgency();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to resume subscription');
-    } finally {
-      setResumingCancel(false);
-    }
-  };
-  const formatCancelDate = (iso?: string | null) => {
-    if (!iso) return 'the end of your billing period';
-    try { return new Date(iso).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }); } catch { return 'the end of your billing period'; }
-  };
   const demoFeatures = [{ label: 'Dashboard', desc: '32 clients, $3,200 MRR, 2,417 total calls' }, { label: 'Clients', desc: '32 realistic service businesses with plans & call data' }, { label: 'Call History', desc: '10 calls with AI summaries, urgency levels, transcripts' }, { label: 'Analytics', desc: 'Revenue charts, plan breakdown, payment history' }, { label: 'Leads', desc: '8 leads across all pipeline stages with follow-ups' }, { label: 'Referrals', desc: '6 referred agencies, commissions, payout history' }];
   const dynamicStyles = `.agency-settings ::selection { background-color: #3b82f640; color: inherit; } .agency-settings input:focus, .agency-settings select:focus, .agency-settings textarea:focus { outline: none; border-color: ${theme.primary} !important; box-shadow: 0 0 0 3px ${theme.primary}20 !important; }`;
   const getFeatureCount = (plan: string) => Object.entries(planFeatures[plan] || {}).filter(([k, v]) => k !== 'team_members' && v === true).length;
@@ -1141,7 +1145,6 @@ function AgencySettingsContent() {
           isOnTrial={isOnTrial}
           theme={theme}
           backendUrl={backendUrl}
-          onScheduled={() => { refreshAgency(); }}
         />
       )}
 
@@ -1724,6 +1727,29 @@ function AgencySettingsContent() {
                   </div>
                 </div>
 
+                {/* When a client cancels, when does their service actually end. */}
+                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                  <h4 className="font-medium text-sm sm:text-base mb-1">When a client cancels</h4>
+                  <p className="text-xs sm:text-sm leading-relaxed mb-3" style={{ color: theme.textMuted }}>Choose when a client&apos;s service ends after they cancel. This policy applies to your clients&apos; cancellations.</p>
+                  <div className="inline-flex rounded-xl overflow-hidden w-full sm:w-auto" style={{ border: `1px solid ${theme.inputBorder}` }}>
+                    {([['period_end', 'At period end'], ['immediate', 'Immediately']] as const).map(([mode, label]) => {
+                      const active = clientCancelMode === mode;
+                      return (
+                        <button key={mode} type="button" onClick={() => handleSetClientCancelMode(mode)} disabled={cancelModeSaving}
+                          className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-60"
+                          style={active ? { backgroundColor: theme.primary, color: theme.primaryText } : { backgroundColor: 'transparent', color: theme.textMuted }}>
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[11px] sm:text-xs mt-2.5 leading-relaxed" style={{ color: theme.textMuted }}>
+                    {clientCancelMode === 'immediate'
+                      ? 'Service ends right away when a client cancels, and their number is released then.'
+                      : 'Clients keep service through the period they already paid for, then it ends. (Recommended.)'}
+                  </p>
+                </div>
+
                 {/* Show/hide the discount-code field on the client signup page. Lives with
                     the discount codes section since it governs whether clients can enter one. */}
                 <div className="rounded-xl p-4 sm:p-5 mb-4 sm:mb-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
@@ -1776,7 +1802,7 @@ function AgencySettingsContent() {
                   ) : (
                     <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                       <div className="flex items-center gap-4">
-                        <StripeMark className="h-12 w-12 flex-shrink-0" color="#635BFF" />
+                        <StripeMark className="h-12 w-12 flex-shrink-0" color="#635BFF" knockout="#fff" />
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm sm:text-base">Stripe Connect</p>
                           <div className="flex items-center gap-2 mt-0.5"><div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: stripeDisplay.color }} /><p className="text-xs sm:text-sm" style={{ color: stripeDisplay.color }}>{stripeDisplay.label}</p></div>
@@ -2103,25 +2129,11 @@ function AgencySettingsContent() {
                 )}
 
                 {/* Cancel sits at the very bottom, separated from the plan options. */}
-                {agency?.plan_cancel_at ? (
-                  <div className="pt-4 mt-2" style={{ borderTop: `1px solid ${theme.border}` }}>
-                    <div className="rounded-xl p-4" style={{ backgroundColor: theme.warningBg || theme.input, border: `1px solid ${theme.warningBorder || theme.inputBorder}` }}>
-                      <p className="text-sm font-medium" style={{ color: theme.warningText || theme.text }}>
-                        Your {isOnTrial ? 'trial' : 'plan'} is scheduled to cancel on {formatCancelDate(agency.plan_cancel_at)}.
-                      </p>
-                      <p className="text-xs mt-1 leading-relaxed" style={{ color: theme.textMuted }}>
-                        You and your clients keep full access until then. Resume anytime before that date to stay on your plan.
-                      </p>
-                      <button onClick={handleResumeCancel} disabled={resumingCancel} className="mt-3 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors w-full sm:w-auto disabled:opacity-60" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
-                        {resumingCancel ? <Loader2 className="h-4 w-4 animate-spin" /> : null}{resumingCancel ? 'Resuming...' : 'Resume Plan'}
-                      </button>
-                    </div>
-                  </div>
-                ) : (isOnTrial || agency?.subscription_status === 'active') ? (
+                {(isOnTrial || agency?.subscription_status === 'active') && (
                   <div className="pt-4 mt-2" style={{ borderTop: `1px solid ${theme.border}` }}>
                     <button onClick={() => setShowCancelModal(true)} className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors w-full sm:w-auto" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.errorText }}><XCircle className="h-4 w-4" />Cancel {isOnTrial ? 'Trial' : 'Subscription'}</button>
                   </div>
-                ) : null}
+                )}
               </div>
             )}
 
