@@ -71,10 +71,6 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: #050505;
-  /* Native-app feel: no horizontal drift, no scroll-chaining/rubber-band that
-     lets the whole page slide off-screen on iOS. */
-  overflow-x: hidden;
-  overscroll-behavior: none;
 }
 
 body {
@@ -83,11 +79,11 @@ body {
   font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
   font-weight: 400;
   font-feature-settings: "ss01", "cv11";
+  /* Clip horizontal overflow only. overflow-y stays visible so the document
+     scrolls normally; never put overflow-x:hidden on <html> (it stops the page
+     from scrolling). The mobile drag-past-edges issue is handled by removing
+     `zoom` on phones (.dash-zoom below), not by locking the document. */
   overflow-x: hidden;
-  overscroll-behavior: none;
-  width: 100%;
-  max-width: 100%;
-  position: relative;
 }
 
 /* The dashboard uses CSS `zoom` for density on desktop. On mobile (iOS in
