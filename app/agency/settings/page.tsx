@@ -1738,39 +1738,6 @@ function AgencySettingsContent() {
                   </div>
                 </div>
 
-                {/* Customer support phone. Saved to support_phone and synced to
-                    the connected Stripe account's business_profile.support_phone,
-                    so it shows on the receipts/invoices clients get from Stripe
-                    (the Express dashboard has no field for this). */}
-                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <Phone className="h-4 w-4" style={{ color: theme.primary }} />
-                    <h4 className="font-medium text-sm sm:text-base">Customer Support Phone</h4>
-                  </div>
-                  <p className="text-xs sm:text-sm mb-3" style={{ color: theme.textMuted }}>
-                    The number shown on the receipts and invoices your clients get from Stripe, so they can reach you about billing. Leave blank to use your agency phone number.
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-                    <input
-                      type="tel"
-                      value={supportPhone}
-                      onChange={(e) => { setSupportPhone(e.target.value); setSupportPhoneSaved(false); }}
-                      placeholder="+1 (555) 123-4567"
-                      className="w-full sm:max-w-xs rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm transition-colors"
-                      style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }}
-                    />
-                    <button
-                      onClick={handleSaveSupportPhone}
-                      disabled={savingSupportPhone}
-                      className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
-                      style={{ backgroundColor: theme.primary, color: theme.primaryText }}
-                    >
-                      {savingSupportPhone ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : <><Check className="h-4 w-4" />Save</>}
-                    </button>
-                    {supportPhoneSaved && <span className="text-xs sm:text-sm flex items-center gap-1" style={{ color: theme.primary }}><Check className="h-4 w-4" />Saved</span>}
-                  </div>
-                </div>
-
                 {/* Stripe Connect group. This whole block is how the platform
                     charges your clients, so it greys out when you switch to
                     billing clients yourself (manual mode). The Stripe status card
@@ -1806,6 +1773,39 @@ function AgencySettingsContent() {
                       </div>
                     </div>
                   )}
+
+                  {/* Customer support phone. Saved to support_phone and synced to the
+                      connected Stripe account's business_profile.support_phone, so it
+                      shows on the receipts/invoices clients get from Stripe (the
+                      Express dashboard has no field for this). */}
+                  <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <Phone className="h-4 w-4" style={{ color: theme.primary }} />
+                      <h4 className="font-medium text-sm sm:text-base">Customer Support Phone</h4>
+                    </div>
+                    <p className="text-xs sm:text-sm mb-3" style={{ color: theme.textMuted }}>
+                      The number shown on the receipts and invoices your clients get from Stripe, so they can reach you about billing. Leave blank to use your agency phone number.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+                      <input
+                        type="tel"
+                        value={supportPhone}
+                        onChange={(e) => { setSupportPhone(e.target.value); setSupportPhoneSaved(false); }}
+                        placeholder="+1 (555) 123-4567"
+                        className="w-full sm:max-w-xs rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm transition-colors"
+                        style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }}
+                      />
+                      <button
+                        onClick={handleSaveSupportPhone}
+                        disabled={savingSupportPhone}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
+                        style={{ backgroundColor: theme.primary, color: theme.primaryText }}
+                      >
+                        {savingSupportPhone ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : <><Check className="h-4 w-4" />Save</>}
+                      </button>
+                      {supportPhoneSaved && <span className="text-xs sm:text-sm flex items-center gap-1" style={{ color: theme.primary }}><Check className="h-4 w-4" />Saved</span>}
+                    </div>
+                  </div>
 
                   {/* Country + Connect. A connected account's country is fixed at
                       creation and can't change later, so it's chosen BEFORE
