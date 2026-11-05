@@ -21,7 +21,7 @@ import { CustomSelect } from '@/components/ui/custom-select';
 import { TimezoneSelect } from '@/components/ui/timezone-select';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 
-interface Client { id: string; business_name: string; email: string; owner_name: string; owner_phone: string; business_city?: string; business_state?: string; business_website?: string; industry?: string; is_test_client?: boolean; plan_type: string; subscription_status: string; status: string; calls_this_month: number; monthly_call_limit?: number; minutes_this_period?: number; created_at: string; vapi_phone_number: string; vapi_assistant_id?: string; trial_ends_at?: string; logo_url?: string | null; primary_color?: string | null; secondary_color?: string | null; accent_color?: string | null; theme_mode?: string | null; login_email?: string | null; login_password?: string | null; signup_discount_code?: string | null; post_call_sms_enabled?: boolean | null; notification_phone?: string | null; awaiting_manual_provision?: boolean | null; }
+interface Client { id: string; business_name: string; email: string; owner_name: string; owner_phone: string; business_city?: string; business_state?: string; business_website?: string; industry?: string; is_test_client?: boolean; plan_type: string; subscription_status: string; status: string; calls_this_month: number; monthly_call_limit?: number; minutes_this_period?: number; created_at: string; vapi_phone_number: string; vapi_assistant_id?: string; trial_ends_at?: string; logo_url?: string | null; primary_color?: string | null; secondary_color?: string | null; accent_color?: string | null; theme_mode?: string | null; login_email?: string | null; login_password?: string | null; signup_discount_code?: string | null; post_call_sms_enabled?: boolean | null; notification_phone?: string | null; awaiting_manual_provision?: boolean | null; show_client_calendar?: boolean | null; }
 interface Call { id: string; customer_name: string; caller_phone: string; customer_phone?: string; created_at: string; urgency_level: string; call_status: string; duration_seconds?: number; duration?: number; service_requested?: string; transfer_status?: string; appointment_booked?: boolean; is_spam?: boolean; }
 
 // Logo color extraction (ported from agency branding so client logos auto-derive
@@ -216,13 +216,16 @@ export default function AgencyClientDetailPage() {
   // Post-call recap SMS, set per client by the agency. Unset is treated as on.
   const [postCallSms, setPostCallSms] = useState(true);
   const [postCallSmsSaving, setPostCallSmsSaving] = useState(false);
+  // Calendar tab visibility on this client's dashboard (agency-controlled).
+  const [calVisible, setCalVisible] = useState(false);
+  const [calVisibleSaving, setCalVisibleSaving] = useState(false);
   const [notifPhone, setNotifPhone] = useState('');
 
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
   const isFreePlan = agency?.plan_type === 'free' || agency?.plan_type === 'starter';
 
   useEffect(() => { if (client?.industry) setIndustryValue(client.industry); }, [client?.industry]);
-  useEffect(() => { if (client) { setBusinessName(client.business_name || ''); setOwnerPhone(client.owner_phone || ''); setPostCallSms(client.post_call_sms_enabled !== false); setNotifPhone(client.notification_phone || ''); } }, [client?.business_name, client?.owner_phone, client?.post_call_sms_enabled, client?.notification_phone]);
+  useEffect(() => { if (client) { setBusinessName(client.business_name || ''); setOwnerPhone(client.owner_phone || ''); setPostCallSms(client.post_call_sms_enabled !== false); setNotifPhone(client.notification_phone || ''); setCalVisible(client.show_client_calendar === true); } }, [client?.business_name, client?.owner_phone, client?.post_call_sms_enabled, client?.notification_phone, client?.show_client_calendar]);
 
   const [deleting, setDeleting] = useState(false);
   const handleDeleteClient = async () => {
@@ -446,6 +449,25 @@ export default function AgencyClientDetailPage() {
       if (!res.ok) setPostCallSms(!next);
     } catch { setPostCallSms(!next); }
     finally { setPostCallSmsSaving(false); }
+  };
+
+  // Show or hide the Calendar tab on this client's dashboard. Uses the
+  // agency-gated visibility endpoint on the client-scoped API.
+  const handleToggleCalendarVisibility = async () => {
+    if (!clientId || !client) return;
+    const next = !calVisible;
+    setCalVisibleSaving(true);
+    setCalVisible(next); // optimistic
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/client/${clientId}/calendar/visibility`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ show: next }),
+      });
+      if (!res.ok) setCalVisible(!next);
+    } catch { setCalVisible(!next); }
+    finally { setCalVisibleSaving(false); }
   };
 
   const handleSaveField = async (field: 'business_name' | 'owner_phone' | 'notification_phone', value: string) => {
@@ -764,6 +786,27 @@ export default function AgencyClientDetailPage() {
                       </div>
                     )}
                     <p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>Where the recap goes. Leave blank to use the owner phone. The text always goes to the business owner.</p>
+                  </div>
+                </div>
+
+                {/* Calendar tab visibility - per-client toggle */}
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0 mt-0.5" style={{ backgroundColor: theme.hover }}>
+                    <CalendarCheck className="h-4 w-4" style={{ color: theme.textMuted }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs" style={{ color: theme.textMuted }}>Calendar tab</p>
+                        <p className="text-sm" style={{ color: theme.text }}>{calVisible ? 'Shown on this business’s dashboard' : 'Hidden from this business’s dashboard'}</p>
+                      </div>
+                      <button type="button" onClick={handleToggleCalendarVisibility} disabled={calVisibleSaving}
+                        className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 focus:outline-none disabled:opacity-50"
+                        style={{ backgroundColor: calVisible ? theme.primary : (isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
+                        <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200" style={{ transform: calVisible ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
+                      </button>
+                    </div>
+                    <p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>Shows or completely hides the Calendar tab for this business. Their AI keeps booking either way.</p>
                   </div>
                 </div>
 

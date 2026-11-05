@@ -5,7 +5,8 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { 
   Phone, TrendingUp, PhoneCall, Users, Bot, Settings, LogOut, Loader2,
-  Menu, X, ChevronRight, Clock, CreditCard, Eye, Building2, MessageSquare
+  Menu, X, ChevronRight, Clock, CreditCard, Eye, Building2, MessageSquare,
+  CalendarDays
 } from 'lucide-react';
 import { ClientProvider, useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
@@ -157,6 +158,14 @@ function ClientDashboardLayout({ children, initialDark = true }: { children: Rea
     { href: '/client/ai-agent', label: 'AI Agent', icon: Bot, permissionKey: 'ai_agent' },
     { href: '/client/settings', label: 'Settings', icon: Settings },
   ];
+
+  // The calendar tab is shown only when the agency has turned it on for this
+  // client (show_client_calendar). Inserted after AI Agent so it sits with the
+  // booking-related pages. Gated purely by the flag, no per-tab permission key.
+  if ((client as any)?.show_client_calendar === true) {
+    const insertAt = navItems.findIndex(i => i.href === '/client/settings');
+    navItems.splice(insertAt < 0 ? navItems.length : insertAt, 0, { href: '/client/calendar', label: 'Calendar', icon: CalendarDays });
+  }
 
   const filteredNavItems = navItems.filter(item => { if (!item.permissionKey) return true; return hasPermission(item.permissionKey); });
   const isActive = (href: string) => { if (href === '/client/dashboard') return pathname === '/client/dashboard' || pathname === '/client'; return pathname?.startsWith(href); };

@@ -11,6 +11,7 @@ import UpgradePrompt from '@/components/client/UpgradePrompt';
 import { SectionCard as SharedSectionCard } from '@/components/client/SectionCard';
 import AISettingsSection from '@/components/client/AISettingsSection';
 import ToolConfigSection from '@/components/client/ToolConfigSection';
+import NativeCalendarSection from '@/components/client/NativeCalendarSection';
 
 interface VoiceOption { id: string; name: string; gender: 'male' | 'female'; accent: string; style: string; description: string; previewUrl: string; recommended?: boolean; }
 interface CalendarStatus { connected: boolean; token_valid: boolean; calendar_access?: boolean; plan_allowed: boolean; plan_message: string | null; email?: string | null; }
@@ -568,6 +569,11 @@ export default function ClientAIAgentPage() {
               </div>
             )}
           </SectionCard>
+        </div>
+
+        {/* VoiceAI Connect native calendar */}
+        <div id="native-calendar-section" className="fu fu2 scroll-mt-6">
+          <NativeCalendarSection client={client} theme={theme} primaryColor={primaryColor} />
         </div>
 
         {/* Voice Selection */}
