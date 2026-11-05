@@ -131,6 +131,9 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
   const [copied, setCopied] = useState(false);
   const theme = useClientTheme();
 
+  const [provisioning, setProvisioning] = useState(false);
+  const [provisionError, setProvisionError] = useState<string | null>(null);
+
   const copyPhoneNumber = () => {
     if (client.vapi_phone_number) {
       navigator.clipboard.writeText(client.vapi_phone_number);
@@ -139,10 +142,51 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
     }
   };
 
+  const handleProvision = async () => {
+    if (provisioning) return;
+    setProvisioning(true);
+    setProvisionError(null);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
+      const res = await fetch(`${backendUrl}/api/client/${client.id}/provision`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        window.location.reload();
+        return;
+      }
+      if (res.status === 202) {
+        // A provision is already running; give it a moment, then refresh.
+        setProvisionError('Setting things up. This can take up to a minute, refreshing shortly.');
+        setTimeout(() => window.location.reload(), 8000);
+        return;
+      }
+      setProvisionError(data.message || 'Could not set up your number. Please try again in a moment.');
+      setProvisioning(false);
+    } catch {
+      setProvisionError('Could not set up your number. Please try again in a moment.');
+      setProvisioning(false);
+    }
+  };
+
   const hasPhoneNumber = !!client.vapi_phone_number;
   const hasAssistant = !!client.vapi_assistant_id;
   const isProvisioned = hasPhoneNumber && hasAssistant;
   const isProvisioningPending = !isProvisioned && client.subscription_status !== 'cancelled';
+  // Self-signups are created WITHOUT a number and wait for someone to press
+  // "Activate" here (or Provision on the agency side). Nothing runs in the
+  // background while awaiting, so we show a button, not a spinner. The button
+  // only does anything in a serviceable billing state, so we only show it then
+  // (an expired/canceled awaiting client gets the upgrade banner instead, and a
+  // number-less client that is NOT a flagged self-signup, e.g. a reactivation
+  // restoring its number, keeps the old "Assigning..." progress spinner).
+  const _subStatus = (client.subscription_status || '').toLowerCase();
+  const _serviceable = ['trial', 'trialing', 'active', 'manual', 'past_due'].includes(_subStatus);
+  const canActivate = isProvisioningPending && client.awaiting_manual_provision === true && _serviceable;
+  const reactivating = isProvisioningPending && client.awaiting_manual_provision !== true;
   // The forwarding card shows its full setup hero only when provisioned and not
   // yet confirmed. While that is up it owns the screen (no forwarding = no calls,
   // so an upgrade prompt is premature), so the trial/upgrade banner is hidden
@@ -385,14 +429,14 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
                 style={{ backgroundColor: isProvisioned ? theme.successBg : hexToRgba(theme.primary, 0.08) }}>
                 {isProvisioned ? (
                   <Phone className="h-6 w-6" style={{ color: theme.success }} />
-                ) : isProvisioningPending ? (
+                ) : (provisioning || reactivating) ? (
                   <Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.primary }} />
                 ) : (
                   <PhoneOff className="h-6 w-6" style={{ color: theme.textMuted }} />
                 )}
               </div>
               <p className="text-2xl sm:text-3xl font-bold tracking-tight truncate" style={{ color: theme.text, fontVariantNumeric: 'tabular-nums' }}>
-                {formattedPhone || (isProvisioningPending ? 'Assigning...' : 'Not assigned')}
+                {formattedPhone || (provisioning ? 'Activating...' : canActivate ? 'Not active yet' : reactivating ? 'Assigning...' : 'Not assigned')}
               </p>
             </div>
 
@@ -406,7 +450,24 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
             )}
           </div>
 
-          {isProvisioningPending && (
+          {canActivate ? (
+            <div className="pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
+              <p className="text-xs sm:text-[13px] leading-relaxed mb-3" style={{ color: theme.textMuted }}>
+                {provisioning
+                  ? 'Setting up your AI receptionist and phone number. This takes up to a minute.'
+                  : 'Your account is ready. Activate your number to turn on your AI receptionist and go live.'}
+              </p>
+              <button onClick={handleProvision} disabled={provisioning}
+                className="flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed w-full sm:w-auto"
+                style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+                {provisioning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Phone className="h-4 w-4" />}
+                {provisioning ? 'Activating...' : 'Activate Your Number'}
+              </button>
+              {provisionError && (
+                <p className="text-xs mt-2.5 leading-relaxed" style={{ color: theme.error || '#dc2626' }}>{provisionError}</p>
+              )}
+            </div>
+          ) : reactivating ? (
             <div className="flex items-center gap-4 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
               {[{ label: 'Phone Number', done: hasPhoneNumber }, { label: 'AI Assistant', done: hasAssistant }].map(s => (
                 <div key={s.label} className="flex items-center gap-2">
@@ -415,7 +476,7 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
                 </div>
               ))}
             </div>
-          )}
+          ) : null}
 
           {isProvisioned && (
             <div className="pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>

@@ -21,7 +21,7 @@ import { CustomSelect } from '@/components/ui/custom-select';
 import { TimezoneSelect } from '@/components/ui/timezone-select';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 
-interface Client { id: string; business_name: string; email: string; owner_name: string; owner_phone: string; business_city?: string; business_state?: string; business_website?: string; industry?: string; is_test_client?: boolean; plan_type: string; subscription_status: string; status: string; calls_this_month: number; monthly_call_limit?: number; minutes_this_period?: number; created_at: string; vapi_phone_number: string; vapi_assistant_id?: string; trial_ends_at?: string; logo_url?: string | null; primary_color?: string | null; secondary_color?: string | null; accent_color?: string | null; theme_mode?: string | null; login_email?: string | null; login_password?: string | null; signup_discount_code?: string | null; post_call_sms_enabled?: boolean | null; notification_phone?: string | null; }
+interface Client { id: string; business_name: string; email: string; owner_name: string; owner_phone: string; business_city?: string; business_state?: string; business_website?: string; industry?: string; is_test_client?: boolean; plan_type: string; subscription_status: string; status: string; calls_this_month: number; monthly_call_limit?: number; minutes_this_period?: number; created_at: string; vapi_phone_number: string; vapi_assistant_id?: string; trial_ends_at?: string; logo_url?: string | null; primary_color?: string | null; secondary_color?: string | null; accent_color?: string | null; theme_mode?: string | null; login_email?: string | null; login_password?: string | null; signup_discount_code?: string | null; post_call_sms_enabled?: boolean | null; notification_phone?: string | null; awaiting_manual_provision?: boolean | null; }
 interface Call { id: string; customer_name: string; caller_phone: string; customer_phone?: string; created_at: string; urgency_level: string; call_status: string; duration_seconds?: number; duration?: number; service_requested?: string; transfer_status?: string; appointment_booked?: boolean; is_spam?: boolean; }
 
 // Logo color extraction (ported from agency branding so client logos auto-derive
@@ -199,6 +199,8 @@ export default function AgencyClientDetailPage() {
   const [tzSaving, setTzSaving] = useState(false);
   const [tzSaved, setTzSaved] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [provisioning, setProvisioning] = useState(false);
+  const [provisionError, setProvisionError] = useState<string | null>(null);
 
   // Client login credentials (view + agency-initiated reset)
   const [credPwVisible, setCredPwVisible] = useState(false);
@@ -480,6 +482,29 @@ export default function AgencyClientDetailPage() {
   const fetchClientData = async () => { if (!agency || !clientId) return; try { const token = localStorage.getItem('auth_token'); const clientRes = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}`, { headers: { 'Authorization': `Bearer ${token}` } }); if (!clientRes.ok) { setError('Client not found'); return; } const clientData = await clientRes.json(); setClient(clientData.client); const callsRes = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}/calls`, { headers: { 'Authorization': `Bearer ${token}` } }); if (callsRes.ok) { const callsData = await callsRes.json(); setRecentCalls((callsData.calls || []).slice(0, 5)); } } catch (e) { console.error('Failed to fetch client:', e); setError('Failed to load client'); } finally { setLoading(false); } };
   const copyPhoneNumber = () => { if (!client?.vapi_phone_number) return; navigator.clipboard.writeText(client.vapi_phone_number); setCopied(true); setTimeout(() => setCopied(false), 2000); };
 
+  // Manual provision (self-signup clients are created without a number). Attaches
+  // the AI assistant + phone number on demand, then refreshes the client row.
+  const handleProvisionClient = async () => {
+    if (!agency || !clientId || provisioning) return;
+    setProvisioning(true);
+    setProvisionError(null);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}/provision`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) { await fetchClientData(); setProvisioning(false); return; }
+      if (res.status === 202) { setProvisionError('Provisioning is already underway. Refreshing shortly.'); setTimeout(() => { fetchClientData(); setProvisioning(false); }, 8000); return; }
+      setProvisionError(data.message || 'Could not provision a number. Please try again in a moment.');
+      setProvisioning(false);
+    } catch {
+      setProvisionError('Could not provision a number. Please try again in a moment.');
+      setProvisioning(false);
+    }
+  };
+
   const handlePreviewAsClient = async () => {
     if (!agency || !clientId) return;
     setPreviewLoading(true);
@@ -616,8 +641,18 @@ export default function AgencyClientDetailPage() {
   // When no number is provisioned, explain why right on the AI Phone card. The
   // common case is a client that was created but never finished Stripe checkout,
   // so no number was purchased (which is fine, the client record still exists).
+  // The agency can provision a self-signup client's number here (the client can
+  // also do it from their own dashboard). Shown only for a flagged self-signup
+  // with no number yet AND a serviceable billing state. A card-required client
+  // still owing checkout (pending_payment), or an expired/canceled account, does
+  // not get the button, those reactivate through billing instead.
+  const _subStLower = (client.subscription_status || '').toLowerCase();
+  const _serviceableStatus = ['trial', 'trialing', 'active', 'manual', 'past_due'].includes(_subStLower);
+  const canProvisionHere = !client.vapi_phone_number && client.awaiting_manual_provision === true && _serviceableStatus;
   const noNumberNote = (_subSt === 'pending_payment' || _subSt === 'pending')
     ? "This client hasn't completed checkout yet, so no phone number has been purchased."
+    : canProvisionHere
+    ? "This client signed up on their own. Provision a number to activate their AI receptionist."
     : "A phone number is provisioned automatically once the client's subscription starts.";
 
   // Reusable status indicator for the inline-editable rows
@@ -636,7 +671,7 @@ export default function AgencyClientDetailPage() {
       <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           {/* AI Phone Number */}
-          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-4"><Phone className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">AI Phone Number</h2></div><div className="flex items-center justify-between gap-3"><div><p className="text-xl sm:text-2xl font-bold" style={{ color: client.vapi_phone_number ? theme.primary : theme.textMuted }}>{client.vapi_phone_number ? formatPhone(client.vapi_phone_number) : 'Not provisioned'}</p>{!client.vapi_phone_number && (<p className="text-xs sm:text-sm mt-1.5 max-w-md" style={{ color: theme.textMuted }}>{noNumberNote}</p>)}</div>{client.vapi_phone_number && (<button onClick={copyPhoneNumber} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>{copied ? <Check className="h-4 w-4" style={{ color: theme.primary }} /> : <Copy className="h-4 w-4" />}{copied ? 'Copied!' : 'Copy'}</button>)}</div></div></div>
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-4"><Phone className="h-4 w-4" style={{ color: theme.primary }} /><h2 className="font-semibold text-sm sm:text-base">AI Phone Number</h2></div><div className="flex items-center justify-between gap-3"><div><p className="text-xl sm:text-2xl font-bold" style={{ color: client.vapi_phone_number ? theme.primary : theme.textMuted }}>{client.vapi_phone_number ? formatPhone(client.vapi_phone_number) : 'Not provisioned'}</p>{!client.vapi_phone_number && (<p className="text-xs sm:text-sm mt-1.5 max-w-md" style={{ color: theme.textMuted }}>{noNumberNote}</p>)}{canProvisionHere && provisionError && (<p className="text-xs mt-2 leading-relaxed" style={{ color: theme.error || '#dc2626' }}>{provisionError}</p>)}</div>{client.vapi_phone_number ? (<button onClick={copyPhoneNumber} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>{copied ? <Check className="h-4 w-4" style={{ color: theme.primary }} /> : <Copy className="h-4 w-4" />}{copied ? 'Copied!' : 'Copy'}</button>) : canProvisionHere ? (<button onClick={handleProvisionClient} disabled={provisioning} className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed flex-shrink-0" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{provisioning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Phone className="h-4 w-4" />}{provisioning ? 'Setting up...' : 'Provision Number'}</button>) : null}</div></div></div>
 
           {/* Business Details - Name & Phone inline-editable, matches Industry pattern */}
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
