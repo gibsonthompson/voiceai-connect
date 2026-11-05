@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { 
   Users, Copy, Check, UserPlus, Megaphone, Search, DollarSign,
   ChevronRight, ArrowUpRight, Loader2, MessageSquare, Send, X, LifeBuoy,
-  Phone, Headphones, Sparkles, Mail, MessageCircle, FlaskConical, Globe, Inbox
+  Phone, Headphones, Sparkles, Mail, MessageCircle, FlaskConical, Globe, Inbox, Link2
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '../../../hooks/useTheme';
@@ -238,37 +238,39 @@ export default function AgencyDashboardPage() {
         provisioningTestClient={provisioningTestClient}
       />
 
-      {/* TRY YOUR AI */}
-      {hasDemo && (
-        <div className="mb-6 sm:mb-8 rounded-xl overflow-hidden" style={{ border: `1px solid ${theme.primary}30` }}>
-          <div className="p-5 sm:p-6" style={{ background: theme.isDark ? `linear-gradient(135deg, ${theme.primary}15 0%, ${theme.primary}05 100%)` : `linear-gradient(135deg, ${theme.primary}10 0%, ${theme.primary}03 100%)` }}>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: theme.primary15 }}><Headphones className="h-4 w-4" style={{ color: theme.primary }} /></div>
-                  <h3 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>Try Your AI Receptionist</h3>
-                </div>
-                <p className="text-xs sm:text-sm mb-3" style={{ color: theme.textMuted }}>Call your demo number to hear it in action. Tell it what kind of business you run and watch it roleplay as your receptionist.</p>
-                <div className="flex items-center gap-3 flex-wrap">
-                  <a href={`tel:${agency?.demo_phone_number}`} className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.98]" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Phone className="h-4 w-4" />Call {demoPhoneDisplay}</a>
-                  <button onClick={copyDemoNumber} className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.textMuted }}>{demoCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}{demoCopied ? 'Copied' : 'Copy Number'}</button>
-                </div>
+      {/* TRY YOUR AI + SIGNUP LINK: one row, split 50/50 on tablet and up. The
+          demo number lives only on the Call button now (no second copy of it).
+          With no demo number yet, the signup link spans the full width. */}
+      <div className={`mb-6 sm:mb-8 grid grid-cols-1 gap-4 sm:gap-6 ${hasDemo ? 'md:grid-cols-2' : ''}`}>
+        {hasDemo && (
+          <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${theme.primary}30` }}>
+            <div className="h-full p-5 sm:p-6 flex flex-col" style={{ background: theme.isDark ? `linear-gradient(135deg, ${theme.primary}15 0%, ${theme.primary}05 100%)` : `linear-gradient(135deg, ${theme.primary}10 0%, ${theme.primary}03 100%)` }}>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: theme.primary15 }}><Headphones className="h-4 w-4" style={{ color: theme.primary }} /></div>
+                <h3 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>Try Your AI Receptionist</h3>
               </div>
-              <div className="hidden sm:flex flex-col items-center justify-center rounded-xl px-5 py-4 flex-shrink-0" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', border: `1px solid ${theme.border}` }}>
-                <p className="text-[10px] uppercase tracking-wider font-medium mb-1" style={{ color: theme.textMuted }}>Demo Line</p>
-                <p className="text-lg font-bold font-mono tracking-wide" style={{ color: theme.primary }}>{demoPhoneDisplay}</p>
-                <div className="flex items-center gap-1 mt-1"><span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ backgroundColor: '#22c55e' }} /><span className="text-[10px] font-medium" style={{ color: '#22c55e' }}>Active</span></div>
+              <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>Call your demo number to hear it in action. Tell it what kind of business you run and watch it roleplay as your receptionist.</p>
+              <div className="flex items-center gap-3 flex-wrap mt-auto">
+                <a href={`tel:${agency?.demo_phone_number}`} className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.98]" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Phone className="h-4 w-4" />Call {demoPhoneDisplay}</a>
+                <button onClick={copyDemoNumber} className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.textMuted }}>{demoCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}{demoCopied ? 'Copied' : 'Copy Number'}</button>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Signup Link Card */}
-      <div className="mb-6 sm:mb-8 rounded-xl p-4 sm:p-5" style={{ background: theme.isDark ? `linear-gradient(to right, ${theme.primary}12, transparent)` : `linear-gradient(to right, ${theme.primary}08, transparent)`, border: `1px solid ${theme.primary30}` }}>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="min-w-0"><p className="text-xs sm:text-sm mb-1" style={{ color: theme.textMuted }}>Your Client Signup Link</p><p className="text-sm sm:text-lg font-medium truncate" style={{ color: theme.primary }}>{signupLink}</p></div>
-          <button onClick={copySignupLink} className="inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors flex-shrink-0" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary}40`, color: theme.primary }}>{copied ? (<><Check className="h-4 w-4" />Copied!</>) : (<><Copy className="h-4 w-4" />Copy Link</>)}</button>
+        {/* Signup Link */}
+        <div className="h-full rounded-xl p-5 sm:p-6 flex flex-col" style={{ background: theme.isDark ? `linear-gradient(135deg, ${theme.primary}12 0%, ${theme.primary}04 100%)` : `linear-gradient(135deg, ${theme.primary}10 0%, ${theme.primary}03 100%)`, border: `1px solid ${theme.primary30}` }}>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: theme.primary15 }}><Link2 className="h-4 w-4" style={{ color: theme.primary }} /></div>
+            <h3 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>Your Client Signup Link</h3>
+          </div>
+          <div className="rounded-lg px-3 py-2 mb-4" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', border: `1px solid ${theme.border}` }}>
+            <p className="text-sm font-medium truncate" style={{ color: theme.primary }}>{signupLink}</p>
+          </div>
+          <div className="flex items-center gap-3 flex-wrap mt-auto">
+            <button onClick={copySignupLink} className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-colors" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{copied ? (<><Check className="h-4 w-4" />Copied!</>) : (<><Copy className="h-4 w-4" />Copy Link</>)}</button>
+            <a href={signupLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.textMuted }}>Open <ArrowUpRight className="h-3.5 w-3.5" /></a>
+          </div>
         </div>
       </div>
 
