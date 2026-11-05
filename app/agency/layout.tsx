@@ -114,7 +114,10 @@ function TourLauncher({ theme }: { theme: any }) {
 
 function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { agency, branding, loading, effectivePlan, hasPermission, isAgent } = useAgency();
+  const { agency, branding, loading, effectivePlan, hasPermission, isAgent, logoScale } = useAgency();
+  // Logo size from Branding. Applied to the nav logos, capped so a large scale
+  // fills the bar without blowing out the 64px header/sidebar.
+  const navLogoHeight = (base: number) => `${Math.min(Math.round(base * (logoScale || 1)), 60)}px`;
   const { canUseMarketingSite, canUseDemoPhoneNumber, canUseAiLab, canUseLeadFinder, hasWhiteLabel, planName, isFree } = usePlanFeatures();
 
   // Brand fonts: load the agency's chosen display + body fonts and expose them as
@@ -350,7 +353,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   // again, which is the whole point of the soft-nav rebuild below.
   if (loading) {
     return (
-      <div className="vac-sk min-h-screen flex" style={{ backgroundColor: 'var(--sk-bg)', zoom: 0.8 }}>
+      <div className="dash-zoom vac-sk min-h-screen flex" style={{ backgroundColor: 'var(--sk-bg)', zoom: 0.8 }}>
         <link rel="manifest" href="/api/agency-manifest" />
         {/* Skeleton colors are driven by CSS variables that flip on the
             html.theme-light / theme-dark class the root layout head script sets
@@ -396,7 +399,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   // read as two generic icons when no logo was uploaded yet.
   if (agencyNeedsPlan) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: theme.bg, zoom: 0.8 }}>
+      <div className="dash-zoom min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: theme.bg, zoom: 0.8 }}>
         <link rel="manifest" href="/api/agency-manifest" />
         <div className="max-w-md w-full rounded-2xl p-8 text-center" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, boxShadow: theme.isDark ? 'none' : '0 4px 24px rgba(0,0,0,0.06)' }}>
           <div className="mb-6">
@@ -470,7 +473,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   // ── MAIN LAYOUT ─────────────────────────────────────────────────────
   return (
     <TourProvider steps={tourSteps} storageKey={agency?.id || 'x'}>
-    <div className="min-h-screen" style={{ backgroundColor: theme.bg, color: theme.text, zoom: 0.8, '--color-primary': primaryColor, '--color-secondary': secondaryColor, '--color-accent': accentColor } as React.CSSProperties}>
+    <div className="dash-zoom min-h-screen" style={{ backgroundColor: theme.bg, color: theme.text, zoom: 0.8, '--color-primary': primaryColor, '--color-secondary': secondaryColor, '--color-accent': accentColor } as React.CSSProperties}>
       <link rel="manifest" href="/api/agency-manifest" />
       {/* DynamicFavicon is now rendered by AgencyFavicon in the layout wrapper */}
       {/*
@@ -489,14 +492,14 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       {hasPaymentIssue && isAccessibleRoute && (<div className="sticky z-40 px-4 py-3 flex items-center justify-between gap-3" style={{ top: 0, backgroundColor: theme.errorBg, borderBottom: `1px solid ${theme.errorBorder}` }}><div className="flex items-center gap-3"><CreditCard className="h-5 w-5 flex-shrink-0" style={{ color: theme.error }} /><div><p className="font-medium text-sm" style={{ color: theme.errorText }}>Payment failed</p><p className="text-xs" style={{ color: theme.errorText, opacity: 0.7 }}>Please update your payment method to continue using your agency.</p></div></div>{!pathname?.startsWith('/agency/settings') && (<Link href="/agency/settings" className="rounded-full px-4 py-2 text-sm font-medium transition-colors flex-shrink-0" style={{ backgroundColor: '#ef4444', color: '#ffffff' }}>Update Payment</Link>)}</div>)}
 
       {/* Mobile header */}
-      <div className="sticky z-30 md:hidden" style={{ backgroundColor: theme.sidebarBg, paddingTop: 'env(safe-area-inset-top)', top: hasPaymentIssue && isAccessibleRoute ? '60px' : 0 }}><header className="flex items-center justify-between h-16 px-4" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}><div className="flex items-center gap-3">{branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} style={{ height: '40px', width: 'auto' }} className="object-contain flex-shrink-0" />) : (<><div className="flex items-center justify-center rounded-xl" style={{ height: '40px', width: '40px', backgroundColor: theme.primary15, border: `1px solid ${theme.sidebarBorder}` }}><WaveformIcon className="h-6 w-6" color={theme.primary} /></div><span className="font-semibold text-lg truncate max-w-[180px]" style={{ color: theme.sidebarText }}>{branding.name}</span></>)}</div><button onClick={() => setSidebarOpen(true)} className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors" style={{ color: theme.sidebarText }}><Menu className="h-7 w-7" /></button></header></div>
+      <div className="sticky z-30 md:hidden" style={{ backgroundColor: theme.sidebarBg, paddingTop: 'env(safe-area-inset-top)', top: hasPaymentIssue && isAccessibleRoute ? '60px' : 0 }}><header className="flex items-center justify-between h-16 px-4" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}><div className="flex items-center gap-3">{branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} style={{ height: navLogoHeight(40), width: 'auto' }} className="object-contain flex-shrink-0" />) : (<><div className="flex items-center justify-center rounded-xl" style={{ height: '40px', width: '40px', backgroundColor: theme.primary15, border: `1px solid ${theme.sidebarBorder}` }}><WaveformIcon className="h-6 w-6" color={theme.primary} /></div><span className="font-semibold text-lg truncate max-w-[180px]" style={{ color: theme.sidebarText }}>{branding.name}</span></>)}</div><button onClick={() => setSidebarOpen(true)} className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors" style={{ color: theme.sidebarText }}><Menu className="h-7 w-7" /></button></header></div>
 
       {sidebarOpen && isMobile && (<div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden" onClick={() => setSidebarOpen(false)} />)}
 
       {/* Sidebar */}
       <aside className={`brand-shell brand-display fixed inset-y-0 left-0 z-50 w-72 md:w-64 flex flex-col transform transition-transform duration-300 ease-out ${isMobile ? `${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}` : 'translate-x-0'}`} style={{ backgroundColor: theme.sidebarBg, borderRight: `1px solid ${theme.sidebarBorder}`, paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0, top: !isMobile ? (hasPaymentIssue && isAccessibleRoute ? '60px' : 0) : 0 }}>
         <div className="flex md:hidden items-center justify-between h-16 px-4" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}><span className="font-semibold text-lg" style={{ color: theme.sidebarText }}>Menu</span><button onClick={() => setSidebarOpen(false)} className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors" style={{ color: theme.sidebarText }}><X className="h-7 w-7" /></button></div>
-        <div className="hidden md:flex h-16 items-center gap-3 px-6" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}>{branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} style={{ height: '32px', width: 'auto' }} className="object-contain flex-shrink-0" />) : (<><div className="flex items-center justify-center rounded-lg" style={{ height: '32px', width: '32px', backgroundColor: theme.primary15, border: `1px solid ${theme.sidebarBorder}` }}><WaveformIcon className="h-5 w-5" color={theme.primary} /></div><span className="font-semibold truncate" style={{ color: theme.sidebarText }}>{branding.name}</span></>)}</div>
+        <div className="hidden md:flex h-16 items-center gap-3 px-6" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}>{branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} style={{ height: navLogoHeight(32), width: 'auto' }} className="object-contain flex-shrink-0" />) : (<><div className="flex items-center justify-center rounded-lg" style={{ height: '32px', width: '32px', backgroundColor: theme.primary15, border: `1px solid ${theme.sidebarBorder}` }}><WaveformIcon className="h-5 w-5" color={theme.primary} /></div><span className="font-semibold truncate" style={{ color: theme.sidebarText }}>{branding.name}</span></>)}</div>
 
         <nav className="flex-1 min-h-0 overflow-y-auto p-4 space-y-1">
           {filteredNavItems.map((item) => { const active = isActive(item.href); const isLocked = item.locked === true; const route = AGENCY_HREF_ROUTE[item.href]; const IconComponent: any = (route && navIcon(agency?.icon_style, route)) || item.icon; return (
@@ -523,7 +526,11 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       <main className="brand-shell md:pl-64 min-h-screen" style={{ backgroundColor: theme.bg }}>
         <div key={pathname} className="agency-page-enter">{children}</div>
       </main>
-      <SupportWidget theme={theme} userType="agency" agencyId={agency?.id} hideLauncher={pathname?.startsWith('/agency/inbox')} />
+      {/* FAQ/help bot: desktop only. On mobile it floats over action buttons
+          (e.g. the leads "Open Gmail" / "Call" row), so it's hidden there. */}
+      <div className="hidden md:block">
+        <SupportWidget theme={theme} userType="agency" agencyId={agency?.id} hideLauncher={pathname?.startsWith('/agency/inbox')} />
+      </div>
     </div>
     <TourOverlay />
     </TourProvider>

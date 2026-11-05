@@ -1030,12 +1030,13 @@ export default function ComposerModal({
                     onChange={(e) => setSubject(e.target.value)}
                     placeholder="Email subject line"
                     className="w-full rounded-xl px-4 py-3 text-sm sm:text-base transition-colors focus:outline-none"
-                    style={{ 
+                    style={{
                       backgroundColor: theme.cardBg,
                       border: `1px solid ${theme.border}`,
                       color: theme.text,
                     }}
                     onFocus={(e) => {
+                      setShowTemplateDropdown(false);
                       e.currentTarget.style.borderColor = primaryColor;
                       e.currentTarget.style.boxShadow = `0 0 0 3px ${hexToRgba(primaryColor, 0.2)}`;
                     }}
@@ -1089,6 +1090,9 @@ export default function ComposerModal({
                     resize: 'vertical',
                   }}
                   onFocus={(e) => {
+                    // Tapping into the body closes the template picker so it never
+                    // covers the message while you're writing.
+                    setShowTemplateDropdown(false);
                     e.currentTarget.style.borderColor = primaryColor;
                     e.currentTarget.style.boxShadow = `0 0 0 3px ${hexToRgba(primaryColor, 0.2)}`;
                   }}

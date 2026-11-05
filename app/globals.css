@@ -71,6 +71,10 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: #050505;
+  /* Native-app feel: no horizontal drift, no scroll-chaining/rubber-band that
+     lets the whole page slide off-screen on iOS. */
+  overflow-x: hidden;
+  overscroll-behavior: none;
 }
 
 body {
@@ -80,6 +84,18 @@ body {
   font-weight: 400;
   font-feature-settings: "ss01", "cv11";
   overflow-x: hidden;
+  overscroll-behavior: none;
+  width: 100%;
+  max-width: 100%;
+  position: relative;
+}
+
+/* The dashboard uses CSS `zoom` for density on desktop. On mobile (iOS in
+   particular) `zoom` miscomputes the viewport width and breaks fixed elements,
+   which lets the whole page be dragged past its edges and feel non-native. On
+   phones we reset it to 1 so layout is plain 1x CSS and the page stays locked. */
+@media (max-width: 767px) {
+  .dash-zoom { zoom: 1 !important; }
 }
 
 ::selection { background: #3b82f640; }

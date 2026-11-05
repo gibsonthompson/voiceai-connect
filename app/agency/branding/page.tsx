@@ -232,7 +232,7 @@ export default function BrandingPage() {
         </div>
       </div>
 
-      <div className="rounded-xl p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="flex items-center gap-3"><div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Sparkles className="h-4.5 w-4.5" style={{ color: theme.primary }} /></div><div><p className="text-sm font-medium" style={{ color: theme.text }}>Auto-generate a palette</p><p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>Shuffles your brand colors ({primaryColor}, {secondaryColor}, {accentColor}) into different arrangements. Press multiple times for different combos.</p></div></div><button onClick={handleShuffle} className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-all hover:opacity-90 flex-shrink-0" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Shuffle className="h-4 w-4" />Shuffle</button></div>
+      <div className="rounded-xl p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="flex items-center gap-3"><div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Sparkles className="h-4 w-4" style={{ color: theme.primary }} /></div><div><p className="text-sm font-medium" style={{ color: theme.text }}>Auto-generate a palette</p><p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>Shuffles your brand colors ({primaryColor}, {secondaryColor}, {accentColor}) into different arrangements. Press multiple times for different combos.</p></div></div><button onClick={handleShuffle} className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-all hover:opacity-90 flex-shrink-0" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Shuffle className="h-4 w-4" />Shuffle</button></div>
 
       {/* Logo size: scale the nav logo. The top logo box grows to fit, the nav itself is unchanged. */}
       <div className="rounded-xl p-4 sm:p-5 mb-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
@@ -269,6 +269,7 @@ export default function BrandingPage() {
               />
               <span className="text-sm font-medium tabular-nums w-12 text-right" style={{ color: theme.text }}>{logoScale.toFixed(1)}x</span>
             </div>
+            <p className="text-[11px] mt-3" style={{ color: theme.textMuted }}>Drag to resize your logo, then hit <span className="font-medium" style={{ color: theme.text }}>Save Changes</span> at the top to apply it across your dashboard.</p>
           </>
         ) : (
           <div className="rounded-xl p-4 text-sm" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>

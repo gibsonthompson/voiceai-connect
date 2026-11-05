@@ -535,18 +535,20 @@ export default function AgencyLeadsPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Link href="/agency/leads/finder" prefetch={false} className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-[filter] bg-[var(--lp-primary)] text-[var(--lp-primary-text)] hover:brightness-95">
+          {/* On mobile these wrap two-up (a lone trailing button stretches full
+              width), so nothing is cut off; on desktop they sit in one row. */}
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto sm:flex-nowrap">
+            <Link href="/agency/leads/finder" prefetch={false} className="flex-1 sm:flex-none min-w-[calc(50%-0.25rem)] sm:min-w-0 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-[filter] bg-[var(--lp-primary)] text-[var(--lp-primary-text)] hover:brightness-95">
               <Search className="h-4 w-4" />Find Leads
             </Link>
-            <button onClick={() => setShowCSVImport(true)} className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors bg-[var(--lp-input)] border border-[var(--lp-input-border)] text-[var(--lp-muted)] hover:bg-[var(--lp-hover)]">
+            <button onClick={() => setShowCSVImport(true)} className="flex-1 sm:flex-none min-w-[calc(50%-0.25rem)] sm:min-w-0 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors bg-[var(--lp-input)] border border-[var(--lp-input-border)] text-[var(--lp-muted)] hover:bg-[var(--lp-hover)]">
               <FileSpreadsheet className="h-4 w-4" />Import
             </button>
-            <Link href="/agency/leads/new" prefetch={false} className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors bg-[var(--lp-input)] border border-[var(--lp-input-border)] text-[var(--lp-muted)] hover:bg-[var(--lp-hover)]">
+            <Link href="/agency/leads/new" prefetch={false} className="flex-1 sm:flex-none min-w-[calc(50%-0.25rem)] sm:min-w-0 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors bg-[var(--lp-input)] border border-[var(--lp-input-border)] text-[var(--lp-muted)] hover:bg-[var(--lp-hover)]">
               <Plus className="h-4 w-4" />Add Lead
             </Link>
             {!readOnly && (
-              <button onClick={() => setShowManage(true)} className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors bg-[var(--lp-input)] border border-[var(--lp-input-border)] text-[var(--lp-muted)] hover:bg-[var(--lp-hover)]">
+              <button onClick={() => setShowManage(true)} className="flex-1 sm:flex-none min-w-[calc(50%-0.25rem)] sm:min-w-0 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors bg-[var(--lp-input)] border border-[var(--lp-input-border)] text-[var(--lp-muted)] hover:bg-[var(--lp-hover)]">
                 <Trash2 className="h-4 w-4" />Manage
               </button>
             )}

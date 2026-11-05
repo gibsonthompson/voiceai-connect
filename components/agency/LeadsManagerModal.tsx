@@ -14,7 +14,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import type { Lead } from '@/types/lead';
-import { X, Trash2, Search, Loader2, Check, AlertTriangle, Download } from 'lucide-react';
+import { X, Trash2, Search, Loader2, Check, Download } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { CustomSelect } from '@/components/ui/custom-select';
 
@@ -273,18 +273,18 @@ export default function LeadsManagerModal({
 
         {/* Confirm overlay */}
         {pendingDelete && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center p-5" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={() => !deleting && setPendingDelete(null)}>
-            <div className="w-full max-w-sm rounded-2xl p-5" style={{ background: theme.bg, border: `1px solid ${theme.border}` }} onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center gap-2.5 mb-2">
-                <AlertTriangle className="h-5 w-5" style={{ color: errRed }} />
-                <h3 className="text-sm font-semibold" style={{ color: theme.text }}>Delete {pendingDelete.length} lead{pendingDelete.length === 1 ? '' : 's'}?</h3>
+          <div className="absolute inset-0 z-10 flex items-center justify-center p-4 sm:p-6" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(2px)' }} onClick={() => !deleting && setPendingDelete(null)}>
+            <div className="w-full max-w-sm rounded-2xl p-6 text-center" style={{ background: theme.bg, border: `1px solid ${theme.border}`, boxShadow: '0 24px 60px rgba(0,0,0,0.4)' }} onClick={(e) => e.stopPropagation()}>
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full" style={{ background: 'rgba(239,68,68,0.12)' }}>
+                <Trash2 className="h-6 w-6" style={{ color: errRed }} />
               </div>
-              <p className="text-xs mb-4" style={{ color: theme.textMuted }}>This permanently removes {pendingDelete.length === 1 ? 'this lead' : 'these leads'} from your pipeline. This can&apos;t be undone.</p>
-              <div className="flex justify-end gap-2">
-                <button onClick={() => setPendingDelete(null)} disabled={deleting} className="rounded-lg px-3 py-2 text-sm font-medium" style={{ color: theme.text, border: `1px solid ${theme.border}` }}>Cancel</button>
-                <button onClick={runDelete} disabled={deleting} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium" style={{ background: errRed, color: '#fff', opacity: deleting ? 0.7 : 1 }}>
+              <h3 className="text-base font-semibold mb-1.5" style={{ color: theme.text }}>Delete {pendingDelete.length} lead{pendingDelete.length === 1 ? '' : 's'}?</h3>
+              <p className="text-sm mb-6 leading-relaxed" style={{ color: theme.textMuted }}>This permanently removes {pendingDelete.length === 1 ? 'this lead' : 'these leads'} from your pipeline. This can&apos;t be undone.</p>
+              <div className="flex flex-col-reverse sm:flex-row gap-2">
+                <button onClick={() => setPendingDelete(null)} disabled={deleting} className="flex-1 rounded-xl px-4 py-3 text-sm font-semibold transition-colors disabled:opacity-50" style={{ color: theme.text, border: `1px solid ${theme.border}`, background: 'transparent' }}>Cancel</button>
+                <button onClick={runDelete} disabled={deleting} className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors disabled:opacity-70" style={{ background: errRed, color: '#fff' }}>
                   {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                  Delete {pendingDelete.length}
+                  {deleting ? 'Deleting...' : `Delete ${pendingDelete.length}`}
                 </button>
               </div>
             </div>
