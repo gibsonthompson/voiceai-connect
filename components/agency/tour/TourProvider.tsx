@@ -39,8 +39,15 @@ export function TourProvider({ steps, storageKey, autoStart = true, children }: 
   const [hydrated, setHydrated] = useState(false);
   const lsKey = `vac_tour_${storageKey}`;
 
-  const persist = useCallback((a: boolean, i: number, completed: boolean) => {
-    try { localStorage.setItem(lsKey, JSON.stringify({ active: a, stepIndex: i, completed })); } catch {}
+  // dismissCount is preserved across writes so the auto-popup can be capped: once
+  // the agency has dismissed the tour 3 times, it stops opening on its own.
+  const persist = useCallback((a: boolean, i: number, completed: boolean, dismissCount?: number) => {
+    try {
+      let existing: any = {};
+      try { existing = JSON.parse(localStorage.getItem(lsKey) || '{}'); } catch {}
+      const dc = typeof dismissCount === 'number' ? dismissCount : (existing.dismissCount || 0);
+      localStorage.setItem(lsKey, JSON.stringify({ active: a, stepIndex: i, completed, dismissCount: dc }));
+    } catch {}
   }, [lsKey]);
 
   // Hydrate from storage; resume an in-progress tour, or first-run auto-start
@@ -48,6 +55,9 @@ export function TourProvider({ steps, storageKey, autoStart = true, children }: 
   useEffect(() => {
     let saved: any = null;
     try { const raw = localStorage.getItem(lsKey); if (raw) saved = JSON.parse(raw); } catch {}
+    // Dismissed 3+ times: never auto-open (or auto-resume) again. The agency can
+    // still launch it manually from the sidebar.
+    if ((saved && saved.dismissCount || 0) >= 3) { setHydrated(true); return; }
     if (saved && saved.active && typeof saved.stepIndex === 'number') {
       setActive(true);
       setStepIndex(Math.min(saved.stepIndex, Math.max(0, steps.length - 1)));
@@ -87,7 +97,14 @@ export function TourProvider({ steps, storageKey, autoStart = true, children }: 
     setStepIndex((i) => { const n = Math.max(0, i - 1); persist(true, n, false); return n; });
   }, [persist]);
 
-  const skip = useCallback(() => { setActive(false); persist(false, stepIndex, true); }, [persist, stepIndex]);
+  const skip = useCallback(() => {
+    setActive(false);
+    let existing: any = {};
+    try { existing = JSON.parse(localStorage.getItem(lsKey) || '{}'); } catch {}
+    // Count the dismissal; keep completed=false so it can still return (until the
+    // 3-dismissal cap), but a finished tour (via next) stays completed and gone.
+    persist(false, stepIndex, false, (existing.dismissCount || 0) + 1);
+  }, [persist, stepIndex, lsKey]);
 
   return (
     <Ctx.Provider value={{ active: active && hydrated, stepIndex, steps, start, next, prev, skip }}>

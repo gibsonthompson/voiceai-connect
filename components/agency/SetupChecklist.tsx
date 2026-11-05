@@ -168,20 +168,20 @@ export default function SetupChecklist({ agency, clientCount, theme, userRole, d
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
-              <p className="text-sm sm:text-base font-semibold truncate" style={{ color: theme.text }}>{isFree ? 'Finish getting started' : 'Finish setting up your agency'}</p>
+              <p className="text-sm sm:text-base font-semibold truncate" style={{ color: theme.text }}>{isFree ? 'Finish Getting Started' : 'Finish Setting Up Your Agency'}</p>
               <span className="text-xs font-semibold flex-shrink-0" style={{ color: theme.primary }}>{completedCount}/{steps.length}</span>
             </div>
             <div className="mt-2 w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb' }}>
               <div className="h-full rounded-full transition-all duration-700 ease-out" style={{ width: `${Math.max(progressPercent, 3)}%`, background: `linear-gradient(90deg, ${theme.primary}, ${theme.primary}cc)` }} />
             </div>
             {nextStep && (
-              <p className="text-xs mt-1.5 truncate" style={{ color: theme.textMuted }}>Up next: <span className="font-medium" style={{ color: theme.text }}>{nextStep.title}</span></p>
+              <p className="text-xs mt-1.5 truncate" style={{ color: theme.textMuted }}>Up Next: <span className="font-medium capitalize" style={{ color: theme.text }}>{nextStep.title}</span></p>
             )}
           </div>
-          <span className="hidden sm:inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold flex-shrink-0 transition-transform group-hover:translate-x-0.5" style={{ backgroundColor: `${theme.primary}15`, color: theme.primary }}>
-            Finish setup <ChevronRight className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold flex-shrink-0 shadow-sm transition-transform group-hover:translate-x-0.5" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+            Finish Setup <ChevronRight className="h-4 w-4" />
           </span>
-          <ChevronRight className="sm:hidden h-5 w-5 flex-shrink-0" style={{ color: theme.primary }} />
+          <span className="sm:hidden inline-flex items-center justify-center h-9 w-9 rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><ChevronRight className="h-5 w-5" /></span>
         </div>
       </button>
     );
@@ -196,7 +196,7 @@ export default function SetupChecklist({ agency, clientCount, theme, userRole, d
               <Rocket className="h-5 w-5" style={{ color: theme.primary }} />
             </div>
             <div>
-              <h3 className="text-sm sm:text-base font-semibold" style={{ color: theme.text }}>{isFree ? 'Get started' : 'Finish setting up your agency'}</h3>
+              <h3 className="text-sm sm:text-base font-semibold" style={{ color: theme.text }}>{isFree ? 'Get Started' : 'Finish Setting Up Your Agency'}</h3>
               <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{completedCount} of {steps.length} steps, {steps.length - completedCount} remaining</p>
             </div>
           </div>

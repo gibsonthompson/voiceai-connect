@@ -114,10 +114,10 @@ function TourLauncher({ theme }: { theme: any }) {
 
 function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { agency, branding, loading, effectivePlan, hasPermission, isAgent, logoScale } = useAgency();
-  // Logo size from Branding. Applied to the nav logos, capped so a large scale
-  // fills the bar without blowing out the 64px header/sidebar.
-  const navLogoHeight = (base: number) => `${Math.min(Math.round(base * (logoScale || 1)), 60)}px`;
+  const { agency, branding, loading, effectivePlan, hasPermission, isAgent } = useAgency();
+  // Logo size from Branding (branding.logoScale). Applied to the nav logos,
+  // capped so a large scale fills the bar without blowing out the 64px header.
+  const navLogoHeight = (base: number) => `${Math.min(Math.round(base * (branding.logoScale || 1)), 60)}px`;
   const { canUseMarketingSite, canUseDemoPhoneNumber, canUseAiLab, canUseLeadFinder, hasWhiteLabel, planName, isFree } = usePlanFeatures();
 
   // Brand fonts: load the agency's chosen display + body fonts and expose them as

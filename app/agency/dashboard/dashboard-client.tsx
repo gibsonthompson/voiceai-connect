@@ -287,7 +287,7 @@ export default function AgencyDashboardPage() {
       {/* TRY YOUR AI + SIGNUP LINK: one row, split 50/50 on desktop. The demo
           number lives only on the Call button now (no second copy of it). When
           there's no demo number yet, the signup link spans the full width. */}
-      <div className={`mb-6 sm:mb-8 grid grid-cols-1 gap-4 sm:gap-6 ${hasDemo ? 'lg:grid-cols-2' : ''}`}>
+      <div className={`mb-6 sm:mb-8 grid grid-cols-1 gap-4 sm:gap-6 ${hasDemo ? 'md:grid-cols-2' : ''}`}>
         {hasDemo && (
           <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${theme.primary}30` }}>
             <div className="h-full p-5 sm:p-6 flex flex-col" style={{ background: theme.isDark ? `linear-gradient(135deg, ${theme.primary}15 0%, ${theme.primary}05 100%)` : `linear-gradient(135deg, ${theme.primary}10 0%, ${theme.primary}03 100%)` }}>
