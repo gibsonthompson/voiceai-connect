@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { 
   Check, ChevronRight, Upload, DollarSign,
-  CreditCard, UserPlus, Sparkles, X, ChevronDown, Rocket, Phone, Loader2, PlayCircle
+  CreditCard, UserPlus, Sparkles, X, Rocket, Phone, Loader2, PlayCircle
 } from 'lucide-react';
 
 interface SetupStep {
@@ -34,14 +34,15 @@ interface SetupChecklistProps {
 }
 
 export default function SetupChecklist({ agency, clientCount, theme, userRole, demoMode, testClient, onProvisionTestClient, provisioningTestClient }: SetupChecklistProps) {
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissed, setDismissed] = useState(true); // collapsed by default
   const [celebrated, setCelebrated] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     try {
-      if (localStorage.getItem('voiceai_setup_dismissed') === 'true') setDismissed(true);
+      // Collapsed by default; only auto-expand if the agency explicitly opened it before.
+      if (localStorage.getItem('voiceai_setup_dismissed') === 'false') setDismissed(false);
       if (localStorage.getItem('voiceai_setup_complete') === 'true') setCelebrated(true);
     } catch {}
   }, []);
@@ -147,6 +148,7 @@ export default function SetupChecklist({ agency, clientCount, theme, userRole, d
   const completedCount = steps.filter(s => s.completed).length;
   const allComplete = completedCount === steps.length;
   const progressPercent = (completedCount / steps.length) * 100;
+  const nextStep = steps.find(s => !s.completed);
 
   if (allComplete && celebrated) return null;
   if (allComplete && !celebrated) {
@@ -155,18 +157,32 @@ export default function SetupChecklist({ agency, clientCount, theme, userRole, d
 
   if (dismissed) {
     return (
-      <button onClick={() => { setDismissed(false); try { localStorage.removeItem('voiceai_setup_dismissed'); } catch {} }}
-        className="mb-6 sm:mb-8 w-full rounded-xl px-4 py-3 flex items-center justify-between transition-all"
-        style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
+      <button onClick={() => { setDismissed(false); try { localStorage.setItem('voiceai_setup_dismissed', 'false'); } catch {} }}
+        className="mb-6 sm:mb-8 w-full rounded-xl overflow-hidden text-left transition-all group"
+        style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, boxShadow: theme.isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)' }}
         onMouseEnter={e => (e.currentTarget.style.borderColor = `${theme.primary}40`)}
         onMouseLeave={e => (e.currentTarget.style.borderColor = theme.border)}>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1">
-            {steps.map(s => (<div key={s.id} className="w-2 h-2 rounded-full transition-colors" style={{ backgroundColor: s.completed ? theme.primary : theme.border }} />))}
+        <div className="flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3.5 sm:py-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: `${theme.primary}15` }}>
+            <Rocket className="h-5 w-5" style={{ color: theme.primary }} />
           </div>
-          <span className="text-sm font-medium" style={{ color: theme.textMuted }}>Complete setup, {completedCount}/{steps.length} done</span>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm sm:text-base font-semibold truncate" style={{ color: theme.text }}>{isFree ? 'Finish getting started' : 'Finish setting up your agency'}</p>
+              <span className="text-xs font-semibold flex-shrink-0" style={{ color: theme.primary }}>{completedCount}/{steps.length}</span>
+            </div>
+            <div className="mt-2 w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb' }}>
+              <div className="h-full rounded-full transition-all duration-700 ease-out" style={{ width: `${Math.max(progressPercent, 3)}%`, background: `linear-gradient(90deg, ${theme.primary}, ${theme.primary}cc)` }} />
+            </div>
+            {nextStep && (
+              <p className="text-xs mt-1.5 truncate" style={{ color: theme.textMuted }}>Up next: <span className="font-medium" style={{ color: theme.text }}>{nextStep.title}</span></p>
+            )}
+          </div>
+          <span className="hidden sm:inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold flex-shrink-0 transition-transform group-hover:translate-x-0.5" style={{ backgroundColor: `${theme.primary}15`, color: theme.primary }}>
+            Finish setup <ChevronRight className="h-3.5 w-3.5" />
+          </span>
+          <ChevronRight className="sm:hidden h-5 w-5 flex-shrink-0" style={{ color: theme.primary }} />
         </div>
-        <ChevronDown className="h-4 w-4" style={{ color: theme.textMuted }} />
       </button>
     );
   }
@@ -177,7 +193,7 @@ export default function SetupChecklist({ agency, clientCount, theme, userRole, d
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: `${theme.primary}15` }}>
-              <Rocket className="h-4.5 w-4.5" style={{ color: theme.primary }} />
+              <Rocket className="h-5 w-5" style={{ color: theme.primary }} />
             </div>
             <div>
               <h3 className="text-sm sm:text-base font-semibold" style={{ color: theme.text }}>{isFree ? 'Get started' : 'Finish setting up your agency'}</h3>
