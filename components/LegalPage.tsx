@@ -22,6 +22,8 @@ interface Agency {
   support_email: string | null;
   support_phone: string | null;
   price_starter: number | null;
+  plans?: Array<{ price_cents?: number | null; visible?: boolean | null }> | null;
+  marketing_config?: { pricing?: Array<{ price?: number | string | null }> | null } | null;
   display_currency: string | null;
   marketing_domain: string | null;
   domain_verified: boolean | null;

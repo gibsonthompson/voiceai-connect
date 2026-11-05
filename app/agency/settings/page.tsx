@@ -314,6 +314,7 @@ function AgencySettingsContent() {
   const [saving, setSaving] = useState(false); const [saved, setSaved] = useState(false); const [error, setError] = useState<string | null>(null);
   const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null); const [loadingStripeStatus, setLoadingStripeStatus] = useState(false);
   const [connectingStripe, setConnectingStripe] = useState(false); const [disconnectingStripe, setDisconnectingStripe] = useState(false);
+  const [supportPhone, setSupportPhone] = useState(''); const [savingSupportPhone, setSavingSupportPhone] = useState(false); const [supportPhoneSaved, setSupportPhoneSaved] = useState(false);
   // Country for a NEW Stripe Connect account. A connected account's country is
   // immutable, so it is chosen before connecting and posted to the onboard
   // endpoint. Initialized from the agency's stored country, else US.
@@ -498,7 +499,7 @@ function AgencySettingsContent() {
   const slugChanged = slugNormalized !== (agency?.slug || '').toLowerCase();
   const slugFormatOk = isSlugFormatValid(slugNormalized);
 
-  useEffect(() => { if (agency) { setBillingMethod((agency as any).billing_method || ''); setCustomFeatures(Array.isArray((agency as any).custom_features) ? (agency as any).custom_features : []); setFeatureOverrides(((agency as any).feature_overrides && typeof (agency as any).feature_overrides === 'object') ? (agency as any).feature_overrides : {}); setAgencyName(agency.name || ''); setAgencyPhone((agency as any).phone || ''); setSlugInput(agency.slug || ''); setLogoUrl(agency.logo_url || ''); setLogoPreview(agency.logo_url); setAppName((agency as any).app_name || ''); setAppIconUrl((agency as any).app_icon_url || ''); setAppIconPreview((agency as any).app_icon_url || null); setPriceStarter(agency.price_starter != null ? (agency.price_starter / 100).toString() : ''); setPricePro(agency.price_pro != null ? (agency.price_pro / 100).toString() : ''); setPriceGrowth(agency.price_growth != null ? (agency.price_growth / 100).toString() : ''); const _legacyFee = Number((agency as any).setup_fee_cents) || 0; const _sfS = (agency as any).setup_fee_starter_cents; const _sfP = (agency as any).setup_fee_pro_cents; const _sfG = (agency as any).setup_fee_growth_cents; const _hasPerPlanFee = _sfS != null || _sfP != null || _sfG != null; const _seedFee = (v: any): { on: boolean; amt: string } => { const n = Number(v); if (n > 0) return { on: true, amt: (n / 100).toString() }; if (!_hasPerPlanFee && _legacyFee > 0) return { on: true, amt: (_legacyFee / 100).toString() }; return { on: false, amt: '' }; }; const _fs = _seedFee(_sfS); setSetupOnStarter(_fs.on); setSetupStarter(_fs.amt); const _fp = _seedFee(_sfP); setSetupOnPro(_fp.on); setSetupPro(_fp.amt); const _fg = _seedFee(_sfG); setSetupOnGrowth(_fg.on); setSetupGrowth(_fg.amt); const ls = agency.limit_starter; const lp = agency.limit_pro; const lg = agency.limit_growth; setUnlimitedStarter(ls === -1); setUnlimitedPro(lp === -1); setUnlimitedGrowth(lg === -1); setLimitStarter(ls === -1 ? '50' : (ls || 50).toString()); setLimitPro(lp === -1 ? '150' : (lp || 150).toString()); setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString()); setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES); setBrandColors({ primary: agency.primary_color || '#00a19b', secondary: agency.secondary_color || '#007e77', accent: agency.accent_color || '#01f5d1' }); setAllowClientBranding((agency as any).allow_client_branding || false); setPlanStarterName((agency as any).plan_starter_name || 'Starter'); setPlanProName((agency as any).plan_pro_name || 'Professional'); setPlanGrowthName((agency as any).plan_growth_name || 'Growth'); setPlanStarterDescription((agency as any).plan_starter_description || ''); setPlanProDescription((agency as any).plan_pro_description || ''); setPlanGrowthDescription((agency as any).plan_growth_description || ''); setRequireCardForTrial((agency as any).require_card_for_trial === true); setSetupFeeTiming((agency as any).setup_fee_timing === 'after_trial' ? 'after_trial' : 'upfront'); const _ctd0 = Number((agency as any).client_trial_days); const _ctd = Number.isFinite(_ctd0) && _ctd0 >= 0 ? Math.min(Math.floor(_ctd0), 365) : 7; setClientTrialDays(_ctd); setTrialCustomActive(![0, 7, 14, 30].includes(_ctd)); setMinutePassThrough((agency as any).minute_pass_through === true); setBillMinutesDuringTrial((agency as any).bill_minutes_during_trial === true); const _rc = Number((agency as any).client_minute_rate_cents); setClientMinuteRate(_rc > 0 ? (_rc / 100).toString() : ''); setClientBillingMode((agency as any).client_billing_mode === 'manual' ? 'manual' : 'connect'); setAllowClientPlanChanges((agency as any).allow_client_plan_changes === true); setHideClientBilling((agency as any).hide_client_billing === true); setShowClientCallUsage((agency as any).show_client_call_usage !== false); setShowClientDiscountCode((agency as any).show_client_discount_code !== false); setShowClientSubscription((agency as any).show_client_subscription !== false); setPaystackConnected((agency as any).paystack_connected === true); setPaystackCurrency((agency as any).paystack_currency || null); setFlutterwaveConnected((agency as any).flutterwave_connected === true); setFlutterwaveCurrency((agency as any).flutterwave_currency || null); setPlans((((agency as any).plans) || []).map((p: any) => ({ _uid: 'p_' + (p.key || Math.random().toString(36).slice(2, 8)), key: p.key || '', name: p.name || '', price: p.price_cents != null ? (p.price_cents / 100).toString() : '', call_limit: p.call_limit === -1 ? '50' : String(p.call_limit != null ? p.call_limit : 50), unlimited: p.call_limit === -1, description: p.description || '', setupOn: p.setup_fee_cents != null && p.setup_fee_cents > 0, setupFee: (p.setup_fee_cents != null && p.setup_fee_cents > 0) ? (p.setup_fee_cents / 100).toString() : '', included_minutes: String((p.included_minutes != null && p.included_minutes > 0) ? p.included_minutes : optimalMinutes(p.call_limit)), features: p.features || {}, visible: p.visible !== false }))); } }, [agency?.branding_overrides]);
+  useEffect(() => { if (agency) { setBillingMethod((agency as any).billing_method || ''); setCustomFeatures(Array.isArray((agency as any).custom_features) ? (agency as any).custom_features : []); setFeatureOverrides(((agency as any).feature_overrides && typeof (agency as any).feature_overrides === 'object') ? (agency as any).feature_overrides : {}); setAgencyName(agency.name || ''); setAgencyPhone((agency as any).phone || ''); setSupportPhone((agency as any).support_phone || ''); setSlugInput(agency.slug || ''); setLogoUrl(agency.logo_url || ''); setLogoPreview(agency.logo_url); setAppName((agency as any).app_name || ''); setAppIconUrl((agency as any).app_icon_url || ''); setAppIconPreview((agency as any).app_icon_url || null); setPriceStarter(agency.price_starter != null ? (agency.price_starter / 100).toString() : ''); setPricePro(agency.price_pro != null ? (agency.price_pro / 100).toString() : ''); setPriceGrowth(agency.price_growth != null ? (agency.price_growth / 100).toString() : ''); const _legacyFee = Number((agency as any).setup_fee_cents) || 0; const _sfS = (agency as any).setup_fee_starter_cents; const _sfP = (agency as any).setup_fee_pro_cents; const _sfG = (agency as any).setup_fee_growth_cents; const _hasPerPlanFee = _sfS != null || _sfP != null || _sfG != null; const _seedFee = (v: any): { on: boolean; amt: string } => { const n = Number(v); if (n > 0) return { on: true, amt: (n / 100).toString() }; if (!_hasPerPlanFee && _legacyFee > 0) return { on: true, amt: (_legacyFee / 100).toString() }; return { on: false, amt: '' }; }; const _fs = _seedFee(_sfS); setSetupOnStarter(_fs.on); setSetupStarter(_fs.amt); const _fp = _seedFee(_sfP); setSetupOnPro(_fp.on); setSetupPro(_fp.amt); const _fg = _seedFee(_sfG); setSetupOnGrowth(_fg.on); setSetupGrowth(_fg.amt); const ls = agency.limit_starter; const lp = agency.limit_pro; const lg = agency.limit_growth; setUnlimitedStarter(ls === -1); setUnlimitedPro(lp === -1); setUnlimitedGrowth(lg === -1); setLimitStarter(ls === -1 ? '50' : (ls || 50).toString()); setLimitPro(lp === -1 ? '150' : (lp || 150).toString()); setLimitGrowth(lg === -1 ? '500' : (lg || 500).toString()); setPlanFeatures((agency as any).plan_features || DEFAULT_PLAN_FEATURES); setBrandColors({ primary: agency.primary_color || '#00a19b', secondary: agency.secondary_color || '#007e77', accent: agency.accent_color || '#01f5d1' }); setAllowClientBranding((agency as any).allow_client_branding || false); setPlanStarterName((agency as any).plan_starter_name || 'Starter'); setPlanProName((agency as any).plan_pro_name || 'Professional'); setPlanGrowthName((agency as any).plan_growth_name || 'Growth'); setPlanStarterDescription((agency as any).plan_starter_description || ''); setPlanProDescription((agency as any).plan_pro_description || ''); setPlanGrowthDescription((agency as any).plan_growth_description || ''); setRequireCardForTrial((agency as any).require_card_for_trial === true); setSetupFeeTiming((agency as any).setup_fee_timing === 'after_trial' ? 'after_trial' : 'upfront'); const _ctd0 = Number((agency as any).client_trial_days); const _ctd = Number.isFinite(_ctd0) && _ctd0 >= 0 ? Math.min(Math.floor(_ctd0), 365) : 7; setClientTrialDays(_ctd); setTrialCustomActive(![0, 7, 14, 30].includes(_ctd)); setMinutePassThrough((agency as any).minute_pass_through === true); setBillMinutesDuringTrial((agency as any).bill_minutes_during_trial === true); const _rc = Number((agency as any).client_minute_rate_cents); setClientMinuteRate(_rc > 0 ? (_rc / 100).toString() : ''); setClientBillingMode((agency as any).client_billing_mode === 'manual' ? 'manual' : 'connect'); setAllowClientPlanChanges((agency as any).allow_client_plan_changes === true); setHideClientBilling((agency as any).hide_client_billing === true); setShowClientCallUsage((agency as any).show_client_call_usage !== false); setShowClientDiscountCode((agency as any).show_client_discount_code !== false); setShowClientSubscription((agency as any).show_client_subscription !== false); setPaystackConnected((agency as any).paystack_connected === true); setPaystackCurrency((agency as any).paystack_currency || null); setFlutterwaveConnected((agency as any).flutterwave_connected === true); setFlutterwaveCurrency((agency as any).flutterwave_currency || null); setPlans((((agency as any).plans) || []).map((p: any) => ({ _uid: 'p_' + (p.key || Math.random().toString(36).slice(2, 8)), key: p.key || '', name: p.name || '', price: p.price_cents != null ? (p.price_cents / 100).toString() : '', call_limit: p.call_limit === -1 ? '50' : String(p.call_limit != null ? p.call_limit : 50), unlimited: p.call_limit === -1, description: p.description || '', setupOn: p.setup_fee_cents != null && p.setup_fee_cents > 0, setupFee: (p.setup_fee_cents != null && p.setup_fee_cents > 0) ? (p.setup_fee_cents / 100).toString() : '', included_minutes: String((p.included_minutes != null && p.included_minutes > 0) ? p.included_minutes : optimalMinutes(p.call_limit)), features: p.features || {}, visible: p.visible !== false }))); } }, [agency?.branding_overrides]);
 
   // Seed the client-experience controls (lower plans, cancel, plan badges).
   useEffect(() => {
@@ -742,6 +743,26 @@ function AgencySettingsContent() {
   // is cents, so dollars are multiplied by 100 before sending. Empty rate saves
   // as null (clears it). refreshAgency() pulls the persisted values back so
   // savedRateCents (which gates the toggle) reflects the new rate immediately.
+  const handleSaveSupportPhone = async () => {
+    if (!agency) return;
+    setSavingSupportPhone(true); setError(null); setSupportPhoneSaved(false);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ support_phone: supportPhone.trim() || null }),
+      });
+      if (!response.ok) { const data = await response.json().catch(() => ({})); throw new Error(data.message || data.error || 'Failed to save support phone'); }
+      await refreshAgency();
+      setSupportPhoneSaved(true); setTimeout(() => setSupportPhoneSaved(false), 2500);
+    } catch (err: any) {
+      setError(err.message || 'Failed to save support phone');
+    } finally {
+      setSavingSupportPhone(false);
+    }
+  };
+
   const handleSaveMinuteBilling = async () => {
     if (!agency) return;
     setMinuteSaving(true); setMinuteError(null); setMinuteSaved(false); setMinuteSweepMsg(null);
@@ -1714,6 +1735,39 @@ function AgencySettingsContent() {
                     <p className="text-sm font-semibold" style={{ color: theme.primary }}>{clientBillingMode === 'manual' ? 'Client Billing: You Bill Them Yourself' : 'Client Billing: Handled By The Platform'}</p>
                     <p className="text-[11px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>{clientBillingMode === 'manual' ? 'You invoice your clients directly and the platform never charges them.' : 'The platform charges your clients through Stripe Connect and you keep the margin.'}</p>
                     <p className="text-[11px] sm:text-xs mt-1" style={{ color: theme.textMuted }}>Change this under &ldquo;Bill My Clients Myself&rdquo; below.</p>
+                  </div>
+                </div>
+
+                {/* Customer support phone. Saved to support_phone and synced to
+                    the connected Stripe account's business_profile.support_phone,
+                    so it shows on the receipts/invoices clients get from Stripe
+                    (the Express dashboard has no field for this). */}
+                <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <Phone className="h-4 w-4" style={{ color: theme.primary }} />
+                    <h4 className="font-medium text-sm sm:text-base">Customer Support Phone</h4>
+                  </div>
+                  <p className="text-xs sm:text-sm mb-3" style={{ color: theme.textMuted }}>
+                    The number shown on the receipts and invoices your clients get from Stripe, so they can reach you about billing. Leave blank to use your agency phone number.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+                    <input
+                      type="tel"
+                      value={supportPhone}
+                      onChange={(e) => { setSupportPhone(e.target.value); setSupportPhoneSaved(false); }}
+                      placeholder="+1 (555) 123-4567"
+                      className="w-full sm:max-w-xs rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm transition-colors"
+                      style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }}
+                    />
+                    <button
+                      onClick={handleSaveSupportPhone}
+                      disabled={savingSupportPhone}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
+                      style={{ backgroundColor: theme.primary, color: theme.primaryText }}
+                    >
+                      {savingSupportPhone ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : <><Check className="h-4 w-4" />Save</>}
+                    </button>
+                    {supportPhoneSaved && <span className="text-xs sm:text-sm flex items-center gap-1" style={{ color: theme.primary }}><Check className="h-4 w-4" />Saved</span>}
                   </div>
                 </div>
 

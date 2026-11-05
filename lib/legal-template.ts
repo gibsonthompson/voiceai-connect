@@ -37,6 +37,11 @@ export interface LegalAgencyFields {
   support_phone?: string | null;
   display_currency?: string | null;
   price_starter?: number | null;
+  // Dynamic plans (visible + priced) are the real source for "plans start at",
+  // the same source the marketing/demo pages use. price_starter is a stale
+  // legacy fallback only.
+  plans?: Array<{ price_cents?: number | null; visible?: boolean | null }> | null;
+  marketing_config?: { pricing?: Array<{ price?: number | string | null }> | null } | null;
   // connection flags used only to pick a sensible default payment processor
   stripe_charges_enabled?: boolean | null;
   paystack_connected?: boolean | null;
@@ -569,13 +574,35 @@ Email: {{SUPPORT_EMAIL}}`;
 
 const TEMPLATES: Record<LegalType, string> = { terms: TERMS_TEMPLATE, privacy: PRIVACY_TEMPLATE };
 
+// Lowest monthly price (whole dollars) shown in "Plans start at ...". Mirrors
+// the marketing/demo page: the agency's real visible, priced plans first, then
+// the marketing_config pricing tiers, then the legacy price_starter column, then
+// a sane floor. price_starter alone went stale and showed a wrong $99.
+export function lowestPlanDollars(agency: LegalAgencyFields): number {
+  const plans = Array.isArray(agency.plans) ? agency.plans : [];
+  const planPrices = plans
+    .filter((p) => p && p.visible !== false && p.price_cents != null && Number(p.price_cents) > 0)
+    .map((p) => Math.round(Number(p.price_cents) / 100));
+  if (planPrices.length > 0) return Math.min(...planPrices);
+
+  const cfgPrices = Array.isArray(agency.marketing_config?.pricing)
+    ? agency.marketing_config!.pricing!
+        .map((t) => Number(t?.price))
+        .filter((n) => Number.isFinite(n) && n > 0)
+    : [];
+  if (cfgPrices.length > 0) return Math.min(...cfgPrices);
+
+  if (agency.price_starter) return Math.round(agency.price_starter / 100);
+  return 49;
+}
+
 // Build the final markdown for a document: fixed template + the agency's field
 // values (falling back to sensible defaults). Protective sections are part of
 // the template and are always present.
 export function composeLegalDoc(type: LegalType, fields: LegalFields | null | undefined, agency: LegalAgencyFields): string {
   const f = fields || {};
   const cs = agency.display_currency === 'GBP' ? '£' : agency.display_currency === 'EUR' ? '€' : '$';
-  const lowestPrice = agency.price_starter ? Math.round(agency.price_starter / 100) : 49;
+  const lowestPrice = lowestPlanDollars(agency);
   const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
   const supportEmail = (f.support_email && f.support_email.trim()) || defaultLegalEmail(agency);
