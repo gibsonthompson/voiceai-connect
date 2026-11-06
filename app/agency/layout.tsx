@@ -475,7 +475,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
 
   // ── MAIN LAYOUT ─────────────────────────────────────────────────────
   return (
-    <TourProvider steps={tourSteps} storageKey={agency?.id || 'x'}>
+    <TourProvider steps={tourSteps} storageKey={agency?.id || 'x'} agencyId={agency?.id || null}>
     <div className="dash-zoom min-h-screen" style={{ backgroundColor: theme.bg, color: theme.text, zoom: 0.8, '--color-primary': primaryColor, '--color-secondary': secondaryColor, '--color-accent': accentColor } as React.CSSProperties}>
       <link rel="manifest" href="/api/agency-manifest" />
       {/* DynamicFavicon is now rendered by AgencyFavicon in the layout wrapper */}
