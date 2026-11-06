@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, CheckCircle, AlertCircle, Building2, User, Mail, Phone, MapPin, Globe, Sparkles, Lock, RefreshCw, Eye, EyeOff, DollarSign, ChevronDown, HelpCircle } from 'lucide-react';
 import { useAgency } from '../../context';
+import { useTheme } from '@/hooks/useTheme';
 import { countries as SUPPORTED_COUNTRIES, getCurrencyForCountry, formatPrice } from '@/lib/currency';
 import { PLAN_RATES, normalizePlanType } from '@/lib/plan-limits';
 import { SELECTABLE_INDUSTRIES } from '@/lib/industries';
@@ -198,17 +199,21 @@ export default function AddClientPage() {
   const primaryColor = branding.primaryColor || '#10b981';
   const buttonTextColor = getContrastColor(primaryColor);
 
-  const textColor = isDark ? '#fafaf9' : '#111827';
-  const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
-  const borderColor = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb';
-  const cardBg = isDark ? 'rgba(255,255,255,0.02)' : '#ffffff';
-  const inputBg = isDark ? 'rgba(255,255,255,0.04)' : '#ffffff';
-  const inputBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
-  const labelColor = isDark ? 'rgba(250,250,249,0.7)' : '#374151';
-  const errorBg = isDark ? 'rgba(239,68,68,0.08)' : '#fef2f2';
-  const errorBorder = isDark ? 'rgba(239,68,68,0.2)' : '#fecaca';
-  const errorText = isDark ? '#f87171' : '#dc2626';
-  const successBg = isDark ? `${primaryColor}10` : `${primaryColor}08`;
+  // Pull dashboard colors from the shared theme so this page honors the
+  // agency's full branding customizer (card / text / border / input overrides),
+  // not just the primary color and light/dark mode.
+  const theme = useTheme();
+  const textColor = theme.text;
+  const mutedTextColor = theme.textMuted;
+  const borderColor = theme.border;
+  const cardBg = theme.card;
+  const inputBg = theme.input;
+  const inputBorder = theme.inputBorder;
+  const labelColor = theme.text;
+  const errorBg = theme.errorBg;
+  const errorBorder = theme.errorBorder;
+  const errorText = theme.errorText;
+  const successBg = theme.primary10;
 
   // What actually happens to a newly added client, derived from the agency's
   // real settings so the copy never contradicts the backend. A manual client

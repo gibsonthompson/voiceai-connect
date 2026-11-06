@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { getCallBadges } from '@/lib/call-badges';
 import { useAgency } from '../../../context';
+import { useTheme } from '@/hooks/useTheme';
 import { DEMO_CLIENTS, DEMO_CLIENT_CALLS } from '../../../demoData';
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -49,25 +50,7 @@ export default function AgencyClientCallsPage() {
   const isDark = agency?.website_theme !== 'light';
   const primaryColor = branding.primaryColor || '#00a19b';
 
-  const theme = isDark ? {
-    bg: '#0a0a0a',
-    text: '#fafaf9',
-    textMuted: 'rgba(250, 250, 249, 0.7)',
-    textMuted4: 'rgba(250, 250, 249, 0.5)',
-    border: 'rgba(255, 255, 255, 0.1)',
-    cardBg: '#111111',
-    hoverBg: 'rgba(255, 255, 255, 0.05)',
-    inputBg: 'rgba(255, 255, 255, 0.05)',
-  } : {
-    bg: '#f9fafb',
-    text: '#111827',
-    textMuted: '#6b7280',
-    textMuted4: '#9ca3af',
-    border: '#e5e7eb',
-    cardBg: '#ffffff',
-    hoverBg: '#f3f4f6',
-    inputBg: '#ffffff',
-  };
+  const theme = useTheme();
 
   useEffect(() => {
     if (!agency || !clientId) return;
@@ -189,7 +172,7 @@ export default function AgencyClientCallsPage() {
           
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="relative flex-1 sm:flex-initial">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted4 }} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textSubtle }} />
               <input
                 type="text"
                 placeholder="Search calls..."
@@ -198,7 +181,7 @@ export default function AgencyClientCallsPage() {
                 className="w-full sm:w-48 lg:w-64 rounded-lg border pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 transition-colors"
                 style={{ 
                   borderColor: theme.border, 
-                  backgroundColor: theme.inputBg, 
+                  backgroundColor: theme.input, 
                   color: theme.text,
                 }}
               />
@@ -211,7 +194,7 @@ export default function AgencyClientCallsPage() {
                 className="inline-flex items-center gap-2 rounded-lg border px-3 sm:px-4 py-2 text-sm font-medium transition-colors flex-shrink-0"
                 style={{ 
                   borderColor: theme.border, 
-                  backgroundColor: theme.cardBg, 
+                  backgroundColor: theme.card, 
                   color: theme.textMuted,
                 }}
                 title="Export CSV"
@@ -223,7 +206,7 @@ export default function AgencyClientCallsPage() {
               {showExport && (
                 <div
                   className="absolute right-0 top-full mt-2 w-72 rounded-2xl p-4 z-50 shadow-xl"
-                  style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.border}` }}
+                  style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
                 >
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-sm font-semibold" style={{ color: theme.text }}>Export Calls</p>
@@ -239,7 +222,7 @@ export default function AgencyClientCallsPage() {
                         value={exportFrom}
                         onChange={(e) => setExportFrom(e.target.value)}
                         className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none"
-                        style={{ backgroundColor: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.text }}
+                        style={{ backgroundColor: theme.input, border: `1px solid ${theme.border}`, color: theme.text }}
                       />
                     </div>
                     <div>
@@ -249,10 +232,10 @@ export default function AgencyClientCallsPage() {
                         value={exportTo}
                         onChange={(e) => setExportTo(e.target.value)}
                         className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none"
-                        style={{ backgroundColor: theme.inputBg, border: `1px solid ${theme.border}`, color: theme.text }}
+                        style={{ backgroundColor: theme.input, border: `1px solid ${theme.border}`, color: theme.text }}
                       />
                     </div>
-                    <p className="text-[11px]" style={{ color: theme.textMuted4 }}>Leave blank to export all calls</p>
+                    <p className="text-[11px]" style={{ color: theme.textSubtle }}>Leave blank to export all calls</p>
                     <button
                       onClick={handleExportCalls}
                       disabled={exporting}
@@ -271,10 +254,10 @@ export default function AgencyClientCallsPage() {
       </div>
 
       {/* Calls List */}
-      <div className="rounded-xl border shadow-sm overflow-hidden" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
+      <div className="rounded-xl border shadow-sm overflow-hidden" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
         {callsLoading ? (
           <div className="py-12 sm:py-20 flex items-center justify-center">
-            <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin" style={{ color: theme.textMuted4 }} />
+            <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin" style={{ color: theme.textSubtle }} />
             <span className="ml-2 text-sm" style={{ color: theme.textMuted }}>Loading calls...</span>
           </div>
         ) : filteredCalls.length === 0 ? (
@@ -283,12 +266,12 @@ export default function AgencyClientCallsPage() {
               className="mx-auto flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full"
               style={{ backgroundColor: hexToRgba(primaryColor, isDark ? 0.2 : 0.1) }}
             >
-              <PhoneCall className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: theme.textMuted4 }} />
+              <PhoneCall className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: theme.textSubtle }} />
             </div>
             <p className="mt-4 font-medium text-sm sm:text-base" style={{ color: theme.textMuted }}>
               {searchQuery ? 'No matching calls found' : 'No calls yet'}
             </p>
-            <p className="text-xs sm:text-sm" style={{ color: theme.textMuted4 }}>
+            <p className="text-xs sm:text-sm" style={{ color: theme.textSubtle }}>
               {searchQuery ? 'Try a different search term' : 'Calls will appear here once received'}
             </p>
           </div>
@@ -316,7 +299,7 @@ export default function AgencyClientCallsPage() {
                 href={`/agency/clients/${clientId}/calls/${call.id}`}
                 className="block transition-colors"
                 style={{ backgroundColor: 'transparent' }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.hoverBg)}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.hover)}
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
               >
                 {/* Mobile Layout */}
@@ -386,15 +369,15 @@ export default function AgencyClientCallsPage() {
                         {call.customer_phone || call.caller_phone}
                       </p>
                       <div className="flex items-center justify-between mt-1">
-                        <p className="text-[10px] truncate" style={{ color: theme.textMuted4 }}>
+                        <p className="text-[10px] truncate" style={{ color: theme.textSubtle }}>
                           {call.service_requested || 'General inquiry'}
                         </p>
-                        <p className="text-[10px] flex-shrink-0" style={{ color: theme.textMuted4 }}>
+                        <p className="text-[10px] flex-shrink-0" style={{ color: theme.textSubtle }}>
                           {new Date(call.created_at).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
-                    <ChevronRight className="h-4 w-4 flex-shrink-0 self-center" style={{ color: theme.textMuted4 }} />
+                    <ChevronRight className="h-4 w-4 flex-shrink-0 self-center" style={{ color: theme.textSubtle }} />
                   </div>
                 </div>
 
@@ -439,7 +422,7 @@ export default function AgencyClientCallsPage() {
                       <p className="text-sm" style={{ color: theme.textMuted }}>
                         {call.service_requested || 'General inquiry'}
                       </p>
-                      <p className="text-xs" style={{ color: theme.textMuted4 }}>
+                      <p className="text-xs" style={{ color: theme.textSubtle }}>
                         {call.duration_seconds ? `${Math.floor(call.duration_seconds / 60)}m ${call.duration_seconds % 60}s` : call.duration ? `${Math.floor(call.duration / 60)}m ${call.duration % 60}s` : '-'}
                       </p>
                     </div>
@@ -476,12 +459,12 @@ export default function AgencyClientCallsPage() {
                           </span>
                         )}
                       </div>
-                      <p className="mt-1 text-[10px] lg:text-xs" style={{ color: theme.textMuted4 }}>
+                      <p className="mt-1 text-[10px] lg:text-xs" style={{ color: theme.textSubtle }}>
                         {new Date(call.created_at).toLocaleDateString()}
                       </p>
                     </div>
                     
-                    <ChevronRight className="h-4 w-4 lg:h-5 lg:w-5" style={{ color: theme.textMuted4 }} />
+                    <ChevronRight className="h-4 w-4 lg:h-5 lg:w-5" style={{ color: theme.textSubtle }} />
                   </div>
                 </div>
               </Link>

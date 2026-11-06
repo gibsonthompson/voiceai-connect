@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import CallPlayback from '@/components/client/CallPlayback';
 import { useAgency } from '../../../../context';
+import { useTheme } from '@/hooks/useTheme';
 import { DEMO_CLIENTS, getDemoCallDetail } from '../../../../demoData';
 
 interface Call {
@@ -64,23 +65,7 @@ export default function AgencyCallDetailPage() {
   const primaryColor = branding.primaryColor || '#00a19b';
   const primaryLight = isLightColor(primaryColor);
 
-  const theme = isDark ? {
-    bg: '#0a0a0a',
-    text: '#fafaf9',
-    textMuted: 'rgba(250, 250, 249, 0.7)',
-    textMuted4: 'rgba(250, 250, 249, 0.5)',
-    border: 'rgba(255, 255, 255, 0.1)',
-    cardBg: '#111111',
-    hoverBg: 'rgba(255, 255, 255, 0.05)',
-  } : {
-    bg: '#f9fafb',
-    text: '#111827',
-    textMuted: '#6b7280',
-    textMuted4: '#9ca3af',
-    border: '#e5e7eb',
-    cardBg: '#ffffff',
-    hoverBg: '#f3f4f6',
-  };
+  const theme = useTheme();
 
   useEffect(() => {
     if (!agency || !clientId || !callId) return;
@@ -245,7 +230,7 @@ export default function AgencyCallDetailPage() {
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           {/* AI Summary */}
           {call.ai_summary && (
-            <div className="rounded-xl border p-4 sm:p-6 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
+            <div className="rounded-xl border p-4 sm:p-6 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
               <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
                 <div 
                   className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg" 
@@ -261,7 +246,7 @@ export default function AgencyCallDetailPage() {
 
           {/* Recording */}
           {call.recording_url && (
-            <div className="rounded-xl border p-4 sm:p-6 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
+            <div className="rounded-xl border p-4 sm:p-6 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
               <h2 className="font-semibold text-sm sm:text-base mb-3 sm:mb-4" style={{ color: theme.text }}>Recording</h2>
               <CallPlayback 
                 recordingUrl={call.recording_url}
@@ -273,7 +258,7 @@ export default function AgencyCallDetailPage() {
 
           {/* Transcript */}
           {call.transcript && (
-            <div className="rounded-xl border p-4 sm:p-6 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
+            <div className="rounded-xl border p-4 sm:p-6 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
               <h2 className="font-semibold text-sm sm:text-base mb-3 sm:mb-4" style={{ color: theme.text }}>Full Transcript</h2>
               <div 
                 className="rounded-lg border p-3 sm:p-4 max-h-64 sm:max-h-96 overflow-y-auto" 
@@ -288,7 +273,7 @@ export default function AgencyCallDetailPage() {
         {/* Sidebar */}
         <div className="space-y-4 sm:space-y-6">
           {/* Contact Details */}
-          <div className="rounded-xl border p-4 sm:p-6 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
+          <div className="rounded-xl border p-4 sm:p-6 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
             <h2 className="font-semibold text-sm sm:text-base mb-3 sm:mb-4" style={{ color: theme.text }}>Contact Details</h2>
             <div className="space-y-3 sm:space-y-4">
               {call.customer_name && (
@@ -300,7 +285,7 @@ export default function AgencyCallDetailPage() {
                     <User className="h-4 w-4" style={{ color: theme.textMuted }} />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Name</p>
+                    <p className="text-[10px] sm:text-xs" style={{ color: theme.textSubtle }}>Name</p>
                     <p className="text-xs sm:text-sm truncate" style={{ color: theme.text }}>{call.customer_name}</p>
                   </div>
                 </div>
@@ -315,7 +300,7 @@ export default function AgencyCallDetailPage() {
                     <Phone className="h-4 w-4" style={{ color: theme.textMuted }} />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Phone</p>
+                    <p className="text-[10px] sm:text-xs" style={{ color: theme.textSubtle }}>Phone</p>
                     <a 
                       href={`tel:${call.customer_phone || call.caller_phone}`}
                       className="text-xs sm:text-sm transition-colors hover:underline"
@@ -336,7 +321,7 @@ export default function AgencyCallDetailPage() {
                     <MessageSquare className="h-4 w-4" style={{ color: theme.textMuted }} />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Email</p>
+                    <p className="text-[10px] sm:text-xs" style={{ color: theme.textSubtle }}>Email</p>
                     <a 
                       href={`mailto:${call.customer_email}`}
                       className="text-xs sm:text-sm transition-colors hover:underline truncate block"
@@ -357,7 +342,7 @@ export default function AgencyCallDetailPage() {
                     <MapPin className="h-4 w-4" style={{ color: theme.textMuted }} />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Address</p>
+                    <p className="text-[10px] sm:text-xs" style={{ color: theme.textSubtle }}>Address</p>
                     <p className="text-xs sm:text-sm" style={{ color: theme.text }}>{call.customer_address}</p>
                   </div>
                 </div>
@@ -366,7 +351,7 @@ export default function AgencyCallDetailPage() {
           </div>
 
           {/* Call Details */}
-          <div className="rounded-xl border p-4 sm:p-6 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.cardBg }}>
+          <div className="rounded-xl border p-4 sm:p-6 shadow-sm" style={{ borderColor: theme.border, backgroundColor: theme.card }}>
             <h2 className="font-semibold text-sm sm:text-base mb-3 sm:mb-4" style={{ color: theme.text }}>Call Details</h2>
             <div className="space-y-3 sm:space-y-4">
               {call.service_requested && (
@@ -378,7 +363,7 @@ export default function AgencyCallDetailPage() {
                     <Settings className="h-4 w-4" style={{ color: theme.textMuted }} />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Service</p>
+                    <p className="text-[10px] sm:text-xs" style={{ color: theme.textSubtle }}>Service</p>
                     <p className="text-xs sm:text-sm" style={{ color: theme.text }}>{call.service_requested}</p>
                   </div>
                 </div>
@@ -393,7 +378,7 @@ export default function AgencyCallDetailPage() {
                     <AlertCircle className="h-4 w-4" style={{ color: theme.textMuted }} />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Urgency</p>
+                    <p className="text-[10px] sm:text-xs" style={{ color: theme.textSubtle }}>Urgency</p>
                     <p className="text-xs sm:text-sm capitalize" style={{ color: theme.text }}>{call.urgency_level}</p>
                   </div>
                 </div>
@@ -408,7 +393,7 @@ export default function AgencyCallDetailPage() {
                     <Clock className="h-4 w-4" style={{ color: theme.textMuted }} />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted4 }}>Duration</p>
+                    <p className="text-[10px] sm:text-xs" style={{ color: theme.textSubtle }}>Duration</p>
                     <p className="text-xs sm:text-sm" style={{ color: theme.text }}>{formatDuration(call.duration_seconds)}</p>
                   </div>
                 </div>
