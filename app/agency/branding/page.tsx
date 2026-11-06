@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useAgency, clampLogoScale, LOGO_SCALE_MIN, LOGO_SCALE_MAX } from '../context';
 import { useTheme, buildTheme, BrandingOverrides, isValidHex } from '../../../hooks/useTheme';
 import {
@@ -59,17 +60,108 @@ const PALETTE_RECIPES: PaletteRecipe[] = [
   { name: 'Clean Slate', build: (p, s, a, dark) => ({ nav_bg: dark ? '#111111' : '#ffffff', nav_text: dark ? '#e0e0e0' : '#333333', page_bg: dark ? '#080808' : '#f5f5f5', card_bg: dark ? '#141414' : '#ffffff', card_border: dark ? '#222222' : '#e0e0e0', text_primary: dark ? '#f0f0f0' : '#111111', text_muted: dark ? '#888888' : '#777777', button_text: isLight(p) ? '#050505' : '#ffffff' }) },
 ];
 
-function ColorInput({ field, value, defaultValue, onChange, onClear, theme }: { field: ColorField; value: string | undefined; defaultValue: string; onChange: (key: keyof BrandingOverrides, val: string) => void; onClear: (key: keyof BrandingOverrides) => void; theme: ReturnType<typeof useTheme>; }) {
+// A curated grid of colors for the picker popup: neutrals, brights, light
+// tints, mids, and darks. Nine per row.
+const PALETTE: string[] = [
+  '#ffffff', '#f3f4f6', '#d1d5db', '#9ca3af', '#6b7280', '#4b5563', '#374151', '#111827', '#000000',
+  '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e', '#10b981', '#14b8a6', '#06b6d4',
+  '#0ea5e9', '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e', '#78716c',
+  '#fecaca', '#fed7aa', '#fde68a', '#fef08a', '#d9f99d', '#bbf7d0', '#a7f3d0', '#99f6e4', '#a5f3fc',
+  '#bae6fd', '#bfdbfe', '#c7d2fe', '#ddd6fe', '#e9d5ff', '#f5d0fe', '#fbcfe8', '#fecdd2', '#e7e5e4',
+  '#991b1b', '#9a3412', '#92400e', '#854d0e', '#3f6212', '#166534', '#065f46', '#115e59', '#155e75',
+];
+
+// Themed color-picker popup, replacing the OS-native color input. Opens from the
+// swatch into a body-level portal (so a card's overflow never clips it) with the
+// agency's brand colors, a shuffle button, and the full palette grid.
+function CustomColorPicker({ value, displayColor, onPick, brand, theme, label }: {
+  value: string | undefined; displayColor: string; onPick: (hex: string) => void;
+  brand: { primary: string; secondary: string; accent: string }; theme: ReturnType<typeof useTheme>; label: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; up: boolean } | null>(null);
+  const WIDTH = 268;
+
+  const measure = useCallback(() => {
+    const r = btnRef.current?.getBoundingClientRect();
+    if (!r) return;
+    const gap = 8;
+    const below = window.innerHeight - r.bottom;
+    const up = below < 320 && r.top > below;
+    const left = Math.max(8, Math.min(r.left, window.innerWidth - WIDTH - 8));
+    setPos({ top: up ? r.top - gap : r.bottom + gap, left, up });
+  }, []);
+
+  useEffect(() => {
+    if (!open) { setPos(null); return; }
+    measure();
+    const h = () => measure();
+    window.addEventListener('scroll', h, true);
+    window.addEventListener('resize', h);
+    return () => { window.removeEventListener('scroll', h, true); window.removeEventListener('resize', h); };
+  }, [open, measure]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent | TouchEvent) => {
+      const t = e.target as Node;
+      if (btnRef.current?.contains(t) || panelRef.current?.contains(t)) return;
+      setOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('touchstart', onDoc, { passive: true });
+    return () => { document.removeEventListener('mousedown', onDoc); document.removeEventListener('touchstart', onDoc); };
+  }, [open]);
+
+  const cur = (value || '').toLowerCase();
+  const brandList: { name: string; color: string }[] = [
+    { name: 'Primary', color: brand.primary },
+    { name: 'Secondary', color: brand.secondary },
+    { name: 'Accent', color: brand.accent },
+  ];
+  const shuffle = () => onPick(PALETTE[Math.floor(Math.random() * PALETTE.length)]);
+
+  return (
+    <>
+      <button ref={btnRef} type="button" onClick={() => setOpen(o => !o)} aria-label={`Pick ${label}`} title={`Pick ${label}`}
+        className="w-9 h-9 rounded-lg border flex-shrink-0 transition-transform hover:scale-105" style={{ backgroundColor: displayColor, borderColor: theme.border }} />
+      {open && pos && typeof document !== 'undefined' && createPortal(
+        <div ref={panelRef} style={{ position: 'fixed', left: pos.left, width: WIDTH, zIndex: 9999, ...(pos.up ? { bottom: window.innerHeight - pos.top } : { top: pos.top }), backgroundColor: theme.card, border: `1px solid ${theme.border}`, borderRadius: 14, boxShadow: '0 12px 34px rgba(0,0,0,0.28)', padding: 12 }}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold" style={{ color: theme.text }}>Your brand</span>
+            <button type="button" onClick={shuffle} className="flex items-center gap-1 text-[11px] font-medium rounded-md px-2 py-1 transition-colors hover:opacity-80" style={{ color: theme.textMuted, border: `1px solid ${theme.border}` }}><Shuffle className="h-3 w-3" /> Shuffle</button>
+          </div>
+          <div className="flex gap-2 mb-3">
+            {brandList.map((b) => { const sel = cur === b.color.toLowerCase(); return (
+              <button key={b.name} type="button" onClick={() => onPick(b.color)} title={`${b.name} (${b.color})`} className="flex-1 h-9 rounded-lg transition-transform hover:scale-[1.03]" style={{ backgroundColor: b.color, border: `2px solid ${sel ? theme.primary : theme.border}` }} />
+            ); })}
+          </div>
+          <div className="text-xs font-semibold mb-1.5" style={{ color: theme.text }}>Colors</div>
+          <div className="grid grid-cols-9 gap-1.5">
+            {PALETTE.map((c) => { const sel = cur === c.toLowerCase(); return (
+              <button key={c} type="button" onClick={() => onPick(c)} title={c} className="w-full rounded-md transition-transform hover:scale-110" style={{ aspectRatio: '1 / 1', backgroundColor: c, border: sel ? `2px solid ${theme.primary}` : `1px solid ${theme.border}` }} />
+            ); })}
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
+  );
+}
+
+function ColorInput({ field, value, defaultValue, onChange, onClear, theme, brand }: { field: ColorField; value: string | undefined; defaultValue: string; onChange: (key: keyof BrandingOverrides, val: string) => void; onClear: (key: keyof BrandingOverrides) => void; theme: ReturnType<typeof useTheme>; brand: { primary: string; secondary: string; accent: string }; }) {
   const [inputValue, setInputValue] = useState(value || '');
   const isOverridden = !!value && isValidHex(value);
   const displayColor = isOverridden ? value : defaultValue;
   useEffect(() => { setInputValue(value || ''); }, [value]);
-  const handleColorPickerChange = (e: React.ChangeEvent<HTMLInputElement>) => { const hex = e.target.value; setInputValue(hex); onChange(field.key, hex); };
+  const handlePick = (hex: string) => { setInputValue(hex); onChange(field.key, hex); };
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => { let val = e.target.value; if (val && !val.startsWith('#')) { val = '#' + val; } setInputValue(val); if (isValidHex(val)) { onChange(field.key, val); } };
   const handleClear = () => { setInputValue(''); onClear(field.key); };
   return (
     <div className="flex items-center gap-3 rounded-xl px-3 py-3 transition-colors" style={{ backgroundColor: isOverridden ? theme.active : 'transparent', border: `1px solid ${isOverridden ? theme.primary30 : theme.border}` }}>
-      <div className="relative flex-shrink-0"><div className="w-9 h-9 rounded-lg border cursor-pointer" style={{ backgroundColor: displayColor, borderColor: theme.border }} /><input type="color" value={displayColor.startsWith('#') ? displayColor : '#000000'} onChange={handleColorPickerChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" title={`Pick ${field.label}`} /></div>
+      <CustomColorPicker value={value} displayColor={displayColor} onPick={handlePick} brand={brand} theme={theme} label={field.label} />
       <div className="flex-1 min-w-0"><div className="flex items-center gap-2"><span className="text-sm font-medium" style={{ color: theme.text }}>{field.label}</span>{isOverridden && (<span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{ backgroundColor: theme.primary15, color: theme.primary }}>Custom</span>)}</div><p className="text-xs mt-0.5 truncate" style={{ color: theme.textMuted }}>{field.description}</p></div>
       <input type="text" value={inputValue || ''} onChange={handleTextChange} placeholder={defaultValue} className="w-[90px] text-xs font-mono rounded-lg px-2 py-1.5 text-center outline-none transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} maxLength={7} />
       {isOverridden && (<button onClick={handleClear} className="flex-shrink-0 p-1.5 rounded-lg transition-colors" style={{ color: theme.textMuted }} title="Reset to default"><RotateCcw className="h-3.5 w-3.5" /></button>)}
@@ -265,10 +357,7 @@ export default function BrandingPage() {
             <div key={c.label} className="rounded-xl p-3" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
               <p className="text-[11px] font-medium mb-2" style={{ color: theme.textMuted }}>{c.label}</p>
               <div className="flex items-center gap-2">
-                <div className="relative w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 border" style={{ borderColor: theme.border }}>
-                  <div className="w-full h-full" style={{ backgroundColor: isValidHex(c.val) ? c.val : '#000000' }} />
-                  <input type="color" value={isValidHex(c.val) ? c.val : '#000000'} onChange={(e) => { c.set(e.target.value); setSaved(false); setError(null); }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" aria-label={`${c.label} color`} />
-                </div>
+                <CustomColorPicker value={c.val} displayColor={isValidHex(c.val) ? c.val : '#000000'} onPick={(hex) => { c.set(hex); setSaved(false); setError(null); }} brand={{ primary: primaryColor, secondary: secondaryColor, accent: accentColor }} theme={theme} label={c.label} />
                 <input type="text" value={c.val} onChange={(e) => { c.set(e.target.value); setSaved(false); setError(null); }} spellCheck={false} className="flex-1 min-w-0 rounded-lg px-2 py-1.5 text-xs font-mono" style={{ backgroundColor: theme.card, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
               </div>
             </div>
@@ -334,7 +423,7 @@ export default function BrandingPage() {
             </div>
           </div>
           <div className="rounded-xl px-4 py-3 flex items-center justify-between" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="flex items-center gap-2"><Paintbrush className="h-4 w-4" style={{ color: theme.textMuted }} /><span className="text-sm" style={{ color: theme.textMuted }}>{activeCount === 0 ? 'Using default theme colors' : `${activeCount} custom color${activeCount !== 1 ? 's' : ''} active`}</span></div><span className="text-xs px-2 py-1 rounded-full font-medium capitalize" style={{ backgroundColor: theme.primary10, color: theme.primary }}>{mode} mode</span></div>
-          {GROUPS.map((group) => { const fields = COLOR_FIELDS.filter(f => f.group === group.key); const GroupIcon = group.icon; return (<div key={group.key} className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: `1px solid ${theme.border}` }}><GroupIcon className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-sm font-semibold" style={{ color: theme.text }}>{group.label}</span></div><div className="p-3 space-y-2">{fields.map((field) => (<ColorInput key={field.key} field={field} value={overrides[field.key]} defaultValue={getDefaultForField(field.key)} onChange={handleChange} onClear={handleClear} theme={theme} />))}</div></div>); })}
+          {GROUPS.map((group) => { const fields = COLOR_FIELDS.filter(f => f.group === group.key); const GroupIcon = group.icon; return (<div key={group.key} className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: `1px solid ${theme.border}` }}><GroupIcon className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-sm font-semibold" style={{ color: theme.text }}>{group.label}</span></div><div className="p-3 space-y-2">{fields.map((field) => (<ColorInput key={field.key} field={field} value={overrides[field.key]} defaultValue={getDefaultForField(field.key)} onChange={handleChange} onClear={handleClear} theme={theme} brand={{ primary: primaryColor, secondary: secondaryColor, accent: accentColor }} />))}</div></div>); })}
         </div>
         <div className="lg:col-span-2"><div className="sticky top-6 space-y-4"><div className="flex items-center gap-2"><Eye className="h-4 w-4" style={{ color: theme.primary }} /><span className="text-sm font-semibold" style={{ color: theme.text }}>Live Preview</span>{dirty && (<span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: theme.warningBg, color: theme.warningText, border: `1px solid ${theme.warningBorder}` }}>Unsaved</span>)}</div><LivePreview previewTheme={previewTheme} primaryColor={primaryColor} /><div className="rounded-xl p-3" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><p className="text-xs font-medium mb-2" style={{ color: theme.textMuted }}>Your brand colors</p><div className="flex gap-2">{[{ label: 'Primary', color: primaryColor }, { label: 'Secondary', color: secondaryColor }, { label: 'Accent', color: accentColor }].map(({ label, color }) => (<div key={label} className="flex items-center gap-1.5 flex-1"><div className="w-5 h-5 rounded-md flex-shrink-0 border" style={{ backgroundColor: color, borderColor: theme.border }} /><div><p className="text-[10px] font-medium" style={{ color: theme.text }}>{label}</p><p className="text-[9px] font-mono" style={{ color: theme.textMuted }}>{color}</p></div></div>))}</div></div><div className="rounded-xl p-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><p className="text-xs leading-relaxed" style={{ color: theme.infoText }}>Changes apply to both your agency dashboard and all your client dashboards. Use Shuffle to auto-arrange your brand colors, then fine-tune individual fields.</p></div></div></div>
       </div>
