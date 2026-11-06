@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import DynamicFavicon from '@/components/DynamicFavicon';
+import type { BrandingOverrides } from '@/hooks/useTheme';
 
 // ============================================================================
 // TYPES
@@ -62,6 +63,9 @@ interface Client {
     primary_color: string;
     secondary_color: string;
     accent_color: string;
+    // Agency granular palette (Sidebar/Card/Text/Border overrides) set on the
+    // agency Branding page. Propagated to client dashboards so they match.
+    branding_overrides?: BrandingOverrides | null;
     support_email: string | null;
     support_phone: string | null;
     website_theme: 'light' | 'dark' | 'auto' | null;
@@ -99,6 +103,8 @@ interface Branding {
   primaryColor: string;
   secondaryColor: string;
   accentColor: string;
+  // Agency's granular palette, applied to the client dashboard theme.
+  overrides: BrandingOverrides;
   agencyName: string;
   businessName: string;
   logoUrl: string | null;
@@ -193,6 +199,7 @@ function buildBranding(c: any): Branding {
       (isUsableBrandColor(c.accent_color) ? c.accent_color.trim() : null)
       || agency?.accent_color
       || '#60a5fa',
+    overrides: (agency?.branding_overrides && typeof agency.branding_overrides === 'object') ? agency.branding_overrides : {},
     agencyName: agency?.name || '',
     businessName: c.business_name || '',
     logoUrl: c.logo_url || agency?.logo_url || null,
@@ -231,6 +238,7 @@ interface ClientContextType {
 // FIXED: agencyName was 'VoiceAI' which caused "V" initial to show during loading
 const defaultBranding: Branding = {
   primaryColor: '#3b82f6', secondaryColor: '#1e40af', accentColor: '#60a5fa',
+  overrides: {},
   agencyName: '', businessName: '', logoUrl: null,
   supportEmail: null, supportPhone: null, websiteTheme: 'dark', clientHeaderMode: 'agency_name',
   appDomain: '',
@@ -269,6 +277,7 @@ function seedBranding(): Branding {
         primaryColor: isUsableBrandColor(a.primary_color) ? a.primary_color.trim() : base.primaryColor,
         secondaryColor: isUsableBrandColor(a.secondary_color) ? a.secondary_color.trim() : base.secondaryColor,
         accentColor: isUsableBrandColor(a.accent_color) ? a.accent_color.trim() : base.accentColor,
+        overrides: (a.branding_overrides && typeof a.branding_overrides === 'object') ? a.branding_overrides : base.overrides,
         agencyName: a.name || base.agencyName,
         logoUrl: base.logoUrl || a.logo_url || null,
         websiteTheme: (a.website_theme === 'light' || a.website_theme === 'dark') ? a.website_theme : base.websiteTheme,

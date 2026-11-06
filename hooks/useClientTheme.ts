@@ -58,6 +58,12 @@ export function useClientTheme() {
 
   return useMemo(() => {
     const primary = branding.primaryColor || '#3b82f6';
+    // Agency's granular palette (from the Branding page), applied to the client
+    // dashboard. Precedence for any color: a per-client column override wins,
+    // then the agency override, then the computed default.
+    const ov: Record<string, any> = (branding as any).overrides || {};
+    const pick = (clientVal: any, ovVal: any, fallback: string): string =>
+      isValidHex(clientVal) ? clientVal : (isValidHex(ovVal) ? ovVal : fallback);
 
     // ── Theme mode ──────────────────────────────────────────────────
     const themeMode = client?.theme_mode || null;
@@ -70,31 +76,33 @@ export function useClientTheme() {
     // In dark mode, auto-darken primary (original behavior).
     // Explicit client.nav_bg override always takes priority.
     const autoNavBg = isDark ? darken(primary, 0.65) : '#ffffff';
-    const navBg = (isValidHex(client?.nav_bg) ? client!.nav_bg! : null) || autoNavBg;
+    const navBg = pick(client?.nav_bg, ov.nav_bg, autoNavBg);
     const isNavDark = !isLight(navBg);
-    const navText = (isValidHex(client?.nav_text) ? client!.nav_text! : null) || (isNavDark ? '#fafaf9' : '#111827');
+    const navText = pick(client?.nav_text, ov.nav_text, isNavDark ? '#fafaf9' : '#111827');
     const navTextMuted = isNavDark ? 'rgba(250,250,249,0.6)' : '#6b7280';
     const navBorder = isNavDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
     const navHover = isNavDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
 
-    // Active item: use primary if it has enough contrast against nav bg, else fallback
+    // Active item: an explicit nav_accent override wins; otherwise primary when
+    // it has enough contrast against the nav bg, else a readable fallback.
+    const navAccentOv = isValidHex(ov.nav_accent) ? (ov.nav_accent as string) : null;
     const primaryContrastOk = Math.abs(luminance(primary) - luminance(navBg)) > 0.25;
-    const navActiveColor = primaryContrastOk ? primary : (isNavDark ? '#ffffff' : '#111827');
-    const navActiveItemBg = primaryContrastOk
-      ? hexToRgba(primary, 0.15)
-      : (isNavDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)');
+    const navActiveColor = navAccentOv || (primaryContrastOk ? primary : (isNavDark ? '#ffffff' : '#111827'));
+    const navActiveItemBg = navAccentOv
+      ? hexToRgba(navAccentOv, 0.15)
+      : (primaryContrastOk ? hexToRgba(primary, 0.15) : (isNavDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)'));
 
     // ── Buttons ─────────────────────────────────────────────────────
-    const buttonText = (isValidHex(client?.button_text) ? client!.button_text! : null) || contrastText(primary);
+    const buttonText = pick(client?.button_text, ov.button_text, contrastText(primary));
 
     // ── Page ────────────────────────────────────────────────────────
-    const bg = (isValidHex(client?.page_bg) ? client!.page_bg! : null) || (isDark ? '#0a0a0a' : '#f9fafb');
-    const card = (isValidHex(client?.card_bg) ? client!.card_bg! : null) || (isDark ? '#111111' : '#ffffff');
-    const border = (isValidHex(client?.card_border) ? client!.card_border! : null) || (isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb');
+    const bg = pick(client?.page_bg, ov.page_bg, isDark ? '#0a0a0a' : '#f9fafb');
+    const card = pick(client?.card_bg, ov.card_bg, isDark ? '#111111' : '#ffffff');
+    const border = pick(client?.card_border, ov.card_border, isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb');
 
     // ── Text ────────────────────────────────────────────────────────
-    const text = isDark ? '#fafaf9' : '#111827';
-    const textMuted = isDark ? 'rgba(250,250,249,0.7)' : '#6b7280';
+    const text = pick(null, ov.text_primary, isDark ? '#fafaf9' : '#111827');
+    const textMuted = pick(null, ov.text_muted, isDark ? 'rgba(250,250,249,0.7)' : '#6b7280');
     const textMuted4 = isDark ? 'rgba(250,250,249,0.5)' : '#9ca3af';
 
     return {
@@ -158,6 +166,7 @@ export function useClientTheme() {
   }, [
     branding.primaryColor,
     branding.websiteTheme,
+    (branding as any).overrides,
     client?.primary_color,
     client?.nav_bg,
     client?.nav_text,
