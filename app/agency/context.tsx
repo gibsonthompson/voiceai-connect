@@ -108,9 +108,11 @@ interface Branding {
 }
 
 // Nav logo size bounds. The logo header grows to fit, so a larger scale makes
-// the top logo taller without changing the nav itself.
+// the top logo taller without changing the nav itself. Max is 6x; the nav
+// render cap in agency/layout.tsx is sized so the whole range is usable (no
+// dead zone where dragging higher does nothing).
 export const LOGO_SCALE_MIN = 1;
-export const LOGO_SCALE_MAX = 4;
+export const LOGO_SCALE_MAX = 6;
 export function clampLogoScale(raw: any): number {
   const n = Number(raw);
   if (!Number.isFinite(n)) return 1;
