@@ -283,19 +283,36 @@ export default function AgencyClientsPage() {
   // the same gate with a 403).
   const isFreePlan = String(agency?.plan_type || '').toLowerCase() === 'free';
 
-  // Filter clients — test client always shows but at the bottom
-  const filteredClients = clients.filter(client => {
-    const matchesSearch = !searchQuery || 
-      client.business_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client.email?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = !statusFilter || 
-      client.subscription_status === statusFilter || 
-      client.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  }).sort((a, b) => {
-    // Test clients sort to bottom
-    if (a.is_test_client && !b.is_test_client) return 1;
-    if (!a.is_test_client && b.is_test_client) return -1;
+  // Canonical status bucket, matching the badge groupings, so sorting by a
+  // status catches every raw value that maps to it (pending + pending_payment,
+  // trial + trialing, canceled + agency_canceled, suspended + manual_suspended).
+  const statusBucket = (c: Client): string => {
+    const s = (c.subscription_status || c.status || '').toLowerCase();
+    if (['active', 'manual'].includes(s)) return 'active';
+    if (['trial', 'trialing'].includes(s)) return 'trial';
+    if (['pending', 'pending_payment'].includes(s)) return 'pending_payment';
+    if (s === 'past_due') return 'past_due';
+    if (['expired', 'trial_expired'].includes(s)) return 'expired';
+    if (['canceled', 'cancelled', 'agency_canceled'].includes(s)) return 'canceled';
+    if (['suspended', 'manual_suspended'].includes(s)) return 'suspended';
+    return 'other';
+  };
+
+  // Search filters the list; the status control SORTS the chosen status to the
+  // top (everyone stays visible). Array sort is stable, so within the chosen
+  // group and the rest the original (newest-first) order is preserved. Test
+  // clients always sort to the very bottom.
+  const filteredClients = clients.filter(client => (
+    !searchQuery ||
+    client.business_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    client.email?.toLowerCase().includes(searchQuery.toLowerCase())
+  )).sort((a, b) => {
+    if (a.is_test_client !== b.is_test_client) return a.is_test_client ? 1 : -1;
+    if (statusFilter) {
+      const am = statusBucket(a) === statusFilter ? 0 : 1;
+      const bm = statusBucket(b) === statusFilter ? 0 : 1;
+      if (am !== bm) return am - bm;
+    }
     return 0;
   });
 
@@ -445,11 +462,14 @@ export default function AgencyClientsPage() {
               value={statusFilter || ''}
               onChange={(v) => setStatusFilter(v || null)}
               options={[
-                { value: '', label: 'All Status' },
-                { value: 'active', label: 'Active' },
-                { value: 'trial', label: 'Trial' },
-                { value: 'past_due', label: 'Past Due' },
-                { value: 'suspended', label: 'Suspended' },
+                { value: '', label: 'Default order' },
+                { value: 'active', label: 'Active first' },
+                { value: 'trial', label: 'Trial first' },
+                { value: 'pending_payment', label: 'Pending payment first' },
+                { value: 'past_due', label: 'Past due first' },
+                { value: 'expired', label: 'Trial expired first' },
+                { value: 'canceled', label: 'Canceled first' },
+                { value: 'suspended', label: 'Suspended first' },
               ]}
               ui={{ inputStyle: { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }, text: theme.text, muted: theme.textMuted, panelBg: theme.card, panelBorder: theme.inputBorder, hover: theme.hover, accent: theme.primary, isDark: theme.isDark }}
             />
@@ -561,10 +581,10 @@ export default function AgencyClientsPage() {
               <Users className="h-7 w-7 sm:h-8 sm:w-8" style={{ color: theme.primary80 }} />
             </div>
             <p className="mt-4 font-medium" style={{ color: theme.isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>
-              {searchQuery || statusFilter ? 'No clients match your search' : 'No clients yet'}
+              {searchQuery ? 'No clients match your search' : 'No clients yet'}
             </p>
             <p className="text-sm mt-1" style={{ color: theme.textMuted }}>
-              {searchQuery || statusFilter ? 'Try adjusting your filters' : 'Share your signup link to get started!'}
+              {searchQuery ? 'Try a different search' : 'Share your signup link to get started!'}
             </p>
           </div>
         ) : (
