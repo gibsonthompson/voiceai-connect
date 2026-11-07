@@ -457,19 +457,19 @@ export default function AgencyClientsPage() {
             />
           </div>
           
-          <div className="w-full sm:w-44">
+          <div className="w-full sm:w-56">
             <CustomSelect
               value={statusFilter || ''}
               onChange={(v) => setStatusFilter(v || null)}
               options={[
                 { value: '', label: 'Default order' },
-                { value: 'active', label: 'Active first' },
-                { value: 'trial', label: 'Trial first' },
-                { value: 'pending_payment', label: 'Pending payment first' },
-                { value: 'past_due', label: 'Past due first' },
-                { value: 'expired', label: 'Trial expired first' },
-                { value: 'canceled', label: 'Canceled first' },
-                { value: 'suspended', label: 'Suspended first' },
+                { value: 'active', label: 'Active' },
+                { value: 'trial', label: 'Trial' },
+                { value: 'pending_payment', label: 'Pending payment' },
+                { value: 'past_due', label: 'Past due' },
+                { value: 'expired', label: 'Trial expired' },
+                { value: 'canceled', label: 'Canceled' },
+                { value: 'suspended', label: 'Suspended' },
               ]}
               ui={{ inputStyle: { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }, text: theme.text, muted: theme.textMuted, panelBg: theme.card, panelBorder: theme.inputBorder, hover: theme.hover, accent: theme.primary, isDark: theme.isDark }}
             />
