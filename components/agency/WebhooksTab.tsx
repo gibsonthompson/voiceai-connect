@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Webhook, Plus, Copy, Trash2, Check, Loader2, AlertCircle, Lock, Send, Power } from 'lucide-react';
+import Link from 'next/link';
+import { Webhook, Plus, Copy, Trash2, Check, Loader2, AlertCircle, Lock, Send, Power, BookOpen, ArrowRight } from 'lucide-react';
 import UpgradeGate from './UpgradeGate';
 
 // Self-contained webhooks panel. Rendered from Settings as a tab:
@@ -118,9 +119,20 @@ export default function WebhooksTab({ agency, theme }: { agency: any; theme: any
     <UpgradeGate locked={!isScale} tier="scale" title="Unlock webhooks with Scale" description="Get a signed POST to your server the moment a call finishes, an appointment is booked, or a client is provisioned, so VoiceAI Connect can drive your CRM, notifications, and automations in real time instead of you polling for changes. Scale unlocks webhook endpoints." theme={theme}>
     <div className="space-y-4 sm:space-y-6">
       <div className="flex items-start justify-between gap-3">
-        <div><h3 className="text-base sm:text-lg font-medium mb-1">Webhooks</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>We POST a signed event to your URL when things happen. Verify the signature with your secret.</p></div>
+        <div><h3 className="text-base sm:text-lg font-medium mb-1">Webhooks</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>We POST a signed JSON event to your URL the moment something happens: a call finishes, an appointment is booked, a client is provisioned, billing changes. Verify each delivery with your endpoint secret.</p></div>
         {!showCreate && (<button onClick={() => setShowCreate(true)} className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium flex-shrink-0" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Plus className="h-4 w-4" />Add endpoint</button>)}
       </div>
+
+      <Link href="/agency/developers#webhooks" className="group flex items-center justify-between gap-3 rounded-xl px-4 py-3.5 transition-colors" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center justify-center h-9 w-9 rounded-lg flex-shrink-0" style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.25)' : '#fff' }}><BookOpen className="h-5 w-5" style={{ color: theme.primary }} /></div>
+          <div className="min-w-0">
+            <p className="text-sm font-medium" style={{ color: theme.primary }}>Webhooks Reference</p>
+            <p className="text-[11px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>The event envelope, all 14 event types with payloads, signature verification, and retries.</p>
+          </div>
+        </div>
+        <ArrowRight className="h-4 w-4 flex-shrink-0 transition-transform group-hover:translate-x-0.5" style={{ color: theme.primary }} />
+      </Link>
 
       {error && (<div className="rounded-xl p-3 flex items-center gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.errorText }} /><p className="text-xs sm:text-sm" style={{ color: theme.errorText }}>{error}</p></div>)}
 

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Key, Plus, Copy, Trash2, Check, Loader2, AlertCircle, Lock, Terminal } from 'lucide-react';
+import Link from 'next/link';
+import { Key, Plus, Copy, Trash2, Check, Loader2, AlertCircle, Lock, Terminal, BookOpen, ArrowRight } from 'lucide-react';
 import UpgradeGate from './UpgradeGate';
 
 // Self-contained API-keys panel. Rendered from the agency Settings page as a tab:
@@ -91,6 +92,17 @@ export default function ApiKeysTab({ agency, theme }: { agency: any; theme: any 
         {!showCreate && (<button onClick={() => setShowCreate(true)} className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium flex-shrink-0" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Plus className="h-4 w-4" />New key</button>)}
       </div>
 
+      <Link href="/agency/developers" className="group flex items-center justify-between gap-3 rounded-xl px-4 py-3.5 transition-colors" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center justify-center h-9 w-9 rounded-lg flex-shrink-0" style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.25)' : '#fff' }}><BookOpen className="h-5 w-5" style={{ color: theme.primary }} /></div>
+          <div className="min-w-0">
+            <p className="text-sm font-medium" style={{ color: theme.primary }}>Developer Reference</p>
+            <p className="text-[11px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>Every endpoint, auth, rate limits, errors, objects, and webhooks, with copyable examples.</p>
+          </div>
+        </div>
+        <ArrowRight className="h-4 w-4 flex-shrink-0 transition-transform group-hover:translate-x-0.5" style={{ color: theme.primary }} />
+      </Link>
+
       {error && (<div className="rounded-xl p-3 flex items-center gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.errorText }} /><p className="text-xs sm:text-sm" style={{ color: theme.errorText }}>{error}</p></div>)}
 
       {freshKey && (
@@ -139,6 +151,7 @@ export default function ApiKeysTab({ agency, theme }: { agency: any; theme: any 
       <div className="rounded-xl p-4" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', border: `1px solid ${theme.inputBorder}` }}>
         <div className="flex items-center gap-2 mb-2"><Terminal className="h-4 w-4" style={{ color: theme.textMuted }} /><p className="text-sm font-medium">Quick start</p></div>
         <code className="block rounded-lg px-3 py-2 text-[11px] font-mono break-all" style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.3)' : '#fff', border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>curl {backendUrl}/api/v1/clients -H &quot;Authorization: Bearer YOUR_KEY&quot;</code>
+        <Link href="/agency/developers" className="inline-flex items-center gap-1.5 mt-3 text-xs font-medium" style={{ color: theme.primary }}>View the full Developer Reference<ArrowRight className="h-3.5 w-3.5" /></Link>
       </div>
     </div>
     </UpgradeGate>
