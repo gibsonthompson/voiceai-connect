@@ -241,8 +241,67 @@
     window.addEventListener('message', onMessage);
   }
 
+  // ── AI web-call widget ─────────────────────────────────────────────────
+  // Agencies paste:
+  //   <div data-voiceai-webcall data-agency="AGENCY_UUID"></div>
+  //   <script src="https://myvoiceaiconnect.com/embed.js" async></script>
+  // Optional: data-mode="demo"|"client" (default demo), data-client="CLIENT_UUID"
+  // for mode=client. Injects an iframe to /webcall (mic permission granted via
+  // allow="microphone") that runs the browser call on our origin.
+  function buildWebcallSrc(container) {
+    var params = new URLSearchParams();
+    params.set('embed', 'true');
+    var agency = container.getAttribute('data-agency');
+    if (agency) params.set('agency', agency);
+    params.set('mode', container.getAttribute('data-mode') || 'demo');
+    var client = container.getAttribute('data-client');
+    if (client) params.set('client', client);
+    if (window.location && window.location.origin) params.set('parent_origin', window.location.origin);
+    return PLATFORM_ORIGIN + '/webcall?' + params.toString();
+  }
+
+  function mountWebcall(container) {
+    var agencyId = container.getAttribute('data-agency');
+    if (!agencyId) {
+      console.error('[VoiceAI] [data-voiceai-webcall] requires a data-agency="..." attribute');
+      return;
+    }
+    if (container.querySelector('iframe[data-voiceai-webcall-iframe]')) return;
+
+    var iframe = document.createElement('iframe');
+    iframe.src = buildWebcallSrc(container);
+    iframe.setAttribute('data-voiceai-webcall-iframe', 'true');
+    iframe.setAttribute('title', 'Talk to our AI receptionist');
+    // Microphone is required for the call; autoplay lets the AI's audio play.
+    iframe.setAttribute('allow', 'microphone; autoplay; clipboard-write');
+    iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
+    iframe.setAttribute('frameborder', '0');
+    iframe.style.cssText = [
+      'width: 100%',
+      'border: 0',
+      'min-height: 360px',
+      'display: block',
+      'background: transparent',
+      'transition: height 200ms ease'
+    ].join(';');
+
+    container.appendChild(iframe);
+
+    function onMessage(e) {
+      if (ALLOWED_ORIGINS.indexOf(e.origin) === -1) return;
+      if (e.source !== iframe.contentWindow) return;
+      if (!e.data || typeof e.data !== 'object' || typeof e.data.type !== 'string') return;
+      if (e.data.type === 'voiceai:resize' && typeof e.data.height === 'number' && e.data.height > 100) {
+        iframe.style.height = e.data.height + 'px';
+      }
+    }
+    window.addEventListener('message', onMessage);
+  }
+
   ready(function () {
     var containers = document.querySelectorAll('[data-voiceai-signup]');
     for (var i = 0; i < containers.length; i++) mount(containers[i]);
+    var webcalls = document.querySelectorAll('[data-voiceai-webcall]');
+    for (var j = 0; j < webcalls.length; j++) mountWebcall(webcalls[j]);
   });
 })();

@@ -209,6 +209,11 @@ export default function BrandingPage() {
   const [previewVariant, setPreviewVariant] = useState<'agency' | 'client'>('agency');
   const [displayFont, setDisplayFont] = useState<string | null>(null);
   const [bodyFont, setBodyFont] = useState<string | null>(null);
+  // Optional override: use different fonts on the public surfaces (marketing
+  // site, signup form, embed widgets) than on the dashboard.
+  const [marketingDisplayFont, setMarketingDisplayFont] = useState<string | null>(null);
+  const [marketingBodyFont, setMarketingBodyFont] = useState<string | null>(null);
+  const [useMarketingFonts, setUseMarketingFonts] = useState(false);
   const [iconStyle, setIconStyle] = useState<string>('lucide');
   const [brandKit, setBrandKit] = useState<any>(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -223,6 +228,11 @@ export default function BrandingPage() {
   useEffect(() => { setLogoScale(clampLogoScale(agency?.branding_overrides?.logo_scale)); }, [agency?.branding_overrides]);
   useEffect(() => { if (agency) { setBrandPrimary(agency.primary_color || '#00a19b'); setBrandSecondary(agency.secondary_color || '#007e77'); setBrandAccent(agency.accent_color || '#01f5d1'); } }, [agency?.primary_color, agency?.secondary_color, agency?.accent_color]);
   useEffect(() => { setDisplayFont(agency?.display_font || null); setBodyFont(agency?.body_font || null); }, [agency?.display_font, agency?.body_font]);
+  useEffect(() => {
+    const md = (agency as any)?.marketing_display_font || null;
+    const mb = (agency as any)?.marketing_body_font || null;
+    setMarketingDisplayFont(md); setMarketingBodyFont(mb); setUseMarketingFonts(Boolean(md || mb));
+  }, [(agency as any)?.marketing_display_font, (agency as any)?.marketing_body_font]);
   useEffect(() => { setIconStyle(agency?.icon_style || 'lucide'); setBrandKit(agency?.brand_kit || null); }, [agency?.icon_style, agency?.brand_kit]);
 
   // Regenerate the brand kit from the agency's logo (fonts + nav icon set + vibe).
@@ -247,7 +257,7 @@ export default function BrandingPage() {
     finally { setAnalyzing(false); }
   };
   // Load the chosen fonts so the preview + picker render in them.
-  useEffect(() => { const href = googleFontsHref([displayFont, bodyFont]); if (!href) return; const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = href; document.head.appendChild(link); return () => { if (link.parentNode) link.parentNode.removeChild(link); }; }, [displayFont, bodyFont]);
+  useEffect(() => { const href = googleFontsHref([displayFont, bodyFont, marketingDisplayFont, marketingBodyFont]); if (!href) return; const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = href; document.head.appendChild(link); return () => { if (link.parentNode) link.parentNode.removeChild(link); }; }, [displayFont, bodyFont, marketingDisplayFont, marketingBodyFont]);
 
   const mode = agency?.website_theme !== 'light' ? 'dark' : 'light';
   const primaryColor = isValidHex(brandPrimary) ? brandPrimary : (branding.primaryColor || '#00a19b');
@@ -264,17 +274,22 @@ export default function BrandingPage() {
   const dispVal = displayFont || 'Sora';
   const bodyVal = bodyFont || 'Inter';
   const fontsChanged = (agency?.display_font || null) !== displayFont || (agency?.body_font || null) !== bodyFont;
+  // Effective marketing fonts to persist: when the override is off we save null
+  // (fall back to dashboard fonts everywhere public).
+  const effMarketingDisplay = useMarketingFonts ? (marketingDisplayFont || null) : null;
+  const effMarketingBody = useMarketingFonts ? (marketingBodyFont || null) : null;
+  const marketingFontsChanged = ((agency as any)?.marketing_display_font || null) !== effMarketingDisplay || ((agency as any)?.marketing_body_font || null) !== effMarketingBody;
   const kitChanged = (agency?.icon_style || 'lucide') !== iconStyle || JSON.stringify(agency?.brand_kit || null) !== JSON.stringify(brandKit || null);
   const logoScaleChanged = clampLogoScale(agency?.branding_overrides?.logo_scale) !== logoScale;
   const brandColorsChanged = (agency?.primary_color || '#00a19b') !== brandPrimary || (agency?.secondary_color || '#007e77') !== brandSecondary || (agency?.accent_color || '#01f5d1') !== brandAccent;
-  const dirty = hasChanges || fontsChanged || kitChanged || logoScaleChanged || brandColorsChanged;
+  const dirty = hasChanges || fontsChanged || marketingFontsChanged || kitChanged || logoScaleChanged || brandColorsChanged;
 
   const handleShuffle = () => { const isDark = mode === 'dark'; let idx = Math.floor(Math.random() * PALETTE_RECIPES.length); if (PALETTE_RECIPES.length > 1) { while (idx === lastShuffleIndex) { idx = Math.floor(Math.random() * PALETTE_RECIPES.length); } } setLastShuffleIndex(idx); const recipe = PALETTE_RECIPES[idx]; const result = recipe.build(primaryColor, secondaryColor, accentColor, isDark); setOverrides(result); setSaved(false); setError(null); };
   const handleThemeSwitch = async (newMode: 'light' | 'dark') => { if (mode === newMode || !agency) return; setSwitchingTheme(true); setError(null); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ website_theme: newMode }) }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to update theme'); } await refreshAgency(); } catch (err) { setError(err instanceof Error ? err.message : 'Failed to update theme mode'); } finally { setSwitchingTheme(false); } };
   const handleChange = (key: keyof BrandingOverrides, value: string) => { setOverrides(prev => ({ ...prev, [key]: value })); setSaved(false); setError(null); };
   const handleClear = (key: keyof BrandingOverrides) => { setOverrides(prev => { const next = { ...prev }; delete next[key]; return next; }); setSaved(false); setError(null); };
   const handleResetAll = () => { setOverrides({}); setSaved(false); setError(null); };
-  const handleSave = async () => { if (!agency) return; setSaving(true); setError(null); setSaved(false); try { const token = localStorage.getItem('auth_token'); const cleanOverrides: BrandingOverrides = {}; for (const field of COLOR_FIELDS) { const val = overrides[field.key]; if (isValidHex(val)) { cleanOverrides[field.key] = val; } } if (logoScale > 1) { (cleanOverrides as any).logo_scale = Math.round(logoScale * 100) / 100; } const payload = { branding_overrides: Object.keys(cleanOverrides).length > 0 ? cleanOverrides : null, display_font: displayFont || null, body_font: bodyFont || null, icon_style: iconStyle || null, brand_kit: brandKit || null, primary_color: isValidHex(brandPrimary) ? brandPrimary : (agency.primary_color || '#00a19b'), secondary_color: isValidHex(brandSecondary) ? brandSecondary : (agency.secondary_color || '#007e77'), accent_color: isValidHex(brandAccent) ? brandAccent : (agency.accent_color || '#01f5d1') }; const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload) }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to save branding'); } await refreshAgency(); setSaved(true); setTimeout(() => setSaved(false), 3000); } catch (err) { setError(err instanceof Error ? err.message : 'Failed to save'); } finally { setSaving(false); } };
+  const handleSave = async () => { if (!agency) return; setSaving(true); setError(null); setSaved(false); try { const token = localStorage.getItem('auth_token'); const cleanOverrides: BrandingOverrides = {}; for (const field of COLOR_FIELDS) { const val = overrides[field.key]; if (isValidHex(val)) { cleanOverrides[field.key] = val; } } if (logoScale > 1) { (cleanOverrides as any).logo_scale = Math.round(logoScale * 100) / 100; } const payload = { branding_overrides: Object.keys(cleanOverrides).length > 0 ? cleanOverrides : null, display_font: displayFont || null, body_font: bodyFont || null, marketing_display_font: effMarketingDisplay, marketing_body_font: effMarketingBody, icon_style: iconStyle || null, brand_kit: brandKit || null, primary_color: isValidHex(brandPrimary) ? brandPrimary : (agency.primary_color || '#00a19b'), secondary_color: isValidHex(brandSecondary) ? brandSecondary : (agency.secondary_color || '#007e77'), accent_color: isValidHex(brandAccent) ? brandAccent : (agency.accent_color || '#01f5d1') }; const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload) }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to save branding'); } await refreshAgency(); setSaved(true); setTimeout(() => setSaved(false), 3000); } catch (err) { setError(err instanceof Error ? err.message : 'Failed to save'); } finally { setSaving(false); } };
 
   // ── LOCKED FOR FREE PLAN ────────────────────────────────────────────
   if (!hasWhiteLabel) {
@@ -405,6 +420,37 @@ export default function BrandingPage() {
               <div className="mt-3 rounded-xl p-4" style={ddInput}>
                 <p style={{ fontFamily: fontStack(dispVal, 'display'), fontWeight: 700, fontSize: '1.35rem', color: theme.text, lineHeight: 1.1 }}>{agency?.name || 'Your Brand'}</p>
                 <p className="mt-1" style={{ fontFamily: fontStack(bodyVal, 'body'), fontSize: '0.88rem', color: theme.textMuted }}>Clear headlines and readable body text, applied across your agency dashboard and all your client dashboards.</p>
+              </div>
+
+              {/* Optional: different fonts for the public surfaces. */}
+              <div className="mt-4 rounded-xl p-4" style={{ border: `1px solid ${theme.border}` }}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium" style={{ color: theme.text }}>Different fonts for public pages</p>
+                    <p className="text-[11px] mt-0.5" style={{ color: theme.textMuted }}>Use separate fonts for your marketing site, signup form, and embed widgets. Off uses your dashboard fonts.</p>
+                  </div>
+                  <button type="button" onClick={() => { setUseMarketingFonts((v) => !v); setSaved(false); setError(null); }} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors" style={{ backgroundColor: useMarketingFonts ? theme.primary : theme.inputBorder }}>
+                    <span className="pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transition" style={{ transform: useMarketingFonts ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
+                  </button>
+                </div>
+                {useMarketingFonts && (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                      <div>
+                        <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Public display font</label>
+                        <FontSelect value={marketingDisplayFont || 'Sora'} onChange={(v) => { setMarketingDisplayFont(v); setSaved(false); setError(null); }} slot="display" ui={ddUI} />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Public body font</label>
+                        <FontSelect value={marketingBodyFont || 'Inter'} onChange={(v) => { setMarketingBodyFont(v); setSaved(false); setError(null); }} slot="body" ui={ddUI} />
+                      </div>
+                    </div>
+                    <div className="mt-3 rounded-xl p-4" style={ddInput}>
+                      <p style={{ fontFamily: fontStack(marketingDisplayFont || 'Sora', 'display'), fontWeight: 700, fontSize: '1.35rem', color: theme.text, lineHeight: 1.1 }}>{agency?.name || 'Your Brand'}</p>
+                      <p className="mt-1" style={{ fontFamily: fontStack(marketingBodyFont || 'Inter', 'body'), fontSize: '0.88rem', color: theme.textMuted }}>How your public pages read with these fonts.</p>
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="mt-4">

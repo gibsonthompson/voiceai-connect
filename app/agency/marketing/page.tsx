@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
-  Globe, ExternalLink, Copy, Check, Eye, Link as LinkIcon,
+  Globe, ExternalLink, Copy, Check, Eye, Link as LinkIcon, Phone,
   AlertCircle, CheckCircle2, Loader2, RefreshCw, Palette, Type, Save, Upload,
   Wand2, BarChart3, Share2, Layout, DollarSign, Code,
   ChevronUp, ChevronDown, Trash2, Plus, LayoutDashboard, FileText
@@ -153,6 +153,11 @@ export default function MarketingWebsitePage() {
   const { canUseMarketingSite, planName } = usePlanFeatures();
   const [copied, setCopied] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
+  // AI web-call embed config
+  const [webcallMode, setWebcallMode] = useState<'demo' | 'client'>('demo');
+  const [webcallClientId, setWebcallClientId] = useState<string>('');
+  const [webcallClients, setWebcallClients] = useState<{ id: string; business_name: string }[]>([]);
+  const [webcallClientOpen, setWebcallClientOpen] = useState(false);
   const [contentScrollTarget, setContentScrollTarget] = useState<string | null>(null);
 
   // Domain
@@ -263,6 +268,13 @@ export default function MarketingWebsitePage() {
   // tracking) rather than buried under Settings.
   const iframeWidgetSnippet = `<div data-voiceai-signup data-agency="${agency?.id || ''}"></div>\n<script src="https://${platformDomain}/embed.js" async></script>`;
 
+  // AI web-call embed: demo assistant by default, or a chosen test client.
+  const webcallIsClient = webcallMode === 'client' && !!webcallClientId;
+  const webcallQuery = webcallIsClient ? `&mode=client&client=${webcallClientId}` : '&mode=demo';
+  const webcallPreviewSrc = `https://${platformDomain}/webcall?embed=true&agency=${agency?.id || ''}${webcallQuery}`;
+  const webcallSnippet = `<div data-voiceai-webcall data-agency="${agency?.id || ''}"${webcallIsClient ? ` data-mode="client" data-client="${webcallClientId}"` : ''}></div>\n<script src="https://${platformDomain}/embed.js" async></script>`;
+  const webcallSelectedClientName = webcallClients.find((c) => c.id === webcallClientId)?.business_name || 'Select a client';
+
   // Live-preview iframe src: the exact URL embed.js injects (see public/embed.js
   // buildIframeSrc), so the on-page preview shows the real signup form, not a
   // mockup. embed=true renders the bare form (no marketing chrome); agency=<id>
@@ -293,6 +305,23 @@ export default function MarketingWebsitePage() {
     if (demoMode) { setTagline('AI-Powered Phone Answering'); setHeadline('Never Miss Another Call'); setSubheadline('Our AI receptionist answers calls 24/7.'); setCustomDomain('voiceai.youragency.com'); setDomainStatus('verified'); setPrimaryColor(agency?.primary_color || '#00a19b'); setSecondaryColor(agency?.secondary_color || '#007e77'); setAccentColor(agency?.accent_color || '#01f5d1'); setSelectedTemplate(agency?.marketing_template || 'classic'); setCustomNavLinks([{ label: 'Home', url: 'https://yourmainsite.com' }]); setDisplayCurrency(''); setGtmId(''); setFbPixelId(''); setGoogleAnalyticsId(''); setCustomHeadScripts(''); setCustomBodyScripts(''); setOgTitle(''); setOgDescription(''); setOgImageUrl(''); setPlans([]); return; }
     if (agency) { if (agency.marketing_domain) { setCustomDomain(agency.marketing_domain); setDomainStatus(agency.domain_verified ? 'verified' : 'pending'); } setTagline(agency.company_tagline || ''); setHeadline(agency.website_headline || ''); setSubheadline(agency.website_subheadline || ''); setSignupHeadline((agency as any).signup_headline || ''); setSignupSubtitle((agency as any).signup_subtitle || ''); setSignupLogoAlign((agency as any).signup_logo_align === 'center' || (agency as any).signup_logo_align === 'right' ? (agency as any).signup_logo_align : 'left'); setPrimaryColor(agency.primary_color || '#00a19b'); setSecondaryColor(agency.secondary_color || '#007e77'); setAccentColor(agency.accent_color || '#01f5d1'); setSelectedTemplate(agency.marketing_template || 'classic'); setCustomNavLinks(Array.isArray((agency as any).custom_nav_links) ? (agency as any).custom_nav_links : []); setDisplayCurrency((agency as any).display_currency || ''); setGtmId(agency.gtm_id || ''); setFbPixelId(agency.fb_pixel_id || ''); setGoogleAnalyticsId(agency.google_analytics_id || ''); setCustomHeadScripts(agency.custom_head_scripts || ''); setCustomBodyScripts(agency.custom_body_scripts || ''); setOgTitle(agency.og_title || ''); setOgDescription(agency.og_description || ''); setOgImageUrl(agency.og_image_url || ''); setPlans(Array.isArray((agency as any).plans) ? (agency as any).plans : []); }
   }, [agency, demoMode]);
+
+  // Load this agency's clients for the web-call "test client" option.
+  useEffect(() => {
+    if (!agency?.id || demoMode) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        const res = await fetch(`${backendUrl}/api/agency/${agency.id}/clients`, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) return;
+        const d = await res.json();
+        if (cancelled) return;
+        setWebcallClients((d.clients || []).map((c: any) => ({ id: c.id, business_name: c.business_name })));
+      } catch { /* non-fatal */ }
+    })();
+    return () => { cancelled = true; };
+  }, [agency?.id, demoMode, backendUrl]);
 
   const copyToClipboard = (text: string, key: string) => { navigator.clipboard.writeText(text); setCopied(key); setTimeout(() => setCopied(null), 2000); };
 
@@ -612,6 +641,50 @@ export default function MarketingWebsitePage() {
             <div className="mt-3 flex items-center gap-2"><span className="text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>Preview:</span><a href={signupUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', padding: '14px 32px', background: agencyPrimaryColor, color: isLightColor(agencyPrimaryColor) ? '#050505' : '#ffffff', borderRadius: '8px', textDecoration: 'none', fontWeight: 600, fontSize: '16px' }}>Start Free Trial</a></div>
           </div>
         </div>
+          {/* AI web-call widget embed */}
+          <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
+            <div className="flex items-center gap-2 mb-1.5"><Phone className="h-4 w-4" style={{ color: agencyPrimaryColor }} /><h3 className="font-medium text-sm sm:text-base" style={{ color: textColor }}>AI web call on your site</h3></div>
+            <p className="text-xs sm:text-sm mb-4" style={{ color: mutedTextColor }}>Let visitors talk to your AI right in the browser. Paste this wherever you want it. It uses your brand colors and fonts.</p>
+
+            <div className="inline-flex rounded-lg p-0.5 mb-4" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
+              {(['demo', 'client'] as const).map((m) => (
+                <button key={m} onClick={() => setWebcallMode(m)} className="px-3 py-1.5 rounded-md text-xs font-semibold transition-colors" style={webcallMode === m ? { backgroundColor: agencyPrimaryColor, color: isLightColor(agencyPrimaryColor) ? '#050505' : '#ffffff' } : { color: mutedTextColor }}>{m === 'demo' ? 'Demo assistant' : 'A test client'}</button>
+              ))}
+            </div>
+
+            {webcallMode === 'client' && (
+              <div className="mb-4 max-w-sm relative">
+                <label className="block text-xs font-medium mb-1.5" style={{ color: mutedTextColor }}>Which client should visitors hear?</label>
+                <button type="button" onClick={() => setWebcallClientOpen((o) => !o)} className="w-full flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor }}>
+                  <span className="truncate">{webcallSelectedClientName}</span><ChevronDown className="h-4 w-4 flex-shrink-0" style={{ color: mutedTextColor }} />
+                </button>
+                {webcallClientOpen && (
+                  <div className="absolute z-30 left-0 right-0 mt-1 rounded-lg overflow-hidden py-1 max-h-60 overflow-y-auto" style={{ backgroundColor: cardBg, border: `1px solid ${inputBorder}` }}>
+                    {webcallClients.length === 0 ? (
+                      <div className="px-3 py-2 text-xs" style={{ color: mutedTextColor }}>No clients yet</div>
+                    ) : webcallClients.map((c) => (
+                      <button key={c.id} onClick={() => { setWebcallClientId(c.id); setWebcallClientOpen(false); }} className="w-full text-left px-3 py-2 text-sm" style={{ color: textColor, backgroundColor: c.id === webcallClientId ? agencyPrimaryColor + '18' : 'transparent' }}>{c.business_name}</button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+              <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${inputBorder}` }}>
+                {agency?.id && !demoMode && (webcallMode === 'demo' || webcallClientId) ? (
+                  <iframe title="AI web call preview" src={webcallPreviewSrc} loading="lazy" allow="microphone" className="block w-full" style={{ height: 420, border: 0, backgroundColor: isDark ? '#0a0a0a' : '#ffffff' }} />
+                ) : (
+                  <div className="flex items-center justify-center text-xs" style={{ height: 420, color: mutedTextColor }}>{demoMode ? 'Preview on a live agency account' : 'Pick a client to preview'}</div>
+                )}
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1.5"><label className="text-xs font-medium" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Embed code</label><button onClick={() => copyToClipboard(webcallSnippet, 'webcall-code')} className="text-xs font-medium inline-flex items-center gap-1" style={{ color: agencyPrimaryColor }}>{copied === 'webcall-code' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} Copy</button></div>
+                <pre className="rounded-lg p-3 text-[10px] sm:text-xs font-mono overflow-x-auto leading-relaxed" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${inputBorder}`, color: textColor, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{webcallSnippet}</pre>
+                <p className="text-[10px] sm:text-xs mt-2" style={{ color: mutedTextColor }}>Visitors allow their mic, then talk to {webcallMode === 'demo' ? 'your demo assistant' : 'the selected client’s AI'}.</p>
+              </div>
+            </div>
+          </div>
       </div>)}
 
       {/* ══════════════ TEMPLATE ══════════════ */}

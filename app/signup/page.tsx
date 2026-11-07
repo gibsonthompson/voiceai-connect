@@ -31,6 +31,8 @@ interface Agency {
   website_theme: 'light' | 'dark' | 'auto' | null;
   display_font?: string | null;
   body_font?: string | null;
+  marketing_display_font?: string | null;
+  marketing_body_font?: string | null;
   logo_background_color: string | null;
   signup_logo_align: 'left' | 'center' | 'right' | null;
   country: string | null;
@@ -468,8 +470,10 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
   // Agency brand fonts (same system as the dashboard branding page). The body
   // font drives labels, inputs and placeholders via the wrapper; the display
   // font is applied to the headline.
-  const dispFont = agency.display_font || 'Sora';
-  const bodyFont = agency.body_font || 'Inter';
+  // Public-surface fonts: the agency's marketing override wins, then their
+  // dashboard fonts, then the platform defaults.
+  const dispFont = agency.marketing_display_font || agency.display_font || 'Sora';
+  const bodyFont = agency.marketing_body_font || agency.body_font || 'Inter';
   useEffect(() => {
     const href = googleFontsHref([dispFont, bodyFont]);
     if (!href) return;
