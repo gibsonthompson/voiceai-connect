@@ -3,7 +3,7 @@
 import { ReactNode, useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe, Phone, Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Zap, Paintbrush, Clock, Headphones, Headset, Check, Crown, Shield, Inbox, LifeBuoy, Compass, type LucideIcon } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe, Phone, Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Zap, Paintbrush, Clock, Headphones, Headset, Check, Crown, Shield, Inbox, LifeBuoy, Compass, MessageSquare, type LucideIcon } from 'lucide-react';
 import { AgencyProvider, useAgency } from './context';
 import { usePlanFeatures } from '../../hooks/usePlanFeatures';
 import { useTheme } from '../../hooks/useTheme';
@@ -201,6 +201,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     { href: '/agency/payments', label: 'Payments', icon: CreditCard, permissionKey: 'billing' },
     { href: '/agency/marketing', label: 'Website', icon: Globe, locked: !canUseMarketingSite, upgradeRequired: 'Pro', permissionKey: 'marketing' },
     { href: '/agency/demo-phone', label: 'Demo Phone', icon: Phone, locked: !isOnTrial && !canUseDemoPhoneNumber, upgradeRequired: 'Pro' },
+    { href: '/agency/messages', label: 'Messages', icon: MessageSquare },
     { href: '/agency/ai-lab', label: 'AI Lab', icon: Cpu, locked: !canUseAiLab, upgradeRequired: 'Pro' },
     { href: '/agency/branding', label: 'Branding', icon: Paintbrush, locked: !hasWhiteLabel, upgradeRequired: 'Pro' },
     { href: '/agency/referrals', label: 'Referrals', icon: Gift, locked: !canUseLeadFinder, upgradeRequired: 'Pro' },

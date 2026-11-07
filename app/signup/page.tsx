@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, Children, isValidElement, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { fontStack, googleFontsHref } from '@/lib/brandFonts';
 import { 
   Phone, ArrowRight, Loader2, Building, Mail, User, MapPin,
   ArrowLeft, Sparkles, Shield, Clock, Zap, Globe,
@@ -28,6 +29,8 @@ interface Agency {
   secondary_color: string;
   accent_color: string;
   website_theme: 'light' | 'dark' | 'auto' | null;
+  display_font?: string | null;
+  body_font?: string | null;
   logo_background_color: string | null;
   signup_logo_align: 'left' | 'center' | 'right' | null;
   country: string | null;
@@ -462,6 +465,20 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
   const primaryColor = agency.primary_color || '#01f5d1';
   const logoAlign = agency.signup_logo_align || 'left';
   const accentColor = agency.accent_color || primaryColor;
+  // Agency brand fonts (same system as the dashboard branding page). The body
+  // font drives labels, inputs and placeholders via the wrapper; the display
+  // font is applied to the headline.
+  const dispFont = agency.display_font || 'Sora';
+  const bodyFont = agency.body_font || 'Inter';
+  useEffect(() => {
+    const href = googleFontsHref([dispFont, bodyFont]);
+    if (!href) return;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    document.head.appendChild(link);
+    return () => { if (link.parentNode) link.parentNode.removeChild(link); };
+  }, [dispFont, bodyFont]);
   const primaryLight = isLightColor(primaryColor);
 
   // In embed mode, background is transparent so the iframe blends with the
@@ -543,8 +560,8 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
   // and renders just the form card. Padding is collapsed so the iframe
   // only needs to be as tall as the form itself.
   const wrapperStyle: React.CSSProperties = isEmbed
-    ? { backgroundColor: bgColor, color: textColor }
-    : { backgroundColor: bgColor, color: textColor };
+    ? { backgroundColor: bgColor, color: textColor, fontFamily: fontStack(bodyFont, 'body') }
+    : { backgroundColor: bgColor, color: textColor, fontFamily: fontStack(bodyFont, 'body') };
   const mainPaddingClass = isEmbed
     ? 'relative min-h-0 py-2 px-2 sm:px-4'
     : 'relative min-h-screen pt-28 sm:pt-32 pb-16 px-4 sm:px-6';
@@ -597,7 +614,7 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
                 <Sparkles className="h-4 w-4" style={{ color: primaryColor }} />
                 <span style={{ color: primaryColor }}>{trialDays > 0 ? `${trialDays}-day free trial` : 'Free trial'}</span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">{(agency as any).signup_headline || 'Get Your AI Receptionist'}</h1>
+              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight" style={{ fontFamily: fontStack(dispFont, 'display') }}>{(agency as any).signup_headline || 'Get Your AI Receptionist'}</h1>
               <p className="mt-2" style={{ color: mutedTextColor }}>{(agency as any).signup_subtitle || `Start your free trial with ${agency.name}`}</p>
             </div>
 

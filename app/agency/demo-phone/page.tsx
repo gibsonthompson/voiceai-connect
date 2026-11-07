@@ -16,6 +16,76 @@ import LockedFeature from '@/components/LockedFeature';
 import DemoCustomizer from '@/components/agency/DemoCustomizer';
 import AdditionalDemoNumbers from '@/components/agency/AdditionalDemoNumbers';
 
+// Custom signup link for the post-demo follow-up text. Saved to the agency
+// (custom_signup_url) via the settings endpoint; when set, the demo follow-up
+// SMS (and the agency's other signup links) use it instead of the hosted page.
+function SignupLinkSection({ agency, theme, onSaved }: { agency: any; theme: ReturnType<typeof useTheme>; onSaved: () => void }) {
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.myvoiceaiconnect.com';
+  const [url, setUrl] = useState<string>(agency?.custom_signup_url || '');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => { setUrl(agency?.custom_signup_url || ''); }, [agency?.custom_signup_url]);
+
+  const trimmed = url.trim();
+  const valid = trimmed === '' || /^https?:\/\/\S+$/i.test(trimmed);
+  const dirty = trimmed !== (agency?.custom_signup_url || '');
+  const errColor = theme.error || '#ef4444';
+
+  const save = async () => {
+    if (!agency?.id || !valid || !dirty) return;
+    setSaving(true); setError(null); setSaved(false);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ custom_signup_url: trimmed || null }),
+      });
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Failed to save'); }
+      setSaved(true); setTimeout(() => setSaved(false), 3000);
+      onSaved?.();
+    } catch (e: any) { setError(e?.message || 'Failed to save'); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div className="rounded-xl p-5 sm:p-6 mb-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+      <div className="flex items-center gap-3 mb-3">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ backgroundColor: theme.iconBg }}><Globe className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
+        <div className="min-w-0">
+          <h3 className="font-semibold text-base sm:text-lg">Signup link for the follow-up text</h3>
+          <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>The link texted to a prospect after they call your demo line</p>
+        </div>
+      </div>
+      <p className="text-xs sm:text-sm mb-3 leading-relaxed" style={{ color: theme.textMuted }}>
+        By default we text your hosted signup page. If you run your own website with the embedded signup form, paste that URL here and the post-demo text (and your other signup links) will use it instead.
+      </p>
+      <label className="block text-xs sm:text-sm font-medium mb-1.5">Your signup URL</label>
+      <input
+        type="url"
+        value={url}
+        onChange={(e) => { setUrl(e.target.value); setSaved(false); setError(null); }}
+        placeholder="https://yourbrand.com/get-started"
+        className="w-full rounded-xl px-3 sm:px-4 py-2.5 text-sm transition-colors focus:outline-none"
+        style={{ backgroundColor: theme.input, border: `1px solid ${!valid ? errColor : theme.inputBorder}`, color: theme.text }}
+      />
+      {!valid && <p className="mt-1.5 text-xs" style={{ color: errColor }}>Enter a full URL starting with http:// or https://</p>}
+      <p className="mt-1.5 text-[11px]" style={{ color: theme.textMuted }}>Leave blank to use your default signup page.</p>
+      <div className="mt-4 flex items-center gap-4 flex-wrap">
+        <button onClick={save} disabled={saving || !dirty || !valid} className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Check className="h-4 w-4" /> : null}
+          {saving ? 'Saving...' : saved ? 'Saved!' : 'Save link'}
+        </button>
+        <a href="/agency/messages" className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors" style={{ color: theme.primary }}>
+          <MessageSquare className="h-4 w-4" />Edit the texts you send
+        </a>
+      </div>
+      {error && <p className="mt-2 text-xs" style={{ color: errColor }}>{error}</p>}
+    </div>
+  );
+}
+
 // ============================================================================
 // HELPERS
 // ============================================================================
@@ -854,6 +924,9 @@ export default function DemoPhonePage() {
 
         {/* How the demo works, shown at the very top of the page. */}
         <HowItWorksCard theme={theme} />
+
+        {/* Custom signup link used in the post-demo follow-up text. */}
+        <SignupLinkSection agency={agency} theme={theme} onSaved={refreshAgency} />
 
         {/* Active Demo Card */}
         <div
