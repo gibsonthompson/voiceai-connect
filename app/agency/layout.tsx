@@ -285,7 +285,11 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     }
   }, [loading, agency?.is_call_center, isAgent, pathname]);
 
-  useEffect(() => { if (!loading && shouldBlockAccess) { window.location.href = '/agency/settings'; } }, [loading, shouldBlockAccess]);
+  // No auto-redirect on a payment block. The old redirect to /agency/settings
+  // rendered the full payment wall for a frame and then bounced, which read as a
+  // "locked UI" flash when switching tabs. Instead the wall simply renders in
+  // place on a blocked route (below), and the nav is locked so the agency is
+  // never trying to navigate into a blocked route in the first place.
   // Permission route guard: bounce agency_staff off any page their Page Access
   // permissions don't include (covers direct-URL navigation, which the sidebar
   // filter alone cannot stop). Owners/super_admins pass via canAccessCurrentPath.
@@ -353,6 +357,28 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     // not survive into the next account's session in the same browser.
     try { localStorage.clear(); } catch {}
     window.location.href = '/agency/login';
+  };
+
+  const [billingLoading, setBillingLoading] = useState(false);
+  // One-click fix for a failed payment: open the Stripe billing portal to update
+  // the card, falling back to the add-payment-method checkout when there is no
+  // portal-eligible subscription, then to Settings. Used by the payment wall and
+  // banner so the agency never has to hunt through tabs.
+  const openBillingPortal = async () => {
+    if (!agency || billingLoading) return;
+    setBillingLoading(true);
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const token = localStorage.getItem('auth_token');
+      const r = await fetch(`${backendUrl}/api/agency/portal`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ agency_id: agency.id }) });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok && d.url) { window.location.href = d.url; return; }
+      const r2 = await fetch(`${backendUrl}/api/agency/add-payment-method`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ agency_id: agency.id }) });
+      const d2 = await r2.json().catch(() => ({}));
+      if (d2.url) { window.location.href = d2.url; return; }
+      window.location.href = '/agency/settings';
+    } catch { window.location.href = '/agency/settings'; }
+    finally { setBillingLoading(false); }
   };
 
   const isActive = (href: string) => { if (href === '/agency/dashboard') return pathname === '/agency/dashboard' || pathname === '/agency'; if (href === '/agency/settings') return pathname?.startsWith('/agency/settings'); if (href === '/agency/ai-lab') return pathname?.startsWith('/agency/ai-lab') || pathname?.startsWith('/agency/templates'); if (href === '/agency/outreach') return pathname?.startsWith('/agency/outreach') || pathname?.startsWith('/agency/marketing-kit'); if (href === '/agency/marketing') return pathname === '/agency/marketing' || pathname?.startsWith('/agency/marketing/'); return pathname?.startsWith(href); };
@@ -465,17 +491,21 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  // ── BLOCKED ACCESS ──────────────────────────────────────────────────
+  // ── BLOCKED ACCESS (payment failed) ─────────────────────────────────
   if (shouldBlockAccess) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: theme.bg }}>
         <link rel="manifest" href="/api/agency-manifest" />
-        <div className="max-w-md w-full rounded-2xl p-8 text-center" style={{ backgroundColor: theme.card, border: `1px solid ${theme.isDark ? 'rgba(239,68,68,0.3)' : '#fecaca'}` }}>
-          <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6" style={{ backgroundColor: theme.errorBg }}><CreditCard className="h-8 w-8 text-red-500" /></div>
-          <h1 className="text-2xl font-bold mb-3" style={{ color: theme.text }}>Payment Required</h1>
-          <p className="mb-6" style={{ color: theme.textMuted }}>Your payment has failed. Please update your payment method to continue using your agency.</p>
-          <a href="/agency/settings" className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-medium text-white transition-colors" style={{ backgroundColor: '#ef4444' }}><CreditCard className="h-5 w-5" />Update Payment Method</a>
-          <button onClick={handleSignOut} className="block w-full mt-4 text-sm transition-colors" style={{ color: theme.textMuted }}>Sign out</button>
+        <div className="max-w-lg w-full rounded-2xl p-8 sm:p-10 text-center" style={{ backgroundColor: theme.card, border: `1px solid ${theme.isDark ? 'rgba(239,68,68,0.35)' : '#fecaca'}`, boxShadow: theme.isDark ? 'none' : '0 10px 40px rgba(0,0,0,0.08)' }}>
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6" style={{ backgroundColor: theme.errorBg }}><CreditCard className="h-8 w-8" style={{ color: theme.error }} /></div>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-3" style={{ color: theme.text }}>Your Payment Failed</h1>
+          <p className="mb-8 text-sm sm:text-base leading-relaxed max-w-md mx-auto" style={{ color: theme.textMuted }}>Your agency is paused until your payment method is updated. Your clients and settings are safe, update your card and everything comes right back.</p>
+          <button onClick={openBillingPortal} disabled={billingLoading} className="w-full inline-flex items-center justify-center gap-2.5 rounded-xl px-6 py-4 text-base font-semibold text-white transition-all hover:opacity-90 disabled:opacity-60" style={{ backgroundColor: '#ef4444', boxShadow: '0 4px 20px rgba(239,68,68,0.3)' }}>{billingLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <CreditCard className="h-5 w-5" />}{billingLoading ? 'Opening secure checkout...' : 'Update Payment Method'}</button>
+          <p className="text-xs mt-4" style={{ color: theme.textMuted }}>Opens a secure Stripe page to update your card.</p>
+          <div className="mt-6 pt-6" style={{ borderTop: `1px solid ${theme.border}` }}>
+            <p className="text-xs mb-3" style={{ color: theme.textMuted }}>Need a hand? Email <a href="mailto:support@myvoiceaiconnect.com" className="underline" style={{ color: theme.primary }}>support@myvoiceaiconnect.com</a></p>
+            <button onClick={handleSignOut} className="text-sm transition-colors hover:opacity-70" style={{ color: theme.textMuted }}>Sign out</button>
+          </div>
         </div>
       </div>
     );
@@ -500,7 +530,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       <style dangerouslySetInnerHTML={{ __html: `::selection { background: #3b82f640; } ::-moz-selection { background: #3b82f640; } @keyframes agencyPageEnter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } } .agency-page-enter { animation: agencyPageEnter 260ms cubic-bezier(0.16, 1, 0.3, 1); } @media (prefers-reduced-motion: reduce) { .agency-page-enter { animation: none !important; } }` }} />
       {theme.isDark && (<div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />)}
 
-      {hasPaymentIssue && isAccessibleRoute && (<div className="sticky z-40 px-4 py-3 flex items-center justify-between gap-3" style={{ top: 0, backgroundColor: theme.errorBg, borderBottom: `1px solid ${theme.errorBorder}` }}><div className="flex items-center gap-3"><CreditCard className="h-5 w-5 flex-shrink-0" style={{ color: theme.error }} /><div><p className="font-medium text-sm" style={{ color: theme.errorText }}>Payment failed</p><p className="text-xs" style={{ color: theme.errorText, opacity: 0.7 }}>Please update your payment method to continue using your agency.</p></div></div>{!pathname?.startsWith('/agency/settings') && (<Link href="/agency/settings" className="rounded-full px-4 py-2 text-sm font-medium transition-colors flex-shrink-0" style={{ backgroundColor: '#ef4444', color: '#ffffff' }}>Update Payment</Link>)}</div>)}
+      {hasPaymentIssue && isAccessibleRoute && (<div className="sticky z-40 px-4 py-3 flex items-center justify-between gap-3" style={{ top: 0, backgroundColor: '#ef4444' }}><div className="flex items-center gap-3 min-w-0"><CreditCard className="h-5 w-5 flex-shrink-0" style={{ color: '#ffffff' }} /><div className="min-w-0"><p className="font-semibold text-sm truncate" style={{ color: '#ffffff' }}>Your payment failed, your agency is paused</p><p className="text-xs truncate" style={{ color: '#ffffff', opacity: 0.85 }}>Update your card to restore full access. Nothing is lost.</p></div></div><button onClick={openBillingPortal} disabled={billingLoading} className="rounded-full px-5 py-2.5 text-sm font-semibold transition-colors flex-shrink-0 inline-flex items-center justify-center gap-2 disabled:opacity-70" style={{ backgroundColor: '#ffffff', color: '#ef4444' }}>{billingLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}<span className="hidden sm:inline">Update Payment Method</span><span className="sm:hidden">Update</span></button></div>)}
 
       {/* Mobile header */}
       <div className="sticky z-30 md:hidden" style={{ backgroundColor: theme.sidebarBg, paddingTop: 'env(safe-area-inset-top)', top: hasPaymentIssue && isAccessibleRoute ? '60px' : 0 }}><header className="flex items-center justify-between px-4 py-2" style={{ minHeight: '64px', borderBottom: `1px solid ${theme.sidebarBorder}` }}><div className="flex items-center gap-3 min-w-0">{branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} style={{ height: `min(${navLogoHeight(40)}, 80px)`, width: 'auto', maxWidth: '100%' }} className="object-contain flex-shrink-0" />) : (<><div className="flex items-center justify-center rounded-xl" style={{ height: '40px', width: '40px', backgroundColor: theme.primary15, border: `1px solid ${theme.sidebarBorder}` }}><WaveformIcon className="h-6 w-6" color={theme.primary} /></div><span className="font-semibold text-lg truncate max-w-[180px]" style={{ color: theme.sidebarText }}>{branding.name}</span></>)}</div><button onClick={() => setSidebarOpen(true)} className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors" style={{ color: theme.sidebarText }}><Menu className="h-7 w-7" /></button></header></div>
@@ -513,11 +543,11 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
         <div className="hidden md:flex items-center gap-3 px-6 py-3 overflow-hidden" style={{ flexGrow: 0, flexShrink: 1, flexBasis: navLogoHeight(32), minHeight: '48px', maxHeight: navLogoHeight(32), borderBottom: `1px solid ${theme.sidebarBorder}` }}>{branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} style={{ maxHeight: '100%', width: 'auto', maxWidth: '100%' }} className="object-contain flex-shrink-0" />) : (<><div className="flex items-center justify-center rounded-lg" style={{ height: '32px', width: '32px', backgroundColor: theme.primary15, border: `1px solid ${theme.sidebarBorder}` }}><WaveformIcon className="h-5 w-5" color={theme.primary} /></div><span className="font-semibold truncate" style={{ color: theme.sidebarText }}>{branding.name}</span></>)}</div>
 
         <nav className={`min-h-0 ${navPadClass} ${navGapClass}`} style={{ flexGrow: 1, flexShrink: 0, flexBasis: 'auto' }}>
-          {filteredNavItems.map((item) => { const active = isActive(item.href); const isLocked = item.locked === true; const route = AGENCY_HREF_ROUTE[item.href]; const IconComponent: any = (route && navIcon(agency?.icon_style, route)) || item.icon; return (
-            <Link key={item.href} data-tour={'nav-' + item.href.replace('/agency/', '')} href={item.href} onClick={() => setSidebarOpen(false)} className={`flex items-center justify-between rounded-xl px-3 py-3 ${navItemPadY} text-sm font-medium transition-all`} style={isLocked ? { color: theme.sidebarTextMuted, opacity: 0.6, cursor: 'pointer' } : active ? { backgroundColor: theme.sidebarActiveItemBg, color: theme.sidebarActiveItemColor } : { color: theme.sidebarText }} onMouseEnter={(e) => { if (!isLocked && !active) { (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover; } }} onMouseLeave={(e) => { if (!isLocked && !active) { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; } }} title={isLocked ? `Upgrade to ${item.upgradeRequired} to unlock` : undefined}>
+          {filteredNavItems.map((item) => { const active = isActive(item.href); const planLocked = item.locked === true; const payLocked = hasPaymentIssue && !item.href.startsWith('/agency/settings'); const isLocked = planLocked || payLocked; const targetHref = payLocked ? '/agency/settings' : item.href; const route = AGENCY_HREF_ROUTE[item.href]; const IconComponent: any = (route && navIcon(agency?.icon_style, route)) || item.icon; return (
+            <Link key={item.href} data-tour={'nav-' + item.href.replace('/agency/', '')} href={targetHref} onClick={() => setSidebarOpen(false)} className={`flex items-center justify-between rounded-xl px-3 py-3 ${navItemPadY} text-sm font-medium transition-all`} style={isLocked ? { color: theme.sidebarTextMuted, opacity: 0.6, cursor: 'pointer' } : active ? { backgroundColor: theme.sidebarActiveItemBg, color: theme.sidebarActiveItemColor } : { color: theme.sidebarText }} onMouseEnter={(e) => { if (!isLocked && !active) { (e.currentTarget as HTMLElement).style.backgroundColor = theme.sidebarHover; } }} onMouseLeave={(e) => { if (!isLocked && !active) { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; } }} title={payLocked ? 'Update your payment method to unlock' : (planLocked ? `Upgrade to ${item.upgradeRequired} to unlock` : undefined)}>
               <div className="flex items-center gap-3">{!noNavIcons && <IconComponent className="h-5 w-5" />}<span>{item.label}</span>{isLocked && <Lock className="h-3.5 w-3.5 ml-1" />}</div>
               {active && !isLocked && <ChevronRight className="h-4 w-4 md:hidden" />}
-              {isLocked && (<span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: theme.sidebarHover, color: theme.sidebarTextMuted }}>{item.upgradeRequired}</span>)}
+              {planLocked && (<span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: theme.sidebarHover, color: theme.sidebarTextMuted }}>{item.upgradeRequired}</span>)}
             </Link>); })}
         </nav>
 
@@ -540,7 +570,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       {/* FAQ/help bot: desktop only. On mobile it floats over action buttons
           (e.g. the leads "Open Gmail" / "Call" row), so it's hidden there. */}
       <div className="hidden md:block">
-        <SupportWidget theme={theme} userType="agency" agencyId={agency?.id} hideLauncher={pathname?.startsWith('/agency/inbox')} />
+        {!hasPaymentIssue && <SupportWidget theme={theme} userType="agency" agencyId={agency?.id} hideLauncher={pathname?.startsWith('/agency/inbox')} />}
       </div>
     </div>
     <TourOverlay />
