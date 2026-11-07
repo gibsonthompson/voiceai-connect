@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useState, useEffect } from 'react';
+import { ReactNode, useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { LayoutDashboard, Users, Settings, LogOut, Loader2, BarChart3, Target, Send, Globe, Phone, Menu, X, ChevronRight, Gift, CreditCard, Lock, Cpu, Zap, Paintbrush, Clock, Headphones, Headset, Check, Crown, Shield, Inbox, LifeBuoy, Compass, type LucideIcon } from 'lucide-react';
@@ -151,6 +151,13 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   const SignOutIcon = navIcon(agency?.icon_style, 'signout');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  // The payment-failed status bar is sticky at the very top. The nav (sidebar)
+  // and the mobile header must sit BELOW it by exactly its height. We measure
+  // that height instead of hardcoding it, because the shell is zoomed (0.8) and
+  // the bar's text wraps at narrow widths, so any fixed px guess drifts and the
+  // nav ends up overlapping the bar.
+  const bannerRef = useRef<HTMLDivElement | null>(null);
+  const [bannerH, setBannerH] = useState(0);
   const [subscribeLoading, setSubscribeLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const theme = useTheme();
@@ -172,6 +179,9 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   // so they are excluded here. Payment-failed (past_due/unpaid) agencies keep
   // the existing in-shell wall.
   const shouldBlockAccess = hasPaymentIssue && !isAccessibleRoute && !agencyIsSuspended && !agency?.is_call_center;
+  // The status bar only coexists with the nav on accessible routes (settings);
+  // elsewhere a payment-failed agency gets the full-screen blocked view instead.
+  const showBanner = hasPaymentIssue && isAccessibleRoute;
 
   const navItems: NavItem[] = [
     { href: '/agency/dashboard', label: 'Dashboard', icon: LayoutDashboard, permissionKey: 'dashboard' },
@@ -261,6 +271,18 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => { const checkMobile = () => setIsMobile(window.innerWidth < 768); checkMobile(); window.addEventListener('resize', checkMobile); return () => window.removeEventListener('resize', checkMobile); }, []);
+  // Keep bannerH in sync with the rendered status bar: measure on show, on
+  // resize, and on any reflow (text wrap) via ResizeObserver. Reset to 0 when
+  // the bar is not shown so the nav sits flush at the top.
+  useEffect(() => {
+    if (!showBanner) { setBannerH(0); return; }
+    const measure = () => { const el = bannerRef.current; if (el) setBannerH(el.offsetHeight); };
+    measure();
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined' && bannerRef.current) { ro = new ResizeObserver(measure); ro.observe(bannerRef.current); }
+    window.addEventListener('resize', measure);
+    return () => { if (ro) ro.disconnect(); window.removeEventListener('resize', measure); };
+  }, [showBanner]);
   useEffect(() => { setSidebarOpen(false); }, [pathname]);
   useEffect(() => { if (sidebarOpen && isMobile) { document.body.style.overflow = 'hidden'; } else { document.body.style.overflow = ''; } return () => { document.body.style.overflow = ''; }; }, [sidebarOpen, isMobile]);
 
@@ -530,15 +552,15 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       <style dangerouslySetInnerHTML={{ __html: `::selection { background: #3b82f640; } ::-moz-selection { background: #3b82f640; } @keyframes agencyPageEnter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } } .agency-page-enter { animation: agencyPageEnter 260ms cubic-bezier(0.16, 1, 0.3, 1); } @media (prefers-reduced-motion: reduce) { .agency-page-enter { animation: none !important; } }` }} />
       {theme.isDark && (<div className="fixed inset-0 pointer-events-none opacity-[0.02] z-50" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} />)}
 
-      {hasPaymentIssue && isAccessibleRoute && (<div className="sticky z-40 px-4 py-3 flex items-center justify-between gap-3" style={{ top: 0, backgroundColor: '#ef4444' }}><div className="flex items-center gap-3 min-w-0"><CreditCard className="h-5 w-5 flex-shrink-0" style={{ color: '#ffffff' }} /><div className="min-w-0"><p className="font-semibold text-sm truncate" style={{ color: '#ffffff' }}>Your payment failed, your agency is paused</p><p className="text-xs truncate" style={{ color: '#ffffff', opacity: 0.85 }}>Update your card to restore full access. Nothing is lost.</p></div></div><button onClick={openBillingPortal} disabled={billingLoading} className="rounded-full px-5 py-2.5 text-sm font-semibold transition-colors flex-shrink-0 inline-flex items-center justify-center gap-2 disabled:opacity-70" style={{ backgroundColor: '#ffffff', color: '#ef4444' }}>{billingLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}<span className="hidden sm:inline">Update Payment Method</span><span className="sm:hidden">Update</span></button></div>)}
+      {showBanner && (<div ref={bannerRef} className="sticky z-[60] px-4 py-3 flex items-center justify-between gap-3" style={{ top: 0, backgroundColor: '#ef4444' }}><div className="flex items-center gap-3 min-w-0"><CreditCard className="h-5 w-5 flex-shrink-0" style={{ color: '#ffffff' }} /><div className="min-w-0"><p className="font-semibold text-sm truncate" style={{ color: '#ffffff' }}>Your payment failed, your agency is paused</p><p className="text-xs truncate" style={{ color: '#ffffff', opacity: 0.85 }}>Update your card to restore full access. Nothing is lost.</p></div></div><button onClick={openBillingPortal} disabled={billingLoading} className="rounded-full px-5 py-2.5 text-sm font-semibold transition-colors flex-shrink-0 inline-flex items-center justify-center gap-2 disabled:opacity-70" style={{ backgroundColor: '#ffffff', color: '#ef4444' }}>{billingLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}<span className="hidden sm:inline">Update Payment Method</span><span className="sm:hidden">Update</span></button></div>)}
 
       {/* Mobile header */}
-      <div className="sticky z-30 md:hidden" style={{ backgroundColor: theme.sidebarBg, paddingTop: 'env(safe-area-inset-top)', top: hasPaymentIssue && isAccessibleRoute ? '60px' : 0 }}><header className="flex items-center justify-between px-4 py-2" style={{ minHeight: '64px', borderBottom: `1px solid ${theme.sidebarBorder}` }}><div className="flex items-center gap-3 min-w-0">{branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} style={{ height: `min(${navLogoHeight(40)}, 80px)`, width: 'auto', maxWidth: '100%' }} className="object-contain flex-shrink-0" />) : (<><div className="flex items-center justify-center rounded-xl" style={{ height: '40px', width: '40px', backgroundColor: theme.primary15, border: `1px solid ${theme.sidebarBorder}` }}><WaveformIcon className="h-6 w-6" color={theme.primary} /></div><span className="font-semibold text-lg truncate max-w-[180px]" style={{ color: theme.sidebarText }}>{branding.name}</span></>)}</div><button onClick={() => setSidebarOpen(true)} className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors" style={{ color: theme.sidebarText }}><Menu className="h-7 w-7" /></button></header></div>
+      <div className="sticky z-30 md:hidden" style={{ backgroundColor: theme.sidebarBg, paddingTop: 'env(safe-area-inset-top)', top: showBanner ? bannerH : 0 }}><header className="flex items-center justify-between px-4 py-2" style={{ minHeight: '64px', borderBottom: `1px solid ${theme.sidebarBorder}` }}><div className="flex items-center gap-3 min-w-0">{branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} style={{ height: `min(${navLogoHeight(40)}, 80px)`, width: 'auto', maxWidth: '100%' }} className="object-contain flex-shrink-0" />) : (<><div className="flex items-center justify-center rounded-xl" style={{ height: '40px', width: '40px', backgroundColor: theme.primary15, border: `1px solid ${theme.sidebarBorder}` }}><WaveformIcon className="h-6 w-6" color={theme.primary} /></div><span className="font-semibold text-lg truncate max-w-[180px]" style={{ color: theme.sidebarText }}>{branding.name}</span></>)}</div><button onClick={() => setSidebarOpen(true)} className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors" style={{ color: theme.sidebarText }}><Menu className="h-7 w-7" /></button></header></div>
 
       {sidebarOpen && isMobile && (<div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden" onClick={() => setSidebarOpen(false)} />)}
 
       {/* Sidebar */}
-      <aside className={`brand-shell brand-display fixed inset-y-0 left-0 z-50 w-72 md:w-64 flex flex-col overflow-y-auto transform transition-transform duration-300 ease-out ${isMobile ? `${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}` : 'translate-x-0'}`} style={{ backgroundColor: theme.sidebarBg, borderRight: `1px solid ${theme.sidebarBorder}`, paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0, top: !isMobile ? (hasPaymentIssue && isAccessibleRoute ? '60px' : 0) : 0 }}>
+      <aside className={`brand-shell brand-display fixed inset-y-0 left-0 z-50 w-72 md:w-64 flex flex-col overflow-y-auto transform transition-transform duration-300 ease-out ${isMobile ? `${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}` : 'translate-x-0'}`} style={{ backgroundColor: theme.sidebarBg, borderRight: `1px solid ${theme.sidebarBorder}`, paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0, top: showBanner ? bannerH : 0 }}>
         <div className="flex md:hidden items-center justify-between h-16 px-4" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}><span className="font-semibold text-lg" style={{ color: theme.sidebarText }}>Menu</span><button onClick={() => setSidebarOpen(false)} className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors" style={{ color: theme.sidebarText }}><X className="h-7 w-7" /></button></div>
         <div className="hidden md:flex items-center gap-3 px-6 py-3 overflow-hidden" style={{ flexGrow: 0, flexShrink: 1, flexBasis: navLogoHeight(32), minHeight: '48px', maxHeight: navLogoHeight(32), borderBottom: `1px solid ${theme.sidebarBorder}` }}>{branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} style={{ maxHeight: '100%', width: 'auto', maxWidth: '100%' }} className="object-contain flex-shrink-0" />) : (<><div className="flex items-center justify-center rounded-lg" style={{ height: '32px', width: '32px', backgroundColor: theme.primary15, border: `1px solid ${theme.sidebarBorder}` }}><WaveformIcon className="h-5 w-5" color={theme.primary} /></div><span className="font-semibold truncate" style={{ color: theme.sidebarText }}>{branding.name}</span></>)}</div>
 
