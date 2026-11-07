@@ -797,7 +797,7 @@ export default function CallScriptModal({
             <div className="flex-1 px-4 sm:px-6 py-3 overflow-y-auto" ref={scriptRef}>
               {composing && (
                 <div className="flex items-center gap-2 text-sm py-8 justify-center" style={{ color: theme.textMuted }}>
-                  <Loader2 className="h-4 w-4 animate-spin" style={{ color: theme.primary }} />
+                  <Loader2 className="h-4 w-4 animate-spin" style={{ color: theme.iconColor }} />
                   Preparing script...
                 </div>
               )}

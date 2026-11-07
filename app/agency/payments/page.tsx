@@ -226,7 +226,7 @@ export default function AgencyPaymentsPage() {
   if (contextLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} />
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.iconColor }} />
       </div>
     );
   }
@@ -239,7 +239,7 @@ export default function AgencyPaymentsPage() {
     return (
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="flex items-center gap-3 mb-6 sm:mb-8">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Wallet className="h-5 w-5" style={{ color: theme.primary }} /></div>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Wallet className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Payments</h1>
             <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>Your balance, payouts, and client payments.</p>
@@ -286,7 +286,7 @@ export default function AgencyPaymentsPage() {
     return (
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="flex items-center gap-3 mb-6 sm:mb-8">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Wallet className="h-5 w-5" style={{ color: theme.primary }} /></div>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Wallet className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Payments</h1>
             <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>Your balance, payouts, and client payments.</p>
@@ -302,7 +302,7 @@ export default function AgencyPaymentsPage() {
 
         <div className="rounded-2xl p-6 sm:p-8 text-center" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl mb-4" style={{ backgroundColor: theme.primary15 }}>
-            <CreditCard className="h-7 w-7" style={{ color: theme.primary }} />
+            <CreditCard className="h-7 w-7" style={{ color: theme.iconColor }} />
           </div>
           <h2 className="text-lg font-semibold" style={{ color: theme.text }}>Connect Stripe to see your money</h2>
           <p className="mt-1.5 text-sm max-w-md mx-auto" style={{ color: theme.textMuted }}>
@@ -348,7 +348,7 @@ export default function AgencyPaymentsPage() {
       {/* Header */}
       <div className="mb-6 sm:mb-8 flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Wallet className="h-5 w-5" style={{ color: theme.primary }} /></div>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Wallet className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Payments</h1>
             <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>Your balance, payouts, and client payments.</p>
@@ -414,7 +414,7 @@ export default function AgencyPaymentsPage() {
               )}
             </div>
             <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: theme.primary15 }}>
-              <Wallet className="h-5 w-5" style={{ color: theme.primary }} />
+              <Wallet className="h-5 w-5" style={{ color: theme.iconColor }} />
             </div>
           </div>
         </div>
@@ -453,7 +453,7 @@ export default function AgencyPaymentsPage() {
               )}
             </div>
             <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: theme.primary15 }}>
-              <ArrowDownToLine className="h-4 w-4" style={{ color: theme.primary }} />
+              <ArrowDownToLine className="h-4 w-4" style={{ color: theme.iconColor }} />
             </div>
           </div>
         </div>

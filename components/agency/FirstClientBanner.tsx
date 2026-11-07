@@ -29,11 +29,11 @@ export default function FirstClientBanner() {
     <div className="mb-5 rounded-xl px-4 py-3 flex items-center gap-3"
       style={{ background: theme.isDark ? `linear-gradient(90deg, ${theme.primary15}, transparent)` : `linear-gradient(90deg, ${theme.primary10}, transparent)`, border: `1px solid ${theme.primary30}` }}>
       <span className="h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>
-        <Rocket className="h-4 w-4" style={{ color: theme.primary }} />
+        <Rocket className="h-4 w-4" style={{ color: theme.iconColor }} />
       </span>
       <div className="min-w-0 flex-1">
         <a href="/agency/acquisition" className="text-sm font-semibold inline-flex items-center gap-1" style={{ color: theme.text }}>
-          Land your next client <ChevronRight className="h-3.5 w-3.5" style={{ color: theme.primary }} />
+          Land your next client <ChevronRight className="h-3.5 w-3.5" style={{ color: theme.iconColor }} />
         </a>
         <p className="text-[12px]" style={{ color: theme.textMuted }}>See your pipeline and follow up the prospects who called your demo line.</p>
       </div>

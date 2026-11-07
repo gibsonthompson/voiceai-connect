@@ -528,7 +528,7 @@ export default function AddToHomeScreenModal({ clientId, theme, isOpen: controll
           <div className="flex items-center justify-between gap-3 p-4" style={{ borderBottom: `1px solid ${theme.border}` }}>
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.15 : 0.08) }}>
-                <Smartphone className="w-4.5 h-4.5" style={{ color: theme.primary }} />
+                <Smartphone className="w-4.5 h-4.5" style={{ color: theme.iconColor }} />
               </div>
               <div className="min-w-0">
                 <h2 className="font-semibold text-sm truncate" style={{ color: theme.text }}>
@@ -548,7 +548,7 @@ export default function AddToHomeScreenModal({ clientId, theme, isOpen: controll
           {alreadyInstalled && (
             <div className="p-5 text-center">
               <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.15 : 0.08) }}>
-                <Smartphone className="w-7 h-7" style={{ color: theme.primary }} />
+                <Smartphone className="w-7 h-7" style={{ color: theme.iconColor }} />
               </div>
               <p className="text-sm font-medium mb-1" style={{ color: theme.text }}>You&apos;re all set!</p>
               <p className="text-xs" style={{ color: theme.textMuted }}>This app is already installed on your device.</p>

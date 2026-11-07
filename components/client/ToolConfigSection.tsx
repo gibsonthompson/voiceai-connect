@@ -305,7 +305,7 @@ export default function ToolConfigSection({ clientId, theme, compact, industry }
     <section className={compact ? '' : 'mb-4 sm:mb-6'}>
       {!compact && (
       <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}>
-        <Shield className="w-4 h-4" style={{ color: theme.primary }} />
+        <Shield className="w-4 h-4" style={{ color: theme.iconColor }} />
         AI Tools
         {saved && (
           <span className="text-[10px] font-medium flex items-center gap-1 px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.successBg, color: theme.success }}>

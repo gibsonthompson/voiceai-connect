@@ -141,7 +141,7 @@ function CallStat({ icon: Icon, label, value, theme }: { icon: any; label: strin
     <div className="rounded-xl p-3 sm:p-5" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
       <div className="flex items-center gap-2 sm:gap-4">
         <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>
-          <Icon className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: theme.primary }} />
+          <Icon className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: theme.iconColor }} />
         </div>
         <div className="min-w-0">
           <p className="text-[10px] sm:text-sm" style={{ color: theme.textMuted }}>{label}</p>
@@ -251,7 +251,7 @@ export default function AgencyAnalyticsPage() {
   if (contextLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} />
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.iconColor }} />
       </div>
     );
   }
@@ -260,7 +260,7 @@ export default function AgencyAnalyticsPage() {
     <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6 sm:mb-8">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><TrendingUp className="h-5 w-5" style={{ color: theme.primary }} /></div>
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><TrendingUp className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
         <div>
           <h1 data-tour="tour-analytics" className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Analytics & Revenue</h1>
           <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>Track your earnings and client metrics.</p>
@@ -396,7 +396,7 @@ export default function AgencyAnalyticsPage() {
               className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl flex-shrink-0"
               style={{ backgroundColor: theme.primary15 }}
             >
-              <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: theme.primary }} />
+              <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: theme.iconColor }} />
             </div>
             <div className="min-w-0">
               <p className="text-[10px] sm:text-sm" style={{ color: theme.textMuted }}>Monthly Recurring</p>

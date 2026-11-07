@@ -134,7 +134,7 @@ export function ContactAgencyButton({ client, agencyName }: { client: any; agenc
             <div className="text-center py-6">
               <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
                 style={{ backgroundColor: hexToRgba(theme.primary, 0.15) }}>
-                <Check className="h-7 w-7" style={{ color: theme.primary }} />
+                <Check className="h-7 w-7" style={{ color: theme.iconColor }} />
               </div>
               <h4 className="text-base font-semibold mb-1.5" style={{ color: theme.text }}>Message sent</h4>
               <p className="text-sm" style={{ color: theme.textMuted }}>

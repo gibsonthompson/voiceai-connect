@@ -157,7 +157,7 @@ export default function ClientAgencyMessages({ onUnreadChange }: { onUnreadChang
 
         <div className="px-4 py-4 space-y-3 max-h-[min(60vh,560px)] overflow-y-auto">
           {threadLoading ? (
-            <div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.primary }} /></div>
+            <div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.iconColor }} /></div>
           ) : messages.map(m => {
             const mine = m.sender === 'client';
             return (
@@ -249,12 +249,12 @@ export default function ClientAgencyMessages({ onUnreadChange }: { onUnreadChang
       </div>
 
       {listLoading ? (
-        <div className="py-12 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.primary }} /></div>
+        <div className="py-12 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.iconColor }} /></div>
       ) : threads.length === 0 ? (
         <div className="p-12 text-center">
           <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl mb-4"
             style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
-            <MessageSquare className="h-7 w-7" style={{ color: theme.primary }} />
+            <MessageSquare className="h-7 w-7" style={{ color: theme.iconColor }} />
           </div>
           <p className="text-sm" style={{ color: theme.text }}>No messages with {agencyName} yet</p>
           <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Start a conversation and their replies will show up here.</p>

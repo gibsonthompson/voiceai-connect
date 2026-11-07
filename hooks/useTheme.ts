@@ -80,6 +80,25 @@ function withAlpha(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
+// A brand-accent color safe to render as an ICON or small foreground ON a card.
+// When the brand primary is too close in luminance to the card background (e.g.
+// a teal card + teal primary), a plain `primary` icon washes out. In that case
+// we keep the hue but push it strongly toward black (on a light card) or white
+// (on a dark card) so it stays on-brand but readable.
+function iconAccentFor(primary: string, cardBg: string): string {
+  const diff = Math.abs(getLuminance(primary) - getLuminance(cardBg));
+  if (diff >= 0.22) return primary;
+  const c = primary.replace('#', '');
+  if (c.length < 6) return primary;
+  const r = parseInt(c.substring(0, 2), 16);
+  const g = parseInt(c.substring(2, 4), 16);
+  const b = parseInt(c.substring(4, 6), 16);
+  const target = isLightColor(cardBg) ? 0 : 255;
+  const amt = 0.62;
+  const mix = (v: number) => Math.round(v + (target - v) * amt).toString(16).padStart(2, '0');
+  return `#${mix(r)}${mix(g)}${mix(b)}`;
+}
+
 function isValidHex(val: string | undefined | null): val is string {
   if (!val) return false;
   return /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(val);
@@ -132,6 +151,8 @@ function hasSufficientContrast(fg: string, bg: string): boolean {
 export interface Theme {
   isDark: boolean;
   primary: string;
+  iconColor: string;
+  iconBg: string;
   primaryText: string;
   primary10: string;
   primary15: string;
@@ -230,6 +251,9 @@ function buildDarkTheme(primary: string, overrides?: BrandingOverrides): Theme {
     primary20: withAlpha(primary, 0.20),
     primary30: withAlpha(primary, 0.30),
     primary80: withAlpha(primary, 0.80),
+    // Contrast-safe brand accent for icons/small foregrounds on cards.
+    iconColor: iconAccentFor(primary, cardBg),
+    iconBg: withAlpha(iconAccentFor(primary, cardBg), 0.14),
 
     bg: pageBg,
     text: textPrimary,
@@ -327,6 +351,9 @@ function buildLightTheme(primary: string, overrides?: BrandingOverrides): Theme 
     primary20: withAlpha(primary, 0.20),
     primary30: withAlpha(primary, 0.30),
     primary80: withAlpha(primary, 0.80),
+    // Contrast-safe brand accent for icons/small foregrounds on cards.
+    iconColor: iconAccentFor(primary, cardBg),
+    iconBg: withAlpha(iconAccentFor(primary, cardBg), 0.14),
 
     bg: pageBg,
     text: textPrimary,

@@ -90,7 +90,7 @@ function IndustryGatingBody({ hideHeader, embedded }: { hideHeader?: boolean; em
 
   const Header = hideHeader ? null : (
     <div className="flex items-center gap-2 mb-1">
-      <Store className="h-4 w-4" style={{ color: theme.primary }} />
+      <Store className="h-4 w-4" style={{ color: theme.iconColor }} />
       <h4 className="font-medium text-sm sm:text-base" style={{ color: theme.text }}>Industries you sell to</h4>
     </div>
   );
@@ -104,7 +104,7 @@ function IndustryGatingBody({ hideHeader, embedded }: { hideHeader?: boolean; em
           Limit which industries clients can choose at signup, or lock your agency to a single vertical.
         </p>
         <div className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm" style={{ background: theme.primary15, color: theme.text }}>
-          <Lock className="h-4 w-4 shrink-0" style={{ color: theme.primary }} />
+          <Lock className="h-4 w-4 shrink-0" style={{ color: theme.iconColor }} />
           <span>Available on <strong>Pro</strong> and up. Upgrade to gate your signup by industry.</span>
         </div>
       </div>
@@ -120,7 +120,7 @@ function IndustryGatingBody({ hideHeader, embedded }: { hideHeader?: boolean; em
 
       {/* Help / explainer */}
       <div className="flex items-start gap-2 rounded-lg px-3 py-2.5 mb-4 text-xs leading-relaxed" style={{ background: theme.primary15, color: theme.text }}>
-        <Info className="h-4 w-4 shrink-0 mt-0.5" style={{ color: theme.primary }} />
+        <Info className="h-4 w-4 shrink-0 mt-0.5" style={{ color: theme.iconColor }} />
         <div>
           <span className="font-medium">Allow all</span> offers every industry. <span className="font-medium">Limit</span> shows only the ones you choose. Pick exactly <span className="font-medium">one</span> to run a fully vertical agency, the industry step disappears from signup and every client is set up for that vertical automatically.
         </div>
@@ -141,7 +141,7 @@ function IndustryGatingBody({ hideHeader, embedded }: { hideHeader?: boolean; em
         <>
           {single && (
             <div className="flex items-center gap-2 rounded-lg px-3 py-2 mb-3 text-xs" style={{ background: theme.primary15, color: theme.text }}>
-              <Layers className="h-3.5 w-3.5 shrink-0" style={{ color: theme.primary }} />
+              <Layers className="h-3.5 w-3.5 shrink-0" style={{ color: theme.iconColor }} />
               <span>Fully vertical: clients skip the industry step and are all set up as <strong>{singleLabel}</strong>.</span>
             </div>
           )}
@@ -191,7 +191,7 @@ export default function IndustryGating({ collapsible = false, defaultOpen = true
       <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open}
         className="w-full flex items-center justify-between px-4 sm:px-5 py-3.5 transition-colors">
         <span className="flex items-center gap-2">
-          <Store className="h-4 w-4" style={{ color: theme.primary }} />
+          <Store className="h-4 w-4" style={{ color: theme.iconColor }} />
           <span className="font-medium text-sm sm:text-base" style={{ color: theme.text }}>Industries you sell to</span>
         </span>
         <ChevronDown className="h-4 w-4 transition-transform" style={{ color: theme.textMuted, transform: open ? 'rotate(180deg)' : 'none' }} />

@@ -361,7 +361,7 @@ export default function CcCommandBar() {
                         style={{ backgroundColor: active ? theme.active : 'transparent' }}
                       >
                         <span className="flex h-7 w-7 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>
-                          <Icon className="h-3.5 w-3.5" style={{ color: theme.primary }} />
+                          <Icon className="h-3.5 w-3.5" style={{ color: theme.iconColor }} />
                         </span>
                         <span className="min-w-0 flex-1">
                           <span className="block text-[13px] font-medium truncate" style={{ color: theme.text }}>{r.label}</span>

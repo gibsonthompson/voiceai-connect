@@ -854,7 +854,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
     <div className="text-center max-w-md mx-auto ob-fu">
       <div className="w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-5 ob-si"
         style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.12 : 0.06) }}>
-        <Sparkles className="w-8 h-8" style={{ color: theme.primary }} />
+        <Sparkles className="w-8 h-8" style={{ color: theme.iconColor }} />
       </div>
       <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2" style={{ color: theme.text }}>
         Let&apos;s set up your AI
@@ -873,7 +873,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
           <div key={i} className={`flex items-center gap-3 ob-fu ob-d${i + 1}`}>
             <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.1 : 0.05) }}>
-              <item.icon className="w-4 h-4" style={{ color: theme.primary }} />
+              <item.icon className="w-4 h-4" style={{ color: theme.iconColor }} />
             </div>
             <span className="text-sm" style={{ color: theme.text }}>{item.text}</span>
           </div>
@@ -1163,7 +1163,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
         {/* Additional Info */}
         <div className="mb-4">
           <label className="flex items-center gap-2 text-xs font-medium mb-2" style={{ color: theme.text }}>
-            <FileText className="w-3.5 h-3.5" style={{ color: theme.primary }} />
+            <FileText className="w-3.5 h-3.5" style={{ color: theme.iconColor }} />
             Anything else your AI should know?
           </label>
           <textarea value={additionalInfo} onChange={e => setAdditionalInfo(e.target.value)}
@@ -1174,7 +1174,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
         {/* Website */}
         <div>
           <label className="flex items-center gap-2 text-xs font-medium mb-2" style={{ color: theme.text }}>
-            <Globe className="w-3.5 h-3.5" style={{ color: theme.primary }} />
+            <Globe className="w-3.5 h-3.5" style={{ color: theme.iconColor }} />
             Website (optional)
           </label>
           <input type="url" value={websiteUrl} onChange={e => setWebsiteUrl(e.target.value)}
@@ -1253,7 +1253,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1">
                           <span className="font-semibold text-[13px] truncate" style={{ color: theme.text }}>{voice.name}</span>
-                          {sel && <Check className="w-3.5 h-3.5 flex-shrink-0" style={{ color: theme.primary }} />}
+                          {sel && <Check className="w-3.5 h-3.5 flex-shrink-0" style={{ color: theme.iconColor }} />}
                         </div>
                         <p className="text-[10px] truncate" style={{ color: theme.textMuted }}>{voice.accent} · {voice.style}</p>
                       </div>
@@ -1317,7 +1317,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
       <div className="max-w-lg mx-auto text-center ob-fu">
         <div className="w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-5 ob-si"
           style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.12 : 0.06) }}>
-          <Rocket className="w-8 h-8" style={{ color: theme.primary }} />
+          <Rocket className="w-8 h-8" style={{ color: theme.iconColor }} />
         </div>
         <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2" style={{ color: theme.text }}>
           You&apos;re ready!
@@ -1342,7 +1342,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
               <button onClick={copyPhone}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition"
                 style={glass}>
-                {copied ? <Check className="w-4 h-4" style={{ color: theme.primary }} /> : <Copy className="w-4 h-4" />}
+                {copied ? <Check className="w-4 h-4" style={{ color: theme.iconColor }} /> : <Copy className="w-4 h-4" />}
                 {copied ? 'Copied' : 'Copy'}
               </button>
               <button onClick={testCall}
@@ -1361,7 +1361,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
             {setupItems.map(item => (
               <div key={item.key} className="flex items-center gap-2">
                 {item.done ? (
-                  <CheckCircle className="w-4 h-4 flex-shrink-0" style={{ color: theme.primary }} />
+                  <CheckCircle className="w-4 h-4 flex-shrink-0" style={{ color: theme.iconColor }} />
                 ) : (
                   <div className="w-4 h-4 rounded-full border flex-shrink-0"
                     style={{ borderColor: theme.isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)' }} />
@@ -1401,7 +1401,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
   const renderWebsite = () => (
     <div className="max-w-lg mx-auto ob-fu">
       <div className="flex items-center justify-center w-14 h-14 rounded-2xl mb-5 mx-auto" style={{ backgroundColor: hexToRgba(theme.primary, 0.12) }}>
-        <Globe className="w-7 h-7" style={{ color: theme.primary }} />
+        <Globe className="w-7 h-7" style={{ color: theme.iconColor }} />
       </div>
       <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-1 text-center" style={{ color: theme.text }}>
         Start with your website
@@ -1438,7 +1438,7 @@ export default function OnboardingWizard({ client, onComplete }: Props) {
       {scanDone && scanSummary && (
         <div className="mt-4 rounded-xl p-4" style={{ backgroundColor: hexToRgba(theme.primary, 0.08), border: `1px solid ${hexToRgba(theme.primary, 0.18)}` }}>
           <div className="flex items-center gap-1.5 mb-2">
-            <CheckCircle className="w-4 h-4" style={{ color: theme.primary }} />
+            <CheckCircle className="w-4 h-4" style={{ color: theme.iconColor }} />
             <span className="text-sm font-semibold" style={{ color: theme.text }}>We scanned your website</span>
           </div>
           {(scanSummary.hours || scanSummary.services > 0 || scanSummary.staff > 0 || scanSummary.faqs > 0) ? (

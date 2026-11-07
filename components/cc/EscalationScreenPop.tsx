@@ -133,7 +133,7 @@ function OfferCard({
         {/* Caller + business */}
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>
-            <PhoneCall className="h-5 w-5" style={{ color: theme.primary }} />
+            <PhoneCall className="h-5 w-5" style={{ color: theme.iconColor }} />
           </div>
           <div className="min-w-0">
             <p className="text-[15px] font-semibold truncate" style={{ color: theme.text }}>{fmtPhone(offer.callerNumber)}</p>

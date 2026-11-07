@@ -55,7 +55,7 @@ export default function PlatformUnreadNudge({ agencyId }: { agencyId?: string })
       style={{ backgroundColor: rgba(theme.primary, 0.08), border: `1px solid ${rgba(theme.primary, 0.3)}` }}
     >
       <span className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: rgba(theme.primary, 0.15) }}>
-        <MessageSquare className="h-4 w-4" style={{ color: theme.primary }} />
+        <MessageSquare className="h-4 w-4" style={{ color: theme.iconColor }} />
       </span>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium" style={{ color: theme.text }}>
@@ -63,7 +63,7 @@ export default function PlatformUnreadNudge({ agencyId }: { agencyId?: string })
         </p>
         <p className="text-xs" style={{ color: theme.textMuted }}>Open your inbox to read and reply.</p>
       </div>
-      <ArrowRight className="h-4 w-4 flex-shrink-0" style={{ color: theme.primary }} />
+      <ArrowRight className="h-4 w-4 flex-shrink-0" style={{ color: theme.iconColor }} />
     </Link>
   );
 }

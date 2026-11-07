@@ -65,7 +65,7 @@ export default function CcDomain({ agencyId, theme }: { agencyId: string; theme:
   return (
     <div className="rounded-2xl p-5 sm:p-6" style={card}>
       <div className="flex items-center gap-3 mb-4">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Globe className="h-4 w-4" style={{ color: theme.primary }} /></div>
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Globe className="h-4 w-4" style={{ color: theme.iconColor }} /></div>
         <div className="min-w-0">
           <h2 className="font-semibold text-sm sm:text-[15px]" style={{ color: theme.text }}>Custom domain</h2>
           <p className="text-[12px]" style={{ color: theme.textMuted }}>Run the dashboard on your own domain. SSL is provisioned automatically once DNS verifies.</p>

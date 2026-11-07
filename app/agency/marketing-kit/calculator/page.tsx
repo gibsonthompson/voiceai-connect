@@ -94,7 +94,7 @@ export default function MissedCallCalculatorPage() {
 
       <div className="flex items-start gap-3 mb-6">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0 mt-0.5" style={{ backgroundColor: theme.primary15 }}>
-          <Calculator className="h-5 w-5" style={{ color: theme.primary }} />
+          <Calculator className="h-5 w-5" style={{ color: theme.iconColor }} />
         </div>
         <div>
           <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Missed-Call Revenue Calculator</h1>

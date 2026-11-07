@@ -144,7 +144,7 @@ export default function NewLeadPage() {
   if (contextLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} />
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.iconColor }} />
       </div>
     );
   }
@@ -329,7 +329,7 @@ export default function NewLeadPage() {
                     value={formData.status}
                     onChange={(v) => setFormData(prev => ({ ...prev, status: v }))}
                     options={STATUS_OPTIONS}
-                    ui={{ inputStyle, text: theme.text, muted: theme.textMuted, panelBg: theme.isDark ? '#232321' : '#ffffff', panelBorder: theme.inputBorder, hover: theme.hover, accent: theme.primary, isDark: theme.isDark }}
+                    ui={{ inputStyle, text: theme.text, muted: theme.textMuted, panelBg: theme.card, panelBorder: theme.inputBorder, hover: theme.hover, accent: theme.primary, isDark: theme.isDark }}
                   />
                 </div>
                 <div>
@@ -339,7 +339,7 @@ export default function NewLeadPage() {
                     onChange={(v) => setFormData(prev => ({ ...prev, source: v }))}
                     options={[{ value: '', label: 'Select source' }, ...SOURCE_OPTIONS]}
                     placeholder="Select source"
-                    ui={{ inputStyle, text: theme.text, muted: theme.textMuted, panelBg: theme.isDark ? '#232321' : '#ffffff', panelBorder: theme.inputBorder, hover: theme.hover, accent: theme.primary, isDark: theme.isDark }}
+                    ui={{ inputStyle, text: theme.text, muted: theme.textMuted, panelBg: theme.card, panelBorder: theme.inputBorder, hover: theme.hover, accent: theme.primary, isDark: theme.isDark }}
                   />
                 </div>
               </div>

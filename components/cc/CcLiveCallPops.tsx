@@ -162,14 +162,14 @@ export default function CcLiveCallPops({ agencyId }: { agencyId?: string }) {
           style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, color: theme.text }}
           title="Get a desktop alert when a new call comes in, even on another tab"
         >
-          <Bell className="h-3.5 w-3.5" style={{ color: theme.primary }} /> Enable alerts for new calls
+          <Bell className="h-3.5 w-3.5" style={{ color: theme.iconColor }} /> Enable alerts for new calls
         </button>
       )}
 
       {visible.slice(0, 4).map((c) => (
         <div key={c.sessionId} className="w-80 max-w-full rounded-2xl p-4 shadow-xl" style={card}>
           <div className="flex items-start gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Phone className="h-4 w-4" style={{ color: theme.primary }} /></div>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Phone className="h-4 w-4" style={{ color: theme.iconColor }} /></div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full animate-pulse flex-shrink-0" style={{ backgroundColor: c.humanOnCall ? '#f59e0b' : '#22c55e' }} />

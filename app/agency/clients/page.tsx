@@ -269,7 +269,7 @@ export default function AgencyClientsPage() {
   if (contextLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} />
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.iconColor }} />
       </div>
     );
   }
@@ -280,7 +280,7 @@ export default function AgencyClientsPage() {
       <div className="mb-6 sm:mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Users className="h-5 w-5" style={{ color: theme.primary }} /></div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Users className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
             <div>
               <h1 data-tour="tour-clients" className="text-xl sm:text-2xl font-semibold tracking-tight">Clients</h1>
               <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>
@@ -418,7 +418,7 @@ export default function AgencyClientsPage() {
                 { value: 'past_due', label: 'Past Due' },
                 { value: 'suspended', label: 'Suspended' },
               ]}
-              ui={{ inputStyle: { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }, text: theme.text, muted: theme.textMuted, panelBg: theme.isDark ? '#232321' : '#ffffff', panelBorder: theme.inputBorder, hover: theme.hover, accent: theme.primary, isDark: theme.isDark }}
+              ui={{ inputStyle: { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }, text: theme.text, muted: theme.textMuted, panelBg: theme.card, panelBorder: theme.inputBorder, hover: theme.hover, accent: theme.primary, isDark: theme.isDark }}
             />
           </div>
         </div>
@@ -434,7 +434,7 @@ export default function AgencyClientsPage() {
               ? `The receptionist you built for ${pendingTestClient.business_name} is saved and ready. Upgrade to Pro or Scale to give it a real phone number and call it live.`
               : 'Activate a working AI receptionist with its own phone number so you can call it and hear exactly what your clients get. Upgrade to Pro or Scale to unlock your test line.'}
             cta="Upgrade to unlock Test AI"
-            icon={<FlaskConical className="h-4 w-4" style={{ color: theme.primary }} />}
+            icon={<FlaskConical className="h-4 w-4" style={{ color: theme.iconColor }} />}
           />
         </div>
       )}
@@ -457,7 +457,7 @@ export default function AgencyClientsPage() {
                   className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" 
                   style={{ backgroundColor: theme.primary15 }}
                 >
-                  <FlaskConical className="h-4 w-4" style={{ color: theme.primary }} />
+                  <FlaskConical className="h-4 w-4" style={{ color: theme.iconColor }} />
                 </div>
                 <h3 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>
                   {pendingTestClient?.business_name ? `Activate ${pendingTestClient.business_name}` : 'Set up your test client'}

@@ -270,12 +270,12 @@ export default function ClientServicesSection({ clientId, theme, compact, indust
     <section className={compact ? '' : 'mb-4 sm:mb-6'}>
       {!compact && (
         <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}>
-          <Briefcase className="w-4 h-4" style={{ color: theme.primary }} />Services
+          <Briefcase className="w-4 h-4" style={{ color: theme.iconColor }} />Services
         </h2>
       )}
       {compact && !hideHeader && (
         <div className="flex items-center gap-2 mb-3">
-          <Briefcase className="w-4 h-4" style={{ color: theme.primary }} />
+          <Briefcase className="w-4 h-4" style={{ color: theme.iconColor }} />
           <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Services</span>
         </div>
       )}
@@ -301,7 +301,7 @@ export default function ClientServicesSection({ clientId, theme, compact, indust
                       const assignedNames = (svc.assigned_staff || []).map(id => staffMap[id]).filter(Boolean);
                       return (
                         <div key={svc.id} className="rounded-xl p-3 flex items-center gap-3 transition-all" style={{ ...glass, opacity: svc.is_active ? 1 : 0.5 }}>
-                          <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.12 : 0.06) }}><Briefcase className="h-4 w-4" style={{ color: theme.primary }} /></div>
+                          <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.12 : 0.06) }}><Briefcase className="h-4 w-4" style={{ color: theme.iconColor }} /></div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap"><p className="text-xs sm:text-sm font-medium truncate" style={{ color: theme.text }}>{svc.name}</p>{svc.price && <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.14 : 0.08), color: theme.primary }}>{svc.price}</span>}<span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: modeStyle.bg, color: modeStyle.color }}>{modeStyle.label}</span></div>
                             <div className="flex items-center gap-3 mt-0.5 flex-wrap">
@@ -322,7 +322,7 @@ export default function ClientServicesSection({ clientId, theme, compact, indust
                 )}
                 {suggestions.length > 0 && (
                   <div className="mb-3 rounded-xl p-3" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.06 : 0.04), border: `1px solid ${hexToRgba(theme.primary, theme.isDark ? 0.15 : 0.12)}` }}>
-                    <div className="flex items-center gap-1.5 mb-1.5"><Globe className="w-3.5 h-3.5" style={{ color: theme.primary }} /><span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: theme.primary }}>Found on your website</span></div>
+                    <div className="flex items-center gap-1.5 mb-1.5"><Globe className="w-3.5 h-3.5" style={{ color: theme.iconColor }} /><span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: theme.primary }}>Found on your website</span></div>
                     <p className="text-[10px] mb-2.5 leading-relaxed" style={{ color: theme.textMuted }}>Services we spotted on your site. Add the ones you offer (you can set a price), or dismiss the rest. These never overwrite a service you already have.</p>
                     <div className="flex flex-wrap gap-2">
                       {suggestions.map((sg, i) => (

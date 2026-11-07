@@ -100,7 +100,7 @@ export default function AgencyClientThread({ agencyId, backendUrl, requestId, re
 
       <div className="px-4 py-4 space-y-3 max-h-[min(50vh,460px)] overflow-y-auto">
         {loading ? (
-          <div className="py-8 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.primary }} /></div>
+          <div className="py-8 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.iconColor }} /></div>
         ) : messages.map(m => {
           const mine = m.sender === 'agency';
           return (

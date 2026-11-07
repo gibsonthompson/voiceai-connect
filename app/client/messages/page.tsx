@@ -524,7 +524,7 @@ export default function MessagesPage() {
 
       {showCompose && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={() => setShowCompose(false)}>
-          <div className="w-full max-w-sm rounded-2xl p-5" style={{ backgroundColor: theme.isDark ? '#141414' : '#ffffff', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}` }} onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-sm rounded-2xl p-5" style={{ backgroundColor: theme.card, border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}` }} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold" style={{ color: theme.text }}>New message</h3>
               <button onClick={() => setShowCompose(false)} style={{ color: theme.textMuted }}><ArrowLeft className="h-4 w-4" /></button>

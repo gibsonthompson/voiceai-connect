@@ -472,7 +472,7 @@ function ClientUpgradeContent() {
 
       {confirmPlan && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => { if (!changing) setConfirmPlan(null); }}>
-          <div className="w-full max-w-sm rounded-2xl p-6" style={{ ...glass, backgroundColor: isDark ? '#0c0c0c' : '#ffffff' }} onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-sm rounded-2xl p-6" style={{ ...glass, backgroundColor: theme.card }} onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-semibold mb-2" style={{ color: theme.text }}>Switch to {confirmPlan.name}?</h3>
             <p className="text-sm mb-5" style={{ color: theme.textMuted }}>Your plan changes right away and your AI receptionist keeps running. Your next invoice is adjusted automatically for the part of the cycle you have already used.</p>
             <div className="flex gap-3">

@@ -649,7 +649,7 @@ export default function AddClientPage() {
     inputStyle,
     text: textColor,
     muted: mutedTextColor,
-    panelBg: isDark ? '#232321' : '#ffffff',
+    panelBg: theme.card,
     panelBorder: inputBorder,
     hover: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)',
     accent: primaryColor,

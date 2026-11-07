@@ -175,7 +175,7 @@ export default function OutreachPage() {
       >
         <div className="p-4 sm:p-6 lg:p-8">
           <div className="flex items-center gap-3 mb-6">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Mail className="h-5 w-5" style={{ color: theme.primary }} /></div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Mail className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
             <div>
               <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Outreach</h1>
               <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>13 conversion-tested templates</p>
@@ -239,7 +239,7 @@ export default function OutreachPage() {
   if (contextLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} />
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.iconColor }} />
       </div>
     );
   }
@@ -342,7 +342,7 @@ export default function OutreachPage() {
               <div className="fixed inset-0 z-10" onClick={() => setActiveDropdown(null)} />
               <div 
                 className="absolute right-0 mt-1 w-32 sm:w-40 rounded-xl shadow-xl z-20"
-                style={{ backgroundColor: theme.isDark ? '#0f0f0f' : '#ffffff', border: `1px solid ${theme.inputBorder}` }}
+                style={{ backgroundColor: theme.card, border: `1px solid ${theme.inputBorder}` }}
               >
                 <Link
                   href={`/agency/outreach/templates/${template.id}`}
@@ -420,7 +420,7 @@ export default function OutreachPage() {
         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.hover)}
         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = theme.card)}>
         <div className="flex items-center gap-3 min-w-0">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0 overflow-hidden" style={{ backgroundColor: theme.primary15 }}>{(agency as any)?.logo_url ? <img src={(agency as any).logo_url} alt="" className="h-6 w-6 object-contain" /> : <Megaphone className="h-4 w-4" style={{ color: theme.primary }} />}</div>
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0 overflow-hidden" style={{ backgroundColor: theme.primary15 }}>{(agency as any)?.logo_url ? <img src={(agency as any).logo_url} alt="" className="h-6 w-6 object-contain" /> : <Megaphone className="h-4 w-4" style={{ color: theme.iconColor }} />}</div>
           <div className="min-w-0">
             <p className="text-sm font-semibold" style={{ color: theme.text }}>Marketing Kit</p>
             <p className="text-xs truncate" style={{ color: theme.textMuted }}>Branded QR codes, a print-ready one-pager, and scripts to land clients.</p>

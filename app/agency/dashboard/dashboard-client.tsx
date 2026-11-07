@@ -182,7 +182,7 @@ export default function AgencyDashboardPage() {
   const needsBillingSetup = isFreePlan && !agency?.stripe_customer_id && !agency?.is_call_center;
 
   if (contextLoading || loading) {
-    return (<div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} /></div>);
+    return (<div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.iconColor }} /></div>);
   }
 
   const statCards = [
@@ -245,7 +245,7 @@ export default function AgencyDashboardPage() {
             title="Test AI is a paid feature"
             message="Set up a fully working AI receptionist with its own phone number that you can call right now, and hear exactly what your clients get. Upgrade to Pro or Scale to unlock it."
             cta="Upgrade to unlock Test AI"
-            icon={<FlaskConical className="h-4 w-4" style={{ color: theme.primary }} />}
+            icon={<FlaskConical className="h-4 w-4" style={{ color: theme.iconColor }} />}
           />
         </div>
       )}
@@ -292,7 +292,7 @@ export default function AgencyDashboardPage() {
           <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${theme.primary}30` }}>
             <div className="h-full p-5 sm:p-6 flex flex-col" style={{ background: theme.isDark ? `linear-gradient(135deg, ${theme.primary}15 0%, ${theme.primary}05 100%)` : `linear-gradient(135deg, ${theme.primary}10 0%, ${theme.primary}03 100%)` }}>
               <div className="flex items-center gap-2 mb-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: theme.primary15 }}><Headphones className="h-4 w-4" style={{ color: theme.primary }} /></div>
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: theme.primary15 }}><Headphones className="h-4 w-4" style={{ color: theme.iconColor }} /></div>
                 <h3 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>Try Your AI Receptionist</h3>
               </div>
               <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>Call your demo number to hear it in action. Tell it what kind of business you run and watch it roleplay as your receptionist.</p>
@@ -307,7 +307,7 @@ export default function AgencyDashboardPage() {
         {/* Signup Link */}
         <div className="h-full rounded-xl p-5 sm:p-6 flex flex-col" style={{ background: theme.isDark ? `linear-gradient(135deg, ${theme.primary}12 0%, ${theme.primary}04 100%)` : `linear-gradient(135deg, ${theme.primary}10 0%, ${theme.primary}03 100%)`, border: `1px solid ${theme.primary30}` }}>
           <div className="flex items-center gap-2 mb-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: theme.primary15 }}><Link2 className="h-4 w-4" style={{ color: theme.primary }} /></div>
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: theme.primary15 }}><Link2 className="h-4 w-4" style={{ color: theme.iconColor }} /></div>
             <h3 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>Your Client Signup Link</h3>
           </div>
           <div className="rounded-lg px-3 py-2 mb-4" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', border: `1px solid ${theme.border}` }}>
@@ -334,7 +334,7 @@ export default function AgencyDashboardPage() {
       {/* MARKETING KIT quick access */}
       <a href="/agency/marketing-kit" className="mb-6 sm:mb-8 flex items-center justify-between gap-3 rounded-xl p-4 sm:p-5 transition-colors" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.hover)} onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = theme.card)}>
         <div className="flex items-center gap-3 min-w-0">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Megaphone className="h-5 w-5" style={{ color: theme.primary }} /></div>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Megaphone className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
           <div className="min-w-0">
             <h3 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>Marketing Kit</h3>
             <p className="text-xs sm:text-sm truncate" style={{ color: theme.textMuted }}>Branded QR codes, a print-ready one-pager, and scripts to land your first clients.</p>
@@ -346,19 +346,19 @@ export default function AgencyDashboardPage() {
       {/* SHARE YOUR DEMO */}
       {hasDemo && (
         <div className="mb-6 sm:mb-8 rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-          <div className="flex items-center gap-2 mb-1"><Sparkles className="h-4 w-4" style={{ color: theme.primary }} /><h3 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>Share Your Demo</h3></div>
+          <div className="flex items-center gap-2 mb-1"><Sparkles className="h-4 w-4" style={{ color: theme.iconColor }} /><h3 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>Share Your Demo</h3></div>
           <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>Send prospects your demo number with a ready-to-go message. They call, experience the AI, and get a signup link automatically.</p>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             <div className="rounded-xl p-4" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
               <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2"><MessageCircle className="h-3.5 w-3.5" style={{ color: theme.primary }} /><span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>SMS</span></div>
+                <div className="flex items-center gap-2"><MessageCircle className="h-3.5 w-3.5" style={{ color: theme.iconColor }} /><span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>SMS</span></div>
                 <button onClick={copySmsTemplate} className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-medium transition-colors" style={{ backgroundColor: smsCopied ? `${theme.primary}15` : theme.card, border: `1px solid ${smsCopied ? theme.primary + '40' : theme.border}`, color: smsCopied ? theme.primary : theme.textMuted }}>{smsCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}{smsCopied ? 'Copied' : 'Copy'}</button>
               </div>
               <p className="text-xs leading-relaxed whitespace-pre-line" style={{ color: theme.text, opacity: 0.8 }}>{smsTemplate}</p>
             </div>
             <div className="rounded-xl p-4" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
               <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5" style={{ color: theme.primary }} /><span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Email</span></div>
+                <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5" style={{ color: theme.iconColor }} /><span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Email</span></div>
                 <button onClick={copyEmailTemplate} className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-medium transition-colors" style={{ backgroundColor: emailCopied ? `${theme.primary}15` : theme.card, border: `1px solid ${emailCopied ? theme.primary + '40' : theme.border}`, color: emailCopied ? theme.primary : theme.textMuted }}>{emailCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}{emailCopied ? 'Copied' : 'Copy'}</button>
               </div>
               <p className="text-xs leading-relaxed whitespace-pre-line" style={{ color: theme.text, opacity: 0.8, display: '-webkit-box', WebkitLineClamp: 6, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>{emailTemplate}</p>

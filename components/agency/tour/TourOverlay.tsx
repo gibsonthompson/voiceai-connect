@@ -174,7 +174,7 @@ export default function TourOverlay() {
             {isCentered ? (
               <div className="flex justify-center mb-3">
                 <div className="h-12 w-12 rounded-2xl flex items-center justify-center" style={{ backgroundColor: theme.primary15 }}>
-                  {isLast ? <Check className="h-6 w-6" style={{ color: theme.primary }} /> : <Sparkles className="h-6 w-6" style={{ color: theme.primary }} />}
+                  {isLast ? <Check className="h-6 w-6" style={{ color: theme.iconColor }} /> : <Sparkles className="h-6 w-6" style={{ color: theme.iconColor }} />}
                 </div>
               </div>
             ) : (

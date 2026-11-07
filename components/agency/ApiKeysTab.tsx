@@ -95,7 +95,7 @@ export default function ApiKeysTab({ agency, theme }: { agency: any; theme: any 
 
       {freshKey && (
         <div className="rounded-xl p-4" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
-          <div className="flex items-center gap-2 mb-2"><Check className="h-4 w-4" style={{ color: theme.primary }} /><p className="text-sm font-medium" style={{ color: theme.primary }}>Key created. Copy it now, you won't see it again.</p></div>
+          <div className="flex items-center gap-2 mb-2"><Check className="h-4 w-4" style={{ color: theme.iconColor }} /><p className="text-sm font-medium" style={{ color: theme.primary }}>Key created. Copy it now, you won't see it again.</p></div>
           <div className="flex items-stretch gap-2">
             <code className="flex-1 min-w-0 rounded-lg px-3 py-2 text-xs font-mono break-all" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>{freshKey}</code>
             <button onClick={copyKey} className="inline-flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium flex-shrink-0" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}{copied ? 'Copied' : 'Copy'}</button>

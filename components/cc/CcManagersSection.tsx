@@ -155,7 +155,7 @@ export default function CcManagersSection({ theme }: { theme: any }) {
     <div className="rounded-2xl p-5 sm:p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
       <div className="flex items-center justify-between gap-3 mb-1">
         <div className="flex items-center gap-2.5 min-w-0">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Users className="h-4 w-4" style={{ color: theme.primary }} /></span>
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Users className="h-4 w-4" style={{ color: theme.iconColor }} /></span>
           <div className="min-w-0">
             <h2 className="text-sm font-semibold" style={{ color: theme.text }}>Managers</h2>
             <p className="text-[12px]" style={{ color: theme.textMuted }}>{managers.length} {managers.length === 1 ? 'manager' : 'managers'} who run the dashboard. Agents are managed on the Agents page.</p>

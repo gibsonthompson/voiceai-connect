@@ -294,7 +294,7 @@ export default function TemplateEditorPage() {
   const selectedTranscriberObj = TRANSCRIBER_OPTIONS.find(m => m.id === transcriberModel);
 
   if (contextLoading || loading) {
-    return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} /></div>;
+    return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.iconColor }} /></div>;
   }
 
   const handleUploadDoc = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -380,7 +380,7 @@ export default function TemplateEditorPage() {
 
       {industryInfo?.kb_status === 'generating' && (
         <div className="mb-6 rounded-xl p-5 flex items-start gap-3" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
-          <Loader2 className="h-5 w-5 flex-shrink-0 mt-0.5 animate-spin" style={{ color: theme.primary }} />
+          <Loader2 className="h-5 w-5 flex-shrink-0 mt-0.5 animate-spin" style={{ color: theme.iconColor }} />
           <div>
             <p className="text-sm font-medium" style={{ color: theme.text }}>Building your {industryInfo.label} receptionist…</p>
             <p className="text-sm mt-0.5" style={{ color: theme.textMuted }}>The AI is writing an industry-specific knowledge base and system prompt for this vertical. This page updates on its own when it's ready, usually under a minute. Hold off on editing until it finishes so your changes aren't overwritten.</p>
@@ -395,13 +395,13 @@ export default function TemplateEditorPage() {
       )}
       {saved && (
         <div className="mb-6 rounded-xl p-4 flex items-center gap-3" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
-          <Check className="h-5 w-5" style={{ color: theme.primary }} />
+          <Check className="h-5 w-5" style={{ color: theme.iconColor }} />
           <p className="text-sm" style={{ color: theme.primary }}>Template saved! New clients will use this configuration.</p>
         </div>
       )}
 
       <div className="mb-6 rounded-xl p-3 flex items-start gap-3" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.06 : 0.04), border: `1px solid ${hexToRgba(theme.primary, 0.15)}` }}>
-        <Info className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.primary }} />
+        <Info className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.iconColor }} />
         <p className="text-xs" style={{ color: theme.textMuted }}>
           Use <code className="px-1.5 py-0.5 rounded text-xs" style={{ backgroundColor: theme.hover }}>{'{businessName}'}</code> in prompts - it&apos;s replaced with the client&apos;s actual business name at signup.
         </p>
@@ -412,18 +412,18 @@ export default function TemplateEditorPage() {
           <div className="rounded-xl p-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
             <div className="mb-3">
               <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Response model</label>
-              <CustomSelect value={model} onChange={(v) => setModel(v)} options={[...MODEL_OPTIONS.map(m => ({ value: m.id, label: `${m.name}${m.tag ? ` (${m.tag})` : ''}` })), ...(MODEL_OPTIONS.find(m => m.id === model) ? [] : [{ value: model, label: model }])]} ui={{ inputStyle, text: theme.text, muted: theme.textMuted, panelBg: theme.isDark ? '#232321' : '#ffffff', panelBorder: theme.border, hover: theme.hover, accent: theme.primary, isDark: theme.isDark }} />
+              <CustomSelect value={model} onChange={(v) => setModel(v)} options={[...MODEL_OPTIONS.map(m => ({ value: m.id, label: `${m.name}${m.tag ? ` (${m.tag})` : ''}` })), ...(MODEL_OPTIONS.find(m => m.id === model) ? [] : [{ value: model, label: model }])]} ui={{ inputStyle, text: theme.text, muted: theme.textMuted, panelBg: theme.card, panelBorder: theme.border, hover: theme.hover, accent: theme.primary, isDark: theme.isDark }} />
               {selectedModelObj && <p className="text-xs mt-1" style={{ color: theme.textMuted }}>{selectedModelObj.desc}</p>}
             </div>
             <div className="mb-3">
               <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Voice engine</label>
-              <CustomSelect value={ttsModel} onChange={(v) => setTtsModel(v)} options={[...TTS_MODEL_OPTIONS.filter(m => !m.comingSoon).map(m => ({ value: m.id, label: `${m.name}${m.tag ? ` (${m.tag})` : ''}` })), ...(TTS_MODEL_OPTIONS.find(m => m.id === ttsModel) ? [] : [{ value: ttsModel, label: ttsModel }])]} ui={{ inputStyle, text: theme.text, muted: theme.textMuted, panelBg: theme.isDark ? '#232321' : '#ffffff', panelBorder: theme.border, hover: theme.hover, accent: theme.primary, isDark: theme.isDark }} />
+              <CustomSelect value={ttsModel} onChange={(v) => setTtsModel(v)} options={[...TTS_MODEL_OPTIONS.filter(m => !m.comingSoon).map(m => ({ value: m.id, label: `${m.name}${m.tag ? ` (${m.tag})` : ''}` })), ...(TTS_MODEL_OPTIONS.find(m => m.id === ttsModel) ? [] : [{ value: ttsModel, label: ttsModel }])]} ui={{ inputStyle, text: theme.text, muted: theme.textMuted, panelBg: theme.card, panelBorder: theme.border, hover: theme.hover, accent: theme.primary, isDark: theme.isDark }} />
               {selectedTtsObj && <p className="text-xs mt-1" style={{ color: theme.textMuted }}>{selectedTtsObj.desc}</p>}
               {TTS_MODEL_OPTIONS.some(m => m.comingSoon) && <p className="text-[11px] mt-1.5" style={{ color: theme.primary }}>Coming soon: {TTS_MODEL_OPTIONS.filter(m => m.comingSoon).map(m => m.name).join(', ')} - we'll add it automatically once our voice provider supports it.</p>}
             </div>
             <div className="mb-3">
               <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Speech recognition</label>
-              <CustomSelect value={transcriberModel} onChange={(v) => setTranscriberModel(v)} options={[...TRANSCRIBER_OPTIONS.map(m => ({ value: m.id, label: `${m.name}${m.tag ? ` (${m.tag})` : ''}` })), ...(TRANSCRIBER_OPTIONS.find(m => m.id === transcriberModel) ? [] : [{ value: transcriberModel, label: transcriberModel }])]} ui={{ inputStyle, text: theme.text, muted: theme.textMuted, panelBg: theme.isDark ? '#232321' : '#ffffff', panelBorder: theme.border, hover: theme.hover, accent: theme.primary, isDark: theme.isDark }} />
+              <CustomSelect value={transcriberModel} onChange={(v) => setTranscriberModel(v)} options={[...TRANSCRIBER_OPTIONS.map(m => ({ value: m.id, label: `${m.name}${m.tag ? ` (${m.tag})` : ''}` })), ...(TRANSCRIBER_OPTIONS.find(m => m.id === transcriberModel) ? [] : [{ value: transcriberModel, label: transcriberModel }])]} ui={{ inputStyle, text: theme.text, muted: theme.textMuted, panelBg: theme.card, panelBorder: theme.border, hover: theme.hover, accent: theme.primary, isDark: theme.isDark }} />
               {selectedTranscriberObj && <p className="text-xs mt-1" style={{ color: theme.textMuted }}>{selectedTranscriberObj.desc}</p>}
             </div>
             <div className="grid grid-cols-2 gap-3 mb-3">
@@ -525,7 +525,7 @@ export default function TemplateEditorPage() {
           <div className="rounded-xl p-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <BookOpen className="h-3.5 w-3.5" style={{ color: theme.primary }} />
+                <BookOpen className="h-3.5 w-3.5" style={{ color: theme.iconColor }} />
                 <span className="text-sm font-medium" style={{ color: theme.textMuted }}>Knowledge Base</span>
               </div>
               <button onClick={() => setKbExpanded(!kbExpanded)} className="flex items-center gap-1 text-xs font-medium transition" style={{ color: theme.primary }}>
@@ -541,15 +541,15 @@ export default function TemplateEditorPage() {
             ) : (
               <div className="space-y-3 mt-2">
                 <div className="flex items-start gap-2 p-2 rounded-lg" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.06 : 0.04) }}>
-                  <Info className="h-3 w-3 flex-shrink-0 mt-0.5" style={{ color: theme.primary }} />
+                  <Info className="h-3 w-3 flex-shrink-0 mt-0.5" style={{ color: theme.iconColor }} />
                   <p className="text-sm leading-relaxed" style={{ color: theme.textMuted }}>Inherited by new clients. They can customize from their dashboard.</p>
                 </div>
                 <div>
-                  <label className="flex items-center gap-1 text-xs font-medium mb-1" style={{ color: theme.textMuted }}><Globe className="w-3 h-3" style={{ color: theme.primary }} /> Website</label>
+                  <label className="flex items-center gap-1 text-xs font-medium mb-1" style={{ color: theme.textMuted }}><Globe className="w-3 h-3" style={{ color: theme.iconColor }} /> Website</label>
                   <input type="url" value={kbWebsite} onChange={e => setKbWebsite(e.target.value)} placeholder="https://yourbusiness.com" className="w-full rounded-lg px-2.5 py-1.5 text-xs" style={inputStyle} />
                 </div>
                 <div>
-                  <label className="flex items-center gap-1 text-xs font-medium mb-1" style={{ color: theme.textMuted }}><Briefcase className="w-3 h-3" style={{ color: theme.primary }} /> Services</label>
+                  <label className="flex items-center gap-1 text-xs font-medium mb-1" style={{ color: theme.textMuted }}><Briefcase className="w-3 h-3" style={{ color: theme.iconColor }} /> Services</label>
                   {kbServices.map(s => (
                     <div key={s.id} className="flex gap-1.5 mb-1.5">
                       <input type="text" value={s.name} onChange={e => updateService(s.id, 'name', e.target.value)} placeholder="Service" className="flex-1 rounded-lg px-2 py-1 text-sm min-w-0" style={inputStyle} />
@@ -560,7 +560,7 @@ export default function TemplateEditorPage() {
                   <button onClick={addService} className="flex items-center gap-1 text-sm font-medium mt-1 px-2 py-1 rounded transition hover:opacity-80" style={{ color: theme.primary, backgroundColor: hexToRgba(theme.primary, 0.08) }}><Plus className="w-2.5 h-2.5" /> Add</button>
                 </div>
                 <div>
-                  <label className="flex items-center gap-1 text-xs font-medium mb-1" style={{ color: theme.textMuted }}><HelpCircle className="w-3 h-3" style={{ color: theme.primary }} /> FAQs</label>
+                  <label className="flex items-center gap-1 text-xs font-medium mb-1" style={{ color: theme.textMuted }}><HelpCircle className="w-3 h-3" style={{ color: theme.iconColor }} /> FAQs</label>
                   {kbFaqs.map(f => (
                     <div key={f.id} className="mb-1.5 space-y-1">
                       <div className="flex gap-1.5">
@@ -573,7 +573,7 @@ export default function TemplateEditorPage() {
                   <button onClick={addFaq} className="flex items-center gap-1 text-sm font-medium mt-1 px-2 py-1 rounded transition hover:opacity-80" style={{ color: theme.primary, backgroundColor: hexToRgba(theme.primary, 0.08) }}><Plus className="w-2.5 h-2.5" /> Add</button>
                 </div>
                 <div>
-                  <label className="flex items-center gap-1 text-xs font-medium mb-1" style={{ color: theme.textMuted }}><FileText className="w-3 h-3" style={{ color: theme.primary }} /> Additional Info</label>
+                  <label className="flex items-center gap-1 text-xs font-medium mb-1" style={{ color: theme.textMuted }}><FileText className="w-3 h-3" style={{ color: theme.iconColor }} /> Additional Info</label>
                   <textarea value={kbAdditionalInfo} onChange={e => setKbAdditionalInfo(e.target.value)} placeholder="Policies, service areas..." rows={2} className="w-full rounded-lg px-2.5 py-1.5 text-sm resize-none" style={inputStyle} />
                 </div>
               </div>
@@ -583,7 +583,7 @@ export default function TemplateEditorPage() {
           {industry.startsWith('custom_') && industryInfo?.kb_status !== 'generating' && (
             <div className="rounded-xl p-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
               <div className="flex items-center justify-between gap-3 mb-1">
-                <label className="flex items-center gap-1.5 text-sm font-medium" style={{ color: theme.text }}><FileText className="w-4 h-4" style={{ color: theme.primary }} /> Documents</label>
+                <label className="flex items-center gap-1.5 text-sm font-medium" style={{ color: theme.text }}><FileText className="w-4 h-4" style={{ color: theme.iconColor }} /> Documents</label>
                 <input ref={docFileRef} type="file" accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown" onChange={handleUploadDoc} className="hidden" />
                 <button onClick={() => docFileRef.current?.click()} disabled={uploadingDoc} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-50" style={{ backgroundColor: hexToRgba(theme.primary, 0.1), border: `1px solid ${hexToRgba(theme.primary, 0.3)}`, color: theme.primary }}>
                   {uploadingDoc ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Reading...</> : <><Plus className="h-3.5 w-3.5" /> Attach document</>}
@@ -597,7 +597,7 @@ export default function TemplateEditorPage() {
                 <div className="space-y-1.5">
                   {documents.map((d) => (
                     <div key={d.id} className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ backgroundColor: theme.hover }}>
-                      <FileText className="w-3.5 h-3.5 flex-shrink-0" style={{ color: theme.primary }} />
+                      <FileText className="w-3.5 h-3.5 flex-shrink-0" style={{ color: theme.iconColor }} />
                       <span className="text-sm truncate flex-1" style={{ color: theme.text }}>{d.name}</span>
                       <button onClick={() => handleDeleteDoc(d.id)} className="p-1" style={{ color: theme.textMuted }} title="Remove"><Trash2 className="w-3.5 h-3.5" /></button>
                     </div>

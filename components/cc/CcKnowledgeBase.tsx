@@ -164,7 +164,7 @@ export default function CcKnowledgeBase({ agencyId, clientId, theme }: { agencyI
     <div className="rounded-2xl p-5 sm:p-6" style={card}>
 
       <div className="flex items-center gap-3 mb-4">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><BookOpen className="h-4 w-4" style={{ color: theme.primary }} /></div>
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><BookOpen className="h-4 w-4" style={{ color: theme.iconColor }} /></div>
         <div className="min-w-0 flex-1">
           <h2 className="font-semibold text-sm sm:text-[15px]" style={{ color: theme.text }}>Knowledge Base</h2>
           <p className="text-[12px]" style={{ color: theme.textMuted }}>What the AI knows about this business: pulled from the website, plus the FAQs and details you add.</p>
@@ -177,7 +177,7 @@ export default function CcKnowledgeBase({ agencyId, clientId, theme }: { agencyI
         <div className="space-y-5">
           {/* Website */}
           <div>
-            <label className="flex items-center gap-2 text-[13px] font-medium mb-2" style={{ color: theme.text }}><Globe className="h-4 w-4" style={{ color: theme.primary }} /> Business website</label>
+            <label className="flex items-center gap-2 text-[13px] font-medium mb-2" style={{ color: theme.text }}><Globe className="h-4 w-4" style={{ color: theme.iconColor }} /> Business website</label>
             <div className="flex flex-col sm:flex-row gap-2">
               <input type="url" value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://thisbusiness.com"
                 className="flex-1 min-w-0 rounded-xl px-3.5 py-2.5 text-sm outline-none" style={field} />
@@ -205,11 +205,11 @@ export default function CcKnowledgeBase({ agencyId, clientId, theme }: { agencyI
 
           {/* FAQs */}
           <div>
-            <label className="flex items-center gap-2 text-[13px] font-medium mb-2" style={{ color: theme.text }}><HelpCircle className="h-4 w-4" style={{ color: theme.primary }} /> FAQs</label>
+            <label className="flex items-center gap-2 text-[13px] font-medium mb-2" style={{ color: theme.text }}><HelpCircle className="h-4 w-4" style={{ color: theme.iconColor }} /> FAQs</label>
 
             {faqSuggestions.length > 0 && (
               <div className="mb-3 rounded-xl p-3" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.border}` }}>
-                <div className="flex items-center gap-1.5 mb-2"><Globe className="h-3.5 w-3.5" style={{ color: theme.primary }} /><span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: theme.primary }}>Found on your website</span></div>
+                <div className="flex items-center gap-1.5 mb-2"><Globe className="h-3.5 w-3.5" style={{ color: theme.iconColor }} /><span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: theme.primary }}>Found on your website</span></div>
                 <div className="space-y-1.5">
                   {faqSuggestions.map((sg, i) => (
                     <div key={i} className="flex items-start gap-2 rounded-lg px-2.5 py-2" style={{ backgroundColor: theme.card }}>
@@ -252,7 +252,7 @@ export default function CcKnowledgeBase({ agencyId, clientId, theme }: { agencyI
           {aiContent.trim() && (
             <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${theme.border}` }}>
               <button onClick={() => setShowAi((s) => !s)} className="flex w-full items-center justify-between gap-2 px-3.5 py-2.5 text-left" style={{ backgroundColor: theme.input }}>
-                <span className="inline-flex items-center gap-2 text-[13px] font-medium" style={{ color: theme.text }}><Sparkles className="h-4 w-4" style={{ color: theme.primary }} /> What the AI knows</span>
+                <span className="inline-flex items-center gap-2 text-[13px] font-medium" style={{ color: theme.text }}><Sparkles className="h-4 w-4" style={{ color: theme.iconColor }} /> What the AI knows</span>
                 <ChevronDown className="h-4 w-4 transition-transform flex-shrink-0" style={{ color: theme.textMuted, transform: showAi ? 'rotate(180deg)' : 'none' }} />
               </button>
               {showAi && (

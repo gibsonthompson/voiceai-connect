@@ -331,7 +331,7 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0"
                 style={{ backgroundColor: hexToRgba(theme.primary, 0.12) }}>
-                <Sparkles className="h-5 w-5" style={{ color: theme.primary }} />
+                <Sparkles className="h-5 w-5" style={{ color: theme.iconColor }} />
               </div>
               <div>
                 <p className="font-semibold text-sm" style={{ color: theme.text }}>
@@ -371,7 +371,7 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0"
                 style={{ backgroundColor: hexToRgba(theme.primary, 0.12) }}>
-                <CreditCard className="h-5 w-5" style={{ color: theme.primary }} />
+                <CreditCard className="h-5 w-5" style={{ color: theme.iconColor }} />
               </div>
               <div>
                 <p className="font-semibold text-sm" style={{ color: theme.text }}>
@@ -430,7 +430,7 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
                 {isProvisioned ? (
                   <Phone className="h-6 w-6" style={{ color: theme.success }} />
                 ) : (provisioning || reactivating) ? (
-                  <Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.primary }} />
+                  <Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.iconColor }} />
                 ) : (
                   <PhoneOff className="h-6 w-6" style={{ color: theme.textMuted }} />
                 )}
@@ -471,7 +471,7 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
             <div className="flex items-center gap-4 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
               {[{ label: 'Phone Number', done: hasPhoneNumber }, { label: 'AI Assistant', done: hasAssistant }].map(s => (
                 <div key={s.label} className="flex items-center gap-2">
-                  {s.done ? <CheckCircle className="h-4 w-4" style={{ color: theme.success }} /> : <Loader2 className="h-4 w-4 animate-spin" style={{ color: theme.primary }} />}
+                  {s.done ? <CheckCircle className="h-4 w-4" style={{ color: theme.success }} /> : <Loader2 className="h-4 w-4 animate-spin" style={{ color: theme.iconColor }} />}
                   <span className="text-xs" style={{ color: s.done ? theme.success : theme.textMuted }}>{s.label}</span>
                 </div>
               ))}
@@ -501,7 +501,7 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
               </div>
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl"
                 style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.1 : 0.06) }}>
-                <PhoneCall className="h-6 w-6" style={{ color: theme.primary }} />
+                <PhoneCall className="h-6 w-6" style={{ color: theme.iconColor }} />
               </div>
             </div>
           </div>
@@ -532,7 +532,7 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
               ) : (
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl"
                   style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.1 : 0.06) }}>
-                  <TrendingUp className="h-6 w-6" style={{ color: theme.primary }} />
+                  <TrendingUp className="h-6 w-6" style={{ color: theme.iconColor }} />
                 </div>
               )}
             </div>
@@ -553,7 +553,7 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
         <div className="rounded-2xl p-5 sm:p-6 mb-5 sm:mb-7 fu fu5" style={glass}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4" style={{ color: theme.primary }} />
+              <Clock className="h-4 w-4" style={{ color: theme.iconColor }} />
               <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: theme.textMuted }}>Voice Minutes</p>
             </div>
             <span className="text-[11px] font-medium" style={{ color: theme.textMuted }}>this billing period</span>
@@ -655,9 +655,9 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0"
                     style={{ backgroundColor: isSpam ? theme.errorBg : (wasBooked && !wasTransferred) ? theme.successBg : hexToRgba(theme.primary, theme.isDark ? 0.1 : 0.06) }}>
                     {isSpam ? <ShieldX className="h-[18px] w-[18px]" style={{ color: theme.error }} />
-                      : wasTransferred ? <PhoneForwarded className="h-[18px] w-[18px]" style={{ color: theme.primary }} />
+                      : wasTransferred ? <PhoneForwarded className="h-[18px] w-[18px]" style={{ color: theme.iconColor }} />
                       : wasBooked ? <CalendarCheck className="h-[18px] w-[18px]" style={{ color: theme.success }} />
-                      : <PhoneCall className="h-[18px] w-[18px]" style={{ color: theme.primary }} />}
+                      : <PhoneCall className="h-[18px] w-[18px]" style={{ color: theme.iconColor }} />}
                   </div>
 
                   <div className="flex-1 min-w-0">

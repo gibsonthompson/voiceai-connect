@@ -65,7 +65,7 @@ function ThemedSelect({ value, onChange, options, theme, ariaLabel }: {
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
               >
                 {o.label}
-                {o.value === value && <Check className="h-3.5 w-3.5 shrink-0 ml-2" style={{ color: theme.primary }} />}
+                {o.value === value && <Check className="h-3.5 w-3.5 shrink-0 ml-2" style={{ color: theme.iconColor }} />}
               </button>
             ))}
           </div>
@@ -305,7 +305,7 @@ export default function TemplateEditorPage() {
         <p className="text-xs truncate" style={{ color: theme.textMuted }}>{v.description}</p>
       </div>
       {copiedVar === v.key ? (
-        <Check className="h-3.5 w-3.5 shrink-0" style={{ color: theme.primary }} />
+        <Check className="h-3.5 w-3.5 shrink-0" style={{ color: theme.iconColor }} />
       ) : (
         <Plus className="h-3.5 w-3.5 shrink-0 opacity-0 group-hover:opacity-100" style={{ color: theme.textMuted }} />
       )}
@@ -349,7 +349,7 @@ export default function TemplateEditorPage() {
   if (contextLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} />
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.iconColor }} />
       </div>
     );
   }

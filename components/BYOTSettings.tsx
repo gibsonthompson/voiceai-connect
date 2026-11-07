@@ -231,7 +231,7 @@ export default function BYOTSettings({ agencyId, planType, subscriptionStatus, t
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.primary + '15' }}>
-                <Check className="h-5 w-5" style={{ color: theme.primary }} />
+                <Check className="h-5 w-5" style={{ color: theme.iconColor }} />
               </div>
               <div>
                 <p className="font-medium text-sm">Twilio Connected</p>

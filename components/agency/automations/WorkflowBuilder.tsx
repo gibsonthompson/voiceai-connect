@@ -210,7 +210,7 @@ function Select({ value, options, onChange, theme }: { value: string; options: {
           <div className="absolute z-20 mt-1 w-full rounded-xl overflow-hidden shadow-lg" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
             {options.map((o) => (
               <button key={o.value} type="button" onClick={() => { onChange(o.value); setOpen(false); }} className="w-full text-left px-3 py-2 text-sm flex items-center justify-between" style={{ color: theme.text, backgroundColor: o.value === value ? theme.hover : 'transparent' }}>
-                {o.label}{o.value === value && <Check className="h-3.5 w-3.5" style={{ color: theme.primary }} />}
+                {o.label}{o.value === value && <Check className="h-3.5 w-3.5" style={{ color: theme.iconColor }} />}
               </button>
             ))}
           </div>
@@ -312,7 +312,7 @@ function AddStepMenu({ plan, theme, onPick, onClose }: { plan: string; theme: an
                 return (
                   <button key={type} type="button" disabled={locked} onClick={() => { if (!locked) onPick(type); }}
                     className="text-left p-2.5 rounded-xl flex items-start gap-2" style={{ background: theme.hover, opacity: locked ? 0.55 : 1, cursor: locked ? 'not-allowed' : 'pointer' }}>
-                    <Icon className="h-4 w-4 mt-0.5 shrink-0" style={{ color: theme.primary }} />
+                    <Icon className="h-4 w-4 mt-0.5 shrink-0" style={{ color: theme.iconColor }} />
                     <div className="min-w-0">
                       <div className="text-sm font-medium flex items-center gap-1" style={{ color: theme.text }}>{c.label}{locked && <Lock className="h-3 w-3" style={{ color: theme.textMuted }} />}</div>
                       <div className="text-xs" style={{ color: theme.textMuted }}>{locked ? 'Scale only' : c.blurb}</div>

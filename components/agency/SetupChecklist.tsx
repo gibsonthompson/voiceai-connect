@@ -163,8 +163,8 @@ export default function SetupChecklist({ agency, clientCount, theme, userRole, d
         onMouseEnter={e => (e.currentTarget.style.borderColor = `${theme.primary}40`)}
         onMouseLeave={e => (e.currentTarget.style.borderColor = theme.border)}>
         <div className="flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3.5 sm:py-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: `${theme.primary}15` }}>
-            <Rocket className="h-5 w-5" style={{ color: theme.primary }} />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.iconBg }}>
+            <Rocket className="h-5 w-5" style={{ color: theme.iconColor }} />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
@@ -192,8 +192,8 @@ export default function SetupChecklist({ agency, clientCount, theme, userRole, d
       <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-3">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: `${theme.primary}15` }}>
-              <Rocket className="h-5 w-5" style={{ color: theme.primary }} />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: theme.iconBg }}>
+              <Rocket className="h-5 w-5" style={{ color: theme.iconColor }} />
             </div>
             <div>
               <h3 className="text-sm sm:text-base font-semibold" style={{ color: theme.text }}>{isFree ? 'Get Started' : 'Finish Setting Up Your Agency'}</h3>
@@ -218,7 +218,7 @@ export default function SetupChecklist({ agency, clientCount, theme, userRole, d
         style={{ backgroundColor: `${theme.primary}10`, border: `1px solid ${theme.primary}20` }}
         onMouseEnter={e => (e.currentTarget.style.backgroundColor = `${theme.primary}18`)}
         onMouseLeave={e => (e.currentTarget.style.backgroundColor = `${theme.primary}10`)}>
-        <PlayCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.primary }} />
+        <PlayCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.iconColor }} />
         <span className="text-sm font-medium flex-1" style={{ color: theme.text }}>Watch the full dashboard walkthrough</span>
         <span className="text-xs flex-shrink-0" style={{ color: theme.textMuted }}>25 min</span>
       </a>
@@ -247,15 +247,15 @@ function StepRow({ step, Icon, theme }: { step: SetupStep; Icon: React.ElementTy
       onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
       <div className="flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0"
         style={step.completed
-          ? { backgroundColor: `${theme.primary}15`, border: `1px solid ${theme.primary}30` }
+          ? { backgroundColor: theme.iconBg, border: `1px solid ${theme.primary}30` }
           : step.loading
           ? { backgroundColor: `${theme.primary}10`, border: `1px solid ${theme.primary}20` }
           : { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${theme.border}` }
         }>
         {step.completed ? (
-          <Check className="h-4 w-4" style={{ color: theme.primary }} />
+          <Check className="h-4 w-4" style={{ color: theme.iconColor }} />
         ) : step.loading ? (
-          <Loader2 className="h-4 w-4 animate-spin" style={{ color: theme.primary }} />
+          <Loader2 className="h-4 w-4 animate-spin" style={{ color: theme.iconColor }} />
         ) : (
           <Icon className="h-4 w-4" style={{ color: theme.textMuted }} />
         )}
@@ -269,7 +269,7 @@ function StepRow({ step, Icon, theme }: { step: SetupStep; Icon: React.ElementTy
         }}>{step.loading ? 'Setting up your test client...' : step.title}</p>
         {!step.completed && <p className="text-xs mt-0.5" style={{ color: step.loading ? theme.primary : theme.textMuted, textTransform: 'capitalize' }}>{step.description}</p>}
       </div>
-      {!step.completed && !step.loading && <ChevronRight className="h-4 w-4 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: theme.primary }} />}
+      {!step.completed && !step.loading && <ChevronRight className="h-4 w-4 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: theme.iconColor }} />}
     </div>
   );
 }
@@ -282,9 +282,9 @@ function CelebrationCard({ theme, onDismiss }: { theme: any; onDismiss: () => vo
       <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(ellipse at 30% 50%, ${theme.primary}08, transparent 60%)` }} />
       <div className="relative">
         <div className="flex items-center justify-center gap-2 mb-2">
-          <Sparkles className="h-5 w-5" style={{ color: theme.primary }} />
+          <Sparkles className="h-5 w-5" style={{ color: theme.iconColor }} />
           <h3 className="text-lg font-semibold" style={{ color: theme.primary }}>Setup Complete!</h3>
-          <Sparkles className="h-5 w-5" style={{ color: theme.primary }} />
+          <Sparkles className="h-5 w-5" style={{ color: theme.iconColor }} />
         </div>
         <p className="text-sm" style={{ color: theme.textMuted }}>Your agency is ready. Start adding clients and growing your business.</p>
         <button onClick={onDismiss} className="mt-3 text-xs font-medium transition-colors" style={{ color: theme.textMuted }}>Dismiss</button>

@@ -104,7 +104,7 @@ const ClientTeamSection = forwardRef<ClientTeamSectionHandle, Props>(function Cl
       <div className="space-y-3">
         {!hideHeader && (
         <div className="flex items-center gap-2">
-          <Users className="w-4 h-4" style={{ color: theme.primary }} />
+          <Users className="w-4 h-4" style={{ color: theme.iconColor }} />
           <h2 className="text-sm sm:text-base font-semibold" style={{ color: theme.text }}>Users</h2>
         </div>
         )}
@@ -129,7 +129,7 @@ const ClientTeamSection = forwardRef<ClientTeamSectionHandle, Props>(function Cl
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-sm sm:text-base font-semibold flex items-center gap-2" style={{ color: theme.text }}>
-            <Users className="w-4 h-4" style={{ color: theme.primary }} />Users
+            <Users className="w-4 h-4" style={{ color: theme.iconColor }} />Users
           </h2>
           <p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>Dashboard login accounts, {limits.max === -1 ? `${limits.current} (Unlimited)` : `${limits.current} of ${limits.max}`}</p>
         </div>
@@ -222,11 +222,11 @@ const ClientTeamSection = forwardRef<ClientTeamSectionHandle, Props>(function Cl
                   <div>
                     <p className="text-[10px] sm:text-xs font-medium mb-0.5" style={{ color: theme.textMuted4 }}>Page Access</p>
                     <p className="text-[10px] mb-1.5" style={{ color: theme.textMuted4 }}>Which tabs this user can open. Tap to toggle - each change saves on its own. Takes effect the next time they sign in. This is separate from disabling their login below.</p>
-                    <div className="grid grid-cols-2 gap-1.5">{Object.entries(CLIENT_PERMISSIONS).map(([key, info]) => { const enabled = member.permissions[key] ?? false; return (<button key={key} onClick={() => togglePermission(member.id, key, enabled)} className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-left transition-colors" style={{ backgroundColor: enabled ? `${theme.primary}10` : theme.bg, border: `1px solid ${enabled ? `${theme.primary}30` : theme.border}` }}>{enabled ? <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: theme.primary }} /> : <Circle className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted4 }} />}<span className="text-[10px] sm:text-xs font-medium truncate" style={{ color: enabled ? theme.text : theme.textMuted4 }}>{info.label}</span></button>); })}</div>
+                    <div className="grid grid-cols-2 gap-1.5">{Object.entries(CLIENT_PERMISSIONS).map(([key, info]) => { const enabled = member.permissions[key] ?? false; return (<button key={key} onClick={() => togglePermission(member.id, key, enabled)} className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-left transition-colors" style={{ backgroundColor: enabled ? `${theme.primary}10` : theme.bg, border: `1px solid ${enabled ? `${theme.primary}30` : theme.border}` }}>{enabled ? <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: theme.iconColor }} /> : <Circle className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted4 }} />}<span className="text-[10px] sm:text-xs font-medium truncate" style={{ color: enabled ? theme.text : theme.textMuted4 }}>{info.label}</span></button>); })}</div>
                   </div>
                   <div>
                     <p className="text-[10px] sm:text-xs font-medium mb-1.5" style={{ color: theme.textMuted4 }}>Notifications</p>
-                    <div className="space-y-1">{Object.entries(NOTIFICATION_LABELS).map(([key, label]) => { const enabled = member.notification_prefs[key] ?? false; return (<div key={key} className="flex items-center justify-between py-1 px-0.5"><div className="flex items-center gap-1.5">{enabled ? <Bell className="h-3 w-3" style={{ color: theme.primary }} /> : <BellOff className="h-3 w-3" style={{ color: theme.textMuted4 }} />}<span className="text-[10px] sm:text-xs" style={{ color: enabled ? theme.text : theme.textMuted4 }}>{label}</span></div><button onClick={() => toggleNotification(member.id, key, enabled)} className="relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full transition-colors" style={{ backgroundColor: enabled ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}><span className="pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow transition" style={{ transform: enabled ? 'translate(12px, 2px)' : 'translate(2px, 2px)' }} /></button></div>); })}</div>
+                    <div className="space-y-1">{Object.entries(NOTIFICATION_LABELS).map(([key, label]) => { const enabled = member.notification_prefs[key] ?? false; return (<div key={key} className="flex items-center justify-between py-1 px-0.5"><div className="flex items-center gap-1.5">{enabled ? <Bell className="h-3 w-3" style={{ color: theme.iconColor }} /> : <BellOff className="h-3 w-3" style={{ color: theme.textMuted4 }} />}<span className="text-[10px] sm:text-xs" style={{ color: enabled ? theme.text : theme.textMuted4 }}>{label}</span></div><button onClick={() => toggleNotification(member.id, key, enabled)} className="relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full transition-colors" style={{ backgroundColor: enabled ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}><span className="pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow transition" style={{ transform: enabled ? 'translate(12px, 2px)' : 'translate(2px, 2px)' }} /></button></div>); })}</div>
                   </div>
                   <div className="pt-2 space-y-1.5" style={{ borderTop: `1px solid ${theme.border}` }}>
                     <p className="text-[10px] sm:text-xs font-medium" style={{ color: theme.textMuted4 }}>Account</p>

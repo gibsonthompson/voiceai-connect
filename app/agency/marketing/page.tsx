@@ -111,7 +111,7 @@ const CURRENCY_OPTIONS = [
 
 // Custom currency dropdown (replaces the native select): shows the symbol, the
 // full name, and a check on the selected option, styled to the agency theme.
-function CurrencySelect({ value, onChange, theme }: { value: string; onChange: (v: string) => void; theme: { inputBg: string; inputBorder: string; textColor: string; cardBg: string; mutedTextColor: string; primary: string; isDark: boolean } }) {
+function CurrencySelect({ value, onChange, theme }: { value: string; onChange: (v: string) => void; theme: { inputBg: string; inputBorder: string; textColor: string; cardBg: string; mutedTextColor: string; primary: string; iconColor: string; isDark: boolean } }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
@@ -132,7 +132,7 @@ function CurrencySelect({ value, onChange, theme }: { value: string; onChange: (
             <button key={o.value || 'default'} type="button" onClick={() => { onChange(o.value); setOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left transition-colors hover:bg-black/[0.03]" style={{ color: theme.textColor, backgroundColor: o.value === value ? `${theme.primary}14` : 'transparent' }}>
               <span className="font-semibold w-6 flex-shrink-0 text-center" style={{ color: o.value === value ? theme.primary : theme.mutedTextColor }}>{o.symbol || '–'}</span>
               <span className="truncate">{o.label}</span>
-              {o.value === value && <Check className="h-4 w-4 ml-auto flex-shrink-0" style={{ color: theme.primary }} />}
+              {o.value === value && <Check className="h-4 w-4 ml-auto flex-shrink-0" style={{ color: theme.iconColor }} />}
             </button>
           ))}
         </div>
@@ -212,11 +212,14 @@ export default function MarketingWebsitePage() {
 
   const isDark = dashTheme.isDark;
   const agencyPrimaryColor = branding.primaryColor || '#00a19b';
-  const textColor = isDark ? '#fafaf9' : '#111827';
-  const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
-  const borderColor = isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb';
-  const cardBg = isDark ? 'rgba(255,255,255,0.02)' : '#ffffff';
-  const inputBg = isDark ? 'rgba(255,255,255,0.05)' : '#ffffff';
+  // White-label: resolve surfaces from useTheme() so an agency's customized
+  // card / text / border / input colors drive this page too, instead of
+  // falling back to hard-coded white in light mode.
+  const textColor = dashTheme.text;
+  const mutedTextColor = dashTheme.textMuted;
+  const borderColor = dashTheme.border;
+  const cardBg = dashTheme.card;
+  const inputBg = dashTheme.input;
   const ogDark = ((agency as any)?.website_theme || 'light') === 'dark';
   const ogCardBg = ogDark ? '#0a0a0a' : '#ffffff';
   const ogCardFg = ogDark ? '#fafafa' : '#111827';
@@ -462,7 +465,7 @@ export default function MarketingWebsitePage() {
           <div className="flex items-center gap-2 mb-1"><DollarSign className="h-4 w-4" style={{ color: agencyPrimaryColor }} /><h3 className="font-medium text-sm sm:text-base">Pricing Currency</h3></div>
           <p className="text-xs sm:text-sm mb-3" style={{ color: mutedTextColor }}>Controls the currency symbol shown on your marketing site pricing.</p>
           <div className="flex items-center gap-3">
-            <CurrencySelect value={displayCurrency} onChange={setDisplayCurrency} theme={{ inputBg, inputBorder, textColor, cardBg, mutedTextColor, primary: agencyPrimaryColor, isDark }} />
+            <CurrencySelect value={displayCurrency} onChange={setDisplayCurrency} theme={{ inputBg, inputBorder, textColor, cardBg, mutedTextColor, primary: agencyPrimaryColor, iconColor: dashTheme.iconColor, isDark }} />
             <button onClick={handleSaveCurrency} disabled={savingCurrency} className="flex items-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium text-white disabled:opacity-50 transition-colors flex-shrink-0" style={{ backgroundColor: agencyPrimaryColor }}>{savingCurrency ? <Loader2 className="h-4 w-4 animate-spin" /> : currencySaved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}{currencySaved ? 'Saved!' : 'Save'}</button>
           </div>
         </div>

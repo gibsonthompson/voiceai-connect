@@ -287,7 +287,7 @@ export default function NeedToSearch() {
     <div ref={ref} className="relative mb-6 sm:mb-8 max-w-3xl">
       <div className="flex items-center gap-3 rounded-2xl px-4 py-3.5 transition-all"
         style={{ backgroundColor: theme.card, border: `1px solid ${open ? theme.primary : theme.border}` }}>
-        <Search className="h-5 w-5 flex-shrink-0" style={{ color: theme.primary }} />
+        <Search className="h-5 w-5 flex-shrink-0" style={{ color: theme.iconColor }} />
         <span className="text-sm font-medium flex-shrink-0 hidden sm:inline" style={{ color: theme.textMuted }}>I need to</span>
         <input
           value={query}
@@ -315,7 +315,7 @@ export default function NeedToSearch() {
                 style={{ backgroundColor: isActive ? (theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)') : 'transparent' }}>
                 <span className="flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0"
                   style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }}>
-                  <Icon className="h-4 w-4" style={{ color: theme.primary }} />
+                  <Icon className="h-4 w-4" style={{ color: theme.iconColor }} />
                 </span>
                 <span className="flex-1 min-w-0">
                   <span className="block text-sm font-medium truncate" style={{ color: theme.text }}>{r.label}</span>
@@ -330,7 +330,7 @@ export default function NeedToSearch() {
             <button onClick={askSupport} className="w-full flex items-center gap-3 px-4 py-3.5 text-left"
               style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
               <span className="flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: `${theme.primary}1a` }}>
-                <MessageSquare className="h-4 w-4" style={{ color: theme.primary }} />
+                <MessageSquare className="h-4 w-4" style={{ color: theme.iconColor }} />
               </span>
               <span className="flex-1 min-w-0">
                 <span className="block text-sm font-medium" style={{ color: theme.text }}>Ask the support assistant</span>

@@ -302,7 +302,7 @@ export default function CallDetailPage() {
               <div className="flex items-center gap-3 mb-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl"
                   style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.1 : 0.06) }}>
-                  <MessageSquare className="h-5 w-5" style={{ color: theme.primary }} />
+                  <MessageSquare className="h-5 w-5" style={{ color: theme.iconColor }} />
                 </div>
                 <h2 className="font-semibold text-sm sm:text-[15px] tracking-tight" style={{ color: theme.text }}>AI Summary</h2>
               </div>
@@ -322,7 +322,7 @@ export default function CallDetailPage() {
                 <div className="flex items-center gap-3 mb-4">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl"
                     style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.1 : 0.06) }}>
-                    <User className="h-5 w-5" style={{ color: theme.primary }} />
+                    <User className="h-5 w-5" style={{ color: theme.iconColor }} />
                   </div>
                   <h2 className="font-semibold text-sm sm:text-[15px] tracking-tight" style={{ color: theme.text }}>Who handled this call</h2>
                 </div>

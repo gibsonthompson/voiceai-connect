@@ -107,7 +107,7 @@ export default function ReferralsPage() {
 
           <div className="rounded-2xl p-6 mb-8" style={{ backgroundColor: theme.primary + '08', border: `1px solid ${theme.primary}30` }}>
             <h2 className="font-medium flex items-center gap-2 mb-2" style={{ color: theme.text }}>
-              <Sparkles className="h-4 w-4" style={{ color: theme.primary }} />
+              <Sparkles className="h-4 w-4" style={{ color: theme.iconColor }} />
               Your Referral Link
             </h2>
             <div className="flex flex-col sm:flex-row gap-3">
@@ -613,10 +613,10 @@ export default function ReferralsPage() {
 
         {/* Payout terms */}
         <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm" style={{ color: theme.textMuted }}>
-          <span className="inline-flex items-center gap-1.5"><DollarSign className="h-3.5 w-3.5" style={{ color: theme.primary }} />40% recurring commission</span>
-          <span className="inline-flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" style={{ color: theme.primary }} />Paid every month they stay</span>
-          <span className="inline-flex items-center gap-1.5"><Banknote className="h-3.5 w-3.5" style={{ color: theme.primary }} />Withdraw to your Stripe account ($10 minimum)</span>
-          <span className="inline-flex items-center gap-1.5"><TrendingUp className="h-3.5 w-3.5" style={{ color: theme.primary }} />No limit on referrals</span>
+          <span className="inline-flex items-center gap-1.5"><DollarSign className="h-3.5 w-3.5" style={{ color: theme.iconColor }} />40% recurring commission</span>
+          <span className="inline-flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" style={{ color: theme.iconColor }} />Paid every month they stay</span>
+          <span className="inline-flex items-center gap-1.5"><Banknote className="h-3.5 w-3.5" style={{ color: theme.iconColor }} />Withdraw to your Stripe account ($10 minimum)</span>
+          <span className="inline-flex items-center gap-1.5"><TrendingUp className="h-3.5 w-3.5" style={{ color: theme.iconColor }} />No limit on referrals</span>
         </div>
 
         {/* Ways to grow your referrals */}

@@ -194,7 +194,7 @@ export default function CcAgentSettings() {
       {/* Header */}
       <div className="flex items-center gap-3 mb-5 sm:mb-6">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>
-          <User className="h-5 w-5" style={{ color: theme.primary }} />
+          <User className="h-5 w-5" style={{ color: theme.iconColor }} />
         </div>
         <div className="min-w-0">
           <h1 className="text-lg sm:text-xl lg:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Settings</h1>
@@ -246,7 +246,7 @@ export default function CcAgentSettings() {
               <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.borderSubtle}` }}>
                 <div className="flex items-center justify-between gap-4">
                   <p className="text-sm font-medium flex items-center gap-2 min-w-0" style={{ color: theme.text }}>
-                    <Zap className="h-4 w-4 flex-shrink-0" style={{ color: theme.primary }} />
+                    <Zap className="h-4 w-4 flex-shrink-0" style={{ color: theme.iconColor }} />
                     <span className="truncate">Take calls outside my hours</span>
                   </p>
                   <button onClick={() => setOverride(!override)} disabled={savingOverride} role="switch" aria-checked={override}

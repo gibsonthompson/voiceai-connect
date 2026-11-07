@@ -101,7 +101,7 @@ export default function CcCalendar({ clientId, theme }: { clientId: string; them
   return (
     <div ref={rootRef} className="rounded-2xl p-5 sm:p-6 scroll-mt-6" style={card}>
       <div className="flex items-center gap-3 mb-4">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><CalendarDays className="h-4 w-4" style={{ color: theme.primary }} /></div>
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><CalendarDays className="h-4 w-4" style={{ color: theme.iconColor }} /></div>
         <div className="min-w-0">
           <h2 className="font-semibold text-sm sm:text-[15px]" style={{ color: theme.text }}>Google Calendar</h2>
           <p className="text-[12px]" style={{ color: theme.textMuted }}>Connect the business owner&apos;s calendar so the AI can check availability and book.</p>

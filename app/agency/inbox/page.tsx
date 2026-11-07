@@ -311,7 +311,7 @@ export default function AgencyInboxPage() {
       <aside className={`${selected ? 'hidden sm:flex' : 'flex'} w-full sm:w-80 shrink-0 flex-col border-r`} style={{ borderColor: theme.border, background: theme.card }}>
         <div className="flex items-center justify-between px-4 h-14 border-b" style={{ borderColor: theme.border }}>
           <div className="flex items-center gap-2">
-            <MessageSquare className="h-4 w-4" style={{ color: theme.primary }} />
+            <MessageSquare className="h-4 w-4" style={{ color: theme.iconColor }} />
             <h1 className="text-sm font-semibold">Inbox</h1>
             {totalUnread > 0 && (<span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: theme.primary, color: theme.primaryText }}>{totalUnread}</span>)}
           </div>

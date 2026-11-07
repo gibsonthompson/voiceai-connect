@@ -164,7 +164,7 @@ export default function AILabBuilder({ agencyId, api, theme, logoUrl }: { agency
   if (phase === 'creating') {
     return (
       <div className="min-h-[75vh] flex flex-col items-center justify-center px-6 text-center">
-        <Loader2 className="h-8 w-8 animate-spin mb-5" style={{ color: theme.primary }} />
+        <Loader2 className="h-8 w-8 animate-spin mb-5" style={{ color: theme.iconColor }} />
         <p className="text-[18px] font-semibold" style={{ color: theme.text }}>Creating Your Receptionist</p>
         <p className="text-[15px] mt-1.5" style={{ color: theme.textMuted }}>Reading your site and building the AI. No number is being bought yet.</p>
       </div>
@@ -227,7 +227,7 @@ export default function AILabBuilder({ agencyId, api, theme, logoUrl }: { agency
         </p>
         <div className="rounded-2xl p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
           <div className="flex items-start gap-3 mb-5">
-            <div className="h-11 w-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><PhoneCall className="h-5 w-5" style={{ color: theme.primary }} /></div>
+            <div className="h-11 w-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><PhoneCall className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
             <div>
               <p className="text-[16px] font-semibold" style={{ color: theme.text }}>Buy a local number</p>
               <p className="text-[14px] mt-0.5" style={{ color: theme.textMuted }}>We provision a real number and connect it to this receptionist so you can call it right away.</p>
@@ -352,7 +352,7 @@ function BusinessStep({ pkg, theme, update, onNext }: any) {
             <div className="absolute z-20 mt-1 w-full rounded-xl py-1 max-h-72 overflow-auto shadow-lg" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
               {!!pkg.sub_vertical && (
                 <button onClick={() => { update({ industry: null, customGen: true }); setPickOpen(false); }} className="w-full text-left px-3.5 py-2.5 text-[14px] flex items-center gap-2 transition-colors hover:opacity-80" style={{ color: theme.text }}>
-                  <Sparkles className="h-4 w-4" style={{ color: theme.primary }} /> Generate custom: {pkg.sub_vertical}
+                  <Sparkles className="h-4 w-4" style={{ color: theme.iconColor }} /> Generate custom: {pkg.sub_vertical}
                 </button>
               )}
               {CATALOG.map(([value, label]) => (
@@ -561,7 +561,7 @@ function VoiceGreetingStep({ pkg, theme, api, agencyId, update, onNext, onBack }
               <div key={v.id} className="flex items-center gap-3 rounded-xl px-3.5 py-3 transition-colors cursor-pointer" style={{ backgroundColor: selected ? theme.primary15 : theme.hover, border: `1px solid ${selected ? theme.primary + '55' : theme.border}` }} onClick={() => update({ voice_id: v.id, voice_name: v.name })}>
                 <button onClick={(e) => { e.stopPropagation(); preview(v); }} className="h-9 w-9 rounded-full flex-shrink-0 inline-flex items-center justify-center" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{playing === v.id ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />}</button>
                 <div className="flex-1 min-w-0"><p className="text-[15px] font-medium flex items-center gap-1.5" style={{ color: theme.text }}>{v.name}{v.accent && <span className="text-[12px] font-normal" style={{ color: theme.textMuted }}>· {v.accent}</span>}</p>{v.description && <p className="text-[13px] truncate" style={{ color: theme.textMuted }}>{v.description}</p>}</div>
-                {selected && <Check className="h-5 w-5 flex-shrink-0" style={{ color: theme.primary }} />}
+                {selected && <Check className="h-5 w-5 flex-shrink-0" style={{ color: theme.iconColor }} />}
               </div>
             );
           })}

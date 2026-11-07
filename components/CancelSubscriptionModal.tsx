@@ -168,7 +168,7 @@ export default function CancelSubscriptionModal({
                 className="h-14 w-14 rounded-full flex items-center justify-center mx-auto mb-4"
                 style={{ backgroundColor: theme.primary15 }}
               >
-                <Check className="h-7 w-7" style={{ color: theme.primary }} />
+                <Check className="h-7 w-7" style={{ color: theme.iconColor }} />
               </div>
               <h3 className="text-lg font-semibold" style={{ color: theme.text }}>
                 Your {isOnTrial ? 'trial' : 'subscription'} has been canceled

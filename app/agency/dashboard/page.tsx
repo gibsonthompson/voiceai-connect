@@ -172,7 +172,7 @@ export default function AgencyDashboardPage() {
   const billableClientCount = Math.max(0, (stats?.clientCount || 0) - (testClient ? 1 : 0));
 
   if (contextLoading || loading) {
-    return (<div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} /></div>);
+    return (<div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.iconColor }} /></div>);
   }
 
   return (
@@ -184,18 +184,18 @@ export default function AgencyDashboardPage() {
       {showFeedbackModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !sendingFeedback && setShowFeedbackModal(false)} />
-          <div className="relative w-full max-w-md rounded-2xl p-6" style={{ backgroundColor: theme.isDark ? '#0a0a0a' : '#ffffff', border: `1px solid ${theme.border}` }}>
+          <div className="relative w-full max-w-md rounded-2xl p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
             <button onClick={() => setShowFeedbackModal(false)} className="absolute top-4 right-4 p-1 rounded-lg transition-colors" style={{ color: theme.textMuted }}><X className="h-5 w-5" /></button>
             {feedbackSent ? (
               <div className="text-center py-4">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full mb-3" style={{ backgroundColor: theme.primary15 }}><Check className="h-6 w-6" style={{ color: theme.primary }} /></div>
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full mb-3" style={{ backgroundColor: theme.iconBg }}><Check className="h-6 w-6" style={{ color: theme.iconColor }} /></div>
                 <h3 className="text-lg font-semibold" style={{ color: theme.text }}>Message Sent</h3>
                 <p className="text-sm mt-1" style={{ color: theme.textMuted }}>Thanks, we'll get back to you soon.</p>
               </div>
             ) : (
               <>
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><LifeBuoy className="h-5 w-5" style={{ color: theme.primary }} /></div>
+                  <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.iconBg }}><LifeBuoy className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
                   <div><h3 className="text-lg font-semibold" style={{ color: theme.text }}>Contact Support</h3><p className="text-sm" style={{ color: theme.textMuted }}>Questions or need a hand? We'll get back to you.</p></div>
                 </div>
                 {feedbackError && (<div className="mb-4 rounded-xl p-3 text-sm" style={{ backgroundColor: theme.errorBg, color: theme.errorText, border: `1px solid ${theme.errorBorder}` }}>{feedbackError}</div>)}
@@ -246,7 +246,7 @@ export default function AgencyDashboardPage() {
           <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${theme.primary}30` }}>
             <div className="h-full p-5 sm:p-6 flex flex-col" style={{ background: theme.isDark ? `linear-gradient(135deg, ${theme.primary}15 0%, ${theme.primary}05 100%)` : `linear-gradient(135deg, ${theme.primary}10 0%, ${theme.primary}03 100%)` }}>
               <div className="flex items-center gap-2 mb-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: theme.primary15 }}><Headphones className="h-4 w-4" style={{ color: theme.primary }} /></div>
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: theme.iconBg }}><Headphones className="h-4 w-4" style={{ color: theme.iconColor }} /></div>
                 <h3 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>Try Your AI Receptionist</h3>
               </div>
               <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>Call your demo number to hear it in action. Tell it what kind of business you run and watch it roleplay as your receptionist.</p>
@@ -261,7 +261,7 @@ export default function AgencyDashboardPage() {
         {/* Signup Link */}
         <div className="h-full rounded-xl p-5 sm:p-6 flex flex-col" style={{ background: theme.isDark ? `linear-gradient(135deg, ${theme.primary}12 0%, ${theme.primary}04 100%)` : `linear-gradient(135deg, ${theme.primary}10 0%, ${theme.primary}03 100%)`, border: `1px solid ${theme.primary30}` }}>
           <div className="flex items-center gap-2 mb-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: theme.primary15 }}><Link2 className="h-4 w-4" style={{ color: theme.primary }} /></div>
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: theme.iconBg }}><Link2 className="h-4 w-4" style={{ color: theme.iconColor }} /></div>
             <h3 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>Your Client Signup Link</h3>
           </div>
           <div className="rounded-lg px-3 py-2 mb-4" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', border: `1px solid ${theme.border}` }}>
@@ -278,33 +278,33 @@ export default function AgencyDashboardPage() {
           filled (2 / 3 / 6 cols). Test Client replaces Messages when a test client exists. */}
       <div className="grid gap-3 mb-6 sm:mb-8 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
         <a href="/agency/clients/new" className="rounded-xl p-4 flex flex-col items-center gap-2.5 text-center transition-all" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${theme.primary}40`; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = 'none'; }}>
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: theme.primary15 }}><UserPlus className="h-5 w-5" style={{ color: theme.primary }} /></div>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: theme.iconBg }}><UserPlus className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
           <span className="text-sm font-medium" style={{ color: theme.text }}>Add Client</span>
         </a>
         <a href="/agency/leads/finder" className="rounded-xl p-4 flex flex-col items-center gap-2.5 text-center transition-all" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${theme.primary}40`; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = 'none'; }}>
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: `${theme.primary}10` }}><Search className="h-5 w-5" style={{ color: theme.primary }} /></div>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: theme.iconBg }}><Search className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
           <span className="text-sm font-medium" style={{ color: theme.text }}>Find Leads</span>
         </a>
         <a href="/agency/marketing" className="rounded-xl p-4 flex flex-col items-center gap-2.5 text-center transition-all" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${theme.primary}40`; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = 'none'; }}>
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: `${theme.info}15` }}><Globe className="h-5 w-5" style={{ color: theme.info }} /></div>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: theme.iconBg }}><Globe className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
           <span className="text-sm font-medium" style={{ color: theme.text }}>Edit Website</span>
         </a>
         <a href="/agency/settings?tab=pricing" className="rounded-xl p-4 flex flex-col items-center gap-2.5 text-center transition-all" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${theme.primary}40`; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = 'none'; }}>
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: theme.primary15 }}><DollarSign className="h-5 w-5" style={{ color: theme.primary }} /></div>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: theme.iconBg }}><DollarSign className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
           <span className="text-sm font-medium" style={{ color: theme.text }}>Pricing</span>
         </a>
         <a href="/agency/marketing-kit" className="rounded-xl p-4 flex flex-col items-center gap-2.5 text-center transition-all" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${theme.primary}40`; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = 'none'; }}>
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: `${theme.primary}10` }}><Megaphone className="h-5 w-5" style={{ color: theme.primary }} /></div>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: theme.iconBg }}><Megaphone className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
           <span className="text-sm font-medium" style={{ color: theme.text }}>Marketing Kit</span>
         </a>
         {testClient ? (
           <a href={`/agency/clients/${testClient.id}`} className="rounded-xl p-4 flex flex-col items-center gap-2.5 text-center transition-all" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${theme.primary}40`; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = 'none'; }}>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: theme.primary15 }}><FlaskConical className="h-5 w-5" style={{ color: theme.primary }} /></div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: theme.iconBg }}><FlaskConical className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
             <span className="text-sm font-medium" style={{ color: theme.text }}>Test Client</span>
           </a>
         ) : (
           <a href="/agency/clients?tab=messages" className="rounded-xl p-4 flex flex-col items-center gap-2.5 text-center transition-all" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${theme.primary}40`; e.currentTarget.style.transform = 'translateY(-1px)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.border; e.currentTarget.style.transform = 'none'; }}>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: `${theme.primary}10` }}><Inbox className="h-5 w-5" style={{ color: theme.primary }} /></div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: theme.iconBg }}><Inbox className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
             <span className="text-sm font-medium" style={{ color: theme.text }}>Messages</span>
           </a>
         )}
@@ -319,7 +319,7 @@ export default function AgencyDashboardPage() {
         <div className="p-4 sm:p-5">
           {!stats?.recentClients || stats.recentClients.length === 0 ? (
             <div className="py-8 sm:py-12 text-center">
-              <div className="mx-auto flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full" style={{ backgroundColor: theme.primary15 }}><Users className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: theme.textMuted }} /></div>
+              <div className="mx-auto flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full" style={{ backgroundColor: theme.iconBg }}><Users className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: theme.textMuted }} /></div>
               <p className="mt-4 font-medium text-sm sm:text-base" style={{ color: theme.text, opacity: 0.7 }}>No clients yet</p>
               <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>Share your signup link to start acquiring clients.</p>
               <button onClick={copySignupLink} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Copy className="h-4 w-4" />Copy Signup Link</button>

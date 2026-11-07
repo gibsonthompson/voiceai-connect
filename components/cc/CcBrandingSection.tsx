@@ -234,7 +234,7 @@ export default function CcBrandingSection({ agency, refreshAgency, theme, hideHe
     <div className="rounded-2xl p-5 sm:p-6" style={card}>
       {!hideHeader && (
         <div className="flex items-center gap-3 mb-4">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Palette className="h-4 w-4" style={{ color: theme.primary }} /></div>
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Palette className="h-4 w-4" style={{ color: theme.iconColor }} /></div>
           <div className="min-w-0">
             <h2 className="font-semibold text-sm sm:text-[15px]" style={{ color: theme.text }}>Branding</h2>
             <p className="text-[12px]" style={{ color: theme.textMuted }}>Your logo and colors across the whole call center. Upload a logo and we pull your colors from it.</p>
@@ -274,7 +274,7 @@ export default function CcBrandingSection({ agency, refreshAgency, theme, hideHe
         <div className="rounded-xl p-4" style={{ border: `1px solid ${theme.border}` }}>
           <div className="flex items-start justify-between gap-3 mb-3">
             <div className="min-w-0 flex items-start gap-2">
-              <Sparkles className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.primary }} />
+              <Sparkles className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.iconColor }} />
               <div>
                 <p className="text-[13px] font-semibold" style={{ color: theme.text }}>Brand kit</p>
                 <p className="text-[11.5px]" style={{ color: theme.textMuted }}>Fonts and nav-icon style matched to your logo. Upload a logo and we analyze it; tweak anything below.</p>
@@ -374,7 +374,7 @@ export default function CcBrandingSection({ agency, refreshAgency, theme, hideHe
         </div>
 
         <div className="rounded-xl p-3.5 flex items-start gap-2.5" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.border}` }}>
-          <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.primary }} />
+          <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.iconColor }} />
           <p className="text-[12px] leading-relaxed" style={{ color: theme.textMuted }}>Your logo and colors apply across the call center dashboard and anything your agents see. When a logo is set, the sidebar shows it in place of your name.</p>
         </div>
       </div>

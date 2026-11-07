@@ -256,13 +256,13 @@ function ClientDashboardLayout({ children, initialDark = true }: { children: Rea
   }
 
   if ((clientTrialExpired || clientCanceled) && !isAccessibleRoute) {
-    return (<div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: theme.bg }}><div className="text-center"><Loader2 className="h-8 w-8 animate-spin mx-auto" style={{ color: theme.primary }} /><p className="mt-4 text-sm" style={{ color: theme.textMuted }}>Redirecting...</p></div></div>);
+    return (<div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: theme.bg }}><div className="text-center"><Loader2 className="h-8 w-8 animate-spin mx-auto" style={{ color: theme.iconColor }} /><p className="mt-4 text-sm" style={{ color: theme.textMuted }}>Redirecting...</p></div></div>);
   }
 
   // Member hit a page they do not have permission for; show a redirecting
   // state while the guard effect above sends them to their first allowed page.
   if (routeBlocked) {
-    return (<div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: theme.bg }}><div className="text-center"><Loader2 className="h-8 w-8 animate-spin mx-auto" style={{ color: theme.primary }} /><p className="mt-4 text-sm" style={{ color: theme.textMuted }}>Redirecting...</p></div></div>);
+    return (<div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: theme.bg }}><div className="text-center"><Loader2 className="h-8 w-8 animate-spin mx-auto" style={{ color: theme.iconColor }} /><p className="mt-4 text-sm" style={{ color: theme.textMuted }}>Redirecting...</p></div></div>);
   }
 
   // ── ONBOARDING WIZARD ────────────────────────────────────────────────

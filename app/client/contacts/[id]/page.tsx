@@ -244,7 +244,7 @@ export default function ContactDetailPage() {
               <div className="mt-2.5 space-y-2">
                 {insights.blurb && (
                   <div className="flex items-start gap-1.5">
-                    <Sparkles className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" style={{ color: theme.primary }} />
+                    <Sparkles className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" style={{ color: theme.iconColor }} />
                     <p className="text-[13px] leading-snug" style={{ color: theme.text }}>{insights.blurb}</p>
                   </div>
                 )}
@@ -270,7 +270,7 @@ export default function ContactDetailPage() {
           <Phone className="h-4 w-4" /> Call
         </a>
         <a href={messagesHref} className="flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition" style={{ ...glass, color: theme.text }}>
-          <MessageSquare className="h-4 w-4" style={{ color: theme.primary }} /> Message
+          <MessageSquare className="h-4 w-4" style={{ color: theme.iconColor }} /> Message
         </a>
         <a href={contact.email ? `mailto:${contact.email}` : messagesHref}
           className={`flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition ${contact.email ? '' : 'pointer-events-none opacity-40'} col-span-2 sm:col-span-1`}
@@ -345,7 +345,7 @@ export default function ContactDetailPage() {
           {contact.ai_summary && (
             <div className="rounded-2xl p-5 sm:p-6 fu fu3" style={glass}>
               <div className="flex items-center gap-2.5 mb-3">
-                <Sparkles className="h-4 w-4" style={{ color: theme.primary }} />
+                <Sparkles className="h-4 w-4" style={{ color: theme.iconColor }} />
                 <h2 className="font-semibold text-sm sm:text-[15px] tracking-tight" style={{ color: theme.text }}>Summary</h2>
               </div>
               <div className="space-y-2">

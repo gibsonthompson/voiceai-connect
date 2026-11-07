@@ -187,7 +187,7 @@ export default function LegalEditor({ agencyId, backendUrl, theme, agency }: Leg
   const card = theme.card || theme.input;
 
   if (loading) {
-    return <div className="flex items-center justify-center py-16"><Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.primary }} /></div>;
+    return <div className="flex items-center justify-center py-16"><Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.iconColor }} /></div>;
   }
   if (loadError) {
     return (
@@ -300,7 +300,7 @@ export default function LegalEditor({ agencyId, backendUrl, theme, agency }: Leg
 
           {/* Protected-sections notice: makes clear the rest is fixed. */}
           <div className="rounded-xl p-3 sm:p-4 flex items-start gap-2.5" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.border}` }}>
-            <Shield className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.primary }} />
+            <Shield className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.iconColor }} />
             <div>
               <p className="text-sm font-medium mb-0.5" style={{ color: theme.text }}>The rest of this page is protected</p>
               <p className="text-[11px] sm:text-xs leading-relaxed" style={{ color: theme.textMuted }}>

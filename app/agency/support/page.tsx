@@ -214,10 +214,10 @@ export default function SupportPage() {
       onMouseEnter={e => { e.currentTarget.style.borderColor = hexToRgba(theme.primary, 0.45); }}
       onMouseLeave={e => { e.currentTarget.style.borderColor = theme.border; }}>
       <div className="flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>
-        <qp.icon className="h-4 w-4" style={{ color: theme.primary }} />
+        <qp.icon className="h-4 w-4" style={{ color: theme.iconColor }} />
       </div>
       <span className="flex-1 font-medium leading-snug" style={{ color: theme.text }}>{qp.label}</span>
-      <ArrowRight className="h-4 w-4 flex-shrink-0 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" style={{ color: theme.primary }} />
+      <ArrowRight className="h-4 w-4 flex-shrink-0 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" style={{ color: theme.iconColor }} />
     </button>
   );
 
@@ -244,7 +244,7 @@ export default function SupportPage() {
             {/* Console top bar */}
             <div className="flex items-center gap-3 px-4 sm:px-5 py-3 sm:py-3.5 border-b flex-shrink-0" style={{ borderColor: theme.border }}>
               <div className="relative flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>
-                <Bot className="h-5 w-5" style={{ color: theme.primary }} />
+                <Bot className="h-5 w-5" style={{ color: theme.iconColor }} />
                 <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full" style={{ backgroundColor: '#22c55e', boxShadow: `0 0 0 2px ${theme.card}` }} />
               </div>
               <div className="min-w-0">
@@ -263,7 +263,7 @@ export default function SupportPage() {
                 ) : !hasChat ? (
                   <div className="mx-auto max-w-xl text-center">
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl" style={{ backgroundColor: theme.primary15 }}>
-                      <Sparkles className="h-8 w-8" style={{ color: theme.primary }} />
+                      <Sparkles className="h-8 w-8" style={{ color: theme.iconColor }} />
                     </div>
                     <h2 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>How can I help?</h2>
                     <p className="mt-2.5 text-sm sm:text-[15px] leading-relaxed mx-auto max-w-md" style={{ color: theme.textMuted }}>
@@ -281,7 +281,7 @@ export default function SupportPage() {
                       <div key={m.id} className={`flex gap-3 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         {m.role === 'assistant' && (
                           <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-1" style={{ backgroundColor: theme.primary15 }}>
-                            <Bot className="h-3.5 w-3.5" style={{ color: theme.primary }} />
+                            <Bot className="h-3.5 w-3.5" style={{ color: theme.iconColor }} />
                           </div>
                         )}
                         <div className="max-w-[85%] sm:max-w-[78%]">
@@ -307,7 +307,7 @@ export default function SupportPage() {
                     {sending && (
                       <div className="flex gap-3">
                         <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-1" style={{ backgroundColor: theme.primary15 }}>
-                          <Bot className="h-3.5 w-3.5" style={{ color: theme.primary }} />
+                          <Bot className="h-3.5 w-3.5" style={{ color: theme.iconColor }} />
                         </div>
                         <div className="rounded-2xl px-4 py-3" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}`, borderBottomLeftRadius: '6px' }}>
                           <div className="flex gap-1">
@@ -399,7 +399,7 @@ export default function SupportPage() {
               {escalated ? (
                 <>
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: theme.primary }} />
+                    <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: theme.iconColor }} />
                     <p className="text-sm font-semibold" style={{ color: theme.text }}>Sent to the team</p>
                   </div>
                   <p className="mt-1.5 text-xs leading-relaxed" style={{ color: theme.textMuted }}>
@@ -413,7 +413,7 @@ export default function SupportPage() {
               ) : (
                 <>
                   <div className="flex items-center gap-2">
-                    <Headphones className="h-4 w-4 flex-shrink-0" style={{ color: theme.primary }} />
+                    <Headphones className="h-4 w-4 flex-shrink-0" style={{ color: theme.iconColor }} />
                     <p className="text-sm font-semibold" style={{ color: theme.text }}>Talk to a human</p>
                   </div>
                   <p className="mt-1.5 text-xs leading-relaxed" style={{ color: theme.textMuted }}>

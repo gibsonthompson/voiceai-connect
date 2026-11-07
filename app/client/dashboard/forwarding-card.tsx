@@ -379,7 +379,7 @@ export function CallForwardingCard({ callsThisMonth = 0 }: CallForwardingCardPro
     <>
       <button onClick={toggleSetup} className="flex w-full items-start gap-2.5 sm:gap-3 text-left">
         <div className="flex h-8 w-8 sm:h-11 sm:w-11 flex-shrink-0 items-center justify-center rounded-xl sm:rounded-2xl" style={{ backgroundColor: theme.primary15 }}>
-          <Phone className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: theme.primary }} />
+          <Phone className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: theme.iconColor }} />
         </div>
         <div className="min-w-0 flex-1">
           <h3 className="text-[15px] sm:text-xl font-bold leading-tight" style={{ color: theme.text }}>
@@ -393,7 +393,7 @@ export function CallForwardingCard({ callsThisMonth = 0 }: CallForwardingCardPro
       </button>
       {setupOpen && (
       <div className="mt-2.5 sm:mt-3 hidden sm:flex items-start gap-2 sm:gap-2.5 rounded-xl px-3 py-2.5 sm:py-3" style={{ backgroundColor: theme.hover }}>
-        <PhoneCall className="mt-0.5 h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" style={{ color: theme.primary }} />
+        <PhoneCall className="mt-0.5 h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" style={{ color: theme.iconColor }} />
         <p className="text-[11px] sm:text-[13px] leading-relaxed" style={{ color: theme.textMuted }}>
           <span style={{ color: theme.text, fontWeight: 600 }}>Two ways to use your AI.</span> Forward your existing number here, or just hand out your AI line <span style={{ color: theme.text, fontWeight: 600 }}>{formatted}</span>, which answers directly. Using it as your main line? Collapse this.
         </p>

@@ -92,7 +92,7 @@ export default function DashboardAccessSelector({ clientId, theme }: DashboardAc
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <Shield className="w-4 h-4" style={{ color: theme.primary }} />
+        <Shield className="w-4 h-4" style={{ color: theme.iconColor }} />
         <span className="text-sm font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Client Dashboard Access</span>
       </div>
 
@@ -139,7 +139,7 @@ export default function DashboardAccessSelector({ clientId, theme }: DashboardAc
 
       {saving && (
         <div className="flex items-center justify-center gap-2 py-1">
-          <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: theme.primary }} />
+          <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: theme.iconColor }} />
           <span className="text-xs" style={{ color: theme.textMuted }}>Updating...</span>
         </div>
       )}

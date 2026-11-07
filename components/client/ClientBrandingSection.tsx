@@ -327,7 +327,7 @@ export default function ClientBrandingSection({ clientId, theme }: Props) {
   return (
     <section className="mb-4 sm:mb-6">
       <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}>
-        <Palette className="w-4 h-4" style={{ color: theme.primary }} />
+        <Palette className="w-4 h-4" style={{ color: theme.iconColor }} />
         Branding
       </h2>
 

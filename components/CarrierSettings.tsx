@@ -231,7 +231,7 @@ export default function CarrierSettings({ agencyId, theme }: CarrierSettingsProp
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3 min-w-0">
                     <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.primary + '15' }}>
-                      <Server className="h-5 w-5" style={{ color: theme.primary }} />
+                      <Server className="h-5 w-5" style={{ color: theme.iconColor }} />
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">

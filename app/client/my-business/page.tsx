@@ -411,8 +411,8 @@ export default function MyBusinessPage() {
   const DAY_KEYS: (keyof BusinessHours)[] = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
 
   const glass = { backgroundColor: theme.card, border: `1px solid ${theme.border}` };
-  const inputStyle = { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#ffffff', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`, color: theme.text };
-  const dropdownUi = { inputStyle, text: theme.text, muted: theme.textMuted4, panelBg: theme.isDark ? '#232321' : '#ffffff', panelBorder: theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb', hover: theme.isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6', accent: primaryColor, isDark: theme.isDark };
+  const inputStyle = { backgroundColor: theme.input, border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`, color: theme.text };
+  const dropdownUi = { inputStyle, text: theme.text, muted: theme.textMuted4, panelBg: theme.card, panelBorder: theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb', hover: theme.isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6', accent: primaryColor, isDark: theme.isDark };
   const timeOptions = TIME_OPTIONS.map((t) => ({ value: t, label: t }));
 
   if (loading || !client) return <div className="flex items-center justify-center min-h-[50vh]" style={{ backgroundColor: theme.bg }}><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.textMuted4 }} /></div>;
@@ -548,7 +548,7 @@ export default function MyBusinessPage() {
                       const changed = prop.closed !== cur.closed || (!prop.closed && (prop.open !== cur.open || prop.close !== cur.close));
                       return (
                         <div key={day} className={`flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 ${idx === DAY_KEYS.length - 1 ? 'sm:col-span-2' : ''}`}
-                          style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#ffffff', border: `1px solid ${changed ? hexToRgba(primaryColor, 0.35) : (theme.isDark ? 'rgba(255,255,255,0.06)' : '#eef0f2')}` }}>
+                          style={{ backgroundColor: theme.input, border: `1px solid ${changed ? hexToRgba(primaryColor, 0.35) : (theme.isDark ? 'rgba(255,255,255,0.06)' : '#eef0f2')}` }}>
                           <span className="text-[11px] font-medium" style={{ color: theme.text }}>{day.charAt(0).toUpperCase() + day.slice(1, 3)}</span>
                           <span className="text-[11px] text-right leading-tight" style={{ color: changed ? primaryColor : theme.textMuted }}>
                             {fmtDayHours(prop)}
@@ -567,7 +567,7 @@ export default function MyBusinessPage() {
             )}
             <div className="mb-3">
               <label className="block text-[11px] font-medium mb-1" style={{ color: theme.textMuted4 }}>Time zone</label>
-              <TimezoneSelect value={timezone} onChange={setTimezone} ui={{ inputStyle, text: theme.text, muted: theme.textMuted4, panelBg: theme.isDark ? '#1c1c1b' : '#ffffff', panelBorder: theme.isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb', hover: theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', accent: theme.primary, isDark: theme.isDark }} />
+              <TimezoneSelect value={timezone} onChange={setTimezone} ui={{ inputStyle, text: theme.text, muted: theme.textMuted4, panelBg: theme.card, panelBorder: theme.isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb', hover: theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', accent: theme.primary, isDark: theme.isDark }} />
               <p className="text-[10px] mt-1" style={{ color: theme.textMuted4 }}>Your hours are read in this time zone. Getting this right is what tells the AI when you're open vs closed.</p>
             </div>
             <div onClick={() => setHoursExpanded(!hoursExpanded)} className="flex items-center justify-between cursor-pointer group">
@@ -649,7 +649,7 @@ export default function MyBusinessPage() {
                 <p className="text-[10px] mb-2.5 leading-relaxed" style={{ color: theme.textMuted }}>Areas we spotted on your site. Tap to add the ones you cover.</p>
                 <div className="flex flex-wrap gap-2">
                   {areaSuggestions.map((a, i) => (
-                    <div key={`${a}-${i}`} className="inline-flex items-center gap-1.5 rounded-full pl-3 pr-1 py-1" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#ffffff', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb'}` }}>
+                    <div key={`${a}-${i}`} className="inline-flex items-center gap-1.5 rounded-full pl-3 pr-1 py-1" style={{ backgroundColor: theme.input, border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb'}` }}>
                       <span className="text-[12px] font-medium" style={{ color: theme.text }}>{a}</span>
                       <button onClick={() => addAreaSuggestion(a)} title="Add this area" className="inline-flex items-center justify-center w-6 h-6 rounded-full transition hover:opacity-90 flex-shrink-0" style={{ backgroundColor: primaryColor, color: theme.buttonText || '#fff' }}><Plus className="w-3.5 h-3.5" /></button>
                       <button onClick={() => dismissAreaSuggestion(a)} title="Dismiss" className="inline-flex items-center justify-center w-5 h-5 rounded-full transition hover:opacity-70 flex-shrink-0" style={{ color: theme.textMuted }}><X className="w-3 h-3" /></button>
@@ -725,7 +725,7 @@ export default function MyBusinessPage() {
                       <p className="text-[10px] mb-2.5 leading-relaxed" style={{ color: theme.textMuted }}>Common questions we spotted on your site. Add the ones you want your AI to answer, then save.</p>
                       <div className="space-y-2">
                         {faqSuggestions.map((f, i) => (
-                          <div key={`${f.question}-${i}`} className="rounded-lg p-2.5" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#ffffff', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}` }}>
+                          <div key={`${f.question}-${i}`} className="rounded-lg p-2.5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}` }}>
                             <div className="flex items-start justify-between gap-2">
                               <p className="text-[12px] font-medium flex-1 min-w-0" style={{ color: theme.text }}>{f.question}</p>
                               <div className="flex items-center gap-1 flex-shrink-0">

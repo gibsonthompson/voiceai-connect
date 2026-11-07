@@ -87,7 +87,7 @@ export default function AcquisitionPage() {
   }, [agency, demoMode]);
 
   if (ctxLoading || loading) {
-    return <div className="p-8 flex items-center justify-center" style={{ minHeight: '60vh' }}><Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.primary }} /></div>;
+    return <div className="p-8 flex items-center justify-center" style={{ minHeight: '60vh' }}><Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.iconColor }} /></div>;
   }
 
   const d = data || DEMO_DATA;
@@ -151,7 +151,7 @@ export default function AcquisitionPage() {
     <div className="p-4 sm:p-6 lg:p-8 max-w-[1040px]">
       {/* Header */}
       <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0 mt-0.5" style={{ backgroundColor: theme.primary15 }}><TrendingUp className="h-5 w-5" style={{ color: theme.primary }} /></div>
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0 mt-0.5" style={{ backgroundColor: theme.primary15 }}><TrendingUp className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
         <div>
           <p className={LABEL} style={{ color: theme.textMuted }}>Acquisition</p>
           <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight mt-0.5" style={{ color: theme.text }}>{d.hasFirstClient ? 'Keep landing clients' : 'Get your first client'}</h1>
@@ -204,7 +204,7 @@ export default function AcquisitionPage() {
                 const ints = interestStyle(c.interest_level);
                 return (
                   <a key={c.id} href="/agency/demo-phone" className="flex items-center gap-3 px-4 sm:px-5 py-3 transition-colors" style={{ borderTop: i === 0 ? 'none' : `1px solid ${theme.borderSubtle}` }} onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.hover)} onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}>
-                    <span className="h-9 w-9 rounded-[10px] flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><PhoneIncoming className="h-4 w-4" style={{ color: theme.primary }} /></span>
+                    <span className="h-9 w-9 rounded-[10px] flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><PhoneIncoming className="h-4 w-4" style={{ color: theme.iconColor }} /></span>
                     <div className="min-w-0">
                       <p className="text-[13.5px] font-semibold truncate" style={{ color: theme.text }}>{who}</p>
                       <p className="text-[11.5px] truncate" style={{ color: theme.textMuted }}>{formatPhone(c.caller_phone) || 'No number'} · {timeAgo(c.created_at)}</p>
@@ -291,7 +291,7 @@ export default function AcquisitionPage() {
       {/* WALKTHROUGH CTA */}
       <div className="mt-4 rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3" style={{ background: theme.isDark ? `linear-gradient(90deg, ${theme.primary15}, transparent)` : `linear-gradient(90deg, ${theme.primary10}, transparent)`, border: `1px solid ${theme.primary30}` }}>
         <div className="flex items-center gap-3 min-w-0">
-          <CalendarCheck className="h-5 w-5 flex-shrink-0" style={{ color: theme.primary }} />
+          <CalendarCheck className="h-5 w-5 flex-shrink-0" style={{ color: theme.iconColor }} />
           <div className="min-w-0">
             <p className="text-sm font-bold" style={{ color: theme.text }}>Stuck, or want a second set of eyes?</p>
             <p className="text-[12.5px]" style={{ color: theme.textMuted }}>Get on a live walkthrough and we'll find exactly where you're losing deals.</p>

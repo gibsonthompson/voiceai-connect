@@ -208,7 +208,7 @@ function DemoCallDetailModal({ call, theme, onClose }: { call: DemoCall; theme: 
             {call.summary && (
               <div className="rounded-xl p-4" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
                 <div className="flex items-center gap-2 mb-2">
-                  <Bot className="h-4 w-4" style={{ color: theme.primary }} />
+                  <Bot className="h-4 w-4" style={{ color: theme.iconColor }} />
                   <h3 className="text-xs font-semibold" style={{ color: theme.text }}>AI Summary</h3>
                 </div>
                 <p className="text-sm leading-relaxed" style={{ color: theme.textMuted }}>{call.summary}</p>
@@ -307,7 +307,7 @@ function DemoCallsList({ agencyId, theme }: { agencyId: string; theme: any }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.primary }} />
+        <Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.iconColor }} />
       </div>
     );
   }
@@ -353,7 +353,7 @@ function DemoCallsList({ agencyId, theme }: { agencyId: string; theme: any }) {
                 className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0"
                 style={{ backgroundColor: theme.primary + '12' }}
               >
-                <PhoneCall className="h-4 w-4" style={{ color: theme.primary }} />
+                <PhoneCall className="h-4 w-4" style={{ color: theme.iconColor }} />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
@@ -382,7 +382,7 @@ function DemoCallsList({ agencyId, theme }: { agencyId: string; theme: any }) {
               </div>
               {call.recording_url && (
                 <div className="flex h-6 w-6 items-center justify-center rounded-full" style={{ backgroundColor: theme.primary + '12' }}>
-                  <Play className="h-3 w-3" style={{ color: theme.primary }} />
+                  <Play className="h-3 w-3" style={{ color: theme.iconColor }} />
                 </div>
               )}
               <ChevronRight className="h-4 w-4" style={{ color: theme.textMuted }} />
@@ -720,7 +720,7 @@ export default function DemoPhonePage() {
       >
         <div className="p-4 sm:p-6 lg:p-8">
           <div className="flex items-center gap-3 mb-6 sm:mb-8">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Phone className="h-5 w-5" style={{ color: theme.primary }} /></div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Phone className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
             <div>
               <h1 className="text-xl sm:text-2xl font-semibold" style={{ color: theme.text }}>Demo Phone</h1>
               <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>
@@ -748,7 +748,7 @@ export default function DemoPhonePage() {
     return (
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="flex items-center gap-3 mb-6 sm:mb-8">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Phone className="h-5 w-5" style={{ color: theme.primary }} /></div>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Phone className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold">Demo Phone</h1>
             <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>
@@ -806,14 +806,14 @@ export default function DemoPhonePage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
             <div className="flex items-start gap-3 rounded-lg p-3" style={{ backgroundColor: theme.hover }}>
-              <MessageSquare className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.primary }} />
+              <MessageSquare className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.iconColor }} />
               <div>
                 <p className="text-xs font-medium" style={{ color: theme.text }}>Post-call SMS</p>
                 <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>On a real demo line, callers get your signup link by text after they hang up</p>
               </div>
             </div>
             <div className="flex items-start gap-3 rounded-lg p-3" style={{ backgroundColor: theme.hover }}>
-              <Headphones className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.primary }} />
+              <Headphones className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.iconColor }} />
               <div>
                 <p className="text-xs font-medium" style={{ color: theme.text }}>On your marketing site</p>
                 <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Your real demo number appears automatically in your "Experience It Live" section</p>
@@ -843,7 +843,7 @@ export default function DemoPhonePage() {
       <div className="p-4 sm:p-6 lg:p-8">
         <FirstClientBanner />
         <div className="flex items-center gap-3 mb-6 sm:mb-8">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Phone className="h-5 w-5" style={{ color: theme.primary }} /></div>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Phone className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold">Demo Phone</h1>
             <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>
@@ -937,14 +937,14 @@ export default function DemoPhonePage() {
           {/* Info tiles */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="flex items-start gap-3 rounded-lg p-3" style={{ backgroundColor: theme.hover }}>
-              <MessageSquare className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.primary }} />
+              <MessageSquare className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.iconColor }} />
               <div>
                 <p className="text-xs font-medium" style={{ color: theme.text }}>Post-call SMS</p>
                 <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Callers automatically receive your signup link via text after hanging up</p>
               </div>
             </div>
             <div className="flex items-start gap-3 rounded-lg p-3" style={{ backgroundColor: theme.hover }}>
-              <Headphones className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.primary }} />
+              <Headphones className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.iconColor }} />
               <div>
                 <p className="text-xs font-medium" style={{ color: theme.text }}>On your marketing site</p>
                 <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>This number appears automatically in your "Experience It Live" section</p>
@@ -1001,7 +1001,7 @@ export default function DemoPhonePage() {
         >
           <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: `1px solid ${theme.border}` }}>
             <div className="flex items-center gap-2">
-              <PhoneCall className="h-4 w-4" style={{ color: theme.primary }} />
+              <PhoneCall className="h-4 w-4" style={{ color: theme.iconColor }} />
               <h3 className="font-semibold text-sm sm:text-base">Demo Call History</h3>
             </div>
           </div>
@@ -1035,7 +1035,7 @@ export default function DemoPhonePage() {
     return (
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="flex items-center gap-3 mb-6 sm:mb-8">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Phone className="h-5 w-5" style={{ color: theme.primary }} /></div>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Phone className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold">Demo Phone</h1>
             <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>A dedicated line prospects call to hear your AI receptionist</p>
@@ -1066,7 +1066,7 @@ export default function DemoPhonePage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="flex items-center gap-3 mb-6 sm:mb-8">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Phone className="h-5 w-5" style={{ color: theme.primary }} /></div>
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Phone className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
         <div>
           <h1 className="text-xl sm:text-2xl font-semibold">Demo Phone</h1>
           <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>
@@ -1093,7 +1093,7 @@ export default function DemoPhonePage() {
 
         {isFreePlanAgency && (
           <div className="mb-5 rounded-xl p-3.5 flex items-start gap-3" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
-            <Sparkles className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.primary }} />
+            <Sparkles className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.iconColor }} />
             <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>
               <span className="font-medium" style={{ color: theme.text }}>Your first demo line is free for 30 days.</span> No card needed. After 30 days it expires and the number is released. Upgrade to Pro any time for a demo line that never expires.
             </p>

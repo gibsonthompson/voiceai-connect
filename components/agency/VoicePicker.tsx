@@ -82,7 +82,7 @@ export default function VoicePicker({ theme, voices, value, onChange, filter, on
                 <div className="min-w-0">
                   <div className="flex items-center gap-1">
                     <span className="font-semibold text-sm truncate" style={{ color: theme.text }}>{v.name}</span>
-                    {isSelected && <Check className="h-3 w-3 flex-shrink-0" style={{ color: theme.primary }} />}
+                    {isSelected && <Check className="h-3 w-3 flex-shrink-0" style={{ color: theme.iconColor }} />}
                     {v.custom && <span className="text-[9px] font-semibold px-1 py-0.5 rounded flex-shrink-0" style={{ backgroundColor: hexToRgba(theme.primary, 0.12), color: theme.primary }}>Custom</span>}
                   </div>
                   <p className="text-[11px]" style={{ color: theme.textMuted }}>{v.accent || v.gender}{v.style ? ` · ${v.style}` : ''}</p>

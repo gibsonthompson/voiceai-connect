@@ -98,7 +98,7 @@ export default function AILabSearchBar({ agencyId, api, theme, logoUrl }: { agen
   if (building) {
     return (
       <div className="min-h-[75vh] flex flex-col items-center justify-center px-6 text-center">
-        <Loader2 className="h-7 w-7 animate-spin mb-4" style={{ color: theme.primary }} />
+        <Loader2 className="h-7 w-7 animate-spin mb-4" style={{ color: theme.iconColor }} />
         <p className="text-[15px] font-medium" style={{ color: theme.text }}>Building your receptionist</p>
         <p className="text-sm mt-1" style={{ color: theme.textMuted }}>Setting up the AI, pulling in your details, and assigning a number.</p>
       </div>
@@ -209,7 +209,7 @@ export default function AILabSearchBar({ agencyId, api, theme, logoUrl }: { agen
                     <span className="inline-flex items-center gap-1 text-sm font-semibold mt-2" style={{ color: theme.primary }}>Build with this <ArrowRight className="h-3.5 w-3.5" /></span>
                   </button>
                   <button onClick={() => generateCustomThenBuild(result)} className="flex-1 text-left rounded-xl p-4 transition-all" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
-                    <p className="font-semibold text-sm flex items-center gap-1.5" style={{ color: theme.text }}><Sparkles className="h-3.5 w-3.5" style={{ color: theme.primary }} /> Build a custom one</p>
+                    <p className="font-semibold text-sm flex items-center gap-1.5" style={{ color: theme.text }}><Sparkles className="h-3.5 w-3.5" style={{ color: theme.iconColor }} /> Build a custom one</p>
                     <p className="text-sm mt-0.5" style={{ color: theme.textMuted }}>Generate a receptionist tailored to {label}.</p>
                   </button>
                 </div>

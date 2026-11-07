@@ -381,7 +381,7 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.primary }} />
+        <Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.iconColor }} />
       </div>
     );
   }
@@ -430,7 +430,7 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
       )}
       {success && (
         <div className="rounded-xl p-3 flex items-center gap-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
-          <Check className="h-4 w-4" style={{ color: theme.primary }} />
+          <Check className="h-4 w-4" style={{ color: theme.iconColor }} />
           <p className="text-sm" style={{ color: theme.primary }}>{success}</p>
         </div>
       )}
@@ -446,7 +446,7 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
                 type="text" value={addName} onChange={(e) => setAddName(e.target.value)}
                 placeholder="John Smith"
                 className="w-full rounded-lg px-3 py-2 text-sm"
-                style={{ backgroundColor: theme.isDark ? '#050505' : '#ffffff', border: `1px solid ${theme.inputBorder}`, color: theme.text }}
+                style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
               />
             </div>
             <div>
@@ -455,7 +455,7 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
                 type="email" value={addEmail} onChange={(e) => setAddEmail(e.target.value)}
                 placeholder="john@company.com"
                 className="w-full rounded-lg px-3 py-2 text-sm"
-                style={{ backgroundColor: theme.isDark ? '#050505' : '#ffffff', border: `1px solid ${theme.inputBorder}`, color: theme.text }}
+                style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
               />
             </div>
           </div>
@@ -465,7 +465,7 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
               type="tel" value={addPhone} onChange={(e) => setAddPhone(e.target.value)}
               placeholder="+1 (555) 123-4567"
               className="w-full sm:w-1/2 rounded-lg px-3 py-2 text-sm"
-              style={{ backgroundColor: theme.isDark ? '#050505' : '#ffffff', border: `1px solid ${theme.inputBorder}`, color: theme.text }}
+              style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
             />
             <p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>Login credentials will be sent here via SMS</p>
           </div>
@@ -502,7 +502,7 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
                           style={{ backgroundColor: sel ? theme.primary15 : 'transparent' }}
                         >
                           {sel
-                            ? <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: theme.primary }} />
+                            ? <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: theme.iconColor }} />
                             : <Circle className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted }} />}
                           <span className="text-xs truncate" style={{ color: sel ? theme.text : theme.textMuted }}>{c.business_name}</span>
                         </button>
@@ -523,13 +523,13 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
               </div>
               <div className="inline-flex rounded-lg p-0.5 mb-2" style={{ backgroundColor: theme.hover }}>
                 {(['browser', 'phone'] as const).map(opt => (
-                  <button key={opt} type="button" onClick={() => setAddCallDelivery(opt)} className="px-3 py-1.5 text-xs font-semibold rounded-md transition-colors capitalize" style={addCallDelivery === opt ? { backgroundColor: theme.isDark ? '#050505' : '#ffffff', color: theme.text } : { color: theme.textMuted }}>
+                  <button key={opt} type="button" onClick={() => setAddCallDelivery(opt)} className="px-3 py-1.5 text-xs font-semibold rounded-md transition-colors capitalize" style={addCallDelivery === opt ? { backgroundColor: theme.input, color: theme.text } : { color: theme.textMuted }}>
                     {opt === 'browser' ? 'In the dashboard' : 'On their phone'}
                   </button>
                 ))}
               </div>
               {addCallDelivery === 'phone' ? (
-                <input type="tel" value={addAgentPhone} onChange={(e) => setAddAgentPhone(e.target.value)} placeholder="+1 (555) 123-4567" className="w-full sm:w-1/2 rounded-lg px-3 py-2 text-sm block" style={{ backgroundColor: theme.isDark ? '#050505' : '#ffffff', border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
+                <input type="tel" value={addAgentPhone} onChange={(e) => setAddAgentPhone(e.target.value)} placeholder="+1 (555) 123-4567" className="w-full sm:w-1/2 rounded-lg px-3 py-2 text-sm block" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
               ) : (
                 <p className="text-[10px]" style={{ color: theme.textMuted }}>Escalated calls ring this agent inside the dashboard. They click to take over.</p>
               )}
@@ -684,7 +684,7 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
                                     style={{ backgroundColor: sel ? theme.primary15 : 'transparent' }}
                                   >
                                     {sel
-                                      ? <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: theme.primary }} />
+                                      ? <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: theme.iconColor }} />
                                       : <Circle className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted }} />}
                                     <span className="text-xs truncate" style={{ color: sel ? theme.text : theme.textMuted }}>{c.business_name}</span>
                                   </button>
@@ -734,7 +734,7 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
                               }}
                             >
                               {enabled
-                                ? <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: theme.primary }} />
+                                ? <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: theme.iconColor }} />
                                 : <Circle className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted }} />
                               }
                               <div className="min-w-0">
@@ -759,7 +759,7 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
                             <div key={key} className="flex items-center justify-between py-1.5 px-1">
                               <div className="flex items-center gap-2">
                                 {enabled
-                                  ? <Bell className="h-3.5 w-3.5" style={{ color: theme.primary }} />
+                                  ? <Bell className="h-3.5 w-3.5" style={{ color: theme.iconColor }} />
                                   : <BellOff className="h-3.5 w-3.5" style={{ color: theme.textMuted }} />
                                 }
                                 <span className="text-xs" style={{ color: enabled ? theme.text : theme.textMuted }}>{label}</span>

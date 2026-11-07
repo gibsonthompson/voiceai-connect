@@ -210,7 +210,7 @@ export default function AISettingsSection({ clientId, theme, compact = false }: 
     <section className={compact ? '' : 'mb-4 sm:mb-6'}>
       {!compact && (
         <h2 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2" style={{ color: theme.text }}>
-          <Bot className="w-4 h-4" style={{ color: theme.primary }} />
+          <Bot className="w-4 h-4" style={{ color: theme.iconColor }} />
           AI Personality & Behavior
         </h2>
       )}
@@ -254,7 +254,7 @@ export default function AISettingsSection({ clientId, theme, compact = false }: 
         {/* Booking Mode */}
         <div>
           <label className="block text-[10px] sm:text-xs font-medium mb-1.5" style={{ color: theme.textMuted || theme.textMuted4 }}>
-            <Calendar className="w-3 h-3 inline mr-1" style={{ color: theme.primary }} />
+            <Calendar className="w-3 h-3 inline mr-1" style={{ color: theme.iconColor }} />
             Appointment Booking
           </label>
           <div className="space-y-2">

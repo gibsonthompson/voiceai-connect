@@ -117,7 +117,7 @@ export default function AdditionalDemoNumbers({ agencyId, theme, country, byotEn
   return (
     <div className="rounded-xl p-5 sm:p-6 mb-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
       <div className="flex items-center gap-2 mb-1">
-        <Phone className="h-4 w-4" style={{ color: theme.primary }} />
+        <Phone className="h-4 w-4" style={{ color: theme.iconColor }} />
         <h3 className="font-semibold text-base sm:text-lg" style={{ color: theme.text }}>Additional Demo Numbers</h3>
       </div>
       <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>

@@ -116,7 +116,7 @@ export default function CcServices({ clientId, theme }: { clientId: string; them
   return (
     <div className="rounded-2xl p-5 sm:p-6" style={card}>
       <div className="flex items-center gap-3 mb-4">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Briefcase className="h-4 w-4" style={{ color: theme.primary }} /></div>
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Briefcase className="h-4 w-4" style={{ color: theme.iconColor }} /></div>
         <div className="min-w-0 flex-1">
           <h2 className="font-semibold text-sm sm:text-[15px]" style={{ color: theme.text }}>Services</h2>
           <p className="text-[12px]" style={{ color: theme.textMuted }}>What this business offers, so the AI can quote and book correctly.</p>

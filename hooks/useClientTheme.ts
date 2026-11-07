@@ -100,6 +100,19 @@ export function useClientTheme() {
     const card = pick(client?.card_bg, ov.card_bg, isDark ? '#111111' : '#ffffff');
     const border = pick(client?.card_border, ov.card_border, isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb');
 
+    // Contrast-safe brand accent for icons on cards: if the brand primary is too
+    // close to the card bg (washes out), keep the hue but push it toward black on
+    // a light card / white on a dark card.
+    const iconColor = (() => {
+      if (Math.abs(luminance(primary) - luminance(card)) >= 0.22) return primary;
+      const c = primary.replace('#', '');
+      if (c.length < 6) return primary;
+      const r = parseInt(c.substring(0, 2), 16), g = parseInt(c.substring(2, 4), 16), b = parseInt(c.substring(4, 6), 16);
+      const target = isLight(card) ? 0 : 255;
+      const mix = (v: number) => Math.round(v + (target - v) * 0.62).toString(16).padStart(2, '0');
+      return `#${mix(r)}${mix(g)}${mix(b)}`;
+    })();
+
     // ── Text ────────────────────────────────────────────────────────
     const text = pick(null, ov.text_primary, isDark ? '#fafaf9' : '#111827');
     const textMuted = pick(null, ov.text_muted, isDark ? 'rgba(250,250,249,0.7)' : '#6b7280');
@@ -113,6 +126,8 @@ export function useClientTheme() {
       primary15: hexToRgba(primary, 0.15),
       primary20: hexToRgba(primary, 0.2),
       primary30: hexToRgba(primary, 0.3),
+      iconColor,
+      iconBg: hexToRgba(iconColor, 0.14),
 
       // Page
       bg,
@@ -123,7 +138,10 @@ export function useClientTheme() {
       borderSubtle: isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6',
       card,
       hover: isDark ? 'rgba(255,255,255,0.05)' : '#f3f4f6',
-      input: isDark ? 'rgba(255,255,255,0.05)' : '#ffffff',
+      // White-label: field bg follows the (possibly customized) card color
+      // instead of hard-coding white in light mode. Fields stay distinct via
+      // inputBorder; a faint inset keeps them readable on any light card.
+      input: isDark ? 'rgba(255,255,255,0.05)' : (isLight(card) ? 'rgba(0,0,0,0.025)' : card),
       inputBorder: isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb',
 
       // Nav

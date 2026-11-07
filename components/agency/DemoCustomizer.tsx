@@ -219,7 +219,7 @@ export default function DemoCustomizer({ agencyId, theme, demoNumberId }: Props)
     <div className="rounded-xl p-5 sm:p-6 mb-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
       <button type="button" onClick={() => setExpanded((v) => !v)} className="w-full flex items-center justify-between gap-2 text-left" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
         <span className="flex items-center gap-2">
-          <Mic className="h-4 w-4" style={{ color: theme.primary }} />
+          <Mic className="h-4 w-4" style={{ color: theme.iconColor }} />
           <h3 className="font-semibold text-base sm:text-lg" style={{ color: theme.text }}>Customize Your Demo</h3>
         </span>
         <ChevronDown className="h-4 w-4 flex-shrink-0 transition-transform" style={{ color: theme.textMuted, transform: expanded ? 'rotate(180deg)' : 'none' }} />

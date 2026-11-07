@@ -84,12 +84,12 @@ function ScopeDropdown({ clients, value, onChange, theme }: { clients: { id: str
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
           <div className="absolute z-20 mt-1 w-64 max-h-72 overflow-y-auto rounded-xl shadow-lg" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
             <button type="button" onClick={() => { onChange(null); setOpen(false); }} className="w-full text-left px-3 py-2 text-sm flex items-center justify-between" style={{ color: theme.text, backgroundColor: value === null ? theme.hover : 'transparent' }}>
-              All clients {value === null && <Check className="h-3.5 w-3.5" style={{ color: theme.primary }} />}
+              All clients {value === null && <Check className="h-3.5 w-3.5" style={{ color: theme.iconColor }} />}
             </button>
             {clients.length === 0 && <div className="px-3 py-2 text-xs" style={{ color: theme.textMuted }}>No businesses yet.</div>}
             {clients.map((c) => (
               <button key={c.id} type="button" onClick={() => { onChange(c.id); setOpen(false); }} className="w-full text-left px-3 py-2 text-sm flex items-center justify-between gap-2" style={{ color: theme.text, backgroundColor: value === c.id ? theme.hover : 'transparent' }}>
-                <span className="truncate">{c.business_name}</span>{value === c.id && <Check className="h-3.5 w-3.5 shrink-0" style={{ color: theme.primary }} />}
+                <span className="truncate">{c.business_name}</span>{value === c.id && <Check className="h-3.5 w-3.5 shrink-0" style={{ color: theme.iconColor }} />}
               </button>
             ))}
           </div>
@@ -293,7 +293,7 @@ export default function AutomationsPage() {
         className="inline-flex h-5 w-5 items-center justify-center rounded-full transition-transform"
         style={{ backgroundColor: '#fff', transform: on ? 'translateX(22px)' : 'translateX(3px)' }}
       >
-        {busy && <Loader2 className="h-3 w-3 animate-spin" style={{ color: theme.primary }} />}
+        {busy && <Loader2 className="h-3 w-3 animate-spin" style={{ color: theme.iconColor }} />}
       </span>
     </button>
   );
@@ -425,7 +425,7 @@ export default function AutomationsPage() {
       <div className="flex items-start justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2" style={{ color: theme.text }}>
-            <Zap className="h-6 w-6" style={{ color: theme.primary }} /> Automations
+            <Zap className="h-6 w-6" style={{ color: theme.iconColor }} /> Automations
           </h1>
           <p className="text-sm mt-1" style={{ color: theme.textMuted }}>
             {category === 'account'
@@ -524,7 +524,7 @@ export default function AutomationsPage() {
           {/* Pro: note that advanced steps live on Scale */}
           {pf.isPro && (
             <div className="mb-5 rounded-xl px-4 py-3 flex items-center gap-2 text-sm" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>
-              <Sparkles className="h-4 w-4 shrink-0" style={{ color: theme.primary }} />
+              <Sparkles className="h-4 w-4 shrink-0" style={{ color: theme.iconColor }} />
               You can run {ent?.max_workflows} automations at once on Pro. Scale unlocks unlimited automations plus AI-written messages and webhooks.
             </div>
           )}

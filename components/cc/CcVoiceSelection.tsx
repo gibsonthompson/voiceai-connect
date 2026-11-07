@@ -146,7 +146,7 @@ export default function CcVoiceSelection({ clientId, theme, greeting }: { client
   return (
     <div className="rounded-2xl p-5 sm:p-6" style={card}>
       <div className="flex items-center gap-3 mb-4">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Mic className="h-4 w-4" style={{ color: theme.primary }} /></div>
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Mic className="h-4 w-4" style={{ color: theme.iconColor }} /></div>
         <div className="min-w-0 flex-1">
           <h2 className="font-semibold text-sm sm:text-[15px]" style={{ color: theme.text }}>Voice</h2>
           <p className="text-[12px]" style={{ color: theme.textMuted }}>The voice callers hear, speaking this business's greeting. Preview one, pick it, and save.</p>
@@ -187,7 +187,7 @@ export default function CcVoiceSelection({ clientId, theme, greeting }: { client
                     <div className="flex items-center gap-1.5">
                       <span className="font-semibold text-[13px] truncate" style={{ color: theme.text }}>{v.name}</span>
                       {v.custom && <span className="text-[8px] font-bold px-1 py-0.5 rounded flex-shrink-0" style={{ backgroundColor: theme.primary15, color: theme.primary }}>CUSTOM</span>}
-                      {sel && <Check className="h-3.5 w-3.5 flex-shrink-0" style={{ color: theme.primary }} />}
+                      {sel && <Check className="h-3.5 w-3.5 flex-shrink-0" style={{ color: theme.iconColor }} />}
                     </div>
                     {meta && <p className="text-[10px] truncate" style={{ color: theme.textMuted }}>{meta}</p>}
                   </div>

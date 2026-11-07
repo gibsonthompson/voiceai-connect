@@ -228,7 +228,7 @@ export default function ClientCallsPage() {
               {showExport && (
                 <div
                   className="absolute right-0 top-full mt-2 w-72 rounded-2xl p-4 z-50 shadow-xl"
-                  style={{ backgroundColor: theme.isDark ? '#1a1a1a' : '#ffffff', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}` }}
+                  style={{ backgroundColor: theme.card, border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}` }}
                 >
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-sm font-semibold" style={{ color: theme.text }}>Export Calls</p>

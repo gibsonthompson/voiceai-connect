@@ -330,7 +330,7 @@ export default function LeadDetailPage() {
   if (contextLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} />
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.iconColor }} />
       </div>
     );
   }
@@ -377,7 +377,7 @@ export default function LeadDetailPage() {
     color: theme.text,
   };
 
-  const dropdownUi = { inputStyle, text: theme.text, muted: theme.textMuted, panelBg: theme.isDark ? '#232321' : '#ffffff', panelBorder: theme.inputBorder, hover: theme.hover, accent: theme.primary, isDark: theme.isDark };
+  const dropdownUi = { inputStyle, text: theme.text, muted: theme.textMuted, panelBg: theme.card, panelBorder: theme.inputBorder, hover: theme.hover, accent: theme.primary, isDark: theme.isDark };
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -484,7 +484,7 @@ export default function LeadDetailPage() {
         <div className="flex items-center justify-between mb-4 sm:mb-5">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ backgroundColor: theme.primary + '18' }}>
-              <TrendingUp className="h-4 w-4" style={{ color: theme.primary }} />
+              <TrendingUp className="h-4 w-4" style={{ color: theme.iconColor }} />
             </div>
             <div>
               <h3 className="font-semibold text-sm sm:text-base leading-tight" style={{ color: theme.text }}>Outreach Progress</h3>

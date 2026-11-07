@@ -292,7 +292,7 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
     <section className={compact ? '' : 'mb-4 sm:mb-6'}>
       {!compact && (
         <h2 className="text-sm sm:text-base font-semibold mb-1 flex items-center gap-2" style={{ color: theme.text }}>
-          <Users className="w-4 h-4" style={{ color: theme.primary }} />Staff Directory
+          <Users className="w-4 h-4" style={{ color: theme.iconColor }} />Staff Directory
         </h2>
       )}
       {!compact && (
@@ -302,7 +302,7 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
       )}
       {compact && !hideHeader && (
         <div className="flex items-center gap-2 mb-3">
-          <Users className="w-4 h-4" style={{ color: theme.primary }} />
+          <Users className="w-4 h-4" style={{ color: theme.iconColor }} />
           <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Staff Directory</span>
         </div>
       )}
@@ -351,7 +351,7 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
                 )}
                 {suggestions.length > 0 && (
                   <div className="mb-3 rounded-xl p-3" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.06 : 0.04), border: `1px solid ${hexToRgba(theme.primary, theme.isDark ? 0.15 : 0.12)}` }}>
-                    <div className="flex items-center gap-1.5 mb-1.5"><Globe className="w-3.5 h-3.5" style={{ color: theme.primary }} /><span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: theme.primary }}>Found on your website</span></div>
+                    <div className="flex items-center gap-1.5 mb-1.5"><Globe className="w-3.5 h-3.5" style={{ color: theme.iconColor }} /><span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: theme.primary }}>Found on your website</span></div>
                     <p className="text-[10px] mb-2.5 leading-relaxed" style={{ color: theme.textMuted }}>People we spotted on your site. Add the ones on your team (you can set a phone and role), or dismiss the rest.</p>
                     <div className="flex flex-wrap gap-2">
                       {suggestions.map((sg, i) => (

@@ -48,7 +48,7 @@ export default function PaidFeatureNotice({
           className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0"
           style={{ backgroundColor: theme.primary15 }}
         >
-          {icon || <Sparkles className="h-4 w-4" style={{ color: theme.primary }} />}
+          {icon || <Sparkles className="h-4 w-4" style={{ color: theme.iconColor }} />}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1.5 flex-wrap">

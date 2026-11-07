@@ -98,7 +98,7 @@ function ProgressBar({ progress, theme }: { progress: any; theme: any }) {
     <div className="rounded-xl p-4 mb-4" style={{ background: `${theme.primary}08`, border: `1px solid ${theme.primary}20` }}>
       <div className="flex items-center gap-3 mb-3">
         <div className="flex items-center justify-center h-9 w-9 rounded-full shrink-0" style={{ background: `${theme.primary}18` }}>
-          <Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.primary }} />
+          <Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.iconColor }} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-sm font-semibold truncate" style={{ color: theme.primary }}>{progress.message || "Working..."}</div>
@@ -211,19 +211,19 @@ function LeadCard({ lead, expanded, onToggle, theme, onSave, saving, saved, sele
             <div className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: theme.textMuted }}>Contact</div>
             {lead.phone && (
               <div className="mb-1 flex items-center gap-2">
-                <Phone className="h-3.5 w-3.5 flex-shrink-0" style={{ color: theme.primary }} />
+                <Phone className="h-3.5 w-3.5 flex-shrink-0" style={{ color: theme.iconColor }} />
                 <a href={`tel:${lead.phone}`} className="no-underline" style={{ color: theme.primary }}>{lead.phone}</a>
               </div>
             )}
             {lead.email && (
               <div className="mb-1 flex items-center gap-2">
-                <Mail className="h-3.5 w-3.5 flex-shrink-0" style={{ color: theme.primary }} />
+                <Mail className="h-3.5 w-3.5 flex-shrink-0" style={{ color: theme.iconColor }} />
                 <a href={`mailto:${lead.email}`} className="no-underline truncate" style={{ color: theme.primary }}>{lead.email}</a>
               </div>
             )}
             {lead.website && (
               <div className="mb-1 flex items-center gap-2">
-                <Globe className="h-3.5 w-3.5 flex-shrink-0" style={{ color: theme.primary }} />
+                <Globe className="h-3.5 w-3.5 flex-shrink-0" style={{ color: theme.iconColor }} />
                 <a href={lead.website} target="_blank" rel="noopener" className="no-underline truncate" style={{ color: theme.primary }}>
                   {lead.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}
                 </a>
@@ -862,7 +862,7 @@ export default function LeadFinderPage() {
         </Link>
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>
-            <Target className="h-5 w-5" style={{ color: theme.primary }} />
+            <Target className="h-5 w-5" style={{ color: theme.iconColor }} />
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Lead Finder</h1>
@@ -875,7 +875,7 @@ export default function LeadFinderPage() {
 
       {/* What it does */}
       <div className="rounded-xl p-4 mb-6 flex items-start gap-3" style={{ background: `${theme.primary}08`, border: `1px solid ${theme.primary}20` }}>
-        <Info className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: theme.primary }} />
+        <Info className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: theme.iconColor }} />
         <div className="text-sm" style={{ color: theme.textMuted }}>
           <p className="font-medium mb-1" style={{ color: theme.text }}>What the Lead Finder does</p>
           <p>Pick an industry (or type a custom search) and a location. It pulls matching local businesses from Google Maps and enriches each one with phone, email, website and hours. Google returns up to 60 businesses per search. Add the ones you want straight to your leads, then work them from the Leads page.</p>
@@ -1085,7 +1085,7 @@ export default function LeadFinderPage() {
               <button onClick={toggleSelectAll} className="inline-flex items-center gap-1.5 text-xs font-medium cursor-pointer"
                 style={{ color: theme.textMuted }}>
                 {selectedLeads.size === filteredLeads.length
-                  ? <CheckSquare className="h-3.5 w-3.5" style={{ color: theme.primary }} />
+                  ? <CheckSquare className="h-3.5 w-3.5" style={{ color: theme.iconColor }} />
                   : <Square className="h-3.5 w-3.5" />}
                 {selectedLeads.size > 0 ? `${selectedLeads.size} selected` : "Select all"}
               </button>

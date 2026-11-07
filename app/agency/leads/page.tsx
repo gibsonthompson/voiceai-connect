@@ -487,7 +487,7 @@ export default function AgencyLeadsPage() {
   if (contextLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.primary }} />
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.iconColor }} />
       </div>
     );
   }
@@ -580,7 +580,7 @@ export default function AgencyLeadsPage() {
                 { value: 'name', label: 'Sort: Name (A to Z)' },
                 { value: 'newest', label: 'Sort: Newest' },
               ]}
-              ui={{ inputStyle: { backgroundColor: 'var(--lp-input)', border: '1px solid var(--lp-input-border)', color: 'var(--lp-muted)' }, text: 'var(--lp-text)', muted: 'var(--lp-muted)', panelBg: theme.isDark ? '#232321' : '#ffffff', panelBorder: 'var(--lp-input-border)', hover: theme.hover, accent: theme.primary, isDark: theme.isDark }}
+              ui={{ inputStyle: { backgroundColor: 'var(--lp-input)', border: '1px solid var(--lp-input-border)', color: 'var(--lp-muted)' }, text: 'var(--lp-text)', muted: 'var(--lp-muted)', panelBg: theme.card, panelBorder: 'var(--lp-input-border)', hover: theme.hover, accent: theme.primary, isDark: theme.isDark }}
             />
           </div>
         </div>

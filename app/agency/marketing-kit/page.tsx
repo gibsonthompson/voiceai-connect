@@ -275,7 +275,7 @@ export default function MarketingKitPage() {
   if (loading || !agency) {
     return (
       <div className="p-8 flex items-center justify-center" style={{ minHeight: '60vh' }}>
-        <Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.primary }} />
+        <Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.iconColor }} />
       </div>
     );
   }
@@ -433,7 +433,7 @@ export default function MarketingKitPage() {
 
       <div className="flex items-start gap-3 mb-6">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0 mt-0.5 overflow-hidden" style={{ backgroundColor: theme.primary15 }}>
-          {logoUrl ? <img src={logoUrl} alt={name} className="h-7 w-7 object-contain" /> : <Megaphone className="h-5 w-5" style={{ color: theme.primary }} />}
+          {logoUrl ? <img src={logoUrl} alt={name} className="h-7 w-7 object-contain" /> : <Megaphone className="h-5 w-5" style={{ color: theme.iconColor }} />}
         </div>
         <div>
           <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Marketing Kit</h1>
@@ -473,7 +473,7 @@ export default function MarketingKitPage() {
         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.hover)}
         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = theme.card)}>
         <div className="flex items-center gap-3 min-w-0">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Calculator className="h-5 w-5" style={{ color: theme.primary }} /></div>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Calculator className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
           <div className="min-w-0">
             <h3 className="text-sm font-semibold" style={{ color: theme.text }}>Missed-Call Revenue Calculator</h3>
             <p className="text-xs truncate" style={{ color: theme.textMuted }}>Show a prospect what missed calls cost them, then print a branded result sheet.</p>
@@ -484,7 +484,7 @@ export default function MarketingKitPage() {
 
       {/* QR codes */}
       <div className="flex items-center gap-2 mb-3">
-        <QrCode className="h-4 w-4" style={{ color: theme.primary }} />
+        <QrCode className="h-4 w-4" style={{ color: theme.iconColor }} />
         <h2 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>QR codes</h2>
       </div>
       <p className="text-sm mb-4" style={{ color: theme.textMuted }}>Download and drop these on cards, flyers, or signs. Each one is ready to print.</p>
@@ -509,7 +509,7 @@ export default function MarketingKitPage() {
 
       {/* ===== Builder: sticky controls + live canvas ===== */}
       <div className="flex items-center gap-2 mb-3">
-        <Megaphone className="h-4 w-4" style={{ color: theme.primary }} />
+        <Megaphone className="h-4 w-4" style={{ color: theme.iconColor }} />
         <h2 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>Branded print materials</h2>
       </div>
       <p className="text-sm mb-4" style={{ color: theme.textMuted }}>Edit colors and content on the left; the materials on the right update live. Saved for next time.</p>
@@ -518,7 +518,7 @@ export default function MarketingKitPage() {
         <div className="mb-6 lg:mb-0 lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto p-4 sm:p-5" style={cardStyle}>
           <div className="flex items-center justify-between gap-3 mb-1 flex-wrap">
             <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4" style={{ color: theme.primary }} />
+              <Sparkles className="h-4 w-4" style={{ color: theme.iconColor }} />
               <h2 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>Customize</h2>
             </div>
             <div className="flex items-center gap-2">
@@ -565,7 +565,7 @@ export default function MarketingKitPage() {
       {/* One-pager */}
       <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4" style={{ color: theme.primary }} />
+          <Sparkles className="h-4 w-4" style={{ color: theme.iconColor }} />
           <h2 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>Printable one-pager</h2>
         </div>
         <button onClick={() => printOnly('mk-onepager')} className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90" style={{ backgroundColor: primary }}>
@@ -633,7 +633,7 @@ export default function MarketingKitPage() {
       {/* Leave-behind card */}
       <div className="flex items-center justify-between gap-3 mb-3 mt-10 flex-wrap">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4" style={{ color: theme.primary }} />
+          <Sparkles className="h-4 w-4" style={{ color: theme.iconColor }} />
           <h2 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>Leave-behind card</h2>
         </div>
         <button onClick={() => printOnly('mk-leavebehind')} className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90" style={{ backgroundColor: primary }}>
@@ -660,7 +660,7 @@ export default function MarketingKitPage() {
       {/* Business card */}
       <div className="flex items-center justify-between gap-3 mb-3 mt-10 flex-wrap">
         <div className="flex items-center gap-2">
-          <QrCode className="h-4 w-4" style={{ color: theme.primary }} />
+          <QrCode className="h-4 w-4" style={{ color: theme.iconColor }} />
           <h2 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>Business card</h2>
         </div>
         <button onClick={() => printOnly('mk-card')} className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90" style={{ backgroundColor: primary }}>

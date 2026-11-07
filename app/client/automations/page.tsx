@@ -113,7 +113,7 @@ export default function ClientAutomationsPage() {
       className="relative inline-flex h-7 w-12 items-center rounded-full transition-colors shrink-0"
       style={{ backgroundColor: on ? theme.primary : theme.border, cursor: busy ? 'not-allowed' : 'pointer' }}>
       <span className="inline-flex h-5 w-5 items-center justify-center rounded-full transition-transform" style={{ backgroundColor: '#fff', transform: on ? 'translateX(22px)' : 'translateX(3px)' }}>
-        {busy && <Loader2 className="h-3 w-3 animate-spin" style={{ color: theme.primary }} />}
+        {busy && <Loader2 className="h-3 w-3 animate-spin" style={{ color: theme.iconColor }} />}
       </span>
     </button>
   );
@@ -174,7 +174,7 @@ export default function ClientAutomationsPage() {
       <div className="flex items-start justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2" style={{ color: theme.text }}>
-            <Zap className="h-6 w-6" style={{ color: theme.primary }} /> Automations
+            <Zap className="h-6 w-6" style={{ color: theme.iconColor }} /> Automations
           </h1>
           <p className="text-sm mt-1" style={{ color: theme.textMuted }}>Automatic text follow-ups for your customers after they call.</p>
         </div>

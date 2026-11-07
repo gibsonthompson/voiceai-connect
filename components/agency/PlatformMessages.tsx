@@ -178,7 +178,7 @@ export default function PlatformMessages({
   if (loading) {
     return (
       <div className="max-w-[1400px] p-12 flex items-center justify-center" style={panel}>
-        <Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.primary }} />
+        <Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.iconColor }} />
       </div>
     );
   }
@@ -229,7 +229,7 @@ export default function PlatformMessages({
 
         <div className="px-4 py-4 space-y-3 max-h-[min(60vh,560px)] overflow-y-auto">
           {threadLoading ? (
-            <div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.primary }} /></div>
+            <div className="py-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.iconColor }} /></div>
           ) : messages.map(m => {
             const mine = m.sender === 'agency';
             return (
@@ -282,7 +282,7 @@ export default function PlatformMessages({
       <div className="max-w-[1400px] p-16 text-center" style={panel}>
         <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl mb-4"
           style={{ backgroundColor: rgba(theme.primary, 0.1), border: `1px solid ${rgba(theme.primary, 0.25)}` }}>
-          <MessageSquare className="h-7 w-7" style={{ color: theme.primary }} />
+          <MessageSquare className="h-7 w-7" style={{ color: theme.iconColor }} />
         </div>
         <p className="text-sm" style={{ color: theme.text }}>No messages from VoiceAI Connect yet</p>
         <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
