@@ -8,7 +8,8 @@ import {
   PhoneCall, CreditCard, Clock, ChevronRight, Loader2,
   Copy, Check, ExternalLink, Save, RotateCcw, AlertCircle, Bot,
   X, Paintbrush, Lock, ChevronDown, Users, Shield, Trash2, Ban,
-  PhoneForwarded, CalendarCheck, AlertTriangle, ShieldX, Radio, Bell
+  PhoneForwarded, CalendarCheck, AlertTriangle, ShieldX, Radio, Bell,
+  CheckCircle2, Circle, Briefcase, HelpCircle, Mic, ClipboardList
 } from 'lucide-react';
 import { getCallBadges } from '@/lib/call-badges';
 import { useAgency } from '../../context';
@@ -21,7 +22,9 @@ import { CustomSelect } from '@/components/ui/custom-select';
 import { TimezoneSelect } from '@/components/ui/timezone-select';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 
-interface Client { id: string; business_name: string; email: string; owner_name: string; owner_phone: string; business_city?: string; business_state?: string; business_website?: string; industry?: string; is_test_client?: boolean; plan_type: string; subscription_status: string; status: string; calls_this_month: number; monthly_call_limit?: number; minutes_this_period?: number; created_at: string; vapi_phone_number: string; vapi_assistant_id?: string; trial_ends_at?: string; logo_url?: string | null; primary_color?: string | null; secondary_color?: string | null; accent_color?: string | null; theme_mode?: string | null; login_email?: string | null; login_password?: string | null; signup_discount_code?: string | null; post_call_sms_enabled?: boolean | null; notification_phone?: string | null; awaiting_manual_provision?: boolean | null; show_client_calendar?: boolean | null; }
+interface OnboardingSection { label: string; done: boolean; optional: boolean; count?: number; }
+interface OnboardingStatus { sections: Record<string, OnboardingSection>; completed_count: number; total: number; percent: number; onboarding_completed: boolean; }
+interface Client { id: string; onboarding_status?: OnboardingStatus; business_name: string; email: string; owner_name: string; owner_phone: string; business_city?: string; business_state?: string; business_website?: string; industry?: string; is_test_client?: boolean; plan_type: string; subscription_status: string; status: string; calls_this_month: number; monthly_call_limit?: number; minutes_this_period?: number; created_at: string; vapi_phone_number: string; vapi_assistant_id?: string; trial_ends_at?: string; logo_url?: string | null; primary_color?: string | null; secondary_color?: string | null; accent_color?: string | null; theme_mode?: string | null; login_email?: string | null; login_password?: string | null; signup_discount_code?: string | null; post_call_sms_enabled?: boolean | null; notification_phone?: string | null; awaiting_manual_provision?: boolean | null; show_client_calendar?: boolean | null; }
 interface Call { id: string; customer_name: string; caller_phone: string; customer_phone?: string; created_at: string; urgency_level: string; call_status: string; duration_seconds?: number; duration?: number; service_requested?: string; transfer_status?: string; appointment_booked?: boolean; is_spam?: boolean; }
 
 // Logo color extraction (ported from agency branding so client logos auto-derive
@@ -31,6 +34,57 @@ function rgbToHex(r: number, g: number, b: number): string { return '#' + [r, g,
 function adjustColorBrightness(hex: string, percent: number): string { const num = parseInt(hex.replace('#', ''), 16); const amt = Math.round(2.55 * percent); const R = Math.min(255, Math.max(0, (num >> 16) + amt)); const G = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amt)); const B = Math.min(255, Math.max(0, (num & 0x0000FF) + amt)); return rgbToHex(R, G, B); }
 function detectLogoBackground(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D): { r: number; g: number; b: number; isTransparent: boolean } { const w = canvas.width; const h = canvas.height; const step = Math.max(1, Math.floor(Math.min(w, h) / 20)); const edgePixels: ImageData[] = []; for (let x = 0; x < w; x += step) { edgePixels.push(ctx.getImageData(x, 0, 1, 1)); edgePixels.push(ctx.getImageData(x, h - 1, 1, 1)); } for (let y = 0; y < h; y += step) { edgePixels.push(ctx.getImageData(0, y, 1, 1)); edgePixels.push(ctx.getImageData(w - 1, y, 1, 1)); } const transparentCount = edgePixels.filter(p => p.data[3] < 128).length; if (transparentCount > edgePixels.length * 0.5) return { r: 0, g: 0, b: 0, isTransparent: true }; let r = 0, g = 0, b = 0, count = 0; edgePixels.forEach(p => { if (p.data[3] >= 128) { r += p.data[0]; g += p.data[1]; b += p.data[2]; count++; } }); return count > 0 ? { r: Math.round(r / count), g: Math.round(g / count), b: Math.round(b / count), isTransparent: false } : { r: 255, g: 255, b: 255, isTransparent: false }; }
 async function extractColorsFromImage(imageUrl: string): Promise<{ primary: string; secondary: string; accent: string; logoBgColor: string; suggestedTheme: 'light' | 'dark'; }> { const fallback = { primary: '#00a19b', secondary: '#007e77', accent: '#01f5d1', logoBgColor: '#000000', suggestedTheme: 'dark' as const }; return new Promise((resolve) => { const img = new Image(); img.crossOrigin = 'Anonymous'; img.onload = () => { const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); if (!ctx) { resolve(fallback); return; } const size = 150; canvas.width = size; canvas.height = size; ctx.drawImage(img, 0, 0, size, size); const bg = detectLogoBackground(canvas, ctx); const bgHex = bg.isTransparent ? '#000000' : rgbToHex(bg.r, bg.g, bg.b); let suggestedTheme: 'light' | 'dark' = 'dark'; if (!bg.isTransparent) { const luminance = (0.299 * bg.r + 0.587 * bg.g + 0.114 * bg.b) / 255; suggestedTheme = luminance > 0.5 ? 'light' : 'dark'; } const pixels = ctx.getImageData(0, 0, size, size).data; const colorData: Record<string, { count: number; r: number; g: number; b: number; saturation: number; lightness: number; }> = {}; for (let i = 0; i < pixels.length; i += 4) { const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2], a = pixels[i + 3]; if (a < 128) continue; const bgDist = Math.sqrt(Math.pow(r - bg.r, 2) + Math.pow(g - bg.g, 2) + Math.pow(b - bg.b, 2)); if (bgDist < 50) continue; const br = Math.round(r / 25) * 25; const bg2 = Math.round(g / 25) * 25; const bb = Math.round(b / 25) * 25; const max = Math.max(br, bg2, bb) / 255; const min = Math.min(br, bg2, bb) / 255; const lightness = (max + min) / 2; const saturation = max === min ? 0 : lightness > 0.5 ? (max - min) / (2 - max - min) : (max - min) / (max + min); if (lightness < 0.15 || lightness > 0.65) continue; if (saturation < 0.25) continue; const key = `${br},${bg2},${bb}`; if (!colorData[key]) colorData[key] = { count: 0, r: br, g: bg2, b: bb, saturation, lightness }; colorData[key].count++; } const colors = Object.values(colorData).filter(c => c.count >= 5).sort((a, b) => (b.saturation * Math.log(b.count)) - (a.saturation * Math.log(a.count))).slice(0, 6).map(c => rgbToHex(c.r, c.g, c.b)); if (!colors.length) { resolve({ ...fallback, logoBgColor: bgHex, suggestedTheme }); return; } const primary = colors[0]; const secondary = colors[1] || adjustColorBrightness(primary, -25); const accent = colors[2] || adjustColorBrightness(primary, 30); resolve({ primary, secondary, accent, logoBgColor: bgHex, suggestedTheme }); }; img.onerror = () => resolve(fallback); img.src = imageUrl; }); }
+
+// Agency-facing view of how much of the AI setup the client has actually filled
+// in, derived server-side from the real data. Read-only: it tells the agency what
+// is done and what is still missing so they know what to nudge the client on.
+function SetupProgressCard({ status, theme }: { status?: OnboardingStatus; theme: any }) {
+  if (!status || !status.total) return null;
+  const ICONS: Record<string, any> = { website: Globe, hours: Clock, services: Briefcase, knowledge: HelpCircle, voice: Mic, staff: Users };
+  const ORDER = ['website', 'hours', 'services', 'knowledge', 'voice', 'staff'];
+  const done = status.completed_count >= status.total;
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+      <div className="p-4 sm:p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2"><ClipboardList className="h-4 w-4" style={{ color: theme.iconColor }} /><h2 className="font-semibold text-sm sm:text-base">Setup Progress</h2></div>
+          <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full" style={{ backgroundColor: done ? theme.primary15 : theme.warningBg, color: done ? theme.primary : theme.warningText }}>{done ? 'Complete' : `${status.completed_count}/${status.total}`}</span>
+        </div>
+        <div className="w-full h-2 rounded-full overflow-hidden mb-4" style={{ backgroundColor: theme.hover }}>
+          <div className="h-full rounded-full transition-all" style={{ width: `${status.percent}%`, backgroundColor: done ? theme.primary : theme.warning }} />
+        </div>
+        <div className="space-y-0.5">
+          {ORDER.map((key) => {
+            const s = status.sections[key];
+            if (!s) return null;
+            const Icon = ICONS[key] || Circle;
+            return (
+              <div key={key} className="flex items-center justify-between py-1.5">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Icon className="h-4 w-4 flex-shrink-0" style={{ color: s.done ? theme.iconColor : theme.textMuted }} />
+                  <span className="text-sm truncate" style={{ color: theme.text }}>{s.label}</span>
+                  {typeof s.count === 'number' && s.count > 0 && (<span className="text-xs flex-shrink-0" style={{ color: theme.textMuted }}>({s.count})</span>)}
+                  {s.optional && (<span className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>optional</span>)}
+                </div>
+                {s.done ? (
+                  <span className="inline-flex items-center gap-1 text-xs font-medium flex-shrink-0" style={{ color: theme.primary }}><CheckCircle2 className="h-4 w-4" />Done</span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-xs flex-shrink-0" style={{ color: theme.textMuted }}><Circle className="h-4 w-4" />{s.optional ? 'None' : 'Not set'}</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {!status.onboarding_completed && (
+          <div className="mt-4 rounded-lg px-3 py-2.5 flex items-start gap-2" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
+            <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.warningText }} />
+            <p className="text-xs leading-relaxed" style={{ color: theme.warningText }}>This client hasn&apos;t finished the setup wizard yet. The sections above reflect what they&apos;ve filled in so far.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function ClientBrandingCard({ client, agencyId, theme, backendUrl, onUpdate }: { client: Client; agencyId?: string; theme: any; backendUrl: string; onUpdate: () => void; }) {
   const [brandingOpen, setBrandingOpen] = useState(false);
@@ -904,6 +958,9 @@ export default function AgencyClientDetailPage() {
           </div>
 
           {/* AI Prompt */}
+          {/* Setup Progress - what the client has actually filled in */}
+          {!client.is_test_client && <SetupProgressCard status={client.onboarding_status} theme={theme} />}
+
           {/* AI Receptionist - configured in the AI Lab */}
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
             <div className="p-4 sm:p-6">

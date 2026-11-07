@@ -11,6 +11,19 @@ import { useTheme } from '@/hooks/useTheme';
 import { DEMO_CLIENTS } from '../demoData';
 import PaidFeatureNotice from '@/components/agency/PaidFeatureNotice';
 
+interface OnboardingSection {
+  label: string;
+  done: boolean;
+  optional: boolean;
+  count?: number;
+}
+interface OnboardingStatus {
+  sections: Record<string, OnboardingSection>;
+  completed_count: number;
+  total: number;
+  percent: number;
+  onboarding_completed: boolean;
+}
 interface Client {
   id: string;
   business_name: string;
@@ -24,9 +37,29 @@ interface Client {
   created_at: string;
   vapi_phone_number: string;
   is_test_client?: boolean;
+  onboarding_status?: OnboardingStatus;
 }
 
 import { CustomSelect } from '@/components/ui/custom-select';
+
+// Compact "how set up is this client" chip for the list. Shows a ready state
+// when every required section is filled, otherwise an amber x/total so the
+// agency can scan for stragglers. Renders nothing when status is unavailable.
+function SetupBadge({ status, theme }: { status?: OnboardingStatus; theme: ReturnType<typeof useTheme> }) {
+  if (!status || !status.total) return null;
+  const done = status.completed_count >= status.total;
+  const Icon = done ? CheckCircle2 : Clock;
+  return (
+    <span
+      title={done ? 'Setup complete' : `Setup: ${status.completed_count} of ${status.total} sections done`}
+      className="inline-flex items-center gap-1 flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+      style={{ backgroundColor: done ? theme.primary15 : theme.warningBg, color: done ? theme.primary : theme.warningText }}
+    >
+      <Icon className="h-3 w-3 flex-shrink-0" />
+      {done ? 'Set up' : `${status.completed_count}/${status.total} set up`}
+    </span>
+  );
+}
 
 export default function AgencyClientsPage() {
   const { agency, loading: contextLoading, demoMode } = useAgency();
@@ -584,8 +617,10 @@ export default function AgencyClientsPage() {
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
                               <p className="font-medium truncate">{client.business_name}</p>
-                              {isTest && (
+                              {isTest ? (
                                 <span className="flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ backgroundColor: theme.isDark ? 'rgba(139,92,246,0.15)' : 'rgba(139,92,246,0.1)', color: '#8b5cf6' }}>Test</span>
+                              ) : (
+                                <SetupBadge status={client.onboarding_status} theme={theme} />
                               )}
                             </div>
                             <p className="text-sm truncate" style={{ color: theme.textMuted }}>{client.email}</p>
@@ -626,8 +661,10 @@ export default function AgencyClientsPage() {
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
                             <p className="font-medium truncate">{client.business_name}</p>
-                            {isTest && (
+                            {isTest ? (
                               <span className="flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ backgroundColor: theme.isDark ? 'rgba(139,92,246,0.15)' : 'rgba(139,92,246,0.1)', color: '#8b5cf6' }}>Test</span>
+                            ) : (
+                              <SetupBadge status={client.onboarding_status} theme={theme} />
                             )}
                           </div>
                           <p className="text-sm truncate" style={{ color: theme.textMuted }}>{client.email}</p>
