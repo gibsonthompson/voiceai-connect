@@ -562,7 +562,7 @@ export default function MarketingWebsitePage() {
         ─────────────────────────────────────────────────────────────────── */}
         <div className="rounded-2xl p-5 sm:p-7" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
           <div className="flex items-center gap-2 mb-1.5"><LinkIcon className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: agencyPrimaryColor }} /><h3 className="font-semibold text-base sm:text-lg" style={{ color: textColor }}>Embed on Your Own Website</h3></div>
-          <p className="text-xs sm:text-sm mb-5 sm:mb-6" style={{ color: mutedTextColor }}>This is for <strong style={{ color: textColor, fontWeight: 600 }}>new clients signing up</strong> (not existing clients logging in, that&apos;s the card above). Drop one of the snippets below onto your existing site and prospects join through your branded form without leaving the page.</p>
+          <p className="text-xs sm:text-sm mb-5 sm:mb-6" style={{ color: mutedTextColor }}>Add your branded <strong style={{ color: textColor, fontWeight: 600 }}>signup form</strong> or a live <strong style={{ color: textColor, fontWeight: 600 }}>AI web call</strong> to your existing website, so new clients can sign up and visitors can hear your AI without leaving the page.</p>
 
           {/* Signup URL row, handy reference even if they pick the widget */}
           <div className="mb-6"><label className="block text-xs font-medium mb-1.5" style={{ color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>Your client signup URL</label><div className="flex items-center gap-2 p-3 rounded-lg" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}><Globe className="h-4 w-4 flex-shrink-0" style={{ color: mutedTextColor }} /><span className="flex-1 text-xs sm:text-sm font-mono truncate" style={{ color: textColor }}>{signupUrl}</span><button onClick={() => copyToClipboard(signupUrl, 'signup-url')} className="flex-shrink-0" style={{ color: mutedTextColor }}>{copied === 'signup-url' ? <Check className="h-4 w-4" style={{ color: agencyPrimaryColor }} /> : <Copy className="h-4 w-4" />}</button></div><p className="text-[10px] sm:text-xs mt-1.5" style={{ color: mutedTextColor }}>{agency?.marketing_domain && agency?.domain_verified ? `Using your custom domain: ${agency.marketing_domain}` : 'Connect a custom domain in the Domain tab for a branded URL'}</p></div>
@@ -595,6 +595,7 @@ export default function MarketingWebsitePage() {
               <h4 className="text-sm sm:text-base font-semibold" style={{ color: textColor }}>Signup Widget</h4>
               <span className="text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded" style={{ backgroundColor: `${agencyPrimaryColor}15`, color: agencyPrimaryColor }}>Recommended</span>
               <span className="text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6', color: mutedTextColor }}>Inline form</span>
+              <a href={signupUrl} target="_blank" rel="noopener noreferrer" className="ml-auto inline-flex items-center gap-1 text-xs font-medium" style={{ color: agencyPrimaryColor }}><ExternalLink className="h-3.5 w-3.5" />Open full page</a>
             </div>
             <p className="text-xs sm:text-sm mb-3" style={{ color: mutedTextColor }}>The full signup form, right on your page. It adopts your brand colors, theme, and pricing automatically, and resizes to fit its content.</p>
 
@@ -679,7 +680,7 @@ export default function MarketingWebsitePage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
               <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${inputBorder}` }}>
                 {agency?.id && !demoMode && (webcallMode === 'demo' || webcallClientId) ? (
-                  <iframe title="AI web call preview" src={webcallPreviewSrc} loading="lazy" allow="microphone" className="block w-full" style={{ height: 420, border: 0, backgroundColor: isDark ? '#0a0a0a' : '#ffffff' }} />
+                  <iframe title="AI web call preview" src={webcallPreviewSrc} loading="lazy" allow="microphone" className="block w-full" style={{ height: 460, border: 0, backgroundColor: '#f6f7f9' }} />
                 ) : (
                   <div className="flex items-center justify-center text-xs" style={{ height: 420, color: mutedTextColor }}>{demoMode ? 'Preview on a live agency account' : 'Pick a client to preview'}</div>
                 )}

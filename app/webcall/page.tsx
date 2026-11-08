@@ -35,6 +35,15 @@ function hexToRgba(hex: string, a: number): string {
   return `rgba(${r},${g},${b},${a})`;
 }
 
+// Pretty-print a US number: +19165551234 -> (916) 555-1234. Leaves anything
+// that is not a 10/11-digit US number as-is.
+function formatPhone(raw: string): string {
+  const d = (raw || '').replace(/\D/g, '');
+  const ten = d.length === 11 && d[0] === '1' ? d.slice(1) : d;
+  if (ten.length === 10) return `(${ten.slice(0, 3)}) ${ten.slice(3, 6)}-${ten.slice(6)}`;
+  return raw;
+}
+
 function WebcallInner() {
   const params = useSearchParams();
   const agencyId = params.get('agency') || '';
@@ -147,13 +156,13 @@ function WebcallInner() {
     try { v.setMuted(next); } catch {}
   }, [muted]);
 
-  const isDark = (config?.websiteTheme || 'dark') === 'dark';
+  const isDark = (config?.websiteTheme || 'light') === 'dark';
   const primary = config?.primaryColor || '#01f5d1';
-  const bg = isDark ? '#0a0a0a' : '#ffffff';
-  const cardBg = isDark ? 'rgba(255,255,255,0.03)' : '#ffffff';
-  const text = isDark ? '#fafaf9' : '#111827';
-  const muted2 = isDark ? 'rgba(250,249,249,0.6)' : '#6b7280';
-  const border = isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb';
+  const bg = isDark ? '#0b0c0f' : '#f6f7f9';
+  const cardBg = isDark ? '#15161a' : '#ffffff';
+  const text = isDark ? '#f5f5f7' : '#0f172a';
+  const muted2 = isDark ? 'rgba(245,245,247,0.6)' : '#64748b';
+  const border = isDark ? 'rgba(255,255,255,0.10)' : '#e8ebf0';
   const mmss = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
 
   const rendered = [...lines]; if (interim) rendered.push(interim);
@@ -166,27 +175,29 @@ function WebcallInner() {
         color: text,
         fontFamily: fontStack(config?.bodyFont, 'body'),
         minHeight: isEmbed ? undefined : '100vh',
-        padding: isEmbed ? 0 : '24px 16px',
+        padding: isEmbed ? '30px 14px 10px' : '24px 16px',
         display: 'flex', justifyContent: 'center',
       }}
     >
-      <div style={{ width: '100%', maxWidth: 480 }}>
-        <div style={{ borderRadius: 20, border: `1px solid ${border}`, backgroundColor: cardBg, overflow: 'hidden' }}>
+      <div style={{ width: '100%', maxWidth: 440, position: 'relative' }}>
+        {/* Soft brand glow so the widget reads as intentional on any site. */}
+        <div style={{ position: 'absolute', top: -36, left: 24, right: 24, height: 150, borderRadius: '50%', background: `radial-gradient(60% 100% at 50% 0%, ${hexToRgba(primary, 0.18)}, transparent 72%)`, pointerEvents: 'none' }} />
+        <div style={{ position: 'relative', borderRadius: 22, border: `1px solid ${border}`, backgroundColor: cardBg, overflow: 'hidden', boxShadow: isDark ? '0 20px 50px rgba(0,0,0,0.45)' : '0 18px 50px rgba(2,6,23,0.12)' }}>
           {/* Header */}
           <div style={{ padding: '18px 20px', borderBottom: `1px solid ${border}`, display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ height: 40, width: 40, borderRadius: 12, backgroundColor: hexToRgba(primary, 0.14), display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
-              {config?.logoUrl ? <img src={config.logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <Phone style={{ height: 20, width: 20, color: primary }} />}
+            <div style={{ height: 40, width: 40, borderRadius: 12, backgroundColor: hexToRgba(primary, 0.14), display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Phone style={{ height: 20, width: 20, color: primary }} />
             </div>
-            <div style={{ minWidth: 0 }}>
+            <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{ fontWeight: 700, fontSize: 16, fontFamily: fontStack(config?.displayFont, 'display'), lineHeight: 1.15 }}>
-                Talk to {config?.label || 'our AI receptionist'}
+                Talk to {config?.label || 'Our AI Receptionist'}
               </div>
-              <div style={{ fontSize: 12.5, color: muted2 }}>
-                {phase === 'live' ? 'Live now' : phase === 'connecting' ? 'Connecting' : phase === 'ended' ? 'Call ended' : 'A real voice call, right in your browser'}
+              <div style={{ fontSize: 12.5, color: muted2, marginTop: 2 }}>
+                {phase === 'live' ? 'On Call' : phase === 'connecting' ? 'Calling…' : phase === 'ended' ? 'Call Ended' : 'AI receptionist'}
               </div>
             </div>
             {(phase === 'live' || phase === 'connecting') && (
-              <span style={{ marginLeft: 'auto', fontSize: 12.5, fontWeight: 600, color: muted2, fontVariantNumeric: 'tabular-nums' }}>{phase === 'connecting' ? 'Connecting' : mmss}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: text, fontVariantNumeric: 'tabular-nums' }}>{phase === 'connecting' ? '•••' : mmss}</span>
             )}
           </div>
 
@@ -211,17 +222,19 @@ function WebcallInner() {
                   <button
                     onClick={phase === 'connecting' ? undefined : startCall}
                     disabled={phase === 'connecting'}
-                    aria-label="Start the call"
+                    aria-label="Call"
                     style={{ position: 'relative', height: 92, width: 92, borderRadius: '50%', backgroundColor: primary, border: 'none', cursor: phase === 'connecting' ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isDark ? '#050505' : '#ffffff', boxShadow: `0 12px 34px ${hexToRgba(primary, 0.45)}` }}
                   >
                     {phase === 'connecting' ? <Loader2 style={{ height: 30, width: 30, animation: 'vaspin 1s linear infinite' }} /> : <Phone style={{ height: 32, width: 32 }} />}
                   </button>
                 </div>
-                <p style={{ fontSize: 15, fontWeight: 700, color: text, margin: '0 0 4px', fontFamily: fontStack(config?.displayFont, 'display') }}>
-                  {phase === 'connecting' ? 'Connecting your call…' : 'Tap to Start a Live Call'}
-                </p>
-                <p style={{ fontSize: 13, color: muted2, margin: '0 auto', maxWidth: 320 }}>
-                  {phase === 'connecting' ? 'Allow your microphone if your browser asks.' : 'Allow your mic, then say hello, ask about hours, or book an appointment.'}
+                {config?.phoneNumber && (
+                  <p style={{ fontSize: 23, fontWeight: 800, color: text, margin: '0 0 4px', fontFamily: fontStack(config?.displayFont, 'display'), letterSpacing: '0.3px' }}>
+                    {formatPhone(config.phoneNumber)}
+                  </p>
+                )}
+                <p style={{ fontSize: 13.5, color: muted2, margin: '0 auto', maxWidth: 320 }}>
+                  {phase === 'connecting' ? 'Calling…' : 'Tap to call and talk to the AI. Allow your mic when asked.'}
                 </p>
               </div>
             )}
@@ -271,14 +284,6 @@ function WebcallInner() {
               </>
             )}
           </div>
-          {config?.phoneNumber && (
-            <div style={{ borderTop: `1px solid ${border}`, padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 12.5, color: muted2 }}>Prefer to call?</span>
-              <a href={`tel:${config.phoneNumber.replace(/[^0-9+]/g, '')}`} style={{ fontSize: 13.5, fontWeight: 700, color: primary, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <Phone style={{ height: 14, width: 14 }} />{config.phoneNumber}
-              </a>
-            </div>
-          )}
         </div>
         {!isEmbed && config?.agencyName && (
           <p style={{ textAlign: 'center', fontSize: 11.5, color: muted2, marginTop: 12 }}>Powered by {config.agencyName}</p>
