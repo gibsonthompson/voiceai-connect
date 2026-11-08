@@ -36,13 +36,20 @@ function detectLogoBackground(canvas: HTMLCanvasElement, ctx: CanvasRenderingCon
 async function extractColorsFromImage(imageUrl: string): Promise<{ primary: string; secondary: string; accent: string; logoBgColor: string; suggestedTheme: 'light' | 'dark'; }> { const fallback = { primary: '#00a19b', secondary: '#007e77', accent: '#01f5d1', logoBgColor: '#000000', suggestedTheme: 'dark' as const }; return new Promise((resolve) => { const img = new Image(); img.crossOrigin = 'Anonymous'; img.onload = () => { const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); if (!ctx) { resolve(fallback); return; } const size = 150; canvas.width = size; canvas.height = size; ctx.drawImage(img, 0, 0, size, size); const bg = detectLogoBackground(canvas, ctx); const bgHex = bg.isTransparent ? '#000000' : rgbToHex(bg.r, bg.g, bg.b); let suggestedTheme: 'light' | 'dark' = 'dark'; if (!bg.isTransparent) { const luminance = (0.299 * bg.r + 0.587 * bg.g + 0.114 * bg.b) / 255; suggestedTheme = luminance > 0.5 ? 'light' : 'dark'; } const pixels = ctx.getImageData(0, 0, size, size).data; const colorData: Record<string, { count: number; r: number; g: number; b: number; saturation: number; lightness: number; }> = {}; for (let i = 0; i < pixels.length; i += 4) { const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2], a = pixels[i + 3]; if (a < 128) continue; const bgDist = Math.sqrt(Math.pow(r - bg.r, 2) + Math.pow(g - bg.g, 2) + Math.pow(b - bg.b, 2)); if (bgDist < 50) continue; const br = Math.round(r / 25) * 25; const bg2 = Math.round(g / 25) * 25; const bb = Math.round(b / 25) * 25; const max = Math.max(br, bg2, bb) / 255; const min = Math.min(br, bg2, bb) / 255; const lightness = (max + min) / 2; const saturation = max === min ? 0 : lightness > 0.5 ? (max - min) / (2 - max - min) : (max - min) / (max + min); if (lightness < 0.15 || lightness > 0.65) continue; if (saturation < 0.25) continue; const key = `${br},${bg2},${bb}`; if (!colorData[key]) colorData[key] = { count: 0, r: br, g: bg2, b: bb, saturation, lightness }; colorData[key].count++; } const colors = Object.values(colorData).filter(c => c.count >= 5).sort((a, b) => (b.saturation * Math.log(b.count)) - (a.saturation * Math.log(a.count))).slice(0, 6).map(c => rgbToHex(c.r, c.g, c.b)); if (!colors.length) { resolve({ ...fallback, logoBgColor: bgHex, suggestedTheme }); return; } const primary = colors[0]; const secondary = colors[1] || adjustColorBrightness(primary, -25); const accent = colors[2] || adjustColorBrightness(primary, 30); resolve({ primary, secondary, accent, logoBgColor: bgHex, suggestedTheme }); }; img.onerror = () => resolve(fallback); img.src = imageUrl; }); }
 
 // Agency-facing view of how much of the AI setup the client has actually filled
-// in, derived server-side from the real data. Read-only: it tells the agency what
-// is done and what is still missing so they know what to nudge the client on.
-function SetupProgressCard({ status, theme }: { status?: OnboardingStatus; theme: any }) {
+// in, derived server-side from the real data. On Pro/Scale each row links into
+// that client's AI Lab to finish the setup; on Free it stays read-only and the
+// card shows an upgrade prompt, since configuring a client's AI is a Pro/Scale
+// feature (the AI Lab is gated off on Free).
+function SetupProgressCard({ status, theme, aiLabHref, locked }: { status?: OnboardingStatus; theme: any; aiLabHref?: string; locked?: boolean }) {
   if (!status || !status.total) return null;
   const ICONS: Record<string, any> = { website: Globe, hours: Clock, services: Briefcase, knowledge: HelpCircle, voice: Mic, staff: Users };
   const ORDER = ['website', 'hours', 'services', 'knowledge', 'voice', 'staff'];
+  // Which AI Lab section each setup item opens to. Website, hours and knowledge
+  // all live in the Lab's Knowledge Base block; voice/services/staff have their
+  // own sections. The Lab reads ?section= and scrolls there.
+  const LAB_SECTION: Record<string, string> = { website: 'knowledge', hours: 'knowledge', knowledge: 'knowledge', voice: 'voice', services: 'services', staff: 'staff' };
   const done = status.completed_count >= status.total;
+  const rowClickable = Boolean(aiLabHref) && !locked;
   return (
     <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
       <div className="p-4 sm:p-6">
@@ -58,27 +65,49 @@ function SetupProgressCard({ status, theme }: { status?: OnboardingStatus; theme
             const s = status.sections[key];
             if (!s) return null;
             const Icon = ICONS[key] || Circle;
-            return (
-              <div key={key} className="flex items-center justify-between py-1.5">
+            const inner = (
+              <>
                 <div className="flex items-center gap-2.5 min-w-0">
                   <Icon className="h-4 w-4 flex-shrink-0" style={{ color: s.done ? theme.iconColor : theme.textMuted }} />
                   <span className="text-sm truncate" style={{ color: theme.text }}>{s.label}</span>
                   {typeof s.count === 'number' && s.count > 0 && (<span className="text-xs flex-shrink-0" style={{ color: theme.textMuted }}>({s.count})</span>)}
                   {s.optional && (<span className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>optional</span>)}
                 </div>
-                {s.done ? (
-                  <span className="inline-flex items-center gap-1 text-xs font-medium flex-shrink-0" style={{ color: theme.primary }}><CheckCircle2 className="h-4 w-4" />Done</span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 text-xs flex-shrink-0" style={{ color: theme.textMuted }}><Circle className="h-4 w-4" />{s.optional ? 'None' : 'Not set'}</span>
-                )}
-              </div>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  {s.done ? (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium" style={{ color: theme.primary }}><CheckCircle2 className="h-4 w-4" />Done</span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-xs" style={{ color: theme.textMuted }}><Circle className="h-4 w-4" />{s.optional ? 'None' : 'Not set'}</span>
+                  )}
+                  {rowClickable && <ChevronRight className="h-4 w-4" style={{ color: theme.textMuted }} />}
+                </div>
+              </>
+            );
+            return rowClickable ? (
+              <Link
+                key={key}
+                href={`${aiLabHref}&section=${LAB_SECTION[key] || 'voice'}`}
+                title={`Set up ${s.label.toLowerCase()} for this client in the AI Lab`}
+                className="flex items-center justify-between py-1.5 px-2 -mx-2 rounded-lg transition-colors"
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = theme.hover; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
+              >
+                {inner}
+              </Link>
+            ) : (
+              <div key={key} className="flex items-center justify-between py-1.5">{inner}</div>
             );
           })}
         </div>
-        {!status.onboarding_completed && (
+        {locked ? (
+          <div className="mt-4 rounded-lg px-3 py-2.5 flex items-start gap-2" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
+            <Lock className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
+            <p className="text-xs leading-relaxed" style={{ color: theme.textMuted }}><span className="font-medium" style={{ color: theme.infoText }}>Upgrade to Pro</span> to set up a client&apos;s AI yourself in the AI Lab. On Free, the client fills in their own setup from their dashboard.</p>
+          </div>
+        ) : !status.onboarding_completed && (
           <div className="mt-4 rounded-lg px-3 py-2.5 flex items-start gap-2" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
             <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.warningText }} />
-            <p className="text-xs leading-relaxed" style={{ color: theme.warningText }}>This client hasn&apos;t finished the setup wizard yet. The sections above reflect what they&apos;ve filled in so far.</p>
+            <p className="text-xs leading-relaxed" style={{ color: theme.warningText }}>This client hasn&apos;t finished the setup wizard yet. The sections above reflect what they&apos;ve filled in so far. Tap any item to open this client in the AI Lab and finish it for them.</p>
           </div>
         )}
       </div>
@@ -959,7 +988,7 @@ export default function AgencyClientDetailPage() {
 
           {/* AI Prompt */}
           {/* Setup Progress - what the client has actually filled in */}
-          {!client.is_test_client && <SetupProgressCard status={client.onboarding_status} theme={theme} />}
+          {!client.is_test_client && <SetupProgressCard status={client.onboarding_status} theme={theme} aiLabHref={`/agency/templates?client=${client.id}`} locked={!canUseAiLab} />}
 
           {/* AI Receptionist - configured in the AI Lab */}
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>

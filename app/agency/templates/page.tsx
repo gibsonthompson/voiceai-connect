@@ -498,6 +498,24 @@ export default function AILabPage() {
     if (match) { deepLinkHandled.current = true; selectClient(match); }
   }, [clients]);
 
+  // Deep link to a specific section: /agency/templates?client=<id>&section=<name>
+  // (from the client detail page's Setup Progress rows). Once the selected
+  // client's config has loaded and the section anchors are on the page, scroll
+  // to the requested one. Runs once per navigation.
+  const sectionScrollHandled = useRef(false);
+  useEffect(() => {
+    if (sectionScrollHandled.current) return;
+    if (!selectedClient || configLoading) return;
+    const section = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('section') : null;
+    const allowed = ['voice', 'knowledge', 'services', 'staff'];
+    if (!section || !allowed.includes(section)) { sectionScrollHandled.current = true; return; }
+    const t = setTimeout(() => {
+      document.getElementById(`lab-${section}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      sectionScrollHandled.current = true;
+    }, 500);
+    return () => clearTimeout(t);
+  }, [selectedClient, configLoading]);
+
   const saveConfig = async () => {
     if (!agency || !selectedClient) return;
     setConfigSaving(true); setConfigSaved(false); setConfigError('');
@@ -646,6 +664,8 @@ export default function AILabPage() {
               </div>
             </div>
 
+            {/* Deep-link anchor: Setup Progress "voice" links here. */}
+            <div id="lab-voice" className="scroll-mt-24" />
             {configLoading ? (
               <div className="rounded-xl p-10 flex items-center justify-center mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.iconColor }} /><span className="ml-3 text-sm" style={{ color: theme.textMuted }}>Loading AI configuration...</span></div>
             ) : config ? (
@@ -741,6 +761,8 @@ export default function AILabPage() {
                 back above full size. */}
             <div style={{ zoom: 1.2 }}>
             {/* Knowledge Base */}
+            {/* Deep-link anchor: Setup Progress "website", "hours" and "knowledge" link here. */}
+            <div id="lab-knowledge" className="scroll-mt-24" />
             {selectedClient?.vapi_assistant_id && (
               <div className="rounded-xl p-4 sm:p-5 mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
                 <div className="flex items-center justify-between mb-3"><div className="flex items-center gap-2"><BookOpen className="h-4 w-4" style={{ color: theme.iconColor }} /><span className="text-sm font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Knowledge Base</span>{kbLastUpdated && (<span className="text-[11px] px-1.5 py-0.5 rounded" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>Updated {new Date(kbLastUpdated).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>)}</div><button onClick={() => setKbExpanded(!kbExpanded)} className="flex items-center gap-1 text-sm font-medium transition" style={{ color: theme.primary }}>{kbExpanded ? 'Hide' : 'Edit'}<ChevronDown className={`h-3.5 w-3.5 transition-transform ${kbExpanded ? 'rotate-180' : ''}`} /></button></div>
@@ -766,6 +788,8 @@ export default function AILabPage() {
             )}
 
             {/* ═══ PHASE 3A: Services ═══ */}
+            {/* Deep-link anchor: Setup Progress "services" links here. */}
+            <div id="lab-services" className="scroll-mt-24" />
             {selectedClient?.vapi_assistant_id && (
               <div className="rounded-xl p-4 sm:p-5 mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
                 <ClientServicesSection clientId={selectedClient.id} theme={theme} compact />
@@ -773,6 +797,8 @@ export default function AILabPage() {
             )}
 
             {/* ═══ PHASE 3A: Staff Members ═══ */}
+            {/* Deep-link anchor: Setup Progress "staff" links here. */}
+            <div id="lab-staff" className="scroll-mt-24" />
             {selectedClient?.vapi_assistant_id && (
               <div className="rounded-xl p-4 sm:p-5 mb-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
                 <StaffMembersSection clientId={selectedClient.id} theme={theme} compact />
