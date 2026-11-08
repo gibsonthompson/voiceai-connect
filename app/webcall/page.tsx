@@ -154,7 +154,6 @@ function WebcallInner() {
   const text = isDark ? '#fafaf9' : '#111827';
   const muted2 = isDark ? 'rgba(250,249,249,0.6)' : '#6b7280';
   const border = isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb';
-  const inCall = phase === 'connecting' || phase === 'live';
   const mmss = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
 
   const rendered = [...lines]; if (interim) rendered.push(interim);
@@ -204,23 +203,39 @@ function WebcallInner() {
               </div>
             )}
 
-            {phase === 'idle' && (
-              <div style={{ textAlign: 'center', padding: '8px 0' }}>
-                <p style={{ fontSize: 14, color: muted2, margin: '0 0 16px' }}>
-                  Click below and allow your microphone. Say hello, ask about hours, or try to book an appointment.
+            {(phase === 'idle' || phase === 'connecting') && (
+              <div style={{ textAlign: 'center', padding: '14px 0 6px' }}>
+                <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+                  <span className="va-ring" style={{ position: 'absolute', height: 104, width: 104, borderRadius: '50%', backgroundColor: hexToRgba(primary, 0.35) }} />
+                  <span className="va-ring va-ring2" style={{ position: 'absolute', height: 104, width: 104, borderRadius: '50%', backgroundColor: hexToRgba(primary, 0.22) }} />
+                  <button
+                    onClick={phase === 'connecting' ? undefined : startCall}
+                    disabled={phase === 'connecting'}
+                    aria-label="Start the call"
+                    style={{ position: 'relative', height: 92, width: 92, borderRadius: '50%', backgroundColor: primary, border: 'none', cursor: phase === 'connecting' ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isDark ? '#050505' : '#ffffff', boxShadow: `0 12px 34px ${hexToRgba(primary, 0.45)}` }}
+                  >
+                    {phase === 'connecting' ? <Loader2 style={{ height: 30, width: 30, animation: 'vaspin 1s linear infinite' }} /> : <Phone style={{ height: 32, width: 32 }} />}
+                  </button>
+                </div>
+                <p style={{ fontSize: 15, fontWeight: 700, color: text, margin: '0 0 4px', fontFamily: fontStack(config?.displayFont, 'display') }}>
+                  {phase === 'connecting' ? 'Connecting your call…' : 'Tap to Start a Live Call'}
                 </p>
-                <button
-                  onClick={startCall}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 10, borderRadius: 999, padding: '14px 28px', fontSize: 16, fontWeight: 600, color: isDark ? '#050505' : '#ffffff', backgroundColor: primary, border: 'none', cursor: 'pointer' }}
-                >
-                  <Phone style={{ height: 18, width: 18 }} />Start the call
-                </button>
+                <p style={{ fontSize: 13, color: muted2, margin: '0 auto', maxWidth: 320 }}>
+                  {phase === 'connecting' ? 'Allow your microphone if your browser asks.' : 'Allow your mic, then say hello, ask about hours, or book an appointment.'}
+                </p>
               </div>
             )}
 
-            {(inCall || phase === 'ended') && (
+            {(phase === 'live' || phase === 'ended') && (
               <>
-                <div ref={transcriptRef} style={{ minHeight: 200, maxHeight: 320, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, padding: '2px 0' }}>
+                {phase === 'live' && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, height: 34, marginBottom: 14 }}>
+                    {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+                      <span key={i} className="va-bar" style={{ width: 4, borderRadius: 3, backgroundColor: primary, animationDelay: `${i * 0.1}s` }} />
+                    ))}
+                  </div>
+                )}
+                <div ref={transcriptRef} style={{ minHeight: 180, maxHeight: 300, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, padding: '2px 0' }}>
                   {rendered.length === 0 ? (
                     <p style={{ fontSize: 13.5, color: muted2, textAlign: 'center', padding: '24px 0', margin: 0 }}>
                       {phase === 'connecting' ? 'Connecting your call.' : phase === 'ended' ? 'Call ended.' : 'Listening. Say hello to get started.'}
@@ -236,13 +251,13 @@ function WebcallInner() {
                   ))}
                 </div>
 
-                <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 16 }}>
-                  {inCall && (
+                <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 18 }}>
+                  {phase === 'live' && (
                     <button onClick={toggleMute} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, borderRadius: 999, padding: '10px 18px', fontSize: 14, fontWeight: 600, color: text, backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6', border: `1px solid ${border}`, cursor: 'pointer' }}>
                       {muted ? <MicOff style={{ height: 16, width: 16 }} /> : <Mic style={{ height: 16, width: 16 }} />}{muted ? 'Unmute' : 'Mute'}
                     </button>
                   )}
-                  {inCall ? (
+                  {phase === 'live' ? (
                     <button onClick={endCall} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, borderRadius: 999, padding: '10px 20px', fontSize: 14, fontWeight: 600, color: '#ffffff', backgroundColor: '#ef4444', border: 'none', cursor: 'pointer' }}>
                       <PhoneOff style={{ height: 16, width: 16 }} />End call
                     </button>
@@ -261,7 +276,14 @@ function WebcallInner() {
           <p style={{ textAlign: 'center', fontSize: 11.5, color: muted2, marginTop: 12 }}>Powered by {config.agencyName}</p>
         )}
       </div>
-      <style>{`@keyframes vaspin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`
+        @keyframes vaspin { to { transform: rotate(360deg); } }
+        @keyframes vapulse { 0% { transform: scale(0.85); opacity: 0.7; } 70% { transform: scale(1.5); opacity: 0; } 100% { transform: scale(1.5); opacity: 0; } }
+        @keyframes vabar { 0%, 100% { height: 8px; } 50% { height: 30px; } }
+        .va-ring { animation: vapulse 1.8s ease-out infinite; }
+        .va-ring2 { animation-delay: 0.9s; }
+        .va-bar { height: 8px; animation: vabar 0.9s ease-in-out infinite; }
+      `}</style>
     </div>
   );
 }

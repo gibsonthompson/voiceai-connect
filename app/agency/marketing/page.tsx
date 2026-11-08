@@ -15,7 +15,7 @@ import { usePlanFeatures } from '../../../hooks/usePlanFeatures';
 import { useTheme } from '../../../hooks/useTheme';
 import MarketingContentEditor from '@/components/agency/MarketingContentEditor';
 
-type ActiveTab = 'overview' | 'template' | 'sections' | 'content' | 'colors' | 'domain' | 'tracking' | 'seo' | 'navigation' | 'legal';
+type ActiveTab = 'overview' | 'template' | 'sections' | 'content' | 'colors' | 'domain' | 'tracking' | 'seo' | 'navigation' | 'legal' | 'embed';
 
 function isLightColor(hex: string): boolean {
   const c = hex.replace('#', '');
@@ -428,6 +428,7 @@ export default function MarketingWebsitePage() {
 
   const tabs = [
     { id: 'overview' as ActiveTab, label: 'Overview', icon: Globe },
+    { id: 'embed' as ActiveTab, label: 'Embed', icon: Code },
     { id: 'template' as ActiveTab, label: 'Template', icon: Layout },
     { id: 'sections' as ActiveTab, label: 'Sections', icon: Eye },
     { id: 'content' as ActiveTab, label: 'Content', icon: Type },
@@ -543,6 +544,11 @@ export default function MarketingWebsitePage() {
           </details>
         </div>
 
+      </div>)}
+
+      {/* ══════════════ EMBED ══════════════ */}
+      {activeTab === 'embed' && (<div className="space-y-4 sm:space-y-6">
+
         {/* ── Embed on Your Own Website ─────────────────────────────────────
             Two ways to bring signups onto the agency's existing site.
             (A) Inline widget (recommended): the iframe-based embed.js form,
@@ -586,7 +592,7 @@ export default function MarketingWebsitePage() {
           {/* ── Section A: Inline Signup Widget (recommended) ── */}
           <div className="mb-6">
             <div className="flex flex-wrap items-center gap-2 mb-1.5">
-              <h4 className="text-sm sm:text-base font-semibold" style={{ color: textColor }}>Signup widget</h4>
+              <h4 className="text-sm sm:text-base font-semibold" style={{ color: textColor }}>Signup Widget</h4>
               <span className="text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded" style={{ backgroundColor: `${agencyPrimaryColor}15`, color: agencyPrimaryColor }}>Recommended</span>
               <span className="text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6', color: mutedTextColor }}>Inline form</span>
             </div>
@@ -603,7 +609,7 @@ export default function MarketingWebsitePage() {
                 <span className="flex items-center gap-1.5 ml-1.5 text-[10px] sm:text-xs font-medium" style={{ color: mutedTextColor }}><Eye className="h-3.5 w-3.5" />Live preview, the real form your visitors see</span>
               </div>
               {agency?.id && !demoMode && hasAccess ? (
-                <iframe title="Signup widget preview" src={widgetPreviewSrc} loading="lazy" className="block w-full" style={{ height: 560, border: 0, backgroundColor: '#ffffff' }} />
+                <iframe title="Signup widget preview" src={widgetPreviewSrc} loading="lazy" className="block w-full" style={{ height: 1040, border: 0, backgroundColor: '#ffffff' }} />
               ) : (
                 <div className="flex items-center justify-center text-center px-6" style={{ height: 320, backgroundColor: inputBg }}>
                   <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>{demoMode ? 'Turn off demo mode to load your live signup form here.' : 'Your live signup form preview will appear here.'}</p>
@@ -630,7 +636,7 @@ export default function MarketingWebsitePage() {
           {/* ── Section B: Embed Button (link-style) ── */}
           <div>
             <div className="flex flex-wrap items-center gap-2 mb-1.5">
-              <h4 className="text-sm sm:text-base font-semibold" style={{ color: textColor }}>Embed button</h4>
+              <h4 className="text-sm sm:text-base font-semibold" style={{ color: textColor }}>Embed Button</h4>
               <span className="text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6', color: mutedTextColor }}>Link</span>
             </div>
             <p className="text-xs sm:text-sm mb-3" style={{ color: mutedTextColor }}>A simple branded link to your signup page. Opens in a new tab, useful if your page can&apos;t load external scripts.</p>
@@ -643,7 +649,7 @@ export default function MarketingWebsitePage() {
         </div>
           {/* AI web-call widget embed */}
           <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
-            <div className="flex items-center gap-2 mb-1.5"><Phone className="h-4 w-4" style={{ color: agencyPrimaryColor }} /><h3 className="font-medium text-sm sm:text-base" style={{ color: textColor }}>AI web call on your site</h3></div>
+            <div className="flex items-center gap-2 mb-1.5"><Phone className="h-4 w-4" style={{ color: agencyPrimaryColor }} /><h3 className="font-medium text-sm sm:text-base" style={{ color: textColor }}>AI Web Call on Your Site</h3></div>
             <p className="text-xs sm:text-sm mb-4" style={{ color: mutedTextColor }}>Let visitors talk to your AI right in the browser. Paste this wherever you want it. It uses your brand colors and fonts.</p>
 
             <div className="inline-flex rounded-lg p-0.5 mb-4" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
