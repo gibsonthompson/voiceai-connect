@@ -238,7 +238,7 @@ function WebcallInner() {
                 <div ref={transcriptRef} style={{ minHeight: 180, maxHeight: 300, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, padding: '2px 0' }}>
                   {rendered.length === 0 ? (
                     <p style={{ fontSize: 13.5, color: muted2, textAlign: 'center', padding: '24px 0', margin: 0 }}>
-                      {phase === 'connecting' ? 'Connecting your call.' : phase === 'ended' ? 'Call ended.' : 'Listening. Say hello to get started.'}
+                      {phase === 'ended' ? 'Call ended.' : 'Listening. Say hello to get started.'}
                     </p>
                   ) : rendered.map((ln, i) => (
                     <div key={i} style={{ alignSelf: ln.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '85%' }}>
