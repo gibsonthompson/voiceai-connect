@@ -23,7 +23,7 @@ import { fontStack, googleFontsHref } from '@/lib/brandFonts';
 type Phase = 'loading' | 'idle' | 'connecting' | 'live' | 'ended' | 'error';
 interface Line { role: 'user' | 'assistant'; text: string; }
 interface WebcallConfig {
-  assistantId: string; label: string; agencyName: string | null; logoUrl: string | null;
+  assistantId: string; label: string; phoneNumber: string | null; agencyName: string | null; logoUrl: string | null;
   primaryColor: string; accentColor: string; websiteTheme: string;
   displayFont: string | null; bodyFont: string | null;
 }
@@ -271,6 +271,14 @@ function WebcallInner() {
               </>
             )}
           </div>
+          {config?.phoneNumber && (
+            <div style={{ borderTop: `1px solid ${border}`, padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 12.5, color: muted2 }}>Prefer to call?</span>
+              <a href={`tel:${config.phoneNumber.replace(/[^0-9+]/g, '')}`} style={{ fontSize: 13.5, fontWeight: 700, color: primary, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <Phone style={{ height: 14, width: 14 }} />{config.phoneNumber}
+              </a>
+            </div>
+          )}
         </div>
         {!isEmbed && config?.agencyName && (
           <p style={{ textAlign: 'center', fontSize: 11.5, color: muted2, marginTop: 12 }}>Powered by {config.agencyName}</p>
