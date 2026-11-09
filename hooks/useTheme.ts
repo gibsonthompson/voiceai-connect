@@ -39,6 +39,7 @@ export interface BrandingOverrides {
   page_bg?: string;
   card_bg?: string;
   card_border?: string;
+  button_bg?: string;
   button_text?: string;
   text_primary?: string;
   text_muted?: string;
@@ -202,7 +203,10 @@ export interface Theme {
 // ============================================================================
 // DARK THEME GENERATOR
 // ============================================================================
-function buildDarkTheme(primary: string, overrides?: BrandingOverrides): Theme {
+function buildDarkTheme(brandPrimary: string, overrides?: BrandingOverrides): Theme {
+  // Button/accent color: agencies can override the brand primary for the
+  // dashboard (buttons and primary highlights) without changing their brand.
+  const primary = isValidHex(overrides?.button_bg) ? overrides!.button_bg! : brandPrimary;
   // Base dark surfaces. Lifted off pure near-black (#050505) to a comfortable
   // dark gray so the default dashboard is easier on the eyes and surfaces read.
   // Agency branding_overrides (page_bg / nav_bg) and light mode are unaffected.
@@ -323,7 +327,10 @@ function buildDarkTheme(primary: string, overrides?: BrandingOverrides): Theme {
 // ============================================================================
 // LIGHT THEME GENERATOR
 // ============================================================================
-function buildLightTheme(primary: string, overrides?: BrandingOverrides): Theme {
+function buildLightTheme(brandPrimary: string, overrides?: BrandingOverrides): Theme {
+  // Button/accent color: agencies can override the brand primary for the
+  // dashboard (buttons and primary highlights) without changing their brand.
+  const primary = isValidHex(overrides?.button_bg) ? overrides!.button_bg! : brandPrimary;
   const baseBg = '#f9fafb';
   const baseText = '#111827';
   const baseTextMuted = '#6b7280';
