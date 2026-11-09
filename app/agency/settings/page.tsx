@@ -1465,6 +1465,8 @@ function AgencySettingsContent() {
                   </div>
                 </div>
 
+                <div className="mt-4"><IndustryGating /></div>
+
                 <div className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                   <div className="flex items-center gap-2 mb-1"><Sparkles className="h-4 w-4" style={{ color: theme.iconColor }} /><h4 className="font-medium text-sm sm:text-base">Features</h4></div>
                   <p className="text-[11px] sm:text-xs mb-3" style={{ color: theme.textMuted }}>Rename or remove any feature, or add your own. They show up as toggle rows in the grid above, so you include or exclude them per plan.</p>
@@ -1787,8 +1789,6 @@ function AgencySettingsContent() {
                 </div>
 
                 <DiscountCodesManager theme={theme} agencyId={agency?.id} isPaid={!isFreePlan} />
-
-                <div className="mt-4"><IndustryGating /></div>
 
                 <div className="mt-4 sm:mt-5">
                   <EmailDomainCard theme={theme} agencyId={agency?.id} />
