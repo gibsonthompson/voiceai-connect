@@ -785,10 +785,16 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [countryCode, setCountryCode] = useState('US');
+  // Monthly vs annual platform billing (annual = 3 months free on Pro/Scale).
+  // Pre-selected from the homepage CTA (?billing=year).
+  const [platformInterval, setPlatformInterval] = useState<'month' | 'year'>('month');
 
   useEffect(() => {
     const detected = getCountryFromCookie();
     if (detected) setCountryCode(detected);
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('billing') === 'year') {
+      setPlatformInterval('year');
+    }
   }, []);
 
   const fmtPrice = (dollars: number) => formatLocalPrice(dollars, countryCode);
@@ -830,6 +836,7 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
         body: JSON.stringify({
           agency_id: agencyId,
           plan: planType,
+          interval: platformInterval === 'year' ? 'year' : 'month',
           successUrl: `${window.location.origin}${returnPath}`,
           cancelUrl: `${window.location.origin}/signup/plan?agency=${agencyId}`,
         }),
@@ -856,6 +863,7 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
     id: t.id,
     name: t.name,
     price: t.price,
+    priceAnnual: t.priceAnnual,
     subtitle: t.id === 'free' ? 'Pay per usage' : 'Unlimited clients',
     icon: t.icon,
     popular: t.popular,
@@ -917,8 +925,22 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
             </div>
           )}
 
+          <div className="flex justify-center mb-8 sm:mb-10">
+            <div className="inline-flex items-center rounded-full p-1 border border-white/[0.08]" style={{ background: 'rgba(255,255,255,0.04)' }}>
+              {(['month', 'year'] as const).map((iv) => (
+                <button key={iv} type="button" onClick={() => setPlatformInterval(iv)}
+                  className="px-5 py-2 rounded-full text-sm font-semibold transition-all"
+                  style={platformInterval === iv ? { background: '#01f5d1', color: '#000' } : { color: 'rgba(250,250,249,0.6)' }}>
+                  {iv === 'month' ? 'Monthly' : 'Annual'}{iv === 'year' ? ' · 3 months free' : ''}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className={`grid gap-4 sm:gap-6 lg:gap-8 mx-auto ${plans.length === 1 ? 'max-w-md' : plans.length === 2 ? 'max-w-4xl md:grid-cols-2' : 'max-w-6xl md:grid-cols-3'}`}>
-            {plans.map((plan) => (
+            {plans.map((plan) => {
+              const annual = platformInterval === 'year' && plan.price > 0;
+              return (
               <div key={plan.id}
                 className={`relative rounded-2xl sm:rounded-3xl border p-5 sm:p-6 lg:p-8 transition-all duration-300 ${
                   plan.popular 
@@ -942,11 +964,14 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
                       <span className="text-3xl sm:text-4xl font-bold">Free</span>
                     ) : (
                       <>
-                        <span className="text-3xl sm:text-4xl font-bold">{fmtPrice(plan.price)}</span>
-                        <span className="text-[#fafaf9]/50 text-sm">/month</span>
+                        <span className="text-3xl sm:text-4xl font-bold">{fmtPrice(annual ? plan.priceAnnual : plan.price)}</span>
+                        <span className="text-[#fafaf9]/50 text-sm">{annual ? '/year' : '/month'}</span>
                       </>
                     )}
                   </div>
+                  {annual && (
+                    <p className="mt-1.5 text-xs text-[#fafaf9]/40">{fmtPrice(Math.round(plan.priceAnnual / 12))}/mo billed yearly · save {fmtPrice(plan.price * 12 - plan.priceAnnual)}</p>
+                  )}
                   <p className="mt-2 text-sm text-[#fafaf9]/40">{plan.subtitle}</p>
                 </div>
                 <ul className="space-y-3 mb-6">
@@ -986,7 +1011,8 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
                   )}
                 </button>
               </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="mt-10 sm:mt-12 text-center">

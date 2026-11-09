@@ -32,6 +32,8 @@ export interface AgencyPlanTier {
   name: string;
   /** Monthly platform fee in DOLLARS (not cents). 0 for Free. */
   price: number;
+  /** Annual platform fee in DOLLARS (yearly). 0 for Free. 3 months free (9x monthly). */
+  priceAnnual: number;
   icon: LucideIcon;
   /** Short tagline shown above the plan name. */
   description: string;
@@ -54,6 +56,7 @@ export const AGENCY_PLAN_TIERS: Record<AgencyPlanId, AgencyPlanTier> = {
     id: 'free',
     name: 'Free',
     price: PLAN_PRICES.free, // 0
+    priceAnnual: 0,
     icon: Zap,
     description: 'Start selling — zero commitment',
     rate: `$${PLAN_RATES.free.perClient.toFixed(2)}/client/mo + $${PLAN_RATES.free.perMinute.toFixed(2)}/min`,
@@ -76,6 +79,7 @@ export const AGENCY_PLAN_TIERS: Record<AgencyPlanId, AgencyPlanTier> = {
     id: 'pro',
     name: 'Pro',
     price: PLAN_PRICES.pro, // 99
+    priceAnnual: PLAN_PRICES.pro * 9, // 891 (3 months free)
     icon: Shield,
     description: 'A complete white-label business',
     rate: `$${PLAN_RATES.pro.perClient.toFixed(2)}/client/mo + $${PLAN_RATES.pro.perMinute.toFixed(2)}/min`,
@@ -96,6 +100,7 @@ export const AGENCY_PLAN_TIERS: Record<AgencyPlanId, AgencyPlanTier> = {
     id: 'scale',
     name: 'Scale',
     price: PLAN_PRICES.scale, // 499
+    priceAnnual: PLAN_PRICES.scale * 9, // 4491 (3 months free)
     icon: Crown,
     description: 'All-in for high-volume agencies',
     rate: `$0/client + $${PLAN_RATES.scale.perMinute.toFixed(2)}/min only`,

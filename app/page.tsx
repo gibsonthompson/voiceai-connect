@@ -139,6 +139,9 @@ export default function HomePage() {
 
   const [clients, setClients] = useState(50);
   const [pricePerClient, setPricePerClient] = useState(249);
+  // Platform billing interval for the pricing section (agency pays VoiceAI
+  // Connect monthly or annually; annual = 3 months free on Pro/Scale).
+  const [platformInterval, setPlatformInterval] = useState<'month' | 'year'>('month');
   const monthlyPlatformFee = 99;
   const perClientCost = 9.99;
   const monthlyRevenue = clients * pricePerClient;
@@ -666,8 +669,22 @@ export default function HomePage() {
             </p>
           </div>
 
+          <div className="flex justify-center lg:justify-start mb-8">
+            <div className="inline-flex items-center rounded-full p-1 border border-white/10" style={{ background: 'rgba(255,255,255,0.04)' }}>
+              {(['month', 'year'] as const).map(iv => (
+                <button key={iv} type="button" onClick={() => setPlatformInterval(iv)}
+                  className="px-5 py-2 rounded-full font-mono text-[11px] tracking-[0.12em] uppercase font-medium transition-all"
+                  style={platformInterval === iv ? { background: '#01f5d1', color: '#000' } : { color: 'rgba(255,255,255,0.6)' }}>
+                  {iv === 'month' ? 'Monthly' : 'Annual'}{iv === 'year' ? ' · 3 mo free' : ''}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="grid lg:grid-cols-3 gap-4 max-w-5xl">
-            {AGENCY_PLAN_TIER_LIST.map(t => (
+            {AGENCY_PLAN_TIER_LIST.map(t => {
+              const annual = platformInterval === 'year' && t.price > 0;
+              return (
               <div key={t.name} className={`price-card ${t.popular ? 'price-card-em' : ''}`}>
                 {t.popular && (
                   <div className="absolute -top-3 left-7">
@@ -682,11 +699,14 @@ export default function HomePage() {
                     <span className="font-display font-medium t-numeric text-white" style={{ fontSize: 'clamp(2.25rem, 4vw, 3rem)', letterSpacing: '-0.04em' }}>Free</span>
                   ) : (
                     <>
-                      <span className="font-display font-medium t-numeric text-white" style={{ fontSize: 'clamp(2.25rem, 4vw, 3rem)', letterSpacing: '-0.04em' }}>{formatPrice(t.price)}</span>
-                      <span className="text-base text-white/45">/mo</span>
+                      <span className="font-display font-medium t-numeric text-white" style={{ fontSize: 'clamp(2.25rem, 4vw, 3rem)', letterSpacing: '-0.04em' }}>{formatPrice(annual ? t.priceAnnual : t.price)}</span>
+                      <span className="text-base text-white/45">{annual ? '/yr' : '/mo'}</span>
                     </>
                   )}
                 </div>
+                {annual && (
+                  <p className="font-mono text-[11px] text-white/40 -mt-4 mb-6 tracking-[0.04em]">{formatPrice(Math.round(t.priceAnnual / 12))}/mo billed yearly · save {formatPrice(t.price * 12 - t.priceAnnual)}</p>
+                )}
                 <ul className="space-y-2.5 mb-7">
                   {t.features.map(f => (
                     <li key={f} className="flex items-start gap-2.5 text-[13px]"><Check className="w-3.5 h-3.5 shrink-0 mt-1 text-em" strokeWidth={2.5} /><span className="text-white/75">{f}</span></li>
@@ -696,11 +716,12 @@ export default function HomePage() {
                     <li key={l} className="flex items-start gap-2.5 text-[13px]"><XIcon className="w-3.5 h-3.5 shrink-0 mt-1 text-white/20" /><span className="text-white/30">{l}</span></li>
                   ))}
                 </ul>
-                <Link href="/signup" className={`block w-full text-center rounded-full py-3 font-mono text-[11px] tracking-[0.12em] uppercase font-medium transition-all ${t.popular ? 'text-black hover:brightness-110' : 'border border-white/15 text-white hover:bg-white hover:text-black hover:border-white'}`} style={t.popular ? { background: '#01f5d1' } : undefined}>
+                <Link href={annual ? '/signup?billing=year' : '/signup'} className={`block w-full text-center rounded-full py-3 font-mono text-[11px] tracking-[0.12em] uppercase font-medium transition-all ${t.popular ? 'text-black hover:brightness-110' : 'border border-white/15 text-white hover:bg-white hover:text-black hover:border-white'}`} style={t.popular ? { background: '#01f5d1' } : undefined}>
                   {t.price === 0 ? 'Start free' : 'Start 14-day trial'}
                 </Link>
               </div>
-            ))}
+              );
+            })}
           </div>
           <p className="font-mono text-[11px] text-white/35 mt-12 text-center uppercase tracking-[0.14em]">Start free, no card · 14-day Pro &amp; Scale trials (card required) · 7-day client trials</p>
         </div>
