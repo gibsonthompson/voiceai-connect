@@ -220,8 +220,16 @@ function buildDarkTheme(primary: string, overrides?: BrandingOverrides): Theme {
   // brightness and silently dropped when they didn't match the mode, which is
   // why picked colors "did nothing".)
   const pageBg = isValidHex(overrides?.page_bg) ? overrides!.page_bg! : baseBg;
-  const textPrimary = isValidHex(overrides?.text_primary) ? overrides!.text_primary! : baseText;
-  const textMuted = isValidHex(overrides?.text_muted) ? overrides!.text_muted! : baseTextMuted;
+  // Readability guard: whatever text color is chosen or defaulted, it must stay
+  // legible on the page background. If it collides with the background (for
+  // example a white page_bg left with the default light text), flip to a
+  // contrasting color so the dashboard can never show invisible text on a
+  // same-tone background.
+  const _rawText = isValidHex(overrides?.text_primary) ? overrides!.text_primary! : baseText;
+  const _textLegible = hasSufficientContrast(_rawText, pageBg);
+  const textPrimary = _textLegible ? _rawText : getContrastText(pageBg, true);
+  const _rawTextMuted = isValidHex(overrides?.text_muted) ? overrides!.text_muted! : baseTextMuted;
+  const textMuted = _textLegible ? _rawTextMuted : (isLightColor(pageBg) ? 'rgba(5,5,5,0.55)' : 'rgba(250,250,249,0.55)');
   const cardBg = isValidHex(overrides?.card_bg) ? overrides!.card_bg! : baseCard;
   const cardBorder = isValidHex(overrides?.card_border) ? overrides!.card_border! : baseBorder;
   const buttonText = isValidHex(overrides?.button_text) ? overrides!.button_text! : getContrastText(primary, true);
@@ -258,7 +266,7 @@ function buildDarkTheme(primary: string, overrides?: BrandingOverrides): Theme {
     bg: pageBg,
     text: textPrimary,
     textMuted: textMuted,
-    textSubtle: 'rgba(250,250,249,0.35)',
+    textSubtle: _textLegible ? 'rgba(250,250,249,0.35)' : (isLightColor(pageBg) ? 'rgba(5,5,5,0.4)' : 'rgba(250,250,249,0.35)'),
 
     card: cardBg,
     cardHover: autoCardHover(cardBg, true),
@@ -321,8 +329,16 @@ function buildLightTheme(primary: string, overrides?: BrandingOverrides): Theme 
   // Each value is used whenever it is a valid hex; unset tokens auto-derive from
   // the chosen surfaces. Mirror of the dark builder above (no brightness gating).
   const pageBg = isValidHex(overrides?.page_bg) ? overrides!.page_bg! : baseBg;
-  const textPrimary = isValidHex(overrides?.text_primary) ? overrides!.text_primary! : baseText;
-  const textMuted = isValidHex(overrides?.text_muted) ? overrides!.text_muted! : baseTextMuted;
+  // Readability guard: whatever text color is chosen or defaulted, it must stay
+  // legible on the page background. If it collides with the background (for
+  // example a white page_bg left with the default light text), flip to a
+  // contrasting color so the dashboard can never show invisible text on a
+  // same-tone background.
+  const _rawText = isValidHex(overrides?.text_primary) ? overrides!.text_primary! : baseText;
+  const _textLegible = hasSufficientContrast(_rawText, pageBg);
+  const textPrimary = _textLegible ? _rawText : getContrastText(pageBg, true);
+  const _rawTextMuted = isValidHex(overrides?.text_muted) ? overrides!.text_muted! : baseTextMuted;
+  const textMuted = _textLegible ? _rawTextMuted : (isLightColor(pageBg) ? 'rgba(5,5,5,0.55)' : 'rgba(250,250,249,0.55)');
   const cardBg = isValidHex(overrides?.card_bg) ? overrides!.card_bg! : baseCard;
   const cardBorder = isValidHex(overrides?.card_border) ? overrides!.card_border! : baseBorder;
   const buttonText = isValidHex(overrides?.button_text) ? overrides!.button_text! : getContrastText(primary, false);
@@ -358,7 +374,7 @@ function buildLightTheme(primary: string, overrides?: BrandingOverrides): Theme 
     bg: pageBg,
     text: textPrimary,
     textMuted: textMuted,
-    textSubtle: '#9ca3af',
+    textSubtle: _textLegible ? '#9ca3af' : (isLightColor(pageBg) ? '#6b7280' : 'rgba(250,250,249,0.6)'),
 
     card: cardBg,
     cardHover: autoCardHover(cardBg, false),
