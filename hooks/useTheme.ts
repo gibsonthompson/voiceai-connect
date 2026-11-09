@@ -248,7 +248,13 @@ function buildDarkTheme(primary: string, overrides?: BrandingOverrides): Theme {
   const navAccent = isValidHex(overrides?.nav_accent) ? overrides!.nav_accent! : primary;
   const accentVisibleOnNav = hasSufficientContrast(navAccent, navBg);
   const activeItemColor = accentVisibleOnNav ? navAccent : (isValidHex(overrides?.nav_accent) ? navAccent : '#ffffff');
-  const activeItemBg = withAlpha(navAccent, 0.15);
+  // The active-item highlight must stay visible even when the brand accent is
+  // the same tone as the nav (for example a navy accent on a navy sidebar). If
+  // the accent has no contrast with the nav, fall back to a neutral translucent
+  // tint so the selected item is always distinguishable.
+  const activeItemBg = accentVisibleOnNav
+    ? withAlpha(navAccent, 0.15)
+    : (isLightColor(navBg) ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.12)');
 
   return {
     isDark: true,
@@ -356,7 +362,13 @@ function buildLightTheme(primary: string, overrides?: BrandingOverrides): Theme 
   const navAccent = isValidHex(overrides?.nav_accent) ? overrides!.nav_accent! : primary;
   const accentVisibleOnNav = hasSufficientContrast(navAccent, navBg);
   const activeItemColor = accentVisibleOnNav ? navAccent : (isValidHex(overrides?.nav_accent) ? navAccent : navText);
-  const activeItemBg = withAlpha(navAccent, 0.15);
+  // The active-item highlight must stay visible even when the brand accent is
+  // the same tone as the nav (for example a navy accent on a navy sidebar). If
+  // the accent has no contrast with the nav, fall back to a neutral translucent
+  // tint so the selected item is always distinguishable.
+  const activeItemBg = accentVisibleOnNav
+    ? withAlpha(navAccent, 0.15)
+    : (isLightColor(navBg) ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.12)');
 
   return {
     isDark: false,
