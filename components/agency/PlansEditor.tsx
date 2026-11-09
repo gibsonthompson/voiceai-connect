@@ -19,6 +19,9 @@ export interface UiPlan {
   key: string;
   name: string;
   price: string;
+  // Annual price (dollars, as a string) the agency charges a client who picks
+  // yearly billing. Blank = use the default of 3 months free (9x the monthly).
+  price_annual: string;
   call_limit: string;
   unlimited: boolean;
   description: string;
@@ -63,6 +66,7 @@ export function makeEmptyPlan(): UiPlan {
     key: '',
     name: '',
     price: '',
+    price_annual: '',
     call_limit: '50',
     unlimited: false,
     description: '',
@@ -169,6 +173,39 @@ export default function PlansEditor({ plans, setPlans, theme, featureKeys, featu
                 <input type="number" min="0" value={p.price} onChange={(e) => update(p._uid, { price: e.target.value })}
                   placeholder="—" className={`w-full rounded-lg ${currencySymbol.length > 1 ? 'pl-12' : 'pl-7'} pr-3 py-2.5 text-base font-semibold`} style={inputStyle} />
               </div>
+
+              {/* Annual price: what a client pays per year if they pick yearly
+                  billing. Blank = default 3 months free (9x the monthly). */}
+              {(() => {
+                const monthly = parseFloat(p.price);
+                const hasMonthly = !Number.isNaN(monthly) && monthly > 0;
+                const defaultAnnual = hasMonthly ? Math.round(monthly * 9 * 100) / 100 : 0;
+                const annual = parseFloat(p.price_annual);
+                const hasAnnual = !Number.isNaN(annual) && annual > 0;
+                const effectiveAnnual = hasAnnual ? annual : defaultAnnual;
+                const fullYear = hasMonthly ? monthly * 12 : 0;
+                const monthsFree = (hasMonthly && effectiveAnnual > 0) ? Math.max(0, Math.round((fullYear - effectiveAnnual) / monthly * 10) / 10) : 0;
+                return (
+                  <>
+                    <label className={fieldLabel} style={{ color: theme.textMuted }}>Price ({currencySymbol}/yr)</label>
+                    <div className="relative mb-1">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold" style={{ color: theme.textMuted }}>{currencySymbol}</span>
+                      <input type="number" min="0" value={p.price_annual} onChange={(e) => update(p._uid, { price_annual: e.target.value })}
+                        placeholder={hasMonthly ? String(defaultAnnual) : '—'}
+                        className={`w-full rounded-lg ${currencySymbol.length > 1 ? 'pl-12' : 'pl-7'} pr-3 py-2.5 text-base font-semibold`} style={inputStyle} />
+                    </div>
+                    <p className="mt-1 mb-3.5 text-[10px] leading-tight" style={{ color: theme.textMuted }}>
+                      {!hasMonthly
+                        ? 'Set a monthly price first. Blank = 3 months free (9x the monthly).'
+                        : !hasAnnual
+                          ? `Blank = 3 months free (${currencySymbol}${defaultAnnual.toLocaleString()}/yr).`
+                          : monthsFree > 0
+                            ? `Clients save ${currencySymbol}${(fullYear - annual).toLocaleString()}/yr (about ${monthsFree} month${monthsFree === 1 ? '' : 's'} free).`
+                            : `${currencySymbol}${annual.toLocaleString()}/yr. No discount vs paying monthly.`}
+                    </p>
+                  </>
+                );
+              })()}
 
               <label className={fieldLabel} style={{ color: theme.textMuted }}>Calls / mo</label>
               {p.unlimited ? (

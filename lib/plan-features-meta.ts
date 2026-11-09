@@ -161,6 +161,10 @@ export interface ClientPlanTile {
   description: string | null;
   /** Monthly price in CENTS. */
   price: number;
+  /** Annual price in CENTS (what a client pays per year on yearly billing).
+   *  Falls back to 9x the monthly price (3 months free) when the agency has
+   *  not set a custom annual price for the plan. */
+  annualPrice: number;
   /** -1 = unlimited. */
   callLimit: number;
   /** Whether to render the "Most Popular" badge. Pro by default. */
@@ -230,6 +234,17 @@ function buildClientFeatureLists(featuresForTier: Record<string, any>, callLimit
   return { included, excluded, teamMembers };
 }
 
+// Resolve a plan's annual price (cents). Uses the agency's custom annual price
+// when set to a valid positive number, otherwise defaults to 9x the monthly
+// price (3 months free). Returns 0 when there's no usable monthly price.
+function annualPriceCents(monthlyCents: number, customAnnualCents: any): number {
+  const custom = Number(customAnnualCents);
+  if (Number.isFinite(custom) && custom > 0) return Math.round(custom);
+  const monthly = Number(monthlyCents);
+  if (Number.isFinite(monthly) && monthly > 0) return Math.round(monthly * 9);
+  return 0;
+}
+
 export function buildClientPlans(agency: Record<string, any> | null | undefined): ClientPlanTile[] {
   const safeAgency: Record<string, any> = agency || {};
   const featureEntries = agencyFeatureEntries(safeAgency);
@@ -258,6 +273,7 @@ export function buildClientPlans(agency: Record<string, any> | null | undefined)
         name: (p.name || '').toString().trim() || 'Plan',
         description: (p.description || '').toString().trim() || null,
         price: Number(p.price_cents),
+        annualPrice: annualPriceCents(Number(p.price_cents), p.price_annual_cents),
         callLimit,
         popular: visible.length >= 3 && i === 1, // middle tier of 3+, else no badge
         included,
@@ -279,7 +295,7 @@ export function buildClientPlans(agency: Record<string, any> | null | undefined)
     const description = rawDesc.length > 0 ? rawDesc : null;
     const featuresForTier: Record<string, any> = (planFeatures[id] && typeof planFeatures[id] === 'object') ? planFeatures[id] : {};
     const { included, excluded, teamMembers } = buildClientFeatureLists(featuresForTier, callLimit, featureEntries);
-    return { id, name, description, price, callLimit, popular: id === 'pro', included, excluded, teamMembers };
+    return { id, name, description, price, annualPrice: annualPriceCents(price, safeAgency[`price_${id}_annual_cents`]), callLimit, popular: id === 'pro', included, excluded, teamMembers };
   });
 }
 
