@@ -17,7 +17,6 @@ import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import LockedFeature from '@/components/LockedFeature';
 import AISettingsSection from '@/components/client/AISettingsSection';
 import DashboardAccessSelector from '@/components/agency/DashboardAccessSelector';
-import IndustryGating from '@/components/agency/IndustryGating';
 import VoicePicker from '@/components/agency/VoicePicker';
 import StaffMembersSection from '@/components/client/StaffMembersSection';
 import ClientServicesSection from '@/components/client/ClientServicesSection';
@@ -841,7 +840,6 @@ export default function AILabPage() {
             </div>
           </div>
         )}
-        <div className="mt-8"><IndustryGating collapsible defaultOpen={false} /></div>
       </div>
       {showAddIndustry && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => { if (!addingIndustry) setShowAddIndustry(false); }}>

@@ -91,7 +91,7 @@ function IndustryGatingBody({ hideHeader, embedded }: { hideHeader?: boolean; em
   const Header = hideHeader ? null : (
     <div className="flex items-center gap-2 mb-1">
       <Store className="h-4 w-4" style={{ color: theme.iconColor }} />
-      <h4 className="font-medium text-sm sm:text-base" style={{ color: theme.text }}>Industries you sell to</h4>
+      <h4 className="font-medium text-sm sm:text-base" style={{ color: theme.text }}>Industries You Sell To</h4>
     </div>
   );
 
@@ -192,7 +192,7 @@ export default function IndustryGating({ collapsible = false, defaultOpen = true
         className="w-full flex items-center justify-between px-4 sm:px-5 py-3.5 transition-colors">
         <span className="flex items-center gap-2">
           <Store className="h-4 w-4" style={{ color: theme.iconColor }} />
-          <span className="font-medium text-sm sm:text-base" style={{ color: theme.text }}>Industries you sell to</span>
+          <span className="font-medium text-sm sm:text-base" style={{ color: theme.text }}>Industries You Sell To</span>
         </span>
         <ChevronDown className="h-4 w-4 transition-transform" style={{ color: theme.textMuted, transform: open ? 'rotate(180deg)' : 'none' }} />
       </button>
