@@ -209,7 +209,12 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 1024,
-        system: systemPrompt,
+        // The system prompt (knowledge base, or the per-agency FAQ prompt) is the
+        // same on every turn and every visitor, so cache it (prompt caching) and
+        // reuse it on later turns instead of reprocessing it each time. Note:
+        // Haiku 4.5 only caches prefixes of 4096+ tokens; below that this is a
+        // harmless no-op (no error, no charge for caching).
+        system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
         messages,
         stream: true,
       }),
