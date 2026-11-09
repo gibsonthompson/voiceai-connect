@@ -534,7 +534,7 @@ export default function MyBusinessPage() {
 
         {/* Business Hours */}
         <div className="fu fu2">
-          <SectionCard theme={theme} primaryColor={primaryColor} icon={Clock} title="Business Hours" subtitle="When your business is open">
+          <SectionCard theme={theme} primaryColor={primaryColor} icon={Clock} title="Business Hours" subtitle="When a person is available for the AI to transfer to">
             {hoursSuggestion && (
               <div className="mb-3 rounded-xl p-3 flex items-start gap-2.5" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.06 : 0.04), border: `1px solid ${hexToRgba(primaryColor, theme.isDark ? 0.15 : 0.12)}` }}>
                 <Globe className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: primaryColor }} />
@@ -568,7 +568,7 @@ export default function MyBusinessPage() {
             <div className="mb-3">
               <label className="block text-[11px] font-medium mb-1" style={{ color: theme.textMuted4 }}>Time zone</label>
               <TimezoneSelect value={timezone} onChange={setTimezone} ui={{ inputStyle, text: theme.text, muted: theme.textMuted4, panelBg: theme.card, panelBorder: theme.isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb', hover: theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', accent: theme.primary, isDark: theme.isDark }} />
-              <p className="text-[10px] mt-1" style={{ color: theme.textMuted4 }}>Your hours are read in this time zone. Getting this right is what tells the AI when you're open vs closed.</p>
+              <p className="text-[10px] mt-1" style={{ color: theme.textMuted4 }}>The AI answers every call 24/7. Your hours just tell it when someone is around to take a transfer: inside these hours it can connect callers to you, outside them it takes a message and books instead. Read in this time zone, so getting it right matters.</p>
             </div>
             <div onClick={() => setHoursExpanded(!hoursExpanded)} className="flex items-center justify-between cursor-pointer group">
               <div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
