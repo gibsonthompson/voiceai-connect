@@ -72,9 +72,18 @@ export default function SupportPage() {
   // or even an unsent question sitting in the box.
   const canEscalate = !!agency && !escalating && !escalated && (messages.length > 0 || input.trim().length > 0);
 
+  // Strip markdown styling so the escalation transcript reads cleanly in the
+  // admin inbox, which shows raw text where "**bold**" would leak as literal
+  // asterisks and look broken.
+  const stripMd = (s: string) => String(s || '')
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/__(.*?)__/g, '$1')
+    .replace(/(^|\n)\s*[-*]\s+/g, '$1')
+    .replace(/(^|\n)#{1,6}\s+/g, '$1')
+    .replace(/`([^`]+)`/g, '$1');
   // Flatten the chat into a readable transcript for the owner.
   const buildTranscript = () =>
-    messages.map(m => `${m.role === 'user' ? 'You' : 'Assistant'}: ${m.content}`).join('\n\n');
+    messages.map(m => `${m.role === 'user' ? 'You' : 'Assistant'}: ${m.role === 'assistant' ? stripMd(m.content) : m.content}`).join('\n\n');
 
   const escalateToHuman = async () => {
     if (!agency || escalating || escalated) return;
