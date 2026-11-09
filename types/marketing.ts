@@ -80,6 +80,10 @@ export interface TestimonialItem {
 export interface PricingTier {
   name: string;
   price: number;
+  // Annual price (whole units, same currency as `price`). The yearly amount a
+  // client pays on annual billing. Optional: templates fall back to 9x the
+  // monthly price (3 months free) when it's absent.
+  annualPrice?: number;
   subtitle: string;
   isPopular?: boolean;
   features: string[];
@@ -150,6 +154,12 @@ export interface MarketingConfig {
   industries: IndustryItem[];
   testimonials: TestimonialItem[];
   pricing: PricingTier[];
+  // Whether clients may choose annual (yearly) billing. When true, the pricing
+  // section shows a Monthly/Annual toggle and each tier's annual price. Set from
+  // the agency's "offer annual billing" switch (and off when per-minute
+  // pass-through is on). Undefined/false = monthly only, so existing sites are
+  // unaffected.
+  annualBillingAvailable?: boolean;
   faqs: FAQItem[];
   footer: FooterConfig;
   analytics?: AnalyticsConfig;

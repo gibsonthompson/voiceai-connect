@@ -602,6 +602,13 @@ function ROICalculatorSection({ config }: { config: MarketingConfig }) {
 function PricingSection({ config }: { config: MarketingConfig }) {
   const { pricing, branding } = config;
   const cs = config.currencySymbol || '$';
+  const annualAvailable = config.annualBillingAvailable === true;
+  const [billingInterval, setBillingInterval] = useState<'month' | 'year'>('month');
+  const isAnnual = annualAvailable && billingInterval === 'year';
+  const signupHref = (planKey?: string) => {
+    const base = planKey ? `/signup?plan=${planKey}` : '/signup';
+    return isAnnual ? base + (planKey ? '&billing=year' : '?billing=year') : base;
+  };
   return (
     <section id="pricing" className="pricing">
       <div className="container">
@@ -609,21 +616,40 @@ function PricingSection({ config }: { config: MarketingConfig }) {
           <h2>Simple Pricing. No Hidden Fees.</h2>
           <p>All plans include the {branding.name} app, text summaries, call recordings{config.signup?.trialDays !== 0 ? `, and a ${config.signup?.trialDays ?? 7}-day free trial` : ''}.</p>
         </div>
+        {annualAvailable && (
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.75rem' }}>
+            <div style={{ display: 'inline-flex', background: 'rgba(125,125,125,0.12)', borderRadius: '999px', padding: '0.25rem', border: '1px solid rgba(125,125,125,0.2)' }}>
+              {(['month', 'year'] as const).map((iv) => (
+                <button key={iv} type="button" onClick={() => setBillingInterval(iv)}
+                  style={{ padding: '0.5rem 1.1rem', borderRadius: '999px', fontSize: '0.875rem', fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all 0.15s',
+                    background: billingInterval === iv ? branding.primaryColor : 'transparent',
+                    color: billingInterval === iv ? '#fff' : 'var(--text-light)' }}>
+                  {iv === 'month' ? 'Monthly' : 'Annual'}{iv === 'year' ? ' · 3 months free' : ''}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="pricing-grid">
-          {pricing.map((tier, i) => (
+          {pricing.map((tier, i) => {
+            const annual = tier.annualPrice ?? Math.round(tier.price * 9);
+            return (
             <div key={i} className={`pricing-card ${tier.isPopular ? 'pricing-popular' : ''}`}>
               {tier.isPopular && (<div className="pricing-badge"><span style={{ color: '#f59e0b', width: '1rem', height: '1rem' }}>{Icons.star}</span>Most Popular</div>)}
               <div className="pricing-header">
                 <h3>{tier.name}</h3>
-                <div className="pricing-price"><span className="price-currency">{cs}</span><span className="price-amount">{tier.price}</span><span className="price-period">/month</span></div>{tier.setupFeeCents && tier.setupFeeCents > 0 ? <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginTop: '0.35rem', marginBottom: 0 }}>+ {cs}{Math.round(tier.setupFeeCents / 100)} one-time setup fee</p> : null}
+                <div className="pricing-price"><span className="price-currency">{cs}</span><span className="price-amount">{isAnnual ? annual : tier.price}</span><span className="price-period">{isAnnual ? '/year' : '/month'}</span></div>
+                {isAnnual && tier.price > 0 ? <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginTop: '0.35rem', marginBottom: 0 }}>{cs}{Math.round(annual / 12)}/mo billed yearly{tier.price * 12 > annual ? ` · save ${cs}${(tier.price * 12 - annual).toLocaleString()}` : ''}</p> : null}
+                {tier.setupFeeCents && tier.setupFeeCents > 0 ? <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginTop: '0.35rem', marginBottom: 0 }}>+ {cs}{Math.round(tier.setupFeeCents / 100)} one-time setup fee</p> : null}
                 {tier.subtitle && <p className="pricing-subtitle">{tier.subtitle}</p>}
               </div>
               <ul className="pricing-features">{tier.features.map((feature, j) => (<li key={j}>{feature.startsWith('Everything') ? <strong>{feature}</strong> : `✓ ${feature}`}</li>))}</ul>
               {tier.note && <div className="pricing-note">{tier.note}</div>}
-              <a href={tier.planKey ? `/signup?plan=${tier.planKey}` : '/signup'} className={`btn-pricing ${tier.isPopular ? 'btn-primary' : ''}`}>{config.signup?.trialDays === 0 ? 'Get Started' : `Start ${config.signup?.trialDays ?? 7}-Day Free Trial`}</a>
+              <a href={signupHref(tier.planKey)} className={`btn-pricing ${tier.isPopular ? 'btn-primary' : ''}`}>{config.signup?.trialDays === 0 ? 'Get Started' : `Start ${config.signup?.trialDays ?? 7}-Day Free Trial`}</a>
               {tier.isPopular && <p className="pricing-recommendation">Most businesses choose {tier.name}</p>}
             </div>
-          ))}
+            );
+          })}
         </div>
         <div className="pricing-guarantee">
           <p><strong>All plans include:</strong> {[config.signup?.trialDays !== 0 ? `${config.signup?.trialDays ?? 7}-day free trial${config.signup?.cardRequired ? '' : ' (no credit card required)'}` : null, 'Cancel anytime', config.stats?.setupTime ? `Setup in ${config.stats.setupTime}` : null].filter(Boolean).join(' • ')}</p>

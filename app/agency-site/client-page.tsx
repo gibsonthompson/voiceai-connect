@@ -230,6 +230,11 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
     setupFeeCents: p.setup_fee_cents,
     name: p.name,
     price: Math.round(p.price_cents / 100),
+    // Annual price: the agency's custom per-plan annual price, else 3 months
+    // free (9x the monthly). Whole units, matching `price`.
+    annualPrice: (p.price_annual_cents != null && Number(p.price_annual_cents) > 0)
+      ? Math.round(Number(p.price_annual_cents) / 100)
+      : Math.round((p.price_cents / 100) * 9),
     subtitle: (p.description || '').trim(),
     isPopular: visiblePlans.length >= 3 ? i === 1 : false,
     features: [
@@ -302,6 +307,10 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
     // over any stale `pricing` array baked into marketing_config by marketing-copy
     // generation. Without this, editing prices in Settings does nothing on the site.
     pricing: resolvedPricing,
+    // Annual billing is offered on the site only when the agency turned it on AND
+    // isn't passing per-minute usage through to clients. The public agency shape
+    // already resolves both into annual_billing_available.
+    annualBillingAvailable: (agency as any).annual_billing_available === true,
     // Re-apply hero AFTER the marketing_config spread so the resolved demoPhone
     // (manual override -> auto-provisioned -> platform fallback) always wins. Without
     // this, a stale hero saved in marketing_config JSONB clobbered demoPhone and the

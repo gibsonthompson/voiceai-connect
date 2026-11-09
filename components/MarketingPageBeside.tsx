@@ -653,6 +653,13 @@ function Pricing({ config }: { config: MarketingConfig }) {
   const { pricing, branding } = config;
   const cs = config.currencySymbol || '$';
   const pos = config.currencySymbolPosition || 'before';
+  const annualAvailable = config.annualBillingAvailable === true;
+  const [billingInterval, setBillingInterval] = useState<'month' | 'year'>('month');
+  const isAnnual = annualAvailable && billingInterval === 'year';
+  const signupHref = (planKey?: string) => {
+    const base = planKey ? `/signup?plan=${planKey}` : '/signup';
+    return isAnnual ? base + (planKey ? '&billing=year' : '?billing=year') : base;
+  };
   return (
     <section id="pricing" className="bsd-section bsd-section-soft">
       <div className="bsd-container">
@@ -661,17 +668,34 @@ function Pricing({ config }: { config: MarketingConfig }) {
           <h2>Simple pricing. No hidden fees.</h2>
           <p>All plans include the {branding.name} app, text summaries, call recordings{config.signup?.trialDays !== 0 ? `, and a ${config.signup?.trialDays ?? 7}-day free trial` : ''}.</p>
         </div>
+        {annualAvailable && (
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.75rem' }}>
+            <div style={{ display: 'inline-flex', background: 'rgba(125,125,125,0.12)', borderRadius: '999px', padding: '0.25rem', border: '1px solid rgba(125,125,125,0.2)' }}>
+              {(['month', 'year'] as const).map((iv) => (
+                <button key={iv} type="button" onClick={() => setBillingInterval(iv)}
+                  style={{ padding: '0.5rem 1.1rem', borderRadius: '999px', fontSize: '0.875rem', fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all 0.15s',
+                    background: billingInterval === iv ? branding.primaryColor : 'transparent',
+                    color: billingInterval === iv ? '#fff' : 'var(--bsd-muted, #6b7280)' }}>
+                  {iv === 'month' ? 'Monthly' : 'Annual'}{iv === 'year' ? ' · 3 months free' : ''}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="bsd-pricing bsd-stagger">
-          {pricing.map((tier, i) => (
+          {pricing.map((tier, i) => {
+            const annual = tier.annualPrice ?? Math.round(tier.price * 9);
+            return (
             <div key={i} className={`bsd-price bsd-reveal${tier.isPopular ? ' pop' : ''}`}>
               {tier.isPopular && <div className="bsd-price-badge">{Icons.star}Most popular</div>}
               <h3>{tier.name}</h3>
               <div className="bsd-price-amt">
                 {pos !== 'after' && <span className="bsd-price-cur">{cs}</span>}
-                <span className="bsd-price-num">{tier.price}</span>
+                <span className="bsd-price-num">{isAnnual ? annual : tier.price}</span>
                 {pos === 'after' && <span className="bsd-price-cur" style={{ marginTop: 0, alignSelf: 'flex-end', marginBottom: '0.35rem' }}>{cs}</span>}
-                <span className="bsd-price-per">/month</span>
+                <span className="bsd-price-per">{isAnnual ? '/year' : '/month'}</span>
               </div>
+              {isAnnual && tier.price > 0 ? <p className="bsd-price-note" style={{ opacity: 0.75, marginTop: '0.35rem' }}>{cs}{Math.round(annual / 12)}/mo billed yearly{tier.price * 12 > annual ? ` · save ${cs}${(tier.price * 12 - annual).toLocaleString()}` : ''}</p> : null}
               {tier.setupFeeCents && tier.setupFeeCents > 0 ? <p className="bsd-price-note" style={{ opacity: 0.75, marginTop: '0.35rem' }}>+ {cs}{Math.round(tier.setupFeeCents / 100)} one-time setup fee</p> : null}
               {tier.subtitle && <p className="bsd-price-sub">{tier.subtitle}</p>}
               <ul className="bsd-price-feats">
@@ -680,9 +704,10 @@ function Pricing({ config }: { config: MarketingConfig }) {
                 ))}
               </ul>
               {tier.note && <p className="bsd-price-note">{tier.note}</p>}
-              <a href={tier.planKey ? `/signup?plan=${tier.planKey}` : '/signup'} className={`bsd-btn bsd-btn-block ${tier.isPopular ? 'bsd-btn-primary' : 'bsd-btn-ghost'}`}>{config.signup?.trialDays === 0 ? 'Get started' : `Start ${config.signup?.trialDays ?? 7}-day free trial`}</a>
+              <a href={signupHref(tier.planKey)} className={`bsd-btn bsd-btn-block ${tier.isPopular ? 'bsd-btn-primary' : 'bsd-btn-ghost'}`}>{config.signup?.trialDays === 0 ? 'Get started' : `Start ${config.signup?.trialDays ?? 7}-day free trial`}</a>
             </div>
-          ))}
+            );
+          })}
         </div>
         <div className="bsd-pricing-foot">
           <p>{[config.signup?.trialDays !== 0 ? `${config.signup?.trialDays ?? 7}-day free trial${config.signup?.cardRequired ? '' : ', no credit card required'}` : null, 'Cancel anytime', config.stats?.setupTime ? `Setup in ${config.stats.setupTime}` : null].filter(Boolean).join('. ')}.</p>

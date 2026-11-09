@@ -270,6 +270,12 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
   const annualAvailable = agency.annual_billing_available === true;
   const [billingInterval, setBillingInterval] = useState<'month' | 'year'>('month');
   const isAnnual = annualAvailable && billingInterval === 'year';
+  // Pre-select annual when the marketing site linked here with ?billing=year.
+  useEffect(() => {
+    if (annualAvailable && typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('billing') === 'year') {
+      setBillingInterval('year');
+    }
+  }, [annualAvailable]);
 
   // Embed mode: transparent so the host page is the visible background;
   // skip the fixed header and ambient blobs.

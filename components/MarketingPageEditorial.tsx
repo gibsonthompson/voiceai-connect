@@ -354,27 +354,52 @@ function Pricing({ config }: { config: MarketingConfig }) {
   const tiers = config.pricing || [];
   const cs = config.currencySymbol || '$';
   const pos = config.currencySymbolPosition;
+  const annualAvailable = config.annualBillingAvailable === true;
+  const [billingInterval, setBillingInterval] = useState<'month' | 'year'>('month');
+  const isAnnual = annualAvailable && billingInterval === 'year';
+  const signupHref = (planKey?: string) => {
+    const base = planKey ? `/signup?plan=${planKey}` : '/signup';
+    return isAnnual ? base + (planKey ? '&billing=year' : '?billing=year') : base;
+  };
   if (tiers.length === 0) return null;
   const { cols, wideLast } = balancedGrid(tiers.length);
   return (
     <section className="ed-pricing" id="pricing">
       <div className="ed-container">
         <div className="ed-section-head"><h2 className="ed-h2">Simple pricing</h2></div>
+        {annualAvailable && (
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
+            <div style={{ display: 'inline-flex', background: 'rgba(125,125,125,0.12)', borderRadius: '999px', padding: '0.25rem', border: '1px solid rgba(125,125,125,0.2)' }}>
+              {(['month', 'year'] as const).map((iv) => (
+                <button key={iv} type="button" onClick={() => setBillingInterval(iv)}
+                  style={{ padding: '0.5rem 1.1rem', borderRadius: '999px', fontSize: '0.875rem', fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all 0.15s',
+                    background: billingInterval === iv ? config.branding.primaryColor : 'transparent',
+                    color: billingInterval === iv ? '#fff' : 'inherit' }}>
+                  {iv === 'month' ? 'Monthly' : 'Annual'}{iv === 'year' ? ' · 3 months free' : ''}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <div className={`ed-price-grid ed-cols-${cols}`}>
-          {tiers.map((t, i) => (
+          {tiers.map((t, i) => {
+            const annual = t.annualPrice ?? Math.round(t.price * 9);
+            return (
             <article className={`ed-price ${t.isPopular ? 'ed-price-pop' : ''} ${wideLast && i === tiers.length - 1 ? 'ed-cell-wide' : ''}`} key={i}>
               {t.isPopular && <span className="ed-price-flag ed-accent-bg">Most popular</span>}
               <h3 className="ed-price-name">{t.name}</h3>
               {t.subtitle && <p className="ed-price-sub">{t.subtitle}</p>}
-              <p className="ed-price-amt">{priceString(cs, t.price, pos)}<span>/mo</span></p>
+              <p className="ed-price-amt">{priceString(cs, isAnnual ? annual : t.price, pos)}<span>{isAnnual ? '/yr' : '/mo'}</span></p>
+              {isAnnual && t.price > 0 ? <p className="ed-price-setup">{priceString(cs, Math.round(annual / 12), pos)}/mo billed yearly{t.price * 12 > annual ? ` · save ${priceString(cs, t.price * 12 - annual, pos)}` : ''}</p> : null}
               {t.setupFeeCents && t.setupFeeCents > 0 ? <p className="ed-price-setup">+ {priceString(cs, Math.round(t.setupFeeCents / 100), pos)} one-time setup fee</p> : null}
               <ul className="ed-price-feats">
                 {t.features.map((f, j) => <li key={j}><span className="ed-tick ed-accent">{Icons.check}</span>{f}</li>)}
               </ul>
-              <a href={t.planKey ? `/signup?plan=${t.planKey}` : '/signup'} className={`ed-btn ${t.isPopular ? 'ed-btn-primary' : 'ed-btn-line'} ed-btn-full`}>Start free trial</a>
+              <a href={signupHref(t.planKey)} className={`ed-btn ${t.isPopular ? 'ed-btn-primary' : 'ed-btn-line'} ed-btn-full`}>Start free trial</a>
               {t.note && <p className="ed-price-note">{t.note}</p>}
             </article>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
