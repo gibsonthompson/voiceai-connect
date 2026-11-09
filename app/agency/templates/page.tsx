@@ -39,6 +39,7 @@ interface ClientItem {
   owner_phone: string; email: string; vapi_assistant_id: string | null;
   vapi_phone_number: string | null; subscription_status: string; status: string;
   plan_type: string; business_city: string; business_state: string; call_mode: string;
+  is_test_client?: boolean;
 }
 
 interface AssistantConfig {
@@ -579,7 +580,11 @@ export default function AILabPage() {
   const removeKbFaq = (id: string) => { if (kbFaqs.length > 1) setKbFaqs(prev => prev.filter(f => f.id !== id)); };
   const updateKbFaq = (id: string, field: string, value: string) => setKbFaqs(prev => prev.map(f => f.id === id ? { ...f, [field]: value } : f));
 
-  const filtered = clientSearch.trim() ? clients.filter(c => c.business_name.toLowerCase().includes(clientSearch.toLowerCase()) || c.industry.toLowerCase().includes(clientSearch.toLowerCase())) : clients;
+  // The test client is the agency's demo receptionist, so it sorts to the front
+  // of the picker (stable otherwise, keeping the newest-first order from the API).
+  const filtered = (clientSearch.trim() ? clients.filter(c => c.business_name.toLowerCase().includes(clientSearch.toLowerCase()) || c.industry.toLowerCase().includes(clientSearch.toLowerCase())) : clients)
+    .slice()
+    .sort((a, b) => (a.is_test_client === b.is_test_client ? 0 : a.is_test_client ? -1 : 1));
   const selectedVoice = allVoices.find(v => v.id === editVoice);
   const selectedModelObj = MODEL_OPTIONS.find(m => m.id === editModel);
 

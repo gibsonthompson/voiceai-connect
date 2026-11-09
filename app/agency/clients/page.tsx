@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { getIndustry } from '@/lib/industries';
 import { 
   Users, PhoneCall, Search, Plus, ChevronRight, Loader2, ArrowUpRight, FlaskConical,
   Download, X, Phone, CheckCircle2, Clock, CreditCard, AlertTriangle, XCircle, Ban,
@@ -38,6 +39,7 @@ interface Client {
   vapi_phone_number: string;
   is_test_client?: boolean;
   onboarding_status?: OnboardingStatus;
+  industry?: string;
 }
 
 import { CustomSelect } from '@/components/ui/custom-select';
@@ -300,14 +302,15 @@ export default function AgencyClientsPage() {
 
   // Search filters the list; the status control SORTS the chosen status to the
   // top (everyone stays visible). Array sort is stable, so within the chosen
-  // group and the rest the original (newest-first) order is preserved. Test
-  // clients always sort to the very bottom.
+  // group and the rest the original (newest-first) order is preserved. The test
+  // client is pulled out into its own pinned section at the top, so it is
+  // excluded from the main table here.
   const filteredClients = clients.filter(client => (
-    !searchQuery ||
+    !client.is_test_client &&
+    (!searchQuery ||
     client.business_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    client.email?.toLowerCase().includes(searchQuery.toLowerCase())
+    client.email?.toLowerCase().includes(searchQuery.toLowerCase()))
   )).sort((a, b) => {
-    if (a.is_test_client !== b.is_test_client) return a.is_test_client ? 1 : -1;
     if (statusFilter) {
       const am = statusBucket(a) === statusFilter ? 0 : 1;
       const bm = statusBucket(b) === statusFilter ? 0 : 1;
@@ -567,8 +570,38 @@ export default function AgencyClientsPage() {
         </div>
       )}
 
+      {/* Pinned test client: it's the agency's demo receptionist, re-pointable to
+          any industry, so it sits at the top on its own rather than in the table. */}
+      {testClient && !demoMode && (
+        <div className="mb-6 rounded-xl p-4 sm:p-5 overflow-hidden" style={{ background: theme.isDark ? `linear-gradient(135deg, ${theme.primary}12 0%, ${theme.primary}04 100%)` : `linear-gradient(135deg, ${theme.primary}08 0%, ${theme.primary}02 100%)`, border: `1px solid ${theme.primary}30` }}>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>
+                <FlaskConical className="h-5 w-5" style={{ color: theme.iconColor }} />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>{testClient.business_name}</h3>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-medium uppercase tracking-wider" style={{ backgroundColor: theme.primary15, color: theme.primary }}>Test client</span>
+                  {testClient.industry && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>{getIndustry(testClient.industry)?.label || testClient.industry}</span>
+                  )}
+                </div>
+                <p className="text-xs sm:text-sm mt-1" style={{ color: theme.textMuted }}>
+                  Your demo receptionist. Change its industry and set up services, pricing and booking in the AI Lab, then call it to test.{testClient.vapi_phone_number ? ` Demo line: ${testClient.vapi_phone_number.replace(/^\+?1?\s*\(?(\d{3})\)?[\s.-]*(\d{3})[\s.-]*(\d{4})$/, '($1) $2-$3')}.` : ''}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">
+              <Link href={`/agency/templates?client=${testClient.id}`} className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><ArrowUpRight className="h-4 w-4" /> Open in AI Lab</Link>
+              <Link href={`/agency/clients/${testClient.id}`} className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition hover:opacity-90" style={{ backgroundColor: theme.hover, color: theme.text, border: `1px solid ${theme.border}` }}>Manage <ChevronRight className="h-4 w-4" /></Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Clients List */}
-      <div 
+      <div
         className="rounded-xl overflow-hidden"
         style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
       >
