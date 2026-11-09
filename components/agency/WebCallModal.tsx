@@ -218,7 +218,7 @@ export default function WebCallModal({ clientId, open, onClose, theme }: Props) 
                 <p className="text-lg font-semibold" style={{ color: text }}>{info?.businessName} AI Receptionist</p>
               )}
               <p className="mt-3 text-[13.5px] max-w-sm leading-relaxed" style={{ color: textMuted }}>
-                {phase === 'ended' ? 'Call ended. Start another whenever you want.' : 'Talk to this client’s AI receptionist right in your browser to test it. Your microphone is used for the call.'}
+                {phase === 'ended' ? 'Call ended. Start another whenever you want.' : 'Talk to this client’s AI receptionist right in your browser to test it. Your microphone is used for the call.'}
               </p>
               {error && <p className="mt-3 text-[13px]" style={{ color: '#ef4444' }}>{error}</p>}
               <button type="button" onClick={startCall} disabled={!info?.assistantId}
