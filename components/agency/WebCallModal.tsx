@@ -136,7 +136,9 @@ export default function WebCallModal({ clientId, open, onClose, theme }: Props) 
   const isDark = theme?.isDark ?? true;
   const primary = info?.primary || theme?.primary || '#01f5d1';
   const primaryText = theme?.primaryText || '#ffffff';
-  const card = theme?.card || (isDark ? '#101012' : '#ffffff');
+  // Force a fully opaque panel. theme.card can be a semi-transparent value,
+  // which made the popup look see-through, so we use a solid surface here.
+  const card = isDark ? '#17171b' : '#ffffff';
   const border = theme?.border || theme?.inputBorder || (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)');
   const text = theme?.text || (isDark ? '#fafafa' : '#111111');
   const textMuted = theme?.textMuted || (isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.5)');
@@ -150,7 +152,7 @@ export default function WebCallModal({ clientId, open, onClose, theme }: Props) 
     const you = ln.role === 'user';
     return (
       <div key={key} className={`flex ${you ? 'justify-end' : 'justify-start'}`}>
-        <div className="max-w-[82%]">
+        <div className="max-w-[85%] md:max-w-[560px]">
           <div className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: textMuted, textAlign: you ? 'right' : 'left' }}>
             {you ? 'You' : (info?.businessName ? `${info.businessName} AI` : 'AI Receptionist')}
           </div>
@@ -168,7 +170,7 @@ export default function WebCallModal({ clientId, open, onClose, theme }: Props) 
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
       onClick={onClose}>
       <div className="rounded-2xl overflow-hidden flex flex-col"
-        style={{ backgroundColor: card, border: `1px solid ${border}`, boxShadow: '0 24px 70px rgba(0,0,0,0.45)', width: 'min(560px, 94vw)', height: 'min(660px, 90vh)' }}
+        style={{ backgroundColor: card, border: `1px solid ${border}`, boxShadow: '0 30px 90px rgba(0,0,0,0.55)', width: 'min(900px, 92vw)', height: 'min(820px, 90vh)' }}
         onClick={(e) => e.stopPropagation()}>
 
         {/* Header */}
