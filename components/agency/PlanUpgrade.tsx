@@ -1,48 +1,58 @@
 'use client';
 
 // ============================================================================
-// PlanUpgrade — in-app plan selection for the agency billing tab.
+// PlanUpgrade: in-app plan + billing-interval control for the agency billing tab.
 // Theme-aware (matches the settings page's useTheme inline-style pattern).
 // ----------------------------------------------------------------------------
-// - Every change goes through a confirmation step first (no silent switches).
-// - Pro <-> Scale: in-app switch via POST /api/agency/change-plan (no redirect;
-//   Stripe prorates, the subscription webhook syncs plan_type/per-client/seats).
-//   Works in BOTH directions (upgrade and switch back down).
-// - Free -> paid: no subscription yet, so it runs POST /api/agency/checkout and
-//   redirects to Stripe.
-// - No downgrade to Free here (cancel lives in the billing tab's Cancel button).
+// Plan changes (Pro <-> Scale, Free -> paid):
+//   - Pro <-> Scale: in-app swap via POST /api/agency/change-plan (Stripe
+//     prorates; the subscription webhook syncs plan_type/per-client/seats).
+//   - Free -> paid: no subscription yet, so POST /api/agency/checkout -> Stripe.
+//   - No downgrade to Free here (cancel lives in the billing tab's Cancel button).
+//
+// Billing interval (Monthly <-> Annual) via POST /api/agency/change-billing-interval:
+//   - Annual billing is Pro/Scale only (Free has no flat fee to bill yearly).
+//   - Annual = a yearly flat subscription + the existing monthly usage sub, so
+//     the switch is handled server-side; here we just confirm and call it.
+//   - A Free agency can't go straight to annual (no paid subscription yet), so
+//     the switch is offered only once they're on Pro or Scale. Free -> paid
+//     always starts monthly; they switch to annual afterward.
+//   - While on annual, plan changes are blocked server-side (one plan's flat fee
+//     is the yearly sub), so the plan buttons are disabled with a note to switch
+//     to monthly first.
 //
 // Usage in the billing tab:
 //   <PlanUpgrade
 //     agencyId={agency?.id || ''}
 //     currentPlan={agency?.plan_type || 'free'}
+//     currentInterval={agency?.billing_interval || 'monthly'}
 //     theme={theme}
 //     onChanged={() => window.location.reload()}
 //   />
 // ============================================================================
 
 import { useState } from 'react';
-import { Check, Loader2, Sparkles, ShieldCheck, ArrowRight, ArrowLeft, AlertCircle, X } from 'lucide-react';
+import { Check, Loader2, Sparkles, ShieldCheck, ArrowRight, ArrowLeft, AlertCircle, X, RefreshCw } from 'lucide-react';
 
 type PlanKey = 'free' | 'pro' | 'scale';
 const RANK: Record<string, number> = { free: 0, starter: 0, pro: 1, scale: 2 };
 
 const PLANS: {
-  key: PlanKey; name: string; price: string; usage: string; tagline: string;
+  key: PlanKey; name: string; price: string; priceAnnual: string; usage: string; tagline: string;
   features: string[]; highlight?: boolean;
 }[] = [
   {
-    key: 'free', name: 'Free', price: '$0', usage: '$29.99 / client · $0.12 / min',
+    key: 'free', name: 'Free', price: '$0', priceAnnual: '$0', usage: '$29.99 / client · $0.12 / min',
     tagline: 'Launch with no platform fee.',
     features: ['24/7 AI receptionist', 'Google Calendar booking', 'Call summaries by text', 'Unlimited clients (usage-based)'],
   },
   {
-    key: 'pro', name: 'Pro', price: '$99', usage: '$9.99 / client · $0.10 / min',
+    key: 'pro', name: 'Pro', price: '$99', priceAnnual: '$891', usage: '$9.99 / client · $0.10 / min',
     tagline: 'Your brand, your marketing site.',
     features: ['Everything in Free', 'Full white-label branding', 'Marketing website', 'Branded demo phone line', 'Lower per-client + per-minute rates'],
   },
   {
-    key: 'scale', name: 'Scale', price: '$499', usage: '$0 / client · $0.05 / min',
+    key: 'scale', name: 'Scale', price: '$499', priceAnnual: '$4,491', usage: '$0 / client · $0.05 / min',
     tagline: 'No per-client fees. Built to grow.',
     highlight: true,
     features: ['Everything in Pro', 'No per-client fees at all', 'Lowest per-minute rate', 'API access + webhooks', 'Unlimited team members'],
@@ -64,14 +74,18 @@ function CardBrands() {
 interface Props {
   agencyId: string;
   currentPlan: string;
+  currentInterval?: string; // 'monthly' | 'annual'
   theme: any;
   token?: string;
   backendUrl?: string;
   onChanged?: () => void;
 }
 
-export default function PlanUpgrade({ agencyId, currentPlan, theme, token, backendUrl, onChanged }: Props) {
-  const [confirm, setConfirm] = useState<PlanKey | null>(null); // plan awaiting confirmation
+export default function PlanUpgrade({ agencyId, currentPlan, currentInterval, theme, token, backendUrl, onChanged }: Props) {
+  const curIntervalAnnual = (currentInterval || 'monthly') === 'annual';
+  const [interval, setPlanInterval] = useState<'month' | 'year'>(curIntervalAnnual ? 'year' : 'month');
+  const [confirm, setConfirm] = useState<PlanKey | null>(null);        // plan change awaiting confirmation
+  const [intervalConfirm, setIntervalConfirm] = useState<'year' | 'month' | null>(null); // interval switch awaiting confirmation
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; msg: string } | null>(null);
 
@@ -79,6 +93,12 @@ export default function PlanUpgrade({ agencyId, currentPlan, theme, token, backe
   const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('auth_token') || '' : '');
   const cur = (currentPlan || 'free').toLowerCase();
   const onFree = RANK[cur] === 0;
+  const isAnnual = interval === 'year';
+  // The interval the agency is actually on right now, as a toggle value.
+  const curIntervalValue: 'year' | 'month' = curIntervalAnnual ? 'year' : 'month';
+  // A switch is offered only for a paid agency whose selected toggle differs
+  // from the interval they're on. Free agencies have no flat fee to bill yearly.
+  const canSwitchInterval = !onFree && interval !== curIntervalValue;
 
   // Free is only ever shown when you're actually on it (as the current-plan
   // marker). We never offer a downgrade to Free from a paid plan.
@@ -86,6 +106,7 @@ export default function PlanUpgrade({ agencyId, currentPlan, theme, token, backe
 
   const softBg = theme && theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)';
   const planByKey = (k: PlanKey) => PLANS.find((p) => p.key === k)!;
+  const priceOf = (p: typeof PLANS[number]) => (isAnnual ? p.priceAnnual : p.price);
 
   async function post(path: string, body: any) {
     const res = await fetch(base + path, {
@@ -101,11 +122,9 @@ export default function PlanUpgrade({ agencyId, currentPlan, theme, token, backe
   async function startCheckout(plan: PlanKey) {
     const successUrl = window.location.origin + '/agency/settings?tab=billing&upgraded=' + plan;
     const cancelUrl = window.location.origin + '/agency/settings?tab=billing&canceled=true';
-    // A free agency upgrading to a paid plan gets the same 14-day free trial new
-    // signups get (skipTrial:false -> backend attaches trial_period_days=14, $0
-    // today). Only an edge-case resubscribe of an already-paid agency whose
-    // subscription vanished keeps skipTrial (immediate charge, no new trial).
-    const json = await post('/api/agency/checkout', { agency_id: agencyId, plan, successUrl, cancelUrl, skipTrial: !onFree });
+    // Free -> paid always starts MONTHLY (direct free -> annual isn't supported;
+    // they switch to annual afterward). skipTrial mirrors the prior behavior.
+    const json = await post('/api/agency/checkout', { agency_id: agencyId, plan, interval: 'month', successUrl, cancelUrl, skipTrial: !onFree });
     if (json.url) { window.location.href = json.url; return; }
     throw new Error('Could not start checkout.');
   }
@@ -116,7 +135,7 @@ export default function PlanUpgrade({ agencyId, currentPlan, theme, token, backe
     if (onFree) {
       return {
         title: 'Start your 14-day free trial?',
-        body: 'Full ' + name + ' access free for 14 days. $0 today, then ' + planByKey(plan).price + '/mo after the trial. Cancel anytime before it ends. You add a card on Stripe to start.',
+        body: 'Full ' + name + ' access free for 14 days. $0 today, then ' + planByKey(plan).price + '/mo after the trial. Cancel anytime before it ends. You add a card on Stripe to start. You can switch to annual billing (3 months free) once your plan is active.',
         cta: 'Start free trial',
       };
     }
@@ -142,15 +161,28 @@ export default function PlanUpgrade({ agencyId, currentPlan, theme, token, backe
       // active subscription to switch (Pro <-> Scale, and a Free agency that
       // already set up billing -> paid), and only returns needs_checkout when
       // there is no subscription yet, in which case we run Stripe Checkout to
-      // create one. Routing Free -> paid straight to checkout would 409 an
-      // agency that already has a (Free, $0) subscription.
+      // create one.
       const json = await post('/api/agency/change-plan', { agency_id: agencyId, plan });
       if (json.needs_checkout) { await startCheckout(plan); return; } // redirects away
       setConfirm(null);
-      setResult({ ok: true, msg: 'You\u2019re now on ' + planByKey(plan).name + '. Refreshing\u2026' });
+      setResult({ ok: true, msg: 'You’re now on ' + planByKey(plan).name + '. Refreshing…' });
       setTimeout(() => { onChanged && onChanged(); }, 1600);
     } catch (e: any) {
       setResult({ ok: false, msg: (e && e.message) || 'Something went wrong. Your plan was not changed.' });
+      setBusy(false);
+    }
+  }
+
+  async function runIntervalSwitch(target: 'year' | 'month') {
+    setBusy(true);
+    setResult(null);
+    try {
+      await post('/api/agency/change-billing-interval', { agency_id: agencyId, interval: target });
+      setIntervalConfirm(null);
+      setResult({ ok: true, msg: (target === 'year' ? 'You’re now on annual billing. Refreshing…' : 'You’re now on monthly billing. Refreshing…') });
+      setTimeout(() => { onChanged && onChanged(); }, 1600);
+    } catch (e: any) {
+      setResult({ ok: false, msg: (e && e.message) || 'Something went wrong. Your billing interval was not changed.' });
       setBusy(false);
     }
   }
@@ -172,11 +204,60 @@ export default function PlanUpgrade({ agencyId, currentPlan, theme, token, backe
         </div>
       )}
 
+      {/* Monthly / Annual toggle */}
+      <div className="mb-4 flex items-center justify-center">
+        <div className="inline-flex items-center rounded-full p-1" style={{ backgroundColor: softBg, border: '1px solid ' + theme?.inputBorder }}>
+          {(['month', 'year'] as const).map((iv) => {
+            const active = interval === iv;
+            return (
+              <button key={iv} type="button" onClick={() => { setResult(null); setPlanInterval(iv); }}
+                className="px-4 py-1.5 rounded-full text-[13px] font-semibold transition-colors"
+                style={active ? { backgroundColor: theme?.primary, color: theme?.primaryText } : { color: theme?.textMuted }}>
+                {iv === 'month' ? 'Monthly' : 'Annual'}
+                {iv === 'year' && <span className="ml-1.5 text-[11px] font-bold" style={{ color: active ? theme?.primaryText : theme?.primary }}>3 months free</span>}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Billing-interval switch CTA (paid agencies, when the toggle differs from
+          the interval they're on) + the free-agency note. */}
+      {canSwitchInterval && (
+        <div className="mb-4 rounded-xl p-3.5 flex items-start justify-between gap-3" style={{ backgroundColor: theme?.primary15, border: '1px solid ' + theme?.primary30 }}>
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold" style={{ color: theme?.text }}>
+              {interval === 'year' ? 'Switch to annual billing' : 'Switch to monthly billing'}
+            </p>
+            <p className="text-[12px] mt-0.5" style={{ color: theme?.textMuted }}>
+              {interval === 'year'
+                ? 'Pay for ' + planByKey(cur as PlanKey).name + ' yearly (' + planByKey(cur as PlanKey).priceAnnual + '/yr, 3 months free). Your per-minute usage stays billed monthly.'
+                : 'Move ' + planByKey(cur as PlanKey).name + ' back to monthly billing (' + planByKey(cur as PlanKey).price + '/mo).'}
+            </p>
+          </div>
+          <button type="button" onClick={() => { setResult(null); setIntervalConfirm(interval); }} disabled={busy}
+            className="rounded-xl text-[13px] font-semibold px-3.5 py-2 inline-flex items-center gap-1.5 flex-shrink-0 transition-colors disabled:opacity-60"
+            style={{ backgroundColor: theme?.primary, color: theme?.primaryText }}>
+            <RefreshCw className="h-3.5 w-3.5" /> {interval === 'year' ? 'Go annual' : 'Go monthly'}
+          </button>
+        </div>
+      )}
+      {onFree && isAnnual && (
+        <div className="mb-4 rounded-xl p-3 flex items-start gap-2.5" style={{ backgroundColor: softBg, border: '1px solid ' + theme?.inputBorder }}>
+          <Sparkles className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme?.primary }} />
+          <p className="text-[12px]" style={{ color: theme?.textMuted }}>Annual billing (3 months free) is available on Pro and Scale. Start a paid plan, then switch to annual anytime from here.</p>
+        </div>
+      )}
+
       <div className={`grid grid-cols-1 gap-3 sm:gap-4 ${visiblePlans.length === 3 ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
         {visiblePlans.map((p) => {
           const isCurrent = p.key === cur;
           const isUpgrade = RANK[p.key] > RANK[cur];
           const border = isCurrent ? theme?.primary : (p.highlight ? theme?.primary30 : theme?.inputBorder);
+          // Plan changes are blocked while on annual (one plan's flat fee is the
+          // yearly sub). Disable the action and explain, so the switch can't 409.
+          const planLocked = curIntervalAnnual && !isCurrent;
+          const showAnnualPrice = isAnnual && p.key !== 'free';
           return (
             <div
               key={p.key}
@@ -190,9 +271,10 @@ export default function PlanUpgrade({ agencyId, currentPlan, theme, token, backe
               )}
               <div className="text-sm font-semibold" style={{ color: theme?.textMuted }}>{p.name}</div>
               <div className="mt-1 flex items-baseline gap-1">
-                <span className="text-2xl sm:text-3xl font-bold tracking-tight">{p.price}</span>
-                <span className="text-sm" style={{ color: theme?.textMuted }}>/mo</span>
+                <span className="text-2xl sm:text-3xl font-bold tracking-tight">{priceOf(p)}</span>
+                <span className="text-sm" style={{ color: theme?.textMuted }}>{showAnnualPrice ? '/yr' : '/mo'}</span>
               </div>
+              {showAnnualPrice && <div className="mt-0.5 text-[11px] font-medium" style={{ color: theme?.primary }}>3 months free vs monthly</div>}
               <div className="mt-1 text-[12px] font-medium" style={{ color: theme?.textMuted }}>{p.usage}</div>
               <p className="mt-2 text-[13px]" style={{ color: theme?.textMuted }}>{p.tagline}</p>
 
@@ -208,7 +290,11 @@ export default function PlanUpgrade({ agencyId, currentPlan, theme, token, backe
               <div className="mt-5">
                 {isCurrent ? (
                   <div className="w-full text-center rounded-xl text-sm font-semibold py-2.5" style={{ backgroundColor: softBg, color: theme?.textMuted }}>
-                    Current plan
+                    Current plan{curIntervalAnnual ? ' · annual' : ''}
+                  </div>
+                ) : planLocked ? (
+                  <div className="w-full text-center rounded-xl text-[12px] py-2.5 px-2" style={{ backgroundColor: softBg, color: theme?.textMuted }}>
+                    Switch to monthly billing to change plans
                   </div>
                 ) : (
                   <button
@@ -228,7 +314,7 @@ export default function PlanUpgrade({ agencyId, currentPlan, theme, token, backe
         })}
       </div>
 
-      {/* Confirmation dialog */}
+      {/* Plan-change confirmation dialog */}
       {confirm && confirmData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => { if (!busy) { setConfirm(null); } }}>
           <div className="w-full max-w-md rounded-2xl p-5 sm:p-6" style={{ backgroundColor: theme?.card || (theme?.isDark ? '#0a0a0a' : '#fff'), border: '1px solid ' + theme?.border }} onClick={(e) => e.stopPropagation()}>
@@ -254,6 +340,41 @@ export default function PlanUpgrade({ agencyId, currentPlan, theme, token, backe
                 style={{ backgroundColor: theme?.primary, color: theme?.primaryText }}
               >
                 {busy ? (<><Loader2 className="h-4 w-4 animate-spin" /> Working...</>) : confirmData.cta}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Billing-interval switch confirmation dialog */}
+      {intervalConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => { if (!busy) { setIntervalConfirm(null); } }}>
+          <div className="w-full max-w-md rounded-2xl p-5 sm:p-6" style={{ backgroundColor: theme?.card || (theme?.isDark ? '#0a0a0a' : '#fff'), border: '1px solid ' + theme?.border }} onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <h4 className="text-base sm:text-lg font-semibold">{intervalConfirm === 'year' ? 'Switch to annual billing?' : 'Switch to monthly billing?'}</h4>
+              <button onClick={() => { if (!busy) setIntervalConfirm(null); }} className="p-1 rounded-lg flex-shrink-0" style={{ color: theme?.textMuted }} aria-label="Close"><X className="h-4 w-4" /></button>
+            </div>
+            <p className="text-[13px] sm:text-sm leading-relaxed" style={{ color: theme?.textMuted }}>
+              {intervalConfirm === 'year'
+                ? 'Your ' + planByKey(cur as PlanKey).name + ' plan moves to yearly billing at ' + planByKey(cur as PlanKey).priceAnnual + '/yr (3 months free). You’re charged for the year now, with the unused part of your current month credited by Stripe. Your per-minute usage keeps billing monthly, and the plan auto-renews yearly. You can switch back to monthly anytime.'
+                : 'Your ' + planByKey(cur as PlanKey).name + ' plan moves back to monthly billing at ' + planByKey(cur as PlanKey).price + '/mo. Stripe credits the unused part of your annual payment toward future invoices. Your per-minute usage is unaffected.'}
+            </p>
+            <div className="mt-5 flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5">
+              <button
+                onClick={() => { if (!busy) setIntervalConfirm(null); }}
+                disabled={busy}
+                className="rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50 w-full sm:w-auto"
+                style={{ backgroundColor: theme?.input, border: '1px solid ' + theme?.inputBorder, color: theme?.text }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => runIntervalSwitch(intervalConfirm)}
+                disabled={busy}
+                className="rounded-xl px-5 py-2.5 text-sm font-semibold transition-colors disabled:opacity-60 inline-flex items-center justify-center gap-2 w-full sm:w-auto"
+                style={{ backgroundColor: theme?.primary, color: theme?.primaryText }}
+              >
+                {busy ? (<><Loader2 className="h-4 w-4 animate-spin" /> Working...</>) : (intervalConfirm === 'year' ? 'Switch to annual' : 'Switch to monthly')}
               </button>
             </div>
           </div>

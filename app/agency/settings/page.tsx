@@ -2139,6 +2139,7 @@ function AgencySettingsContent() {
                 <PlanUpgrade
                   agencyId={agency?.id || ''}
                   currentPlan={agency?.plan_type || 'free'}
+                  currentInterval={(agency as any)?.billing_interval || 'monthly'}
                   theme={theme}
                   onChanged={() => window.location.reload()}
                 />
