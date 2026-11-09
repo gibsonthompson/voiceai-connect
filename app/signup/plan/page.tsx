@@ -50,6 +50,8 @@ interface Agency {
   require_card_for_trial?: boolean;
   bill_minutes_during_trial?: boolean;
   client_minute_rate_cents?: number | null;
+  // True when the agency offers clients an annual (yearly) billing option.
+  annual_billing_available?: boolean;
 }
 
 interface SignupData {
@@ -264,6 +266,10 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
   const accentColor = agency.accent_color || primaryColor;
   const primaryLight = isLightColor(primaryColor);
   const agencyCountry = agency.country || 'US';
+  // Monthly vs annual (yearly) billing. Only offered when the agency enabled it.
+  const annualAvailable = agency.annual_billing_available === true;
+  const [billingInterval, setBillingInterval] = useState<'month' | 'year'>('month');
+  const isAnnual = annualAvailable && billingInterval === 'year';
 
   // Embed mode: transparent so the host page is the visible background;
   // skip the fixed header and ambient blobs.
@@ -405,6 +411,7 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
         consent_agreed: consentAgreed,
         consent_text: consentText,
         ...(discountCode.trim() ? { discount_code: discountCode.trim() } : {}),
+        ...(isAnnual ? { billing_interval: 'year' } : {}),
       };
       
       const response = await fetch(`${backendUrl}/api/client/signup`, {
@@ -596,6 +603,28 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
             <p className="mt-3 text-base sm:text-lg max-w-xl mx-auto" style={{ color: mutedTextColor }}>
               Select the plan that fits your business. Upgrade or downgrade anytime.
             </p>
+
+            {annualAvailable && (
+              <div className="flex justify-center mt-6">
+                <div className="inline-flex items-center rounded-full p-1"
+                  style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)', border: `1px solid ${cardBorder}` }}>
+                  {(['month', 'year'] as const).map((iv) => {
+                    const active = billingInterval === iv;
+                    const onActive = primaryLight ? '#050505' : '#fafaf9';
+                    return (
+                      <button key={iv} type="button" onClick={() => setBillingInterval(iv)}
+                        className="px-5 py-2 rounded-full text-sm font-semibold transition-all"
+                        style={active ? { backgroundColor: primaryColor, color: onActive } : { color: mutedTextColor }}>
+                        {iv === 'month' ? 'Monthly' : 'Annual'}
+                        {iv === 'year' && (
+                          <span className="ml-1.5 text-[11px] font-bold" style={{ color: active ? onActive : primaryColor }}>3 months free</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {error && (
@@ -629,12 +658,27 @@ function ClientPlanSelection({ agency, signupData, isEmbed }: { agency: Agency; 
                     <p className="text-sm mb-4" style={{ color: mutedTextColor }}>{plan.description}</p>
                   )}
                   <div className="flex items-baseline justify-center gap-1 mt-2">
-                    {discounted != null && (
-                      <span className="text-base line-through mr-1" style={{ color: mutedTextColor, opacity: 0.6 }}>{formatAgencyPrice(plan.price, agencyCountry)}</span>
+                    {isAnnual ? (
+                      <>
+                        <span className="text-2xl sm:text-3xl font-bold" style={{ color: primaryColor, fontVariantNumeric: 'tabular-nums' }}>{formatAgencyPrice(plan.annualPrice, agencyCountry)}</span>
+                        <span className="text-base" style={{ color: isDark ? 'rgba(250,250,249,0.5)' : '#9ca3af' }}>/yr</span>
+                      </>
+                    ) : (
+                      <>
+                        {discounted != null && (
+                          <span className="text-base line-through mr-1" style={{ color: mutedTextColor, opacity: 0.6 }}>{formatAgencyPrice(plan.price, agencyCountry)}</span>
+                        )}
+                        <span className="text-2xl sm:text-3xl font-bold" style={{ color: primaryColor, fontVariantNumeric: 'tabular-nums' }}>{formatAgencyPrice(discounted != null ? discounted : plan.price, agencyCountry)}</span>
+                        <span className="text-base" style={{ color: isDark ? 'rgba(250,250,249,0.5)' : '#9ca3af' }}>/mo</span>
+                      </>
                     )}
-                    <span className="text-2xl sm:text-3xl font-bold" style={{ color: primaryColor, fontVariantNumeric: 'tabular-nums' }}>{formatAgencyPrice(discounted != null ? discounted : plan.price, agencyCountry)}</span>
-                    <span className="text-base" style={{ color: isDark ? 'rgba(250,250,249,0.5)' : '#9ca3af' }}>/mo</span>
                   </div>
+                  {isAnnual && plan.price > 0 && (
+                    <p className="mt-1.5 text-xs" style={{ color: mutedTextColor }}>
+                      {formatAgencyPrice(Math.round(plan.annualPrice / 12), agencyCountry)}/mo billed yearly
+                      {plan.price * 12 > plan.annualPrice ? ` · save ${formatAgencyPrice(plan.price * 12 - plan.annualPrice, agencyCountry)}` : ''}
+                    </p>
+                  )}
                 </div>
 
                 <ul className="space-y-3.5 mb-5">
