@@ -21,6 +21,7 @@ import CancelClientModal from '@/components/CancelClientModal';
 import { CustomSelect } from '@/components/ui/custom-select';
 import { TimezoneSelect } from '@/components/ui/timezone-select';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import WebCallModal from '@/components/agency/WebCallModal';
 
 interface OnboardingSection { label: string; done: boolean; optional: boolean; count?: number; }
 interface OnboardingStatus { sections: Record<string, OnboardingSection>; completed_count: number; total: number; percent: number; onboarding_completed: boolean; }
@@ -271,6 +272,7 @@ export default function AgencyClientDetailPage() {
   });
 
   const [client, setClient] = useState<Client | null>(null);
+  const [webCallOpen, setWebCallOpen] = useState(false);
   const [recentCalls, setRecentCalls] = useState<Call[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -771,7 +773,7 @@ export default function AgencyClientDetailPage() {
     <div className="p-4 sm:p-6 lg:p-8">
       <Link href="/agency/clients" className="inline-flex items-center gap-2 text-sm transition-colors mb-4 sm:mb-6 hover:opacity-80" style={{ color: theme.textMuted }}><ArrowLeft className="h-4 w-4" /> Back to Clients</Link>
 
-      <div className="mb-6 sm:mb-8"><div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"><div className="flex items-center gap-4"><div className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>{client.logo_url ? (<img src={client.logo_url} alt={client.business_name} className="h-10 w-10 sm:h-12 sm:w-12 object-contain rounded-lg" />) : (<span className="text-xl sm:text-2xl font-medium" style={{ color: theme.primary }}>{client.business_name?.charAt(0) || '?'}</span>)}</div><div className="min-w-0"><h1 className="text-xl sm:text-2xl font-semibold tracking-tight truncate">{client.business_name}</h1><div className="flex items-center gap-2 mt-1 flex-wrap"><span className="inline-flex rounded-full px-3 py-1 text-xs font-medium capitalize" style={{ backgroundColor: statusStyle.bg, color: statusStyle.text }}>{formatStatus(client.subscription_status || client.status)}</span><span className="text-sm" style={{ color: theme.textMuted }}>{getPlanLabel(client.plan_type)} - ${((_effCents || 0) / 100).toFixed(0)}/mo</span></div></div></div><div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto"><a href={`/live/${clientId}`} target="_blank" rel="noopener noreferrer" className="flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.hover, color: theme.text, border: `1px solid ${theme.border}` }}><Radio className="h-4 w-4" style={{ color: theme.iconColor }} /> Live Demo</a><Link href={`/agency/clients/${clientId}/calls`} className="flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><PhoneCall className="h-4 w-4" /> View Call History</Link><button onClick={handlePreviewAsClient} disabled={previewLoading} className="flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.hover, color: theme.text, border: `1px solid ${theme.border}` }}>{previewLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}{previewLoading ? 'Opening...' : 'Login as Client'}</button></div></div></div>
+      <div className="mb-6 sm:mb-8"><div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"><div className="flex items-center gap-4"><div className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>{client.logo_url ? (<img src={client.logo_url} alt={client.business_name} className="h-10 w-10 sm:h-12 sm:w-12 object-contain rounded-lg" />) : (<span className="text-xl sm:text-2xl font-medium" style={{ color: theme.primary }}>{client.business_name?.charAt(0) || '?'}</span>)}</div><div className="min-w-0"><h1 className="text-xl sm:text-2xl font-semibold tracking-tight truncate">{client.business_name}</h1><div className="flex items-center gap-2 mt-1 flex-wrap"><span className="inline-flex rounded-full px-3 py-1 text-xs font-medium capitalize" style={{ backgroundColor: statusStyle.bg, color: statusStyle.text }}>{formatStatus(client.subscription_status || client.status)}</span><span className="text-sm" style={{ color: theme.textMuted }}>{getPlanLabel(client.plan_type)} - ${((_effCents || 0) / 100).toFixed(0)}/mo</span></div></div></div><div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto"><button onClick={() => setWebCallOpen(true)} className="flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.hover, color: theme.text, border: `1px solid ${theme.border}` }}><Radio className="h-4 w-4" style={{ color: theme.iconColor }} /> Web Call</button><Link href={`/agency/clients/${clientId}/calls`} className="flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><PhoneCall className="h-4 w-4" /> View Call History</Link><button onClick={handlePreviewAsClient} disabled={previewLoading} className="flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.hover, color: theme.text, border: `1px solid ${theme.border}` }}>{previewLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}{previewLoading ? 'Opening...' : 'Login as Client'}</button></div></div></div>
 
       <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
@@ -1321,6 +1323,8 @@ export default function AgencyClientDetailPage() {
         busy={canceling}
         onConfirm={confirmCancel}
       />
+
+      <WebCallModal clientId={clientId} open={webCallOpen} onClose={() => setWebCallOpen(false)} theme={theme} />
 
     </div>
   );

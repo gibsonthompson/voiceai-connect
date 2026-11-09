@@ -1164,7 +1164,7 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
                     </p>
                   </div>
                 )}
-                {lines.map((l) => <Bubble key={l.id} role={l.role} text={l.text} speaker={l.speaker} t={t} accent={accent} accentText={accentText} />)}
+                {lines.map((l) => <Bubble key={l.id} role={l.role} text={l.text} speaker={l.speaker} t={t} accent={accent} accentText={accentText} demo={mode === 'demo'} />)}
                 {bridged && (
                   <div className="rounded-lg px-3 py-2.5 text-xs leading-relaxed" style={{ backgroundColor: t.borderSubtle, color: t.textMuted }}>
                     <span style={{ color: t.text, fontWeight: 600 }}>{bridged}.</span>{' '}
@@ -1194,7 +1194,7 @@ export default function LiveCallMonitor({ clientId, mode, autoJoin = false, back
                   />
                   <div className="min-w-0">
                     <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: t.textFaint }}>
-                      {partial.role === 'caller' ? 'Caller' : 'AI'} speaking
+                      {partial.role === 'caller' ? (mode === 'demo' ? 'You' : 'Caller') : 'AI'} speaking
                     </span>
                     <p className="text-sm leading-snug" style={{ color: t.text }}>
                       {smoothPartial}
@@ -1404,24 +1404,27 @@ function StatusPill({ state, label, t }: { state: CallState; label: string; t: T
   );
 }
 
-function Bubble({ role, text, t, accent, accentText, faded, speaker }: { role: 'caller' | 'assistant'; text: string; t: Theme; accent: string; accentText: string; faded?: boolean; speaker?: string | null }) {
-  // Caller sits on the LEFT (neutral bubble); the AI and a human agent share the
-  // RIGHT (accent bubble), since both are "our" side of the conversation.
-  const isCaller = role === 'caller';
-  const labelColor = isCaller
-    ? t.textFaint
-    : (accentText === '#ffffff' ? 'rgba(255,255,255,0.75)' : 'rgba(15,23,42,0.6)');
+function Bubble({ role, text, t, accent, accentText, faded, speaker, demo }: { role: 'caller' | 'assistant'; text: string; t: Theme; accent: string; accentText: string; faded?: boolean; speaker?: string | null; demo?: boolean }) {
+  // Monitor (real call): the caller sits on the LEFT (neutral), the AI on the
+  // RIGHT (accent), since the AI is "our" side watching the call come in.
+  // Demo (you test it in the browser): YOU are the one on the mic, so you sit on
+  // the RIGHT (accent) like a chat, and the AI receptionist sits on the LEFT.
+  const onRight = demo ? role === 'caller' : role !== 'caller';
+  const labelColor = onRight
+    ? (accentText === '#ffffff' ? 'rgba(255,255,255,0.75)' : 'rgba(15,23,42,0.6)')
+    : t.textFaint;
+  const defaultLabel = role === 'caller' ? (demo ? 'You' : 'Caller') : 'AI';
   return (
-    <div className={`flex ${isCaller ? 'justify-start' : 'justify-end'}`}>
+    <div className={`flex ${onRight ? 'justify-end' : 'justify-start'}`}>
       <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm leading-snug ${faded ? 'opacity-60' : ''}`}
            style={{
-             backgroundColor: isCaller ? t.aiBubbleBg : accent,
-             color: isCaller ? t.aiBubbleText : accentText,
-             borderBottomLeftRadius: isCaller ? 4 : 16,
-             borderBottomRightRadius: isCaller ? 16 : 4,
+             backgroundColor: onRight ? accent : t.aiBubbleBg,
+             color: onRight ? accentText : t.aiBubbleText,
+             borderBottomLeftRadius: onRight ? 16 : 4,
+             borderBottomRightRadius: onRight ? 4 : 16,
            }}>
         <p className="text-[10px] uppercase tracking-wide mb-0.5" style={{ color: labelColor }}>
-          {speaker || (isCaller ? 'Caller' : 'AI')}
+          {speaker || defaultLabel}
         </p>
         {text}
       </div>

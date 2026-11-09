@@ -23,6 +23,7 @@ import StaffMembersSection from '@/components/client/StaffMembersSection';
 import ClientServicesSection from '@/components/client/ClientServicesSection';
 import { INDUSTRY_ICON_MAP as ICON_MAP, INDUSTRIES } from '@/lib/industries';
 import { CustomSelect } from '@/components/ui/custom-select';
+import WebCallModal from '@/components/agency/WebCallModal';
 
 const MODEL_OPTIONS = [
   { id: 'gpt-4.1', name: 'GPT-4.1', desc: 'Full GPT-4.1 - best instruction following and reasoning for voice. Production default.', tag: 'Recommended' },
@@ -226,6 +227,7 @@ export default function AILabPage() {
   const [clients, setClients] = useState<ClientItem[]>([]);
   const [clientsLoading, setClientsLoading] = useState(true);
   const [selectedClient, setSelectedClient] = useState<ClientItem | null>(null);
+  const [webCallOpen, setWebCallOpen] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [clientSearch, setClientSearch] = useState('');
   const [config, setConfig] = useState<AssistantConfig | null>(null);
@@ -657,10 +659,12 @@ export default function AILabPage() {
                 {selectedClient.vapi_phone_number && (<div className="text-right flex-shrink-0"><p className="text-sm uppercase tracking-wider" style={{ color: theme.textMuted }}>AI Phone</p><p className="text-base font-mono font-semibold" style={{ color: theme.primary }}>{fmtPhone(selectedClient.vapi_phone_number)}</p></div>)}
               </div>
               <div className="mt-4 pt-4 flex flex-wrap items-center gap-2" style={{ borderTop: `1px solid ${theme.border}` }}>
-                <a href={`/live/${selectedClient.id}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Radio className="h-4 w-4" /> Live demo screen</a>
-                <a href={`/live/${selectedClient.id}?mode=monitor&back=/agency/live-calls`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition hover:opacity-90" style={{ backgroundColor: theme.hover, color: theme.text, border: `1px solid ${theme.border}` }}><Headphones className="h-4 w-4" /> Monitor live call</a>
+                <button onClick={() => setWebCallOpen(true)} className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Radio className="h-4 w-4" /> Web Call</button>
+                {agency?.is_call_center && (
+                  <a href={`/live/${selectedClient.id}?mode=monitor&back=/agency/live-calls`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition hover:opacity-90" style={{ backgroundColor: theme.hover, color: theme.text, border: `1px solid ${theme.border}` }}><Headphones className="h-4 w-4" /> Monitor live call</a>
+                )}
                 <button onClick={handlePreviewAsClient} disabled={previewLoading} className="flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: theme.hover, color: theme.text, border: `1px solid ${theme.border}` }}>{previewLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />} {previewLoading ? 'Opening...' : 'Login as Client'}</button>
-                <span className="text-[11px]" style={{ color: theme.textMuted }}>Opens a clean, white-labeled screen to screenshare on a call.</span>
+                <span className="text-[11px]" style={{ color: theme.textMuted }}>Call this client{'’'}s AI receptionist in your browser to test it.</span>
               </div>
             </div>
 
@@ -851,6 +855,7 @@ export default function AILabPage() {
           </div>
         </div>
       )}
+      {selectedClient && <WebCallModal clientId={selectedClient.id} open={webCallOpen} onClose={() => setWebCallOpen(false)} theme={theme} />}
     </>
   );
 }
