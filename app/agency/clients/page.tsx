@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { getIndustry } from '@/lib/industries';
 import { 
   Users, PhoneCall, Search, Plus, ChevronRight, Loader2, ArrowUpRight, FlaskConical,
-  Download, X, Phone, CheckCircle2, Clock, CreditCard, AlertTriangle, XCircle, Ban,
+  Download, X, Phone, CheckCircle2, Clock, CreditCard, AlertTriangle, XCircle, Ban, UserCheck,
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
@@ -86,6 +86,10 @@ export default function AgencyClientsPage() {
   // Receptionist the owner built on the marketing demo and carried through
   // signup, waiting to be activated as their Test AI (null when none).
   const [pendingTestClient, setPendingTestClient] = useState<{ business_name?: string; industry?: string; city?: string; greeting?: string } | null>(null);
+  // Convert test client to real client state
+  const [showConvertModal, setShowConvertModal] = useState(false);
+  const [convertingTestClient, setConvertingTestClient] = useState(false);
+  const [convertError, setConvertError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!agency) return;
@@ -161,6 +165,38 @@ export default function AgencyClientsPage() {
       setProvisionError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
     } finally {
       setProvisioningTestClient(false);
+    }
+  };
+
+  const handleConvertTestClient = async () => {
+    if (!agency || convertingTestClient) return;
+    setConvertingTestClient(true);
+    setConvertError(null);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/test-client/convert`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.message || data.error || 'Failed to convert test client');
+      }
+      // The converted client now lives in the normal clients list. Land the
+      // agency on its page so they can set the price and collect payment.
+      const newId = data?.client?.id;
+      setShowConvertModal(false);
+      if (newId) {
+        window.location.href = `/agency/clients/${newId}`;
+      } else {
+        await fetchClients();
+      }
+    } catch (err) {
+      console.error('Test client convert failed:', err);
+      setConvertError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+    } finally {
+      setConvertingTestClient(false);
     }
   };
 
@@ -588,13 +624,14 @@ export default function AgencyClientsPage() {
                   )}
                 </div>
                 <p className="text-xs sm:text-sm mt-1" style={{ color: theme.textMuted }}>
-                  Your demo receptionist. Change its industry and set up services, pricing and booking in the AI Lab, then call it to test.{testClient.vapi_phone_number ? ` Demo line: ${testClient.vapi_phone_number.replace(/^\+?1?\s*\(?(\d{3})\)?[\s.-]*(\d{3})[\s.-]*(\d{4})$/, '($1) $2-$3')}.` : ''}
+                  A real, free AI receptionist with its own phone number, separate from your public demo line. Point it at one business you are pitching: rename it to their name and set their services, pricing, and booking in the AI Lab. Then give them this number so they can call and hear their own AI answer, quote, and book before they sign up. It does not count toward your billing.{testClient.vapi_phone_number ? ` Number to share: ${testClient.vapi_phone_number.replace(/^\+?1?\s*\(?(\d{3})\)?[\s.-]*(\d{3})[\s.-]*(\d{4})$/, '($1) $2-$3')}.` : ''}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">
-              <Link href={`/agency/templates?client=${testClient.id}`} className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><ArrowUpRight className="h-4 w-4" /> Open in AI Lab</Link>
-              <Link href={`/agency/clients/${testClient.id}`} className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition hover:opacity-90" style={{ backgroundColor: theme.hover, color: theme.text, border: `1px solid ${theme.border}` }}>Manage <ChevronRight className="h-4 w-4" /></Link>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-shrink-0 w-full sm:w-auto">
+              <Link href={`/agency/templates?client=${testClient.id}`} className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><ArrowUpRight className="h-4 w-4" /> Open in AI Lab</Link>
+              <button onClick={() => { setConvertError(null); setShowConvertModal(true); }} className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition hover:opacity-90" style={{ backgroundColor: theme.hover, color: theme.text, border: `1px solid ${theme.border}` }}><UserCheck className="h-4 w-4" /> Convert to client</button>
+              <Link href={`/agency/clients/${testClient.id}`} className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition hover:opacity-90" style={{ backgroundColor: theme.hover, color: theme.text, border: `1px solid ${theme.border}` }}>Manage <ChevronRight className="h-4 w-4" /></Link>
             </div>
           </div>
         </div>
@@ -766,6 +803,25 @@ export default function AgencyClientsPage() {
           </div>
         )}
       </div>
+
+      {showConvertModal && testClient && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => { if (!convertingTestClient) setShowConvertModal(false); }}>
+          <div className="rounded-2xl p-5 sm:p-6 w-full max-w-md" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-2 mb-2"><UserCheck className="h-5 w-5" style={{ color: theme.iconColor }} /><h3 className="font-semibold text-base" style={{ color: theme.text }}>Convert to a Real Client</h3></div>
+            <p className="text-sm mb-3" style={{ color: theme.textMuted }}>This turns <span className="font-medium" style={{ color: theme.text }}>{testClient.business_name}</span> into a regular client. It keeps the same phone number, receptionist, and knowledge base, so nothing has to be rebuilt and the business keeps the line it has been calling.</p>
+            <ul className="text-sm mb-4 space-y-1.5" style={{ color: theme.textMuted }}>
+              <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.iconColor }} /> Moves off the 30-minute test cap onto your plan&apos;s call limit.</li>
+              <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.iconColor }} /> No card is charged. Set their price and collect payment from the client&apos;s billing page.</li>
+              <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.iconColor }} /> Frees your test slot so you can set up a fresh test client for the next prospect.</li>
+            </ul>
+            {convertError && (<div className="flex items-start gap-2 rounded-lg px-3 py-2 mb-3 text-sm" style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#ef4444' }}><AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />{convertError}</div>)}
+            <div className="flex gap-2">
+              <button onClick={() => setShowConvertModal(false)} disabled={convertingTestClient} className="flex-1 rounded-lg px-4 py-2 text-sm font-medium transition hover:opacity-90 disabled:opacity-40" style={{ backgroundColor: theme.hover, color: theme.text, border: `1px solid ${theme.border}` }}>Cancel</button>
+              <button onClick={handleConvertTestClient} disabled={convertingTestClient} className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition hover:opacity-90 disabled:opacity-40" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{convertingTestClient ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserCheck className="h-4 w-4" />} Convert</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
