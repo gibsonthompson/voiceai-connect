@@ -931,11 +931,15 @@ function AgencyPlanSelection({ agencyId }: { agencyId: string }) {
                 <button key={iv} type="button" onClick={() => setPlatformInterval(iv)}
                   className="px-5 py-2 rounded-full text-sm font-semibold transition-all"
                   style={platformInterval === iv ? { background: '#01f5d1', color: '#000' } : { color: 'rgba(250,250,249,0.6)' }}>
-                  {iv === 'month' ? 'Monthly' : 'Annual'}{iv === 'year' ? ' · 3 months free' : ''}
+                  {iv === 'month' ? 'Monthly' : 'Annual'}
                 </button>
               ))}
             </div>
           </div>
+
+          {platformInterval === 'year' && (
+            <p className="text-center text-sm font-semibold mb-6" style={{ color: '#01f5d1' }}>Three months free on Pro and Scale</p>
+          )}
 
           <div className={`grid gap-4 sm:gap-6 lg:gap-8 mx-auto ${plans.length === 1 ? 'max-w-md' : plans.length === 2 ? 'max-w-4xl md:grid-cols-2' : 'max-w-6xl md:grid-cols-3'}`}>
             {plans.map((plan) => {

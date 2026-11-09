@@ -44,18 +44,18 @@ const PLANS: {
   {
     key: 'free', name: 'Free', price: '$0', priceAnnual: '$0', usage: '$29.99 / client · $0.12 / min',
     tagline: 'Launch with no platform fee.',
-    features: ['24/7 AI receptionist', 'Google Calendar booking', 'Call summaries by text', 'Unlimited clients (usage-based)'],
+    features: ['24/7 AI receptionist', 'Two-way texting + call summaries', 'Google Calendar booking', 'Client dashboard + Stripe Connect', 'Unlimited clients (usage-based)'],
   },
   {
     key: 'pro', name: 'Pro', price: '$99', priceAnnual: '$891', usage: '$9.99 / client · $0.10 / min',
     tagline: 'Your brand, your marketing site.',
-    features: ['Everything in Free', 'Full white-label branding', 'Marketing website', 'Branded demo phone line', 'Lower per-client + per-minute rates'],
+    features: ['Everything in Free', 'Full white-label branding + domain', 'Marketing website + AI demo line', 'Lead gen CRM + AI Lab', 'Up to 3 team members'],
   },
   {
     key: 'scale', name: 'Scale', price: '$499', priceAnnual: '$4,491', usage: '$0 / client · $0.05 / min',
     tagline: 'No per-client fees. Built to grow.',
     highlight: true,
-    features: ['Everything in Pro', 'No per-client fees at all', 'Lowest per-minute rate', 'API access + webhooks', 'Unlimited team members'],
+    features: ['Everything in Pro', 'No per-client fees at all', 'Unlimited team members', 'Developer API + webhooks', 'Industry templates + priority support'],
   },
 ];
 
@@ -214,12 +214,16 @@ export default function PlanUpgrade({ agencyId, currentPlan, currentInterval, th
                 className="px-4 py-1.5 rounded-full text-[13px] font-semibold transition-colors"
                 style={active ? { backgroundColor: theme?.primary, color: theme?.primaryText } : { color: theme?.textMuted }}>
                 {iv === 'month' ? 'Monthly' : 'Annual'}
-                {iv === 'year' && <span className="ml-1.5 text-[11px] font-bold" style={{ color: active ? theme?.primaryText : theme?.primary }}>3 months free</span>}
               </button>
             );
           })}
         </div>
       </div>
+
+      {/* Three months free indicator, shown above the plans when annual is selected */}
+      {isAnnual && (
+        <p className="mb-4 text-center text-[13px] font-semibold" style={{ color: theme?.primary }}>Three months free on every annual plan</p>
+      )}
 
       {/* Billing-interval switch CTA (paid agencies, when the toggle differs from
           the interval they're on) + the free-agency note. */}
@@ -231,7 +235,7 @@ export default function PlanUpgrade({ agencyId, currentPlan, currentInterval, th
             </p>
             <p className="text-[12px] mt-0.5" style={{ color: theme?.textMuted }}>
               {interval === 'year'
-                ? 'Pay for ' + planByKey(cur as PlanKey).name + ' yearly (' + planByKey(cur as PlanKey).priceAnnual + '/yr, 3 months free). Your per-minute usage stays billed monthly.'
+                ? 'Pay for ' + planByKey(cur as PlanKey).name + ' yearly (' + planByKey(cur as PlanKey).priceAnnual + '/yr). Your per-minute usage stays billed monthly.'
                 : 'Move ' + planByKey(cur as PlanKey).name + ' back to monthly billing (' + planByKey(cur as PlanKey).price + '/mo).'}
             </p>
           </div>
@@ -274,7 +278,6 @@ export default function PlanUpgrade({ agencyId, currentPlan, currentInterval, th
                 <span className="text-2xl sm:text-3xl font-bold tracking-tight">{priceOf(p)}</span>
                 <span className="text-sm" style={{ color: theme?.textMuted }}>{showAnnualPrice ? '/yr' : '/mo'}</span>
               </div>
-              {showAnnualPrice && <div className="mt-0.5 text-[11px] font-medium" style={{ color: theme?.primary }}>3 months free vs monthly</div>}
               <div className="mt-1 text-[12px] font-medium" style={{ color: theme?.textMuted }}>{p.usage}</div>
               <p className="mt-2 text-[13px]" style={{ color: theme?.textMuted }}>{p.tagline}</p>
 
@@ -356,7 +359,7 @@ export default function PlanUpgrade({ agencyId, currentPlan, currentInterval, th
             </div>
             <p className="text-[13px] sm:text-sm leading-relaxed" style={{ color: theme?.textMuted }}>
               {intervalConfirm === 'year'
-                ? 'Your ' + planByKey(cur as PlanKey).name + ' plan moves to yearly billing at ' + planByKey(cur as PlanKey).priceAnnual + '/yr (3 months free). You’re charged for the year now, with the unused part of your current month credited by Stripe. Your per-minute usage keeps billing monthly, and the plan auto-renews yearly. You can switch back to monthly anytime.'
+                ? 'Your ' + planByKey(cur as PlanKey).name + ' plan moves to yearly billing at ' + planByKey(cur as PlanKey).priceAnnual + '/yr. You’re charged for the year now, with the unused part of your current month credited by Stripe. Your per-minute usage keeps billing monthly, and the plan auto-renews yearly. You can switch back to monthly anytime.'
                 : 'Your ' + planByKey(cur as PlanKey).name + ' plan moves back to monthly billing at ' + planByKey(cur as PlanKey).price + '/mo. Stripe credits the unused part of your annual payment toward future invoices. Your per-minute usage is unaffected.'}
             </p>
             <div className="mt-5 flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5">

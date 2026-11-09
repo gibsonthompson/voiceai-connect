@@ -675,11 +675,15 @@ export default function HomePage() {
                 <button key={iv} type="button" onClick={() => setPlatformInterval(iv)}
                   className="px-5 py-2 rounded-full font-mono text-[11px] tracking-[0.12em] uppercase font-medium transition-all"
                   style={platformInterval === iv ? { background: '#01f5d1', color: '#000' } : { color: 'rgba(255,255,255,0.6)' }}>
-                  {iv === 'month' ? 'Monthly' : 'Annual'}{iv === 'year' ? ' · 3 mo free' : ''}
+                  {iv === 'month' ? 'Monthly' : 'Annual'}
                 </button>
               ))}
             </div>
           </div>
+
+          {platformInterval === 'year' && (
+            <p className="t-eyebrow text-em mb-6">Three months free on Pro &amp; Scale</p>
+          )}
 
           <div className="grid lg:grid-cols-3 gap-4 max-w-5xl">
             {AGENCY_PLAN_TIER_LIST.map(t => {
