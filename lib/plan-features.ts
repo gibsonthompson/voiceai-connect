@@ -80,7 +80,7 @@ export const AGENCY_PLAN_TIERS: Record<AgencyPlanId, AgencyPlanTier> = {
   },
   pro: {
     id: 'pro',
-    name: 'Pro',
+    name: 'Professional',
     price: PLAN_PRICES.pro, // 99
     priceAnnual: PLAN_PRICES.pro * 9, // 891 (3 months free)
     icon: Shield,

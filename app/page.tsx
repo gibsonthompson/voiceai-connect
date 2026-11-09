@@ -55,11 +55,11 @@ const FAQ_ITEMS = [
                 { q: 'How is VoiceAI Connect different from GoHighLevel?', a: 'GoHighLevel is a multi-purpose marketing platform, CRM, funnels, email, SMS, websites, designed for marketing agencies to manage client campaigns. VoiceAI Connect is purpose-built for one product: AI receptionist resale. Three concrete differences: end clients receive their own branded dashboard (GoHighLevel does not provide one), client onboarding completes in under sixty seconds (GoHighLevel requires per-client A2P registration that can take days), and the agency interface is mobile-first (GoHighLevel is desktop-bound).' },
                 { q: 'Does the AI receptionist integrate with Google Calendar?', a: 'Yes, and it is included on every plan, including Free. When a caller requests an appointment, the AI checks the business owner&apos;s Google Calendar for available time slots in real time, offers options to the caller, and creates the calendar event automatically with the caller&apos;s name, phone number, and reason for the appointment. The booking appears in Google Calendar instantly, which means it also syncs automatically to any connected CRM, HubSpot, Salesforce, Pipedrive, and can trigger downstream automations via Zapier or Make.' },
                 { q: 'Does the AI work in Spanish?', a: 'Yes, automatic English and Spanish on every plan, no configuration required. The AI detects when a caller speaks Spanish and switches to Spanish for the entire conversation. It collects names, phone numbers, appointment requests, and everything else in Spanish, then sends the business owner a summary in English. This is especially valuable for home services, medical, dental, and restaurant businesses serving Spanish-speaking communities.' },
-                { q: 'What does it cost to start an AI receptionist agency?', a: 'The platform offers three tiers. The Free tier has no platform fee, agencies pay $29.99 per client per month plus $0.12 per minute of voice usage, making it zero-risk to start. The Pro tier costs $99 per month and includes full white-label branding, a marketing website, and a demo phone line, with reduced per-client ($9.99) and per-minute ($0.10) rates. The Scale tier at $499 per month eliminates per-client fees entirely at $0.05 per minute. Pro and Scale both include a 14-day free trial, you add a card to start it and aren&apos;t charged until the trial ends. On the client side, every plan includes a 7-day free trial for the businesses you onboard, giving your clients a risk-free way to experience the AI receptionist before their first billing cycle. Google Calendar integration is included on all tiers.' },
-                { q: 'How many team members can I add to my agency?', a: 'Team-member capacity scales with your plan. The Free plan is solo, just you as the agency owner. The Pro plan includes up to 3 team members, which is enough for most operators to bring on a sales partner, a client success manager, and a virtual assistant for outreach. The Scale plan includes unlimited team members for high-volume agencies running larger operations. Each member gets their own login and configurable permissions: dashboard, clients, leads, outreach, analytics, marketing, settings, and billing can all be toggled per member, so you can give a VA access to outreach without exposing your Stripe revenue, or give a sales rep client management without settings access. Separately, the businesses you onboard each receive their own team-member slots, included on Pro (2 per client) and unlimited on Scale, so your clients can give their own employees dashboard access without an additional charge.' },
-                { q: 'How do free trials work, and why is a card required?', a: 'There are two separate trials. At the agency level, the Pro and Scale plans include a 14-day free trial: you add a card to start it and are not charged until day 14, with full access to white-label branding, the marketing site, CRM, and every feature, and you can cancel anytime before day 14 at no cost. The card keeps the trial reserved for operators seriously building an agency, since trials cost real money to run, phone numbers, voice minutes, and infrastructure, and it lets us keep platform pricing low. The Free plan needs no card and starts immediately, there is no platform fee to trial against. At the client level, every plan (Free, Pro, and Scale) includes a 7-day free trial for the businesses you onboard: when a local business signs up through your branded page, they get seven days of full AI receptionist service before their first billing cycle begins, which increases conversion from prospect to paying subscriber.' },
+                { q: 'What does it cost to start an AI receptionist agency?', a: 'The platform offers three tiers. The Free tier has no platform fee, agencies pay $29.99 per client per month plus $0.12 per minute of voice usage, making it zero-risk to start. The Professional tier costs $99 per month and includes full white-label branding, a marketing website, and a demo phone line, with reduced per-client ($9.99) and per-minute ($0.10) rates. The Scale tier at $499 per month eliminates per-client fees entirely at $0.05 per minute. Professional and Scale both include a 14-day free trial, you add a card to start it and aren&apos;t charged until the trial ends. On the client side, every plan includes a 7-day free trial for the businesses you onboard, giving your clients a risk-free way to experience the AI receptionist before their first billing cycle. Google Calendar integration is included on all tiers.' },
+                { q: 'How many team members can I add to my agency?', a: 'Team-member capacity scales with your plan. The Free plan is solo, just you as the agency owner. The Professional plan includes up to 3 team members, which is enough for most operators to bring on a sales partner, a client success manager, and a virtual assistant for outreach. The Scale plan includes unlimited team members for high-volume agencies running larger operations. Each member gets their own login and configurable permissions: dashboard, clients, leads, outreach, analytics, marketing, settings, and billing can all be toggled per member, so you can give a VA access to outreach without exposing your Stripe revenue, or give a sales rep client management without settings access. Separately, the businesses you onboard each receive their own team-member slots, included on Professional (2 per client) and unlimited on Scale, so your clients can give their own employees dashboard access without an additional charge.' },
+                { q: 'How do free trials work, and why is a card required?', a: 'There are two separate trials. At the agency level, the Professional and Scale plans include a 14-day free trial: you add a card to start it and are not charged until day 14, with full access to white-label branding, the marketing site, CRM, and every feature, and you can cancel anytime before day 14 at no cost. The card keeps the trial reserved for operators seriously building an agency, since trials cost real money to run, phone numbers, voice minutes, and infrastructure, and it lets us keep platform pricing low. The Free plan needs no card and starts immediately, there is no platform fee to trial against. At the client level, every plan (Free, Professional, and Scale) includes a 7-day free trial for the businesses you onboard: when a local business signs up through your branded page, they get seven days of full AI receptionist service before their first billing cycle begins, which increases conversion from prospect to paying subscriber.' },
                 { q: 'Can VoiceAI Connect be used internationally?', a: 'Yes, both the operator and the phone numbers. Agency operators in any country can sign up and run a workspace, an operator based in India, the Philippines, or anywhere else can run a US-focused agency remotely, and Stripe Connect supports payouts to most major countries. For numbers, US lines are provisioned automatically via Telnyx; for UK, Canadian, or other international numbers, agencies connect their own Twilio account by pasting their API credentials in the dashboard, and the platform routes those clients through Twilio automatically. End-client coverage is available in the United States, United Kingdom, and Canada, with identical AI behavior, dashboards, billing, and onboarding.' },
-                { q: 'How do agencies acquire clients on the platform?', a: 'The platform includes a built-in lead generation CRM with thirteen pre-written outreach templates, a Google Maps business prospecting tool, sales scripts, and reply tracking. The strongest conversion tool is the interactive AI demo phone line, included on the Pro tier, prospects call the demo number, experience the AI receptionist firsthand, and typically convert without requiring a sales call.' },
+                { q: 'How do agencies acquire clients on the platform?', a: 'The platform includes a built-in lead generation CRM with thirteen pre-written outreach templates, a Google Maps business prospecting tool, sales scripts, and reply tracking. The strongest conversion tool is the interactive AI demo phone line, included on the Professional tier, prospects call the demo number, experience the AI receptionist firsthand, and typically convert without requiring a sales call.' },
                 { q: 'Are technical skills required to operate the platform?', a: 'No. Configuration is point-and-click: upload a logo, select a color palette, set pricing tiers, share a signup link. The platform handles AI agent configuration, phone number provisioning, billing setup, and ongoing operations automatically. There is no code to write and no infrastructure to manage.' },
                 { q: 'What integrations and infrastructure power the platform?', a: 'VoiceAI Connect orchestrates sixteen enterprise infrastructure providers behind a single application: Anthropic Claude for reasoning, ElevenLabs for voice synthesis, Deepgram for real-time speech-to-text, OpenAI Whisper for batch transcription, Telnyx for US phone numbers and SIP trunking, Twilio for UK and international numbers, Google Calendar for real-time appointment booking, Stripe Connect for subscription billing, Supabase for Postgres and authentication, Make and n8n for workflow automation, Vercel and Cloudflare for the edge layer, Brevo for transactional email, Sentry for error monitoring, and PostHog for product analytics.' },
                 { q: 'What happens if I cancel my subscription?', a: 'Cancellation is available at any time, with no holdback period or penalty. Operators retain ownership of their client list, custom domain, Stripe Connect account, and all client data. Existing clients can be migrated to another platform or terminated at the operator&apos;s discretion.' },
@@ -118,7 +118,7 @@ const HOME_JSONLD = {
       publisher: { '@id': `${SITE_URL}/#organization` },
       offers: [
         { '@type': 'Offer', name: 'Free', price: '0', priceCurrency: 'USD', description: 'No platform fee. Usage-based per-client and per-minute pricing.' },
-        { '@type': 'Offer', name: 'Pro', price: '99', priceCurrency: 'USD', description: 'Full white-label branding, marketing website, and demo phone line.' },
+        { '@type': 'Offer', name: 'Professional', price: '99', priceCurrency: 'USD', description: 'Full white-label branding, marketing website, and demo phone line.' },
         { '@type': 'Offer', name: 'Scale', price: '499', priceCurrency: 'USD', description: 'No per-client fees, lowest per-minute rate, unlimited team members.' },
       ],
     },
@@ -444,7 +444,7 @@ export default function HomePage() {
                     <div className="min-w-0">
                       <p className="t-eyebrow text-white/40 mb-2">Annualized</p>
                       <p className="text-white t-numeric font-display font-medium" style={{ fontSize: 'clamp(1.875rem, 3.6vw, 2.875rem)', lineHeight: 1, letterSpacing: '-0.04em' }}>{formatPrice(yearlyProfit)}</p>
-                      <p className="font-mono text-[11px] text-white/40 mt-2.5">{margin}% gross margin · Pro plan</p>
+                      <p className="font-mono text-[11px] text-white/40 mt-2.5">{margin}% gross margin · Professional plan</p>
                     </div>
                   </div>
 
@@ -665,7 +665,7 @@ export default function HomePage() {
             <p className="t-eyebrow text-em mb-6">Pricing</p>
             <h2 className="t-h2 text-white">Start free. Scale when ready.</h2>
             <p className="t-body mt-6 max-w-lg">
-              Start free with per-usage billing, or lock in lower rates with a 14-day Pro or Scale trial. You set the free trial your clients get, or no trial at all. No revenue share, no hidden fees.
+              Start free with per-usage billing, or lock in lower rates with a 14-day Professional or Scale trial. You set the free trial your clients get, or no trial at all. No revenue share, no hidden fees.
             </p>
           </div>
 
@@ -681,10 +681,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          {platformInterval === 'year' && (
-            <p className="t-eyebrow text-em mb-6">Three months free on Pro &amp; Scale</p>
-          )}
-
           <div className="grid lg:grid-cols-3 gap-4 max-w-5xl">
             {AGENCY_PLAN_TIER_LIST.map(t => {
               const annual = platformInterval === 'year' && t.price > 0;
@@ -697,6 +693,7 @@ export default function HomePage() {
                 )}
                 <p className={`font-mono text-[11px] tracking-[0.14em] uppercase ${t.popular ? 'text-em' : 'text-white/40'}`}>{t.description}</p>
                 <p className="font-display text-lg font-medium mt-1.5 text-white">{t.name}</p>
+                {annual && <p className="font-mono text-[10px] tracking-[0.14em] uppercase text-em mt-2">Three months free</p>}
                 {t.trial && <p className="font-mono text-[11px] text-em mt-3 tracking-[0.04em]">{t.trial}</p>}
                 <div className="my-6 flex items-baseline gap-1">
                   {t.price === 0 ? (
@@ -727,7 +724,7 @@ export default function HomePage() {
               );
             })}
           </div>
-          <p className="font-mono text-[11px] text-white/35 mt-12 text-center uppercase tracking-[0.14em]">Start free, no card · 14-day Pro &amp; Scale trials (card required) · You set your clients&apos; trial length, or no trial</p>
+          <p className="font-mono text-[11px] text-white/35 mt-12 text-center uppercase tracking-[0.14em]">Start free, no card · 14-day Professional &amp; Scale trials · You set your clients&apos; trial length, or no trial</p>
         </div>
       </section>
 
@@ -856,7 +853,7 @@ export default function HomePage() {
             <p className="t-eyebrow text-em mb-6">Get started</p>
             <h2 className="t-h1 text-white">Your brand, your clients, your recurring revenue.</h2>
             <p className="t-body mt-7 max-w-lg">
-              Start free with usage-based billing and no card, then unlock full white-label branding, your own domain, and a marketing site on a 14-day Pro trial. Connect Stripe Connect, share your signup link, and add your first client whenever you&apos;re ready.
+              Start free with usage-based billing and no card, then unlock full white-label branding, your own domain, and a marketing site on a 14-day Professional trial. Connect Stripe Connect, share your signup link, and add your first client whenever you&apos;re ready.
             </p>
             <div className="flex flex-wrap gap-3 mt-10">
               <Link href="/signup" className="btn btn-em">Get started free <ArrowUpRight className="w-3.5 h-3.5" /></Link>

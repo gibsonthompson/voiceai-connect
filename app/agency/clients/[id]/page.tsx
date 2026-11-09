@@ -9,7 +9,7 @@ import {
   Copy, Check, ExternalLink, Save, RotateCcw, AlertCircle, Bot,
   X, Paintbrush, Lock, ChevronDown, Users, Shield, Trash2, Ban,
   PhoneForwarded, CalendarCheck, AlertTriangle, ShieldX, Radio, Bell,
-  CheckCircle2, Circle, Briefcase, HelpCircle, Mic, ClipboardList
+  CheckCircle2, Circle, Briefcase, HelpCircle, Mic, ClipboardList, UserCheck
 } from 'lucide-react';
 import { getCallBadges } from '@/lib/call-badges';
 import { useAgency } from '../../context';
@@ -273,6 +273,9 @@ export default function AgencyClientDetailPage() {
 
   const [client, setClient] = useState<Client | null>(null);
   const [webCallOpen, setWebCallOpen] = useState(false);
+  const [showConvertModal, setShowConvertModal] = useState(false);
+  const [convertingTestClient, setConvertingTestClient] = useState(false);
+  const [convertError, setConvertError] = useState<string | null>(null);
   const [recentCalls, setRecentCalls] = useState<Call[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -399,6 +402,32 @@ export default function AgencyClientDetailPage() {
   const [cancelMode, setCancelMode] = useState<'period_end' | 'immediate'>('period_end');
   const handleCancel = () => { if (!client) return; setCancelMode('period_end'); setCancelMsg(null); setCancelOpen(true); };
   const handleCancelNow = () => { if (!client) return; setCancelMode('immediate'); setCancelMsg(null); setCancelOpen(true); };
+
+  const handleConvertTestClient = async () => {
+    if (!agency || convertingTestClient) return;
+    setConvertingTestClient(true);
+    setConvertError(null);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/test-client/convert`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.message || data.error || 'Failed to convert test client');
+      }
+      // This client is now a real client, so refresh it in place. The test
+      // banner falls away and the agency's test slot frees up for the next one.
+      setShowConvertModal(false);
+      await fetchClientData();
+    } catch (err) {
+      console.error('Test client convert failed:', err);
+      setConvertError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+    } finally {
+      setConvertingTestClient(false);
+    }
+  };
   const confirmCancel = async ({ feedback }: { feedback: string }) => {
     const body: any = { feedback: feedback || null };
     if (cancelMode === 'immediate') body.immediate = true;
@@ -777,6 +806,22 @@ export default function AgencyClientDetailPage() {
 
       <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+          {client.is_test_client && (
+            <div className="rounded-xl p-4 sm:p-5 overflow-hidden" style={{ background: isDark ? `linear-gradient(135deg, ${theme.primary}12 0%, ${theme.primary}04 100%)` : `linear-gradient(135deg, ${theme.primary}08 0%, ${theme.primary}02 100%)`, border: `1px solid ${theme.primary}30` }}>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex items-start gap-3 min-w-0">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>
+                    <UserCheck className="h-5 w-5" style={{ color: theme.iconColor }} />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>This is a test client</h3>
+                    <p className="text-xs sm:text-sm mt-1" style={{ color: theme.textMuted }}>A free, full receptionist you can hand to a prospect. When they are ready to sign on, convert it to a real client. It keeps the same number and setup, so nothing has to be rebuilt.</p>
+                  </div>
+                </div>
+                <button onClick={() => { setConvertError(null); setShowConvertModal(true); }} className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition hover:opacity-90 flex-shrink-0" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><UserCheck className="h-4 w-4" /> Convert to a Real Client</button>
+              </div>
+            </div>
+          )}
           {/* AI Phone Number */}
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-4"><Phone className="h-4 w-4" style={{ color: theme.iconColor }} /><h2 className="font-semibold text-sm sm:text-base">AI Phone Number</h2></div><div className="flex items-center justify-between gap-3"><div><p className="text-xl sm:text-2xl font-bold" style={{ color: client.vapi_phone_number ? theme.primary : theme.textMuted }}>{client.vapi_phone_number ? formatPhone(client.vapi_phone_number) : 'Not provisioned'}</p>{!client.vapi_phone_number && (<p className="text-xs sm:text-sm mt-1.5 max-w-md" style={{ color: theme.textMuted }}>{noNumberNote}</p>)}{canProvisionHere && provisionError && (<p className="text-xs mt-2 leading-relaxed" style={{ color: theme.error || '#dc2626' }}>{provisionError}</p>)}</div>{client.vapi_phone_number ? (<button onClick={copyPhoneNumber} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>{copied ? <Check className="h-4 w-4" style={{ color: theme.iconColor }} /> : <Copy className="h-4 w-4" />}{copied ? 'Copied!' : 'Copy'}</button>) : canProvisionHere ? (<button onClick={handleProvisionClient} disabled={provisioning} className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed flex-shrink-0" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{provisioning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Phone className="h-4 w-4" />}{provisioning ? 'Setting up...' : 'Provision Number'}</button>) : null}</div></div></div>
 
@@ -1325,6 +1370,25 @@ export default function AgencyClientDetailPage() {
       />
 
       <WebCallModal clientId={clientId} open={webCallOpen} onClose={() => setWebCallOpen(false)} theme={theme} />
+
+      {showConvertModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => { if (!convertingTestClient) setShowConvertModal(false); }}>
+          <div className="rounded-2xl p-5 sm:p-6 w-full max-w-md" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-2 mb-2"><UserCheck className="h-5 w-5" style={{ color: theme.iconColor }} /><h3 className="font-semibold text-base" style={{ color: theme.text }}>Convert to a Real Client</h3></div>
+            <p className="text-sm mb-3" style={{ color: theme.textMuted }}>This turns <span className="font-medium" style={{ color: theme.text }}>{client.business_name}</span> into a regular client. It keeps the same phone number, receptionist, and knowledge base, so nothing has to be rebuilt and the business keeps the line it has been calling.</p>
+            <ul className="text-sm mb-4 space-y-1.5" style={{ color: theme.textMuted }}>
+              <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.iconColor }} /> Moves off the 30-minute test cap onto your plan&apos;s call limit.</li>
+              <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.iconColor }} /> No card is charged. Set their price and collect payment from the client&apos;s billing page.</li>
+              <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.iconColor }} /> Frees your test slot so you can set up a fresh test client for the next prospect.</li>
+            </ul>
+            {convertError && (<div className="flex items-start gap-2 rounded-lg px-3 py-2 mb-3 text-sm" style={{ backgroundColor: 'rgba(239,68,68,0.1)', color: '#ef4444' }}><AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />{convertError}</div>)}
+            <div className="flex gap-2">
+              <button onClick={() => setShowConvertModal(false)} disabled={convertingTestClient} className="flex-1 rounded-lg px-4 py-2 text-sm font-medium transition hover:opacity-90 disabled:opacity-40" style={{ backgroundColor: theme.hover, color: theme.text, border: `1px solid ${theme.border}` }}>Cancel</button>
+              <button onClick={handleConvertTestClient} disabled={convertingTestClient} className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition hover:opacity-90 disabled:opacity-40" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{convertingTestClient ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserCheck className="h-4 w-4" />} Convert</button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
