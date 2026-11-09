@@ -41,6 +41,14 @@ interface Conversation {
   faqOrigin?: { userType: string | null; source: string | null; agencyName: string | null; tag: string; visitorName?: string | null; visitorContact?: string | null } | null;
 }
 
+interface AgencyFacts {
+  plan: string | null; comped: boolean; status: string | null; isTrial: boolean;
+  trialEndsAt: string | null; clientCount: number; demoCalled: boolean; hasDemo: boolean;
+  demoPhone: string | null; hasTestClient: boolean; testClientName: string | null;
+  testClientStatus: string | null; onboardingCompleted: boolean; onboardingStep: number | null;
+  lastActiveAt: string | null; createdAt: string | null;
+}
+
 const backendUrl = () => process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
 const authHeaders = (): Record<string, string> => ({
   Authorization: `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('admin_token') || '' : ''}`,
@@ -52,9 +60,34 @@ function fmtTime(iso: string | null): string {
   catch { return ''; }
 }
 
+function cap(s?: string | null): string { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+
+function timeAgo(iso: string | null): string {
+  if (!iso) return '';
+  const diff = Date.now() - new Date(iso).getTime();
+  if (isNaN(diff)) return '';
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
+function trialEndsLabel(iso?: string | null): string {
+  if (!iso) return '--';
+  const diff = new Date(iso).getTime() - Date.now();
+  if (isNaN(diff)) return '--';
+  const d = Math.ceil(diff / 86400000);
+  if (d < 0) return 'Ended';
+  if (d === 0) return 'Today';
+  return `${d}d left`;
+}
+
 export default function AdminInboxPage() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selected, setSelected] = useState<Conversation | null>(null);
+  const [facts, setFacts] = useState<AgencyFacts | null>(null);
   const [loadingList, setLoadingList] = useState(true);
   const [reply, setReply] = useState('');
   const [sending, setSending] = useState(false);
@@ -87,6 +120,22 @@ export default function AdminInboxPage() {
   }, [load]);
 
   useEffect(() => { stickRef.current = true; }, [selected?.key]);
+
+  // Load the agency's quick facts for the stat strip when an agency thread opens.
+  useEffect(() => {
+    setFacts(null);
+    if (!selected || selected.type !== 'agency' || !selected.agencyId) return;
+    const aid = selected.agencyId;
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch(`${backendUrl()}/api/admin/inbox/agency-facts/${aid}`, { headers: authHeaders() });
+        const data = await res.json().catch(() => ({}));
+        if (alive && res.ok && data.success) setFacts(data.facts);
+      } catch { /* non-fatal: the strip just stays hidden */ }
+    })();
+    return () => { alive = false; };
+  }, [selected?.agencyId, selected?.type]);
   // Only auto-scroll to the bottom on a thread switch or when a new message
   // actually arrives, and only when the reader is already pinned to the bottom.
   // The 15s poll replaces `selected` with a fresh object every time, so the old
@@ -285,6 +334,26 @@ export default function AdminInboxPage() {
                 )}
               </div>
             </div>
+
+            {selected.type === 'agency' && facts && (
+              <div className="shrink-0 border-b px-4 py-2 grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2" style={{ borderColor: 'var(--a-line)', background: 'white' }}>
+                {[
+                  { label: 'Plan', value: facts.comped ? `${cap(facts.plan) || 'Comped'} (comped)` : (cap(facts.plan) || '--') },
+                  { label: 'Status', value: facts.isTrial ? 'Trial' : (cap(facts.status) || '--') },
+                  ...(facts.isTrial ? [{ label: 'Trial ends', value: trialEndsLabel(facts.trialEndsAt) }] : []),
+                  { label: 'Clients', value: String(facts.clientCount) },
+                  { label: 'Demo', value: facts.demoCalled ? 'Called' : (facts.hasDemo ? 'Not called' : 'No demo') },
+                  { label: 'Test client', value: facts.hasTestClient ? (facts.testClientName || 'Yes') : 'None' },
+                  { label: 'Onboarding', value: facts.onboardingCompleted ? 'Complete' : (facts.onboardingStep ? `Step ${facts.onboardingStep}` : 'In progress') },
+                  { label: 'Last active', value: facts.lastActiveAt ? timeAgo(facts.lastActiveAt) : 'Never' },
+                ].map((f) => (
+                  <div key={f.label} className="min-w-0">
+                    <div className="text-[9px] uppercase tracking-wide truncate" style={{ color: 'var(--a-dim)' }}>{f.label}</div>
+                    <div className="text-xs font-medium truncate" style={{ color: 'var(--a-ink)' }}>{f.value}</div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div ref={threadScrollRef} onScroll={handleThreadScroll} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
               {selected.messages.length === 0 ? (
