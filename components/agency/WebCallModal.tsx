@@ -10,8 +10,9 @@
 // transcript. Transcript direction is natural: YOU are on the right, the AI
 // receptionist is on the left, so it never reads backwards.
 //
-// Themed with the dashboard theme object (inline styles), so it white-labels in
-// both light and dark exactly like the rest of the agency dashboard.
+// Layout: the panel is a FIXED size. The transcript scrolls inside it, so the
+// box never grows or shifts as lines stream in. Surfaces are solid (with a
+// drop shadow) so nothing looks see-through, and labels use Title Case.
 // ============================================================================
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -131,12 +132,17 @@ export default function WebCallModal({ clientId, open, onClose, theme }: Props) 
 
   if (!open) return null;
 
+  // Solid, opaque surfaces so nothing reads as see-through.
+  const isDark = theme?.isDark ?? true;
   const primary = info?.primary || theme?.primary || '#01f5d1';
   const primaryText = theme?.primaryText || '#ffffff';
-  const card = theme?.card || (theme?.isDark ? '#0a0a0a' : '#ffffff');
-  const border = theme?.border || theme?.inputBorder || (theme?.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)');
-  const text = theme?.text || (theme?.isDark ? '#fafafa' : '#111111');
-  const muteBg = theme?.input || (theme?.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)');
+  const card = theme?.card || (isDark ? '#101012' : '#ffffff');
+  const border = theme?.border || theme?.inputBorder || (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)');
+  const text = theme?.text || (isDark ? '#fafafa' : '#111111');
+  const textMuted = theme?.textMuted || (isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.5)');
+  const aiBubble = isDark ? '#26262b' : '#f1f3f5';   // solid neutral, reads on any card
+  const controlBg = isDark ? '#1c1c20' : '#f1f3f5';  // solid, for the mute button
+  const subtle = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)';
   const mm = Math.floor(seconds / 60);
   const ss = String(seconds % 60).padStart(2, '0');
 
@@ -144,13 +150,13 @@ export default function WebCallModal({ clientId, open, onClose, theme }: Props) 
     const you = ln.role === 'user';
     return (
       <div key={key} className={`flex ${you ? 'justify-end' : 'justify-start'}`}>
-        <div className="max-w-[80%]">
-          <div className="text-[10px] font-semibold uppercase tracking-wide mb-0.5" style={{ color: theme?.textMuted, textAlign: you ? 'right' : 'left' }}>
-            {you ? 'You' : (info?.businessName ? `${info.businessName} AI` : 'AI receptionist')}
+        <div className="max-w-[82%]">
+          <div className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: textMuted, textAlign: you ? 'right' : 'left' }}>
+            {you ? 'You' : (info?.businessName ? `${info.businessName} AI` : 'AI Receptionist')}
           </div>
-          <div className="rounded-2xl px-3.5 py-2 text-[14px] leading-snug" style={you
-            ? { backgroundColor: primary, color: primaryText, opacity: dim ? 0.6 : 1 }
-            : { backgroundColor: muteBg, color: text, opacity: dim ? 0.6 : 1 }}>
+          <div className="rounded-2xl px-4 py-2.5 text-[14px] leading-relaxed" style={you
+            ? { backgroundColor: primary, color: primaryText, opacity: dim ? 0.65 : 1 }
+            : { backgroundColor: aiBubble, color: text, opacity: dim ? 0.65 : 1 }}>
             {ln.text}
           </div>
         </div>
@@ -159,86 +165,95 @@ export default function WebCallModal({ clientId, open, onClose, theme }: Props) 
   };
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.55)' }}
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
       onClick={onClose}>
-      <div className="w-full max-w-md rounded-2xl overflow-hidden flex flex-col" style={{ backgroundColor: card, border: `1px solid ${border}`, maxHeight: '85vh' }}
+      <div className="rounded-2xl overflow-hidden flex flex-col"
+        style={{ backgroundColor: card, border: `1px solid ${border}`, boxShadow: '0 24px 70px rgba(0,0,0,0.45)', width: 'min(560px, 94vw)', height: 'min(660px, 90vh)' }}
         onClick={(e) => e.stopPropagation()}>
 
         {/* Header */}
-        <div className="flex items-center justify-between gap-3 px-5 py-4" style={{ borderBottom: `1px solid ${border}` }}>
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: `${primary}1f` }}>
-              <Radio className="h-4 w-4" style={{ color: primary }} />
+        <div className="flex items-center justify-between gap-3 px-5 py-4 flex-shrink-0" style={{ borderBottom: `1px solid ${border}`, backgroundColor: subtle }}>
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: `${primary}22` }}>
+              <Radio className="h-5 w-5" style={{ color: primary }} />
             </div>
             <div className="min-w-0">
-              <div className="text-sm font-semibold truncate" style={{ color: text }}>Web Call</div>
-              <div className="text-[12px] truncate" style={{ color: theme?.textMuted }}>{info?.businessName || 'Loading...'}</div>
+              <div className="text-[15px] font-semibold truncate" style={{ color: text }}>Web Call</div>
+              <div className="text-[12.5px] truncate" style={{ color: textMuted }}>{info?.businessName || 'Loading...'}</div>
             </div>
           </div>
-          <button type="button" onClick={onClose} className="p-1.5 rounded-lg flex-shrink-0" style={{ color: theme?.textMuted }} aria-label="Close"><X className="h-4 w-4" /></button>
+          <button type="button" onClick={onClose} className="p-2 rounded-lg flex-shrink-0 transition-colors" style={{ color: textMuted, backgroundColor: controlBg }} aria-label="Close"><X className="h-4 w-4" /></button>
         </div>
 
-        {/* Body */}
+        {/* Body (fills the fixed height; inner regions scroll, the panel does not grow) */}
         <div className="flex-1 min-h-0 flex flex-col">
           {phase === 'loading' && (
-            <div className="flex flex-col items-center justify-center py-16 gap-3"><Loader2 className="h-6 w-6 animate-spin" style={{ color: primary }} /><p className="text-sm" style={{ color: theme?.textMuted }}>Loading receptionist...</p></div>
+            <div className="flex-1 flex flex-col items-center justify-center gap-3">
+              <Loader2 className="h-7 w-7 animate-spin" style={{ color: primary }} />
+              <p className="text-sm" style={{ color: textMuted }}>Loading Receptionist...</p>
+            </div>
           )}
 
           {phase === 'error' && (
-            <div className="flex flex-col items-center justify-center py-14 px-6 gap-3 text-center">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full" style={{ backgroundColor: 'rgba(239,68,68,0.12)' }}><PhoneOff className="h-5 w-5" style={{ color: '#ef4444' }} /></div>
+            <div className="flex-1 flex flex-col items-center justify-center px-8 gap-4 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full" style={{ backgroundColor: 'rgba(239,68,68,0.14)' }}><PhoneOff className="h-5 w-5" style={{ color: '#ef4444' }} /></div>
               <p className="text-sm" style={{ color: text }}>{error || 'Something went wrong.'}</p>
-              <button type="button" onClick={onClose} className="mt-1 rounded-xl px-4 py-2 text-sm font-medium" style={{ backgroundColor: muteBg, color: text, border: `1px solid ${border}` }}>Close</button>
+              <button type="button" onClick={onClose} className="rounded-xl px-5 py-2.5 text-sm font-medium" style={{ backgroundColor: controlBg, color: text, border: `1px solid ${border}` }}>Close</button>
             </div>
           )}
 
           {(phase === 'idle' || phase === 'ended') && (
-            <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+            <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full mb-5" style={{ backgroundColor: `${primary}1a` }}>
+                <Phone className="h-7 w-7" style={{ color: primary }} />
+              </div>
               {info?.phone ? (
                 <>
-                  <p className="text-[12px] uppercase tracking-wide font-medium" style={{ color: theme?.textMuted }}>Calling</p>
-                  <p className="mt-1 text-2xl font-bold tracking-tight" style={{ color: text }}>{formatPhone(info.phone)}</p>
+                  <p className="text-[12px] uppercase tracking-wide font-semibold" style={{ color: textMuted }}>Calling</p>
+                  <p className="mt-1.5 text-3xl font-bold tracking-tight" style={{ color: text }}>{formatPhone(info.phone)}</p>
                 </>
               ) : (
-                <p className="text-base font-semibold" style={{ color: text }}>{info?.businessName} AI receptionist</p>
+                <p className="text-lg font-semibold" style={{ color: text }}>{info?.businessName} AI Receptionist</p>
               )}
-              <p className="mt-2 text-[13px] max-w-xs" style={{ color: theme?.textMuted }}>
-                {phase === 'ended' ? 'Call ended. Start another whenever you want.' : 'Talk to this client’s AI receptionist right in your browser to test it. Your mic is used for the call.'}
+              <p className="mt-3 text-[13.5px] max-w-sm leading-relaxed" style={{ color: textMuted }}>
+                {phase === 'ended' ? 'Call ended. Start another whenever you want.' : 'Talk to this client’s AI receptionist right in your browser to test it. Your microphone is used for the call.'}
               </p>
               {error && <p className="mt-3 text-[13px]" style={{ color: '#ef4444' }}>{error}</p>}
               <button type="button" onClick={startCall} disabled={!info?.assistantId}
-                className="mt-6 inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold transition-transform hover:scale-[1.03] active:scale-[0.98] disabled:opacity-50"
+                className="mt-7 inline-flex items-center gap-2 rounded-full px-8 py-3.5 text-[15px] font-semibold transition-transform hover:scale-[1.03] active:scale-[0.98] disabled:opacity-50"
                 style={{ backgroundColor: primary, color: primaryText }}>
-                <Phone className="h-4 w-4" /> {phase === 'ended' ? 'Call again' : 'Start web call'}
+                <Phone className="h-5 w-5" /> {phase === 'ended' ? 'Call Again' : 'Start Web Call'}
               </button>
-              {!info?.assistantId && phase === 'idle' && <p className="mt-3 text-[12px]" style={{ color: theme?.textMuted }}>This client has no AI receptionist set up yet.</p>}
+              {!info?.assistantId && phase === 'idle' && <p className="mt-4 text-[12.5px]" style={{ color: textMuted }}>This client has no AI receptionist set up yet.</p>}
             </div>
           )}
 
           {(phase === 'connecting' || phase === 'live') && (
             <>
-              <div className="flex items-center justify-center gap-2 py-3" style={{ borderBottom: `1px solid ${border}` }}>
+              <div className="flex items-center justify-center gap-2 py-3 flex-shrink-0" style={{ borderBottom: `1px solid ${border}`, backgroundColor: subtle }}>
                 <span className="relative flex h-2.5 w-2.5">
                   <span className="absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping" style={{ backgroundColor: phase === 'live' ? '#22c55e' : primary }} />
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5" style={{ backgroundColor: phase === 'live' ? '#22c55e' : primary }} />
                 </span>
-                <span className="text-sm font-medium" style={{ color: text }}>{phase === 'connecting' ? 'Connecting...' : `On call ${mm}:${ss}`}</span>
+                <span className="text-sm font-semibold" style={{ color: text }}>{phase === 'connecting' ? 'Connecting...' : `On Call ${mm}:${ss}`}</span>
               </div>
 
-              <div ref={transcriptRef} className="flex-1 min-h-[220px] overflow-y-auto px-4 py-4 space-y-3">
+              <div ref={transcriptRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-3.5">
                 {lines.length === 0 && !interim && (
-                  <p className="text-center text-[13px] py-10" style={{ color: theme?.textMuted }}>{phase === 'connecting' ? 'Setting up the call...' : 'Say hello to start the conversation.'}</p>
+                  <div className="h-full flex items-center justify-center">
+                    <p className="text-center text-[13.5px] px-6" style={{ color: textMuted }}>{phase === 'connecting' ? 'Setting up the call...' : 'Say hello to start the conversation.'}</p>
+                  </div>
                 )}
                 {lines.map((ln, i) => renderLine(ln, `l${i}`))}
                 {interim && renderLine(interim, 'interim', true)}
               </div>
 
-              <div className="flex items-center justify-center gap-3 px-5 py-4" style={{ borderTop: `1px solid ${border}` }}>
-                <button type="button" onClick={toggleMute} className="inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium" style={{ backgroundColor: muteBg, color: text, border: `1px solid ${border}` }}>
+              <div className="flex items-center justify-center gap-3 px-5 py-4 flex-shrink-0" style={{ borderTop: `1px solid ${border}`, backgroundColor: subtle }}>
+                <button type="button" onClick={toggleMute} className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: controlBg, color: text, border: `1px solid ${border}` }}>
                   {muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />} {muted ? 'Unmute' : 'Mute'}
                 </button>
-                <button type="button" onClick={endCall} className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold" style={{ backgroundColor: '#ef4444', color: '#ffffff' }}>
-                  <PhoneOff className="h-4 w-4" /> End call
+                <button type="button" onClick={endCall} className="inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold transition-transform active:scale-[0.98]" style={{ backgroundColor: '#ef4444', color: '#ffffff' }}>
+                  <PhoneOff className="h-4 w-4" /> End Call
                 </button>
               </div>
             </>
