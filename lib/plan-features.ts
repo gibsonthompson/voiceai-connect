@@ -70,7 +70,7 @@ export const AGENCY_PLAN_TIERS: Record<AgencyPlanId, AgencyPlanTier> = {
       'Caller recognition + after-hours mode',
       'Spam & robocall detection',
       'Client-facing dashboard + Stripe Connect billing',
-      '7-day free trial for your clients',
+      'You set each client\'s free trial, or no trial',
     ],
     limitations: [
       'No white-label branding',

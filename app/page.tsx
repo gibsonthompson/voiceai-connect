@@ -665,7 +665,7 @@ export default function HomePage() {
             <p className="t-eyebrow text-em mb-6">Pricing</p>
             <h2 className="t-h2 text-white">Start free. Scale when ready.</h2>
             <p className="t-body mt-6 max-w-lg">
-              Start free with per-usage billing, or lock in lower rates with a 14-day Pro or Scale trial. Every plan includes a 7-day free trial for the clients you onboard. No revenue share, no hidden fees.
+              Start free with per-usage billing, or lock in lower rates with a 14-day Pro or Scale trial. You set the free trial your clients get, or no trial at all. No revenue share, no hidden fees.
             </p>
           </div>
 
@@ -727,7 +727,7 @@ export default function HomePage() {
               );
             })}
           </div>
-          <p className="font-mono text-[11px] text-white/35 mt-12 text-center uppercase tracking-[0.14em]">Start free, no card · 14-day Pro &amp; Scale trials (card required) · 7-day client trials</p>
+          <p className="font-mono text-[11px] text-white/35 mt-12 text-center uppercase tracking-[0.14em]">Start free, no card · 14-day Pro &amp; Scale trials (card required) · You set your clients&apos; trial length, or no trial</p>
         </div>
       </section>
 
