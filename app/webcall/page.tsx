@@ -23,7 +23,7 @@ import { fontStack, googleFontsHref } from '@/lib/brandFonts';
 type Phase = 'loading' | 'idle' | 'connecting' | 'live' | 'ended' | 'error';
 interface Line { role: 'user' | 'assistant'; text: string; }
 interface WebcallConfig {
-  assistantId: string; label: string; phoneNumber: string | null; agencyName: string | null; logoUrl: string | null;
+  assistantId: string; label: string; phoneNumber: string | null; title: string | null; subtitle: string | null; cta: string | null; agencyName: string | null; logoUrl: string | null;
   primaryColor: string; accentColor: string; websiteTheme: string;
   displayFont: string | null; bodyFont: string | null;
 }
@@ -190,10 +190,10 @@ function WebcallInner() {
             </div>
             <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{ fontWeight: 700, fontSize: 16, fontFamily: fontStack(config?.displayFont, 'display'), lineHeight: 1.15 }}>
-                Talk to {config?.label || 'Our AI Receptionist'}
+                {config?.title || `Talk to ${config?.label || 'Our AI Receptionist'}`}
               </div>
               <div style={{ fontSize: 12.5, color: muted2, marginTop: 2 }}>
-                {phase === 'live' ? 'On Call' : phase === 'connecting' ? 'Calling…' : phase === 'ended' ? 'Call Ended' : 'AI receptionist'}
+                {phase === 'live' ? 'On Call' : phase === 'connecting' ? 'Calling…' : phase === 'ended' ? 'Call Ended' : (config?.subtitle || 'AI receptionist')}
               </div>
             </div>
             {(phase === 'live' || phase === 'connecting') && (
@@ -234,7 +234,7 @@ function WebcallInner() {
                   </p>
                 )}
                 <p style={{ fontSize: 13.5, color: muted2, margin: '0 auto', maxWidth: 320 }}>
-                  {phase === 'connecting' ? 'Calling…' : 'Tap to call and talk to the AI. Allow your mic when asked.'}
+                  {phase === 'connecting' ? 'Calling…' : (config?.cta || 'Tap to call and talk to the AI. Allow your mic when asked.')}
                 </p>
               </div>
             )}
