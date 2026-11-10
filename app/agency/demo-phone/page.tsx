@@ -94,7 +94,7 @@ function PostDemoFollowupSection({ agency, theme, onSaved }: { agency: any; them
         <div className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ backgroundColor: theme.iconBg }}><MessageSquare className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
         <div className="min-w-0">
           <h3 className="font-semibold text-base sm:text-lg">Post-Demo Follow-Up Text</h3>
-          <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>The text a prospect gets after they call your demo line</p>
+          <p className="text-xs sm:text-sm" style={{ color: theme.cardTextMuted }}>The text a prospect gets after they call your demo line</p>
         </div>
       </div>
 
@@ -107,7 +107,7 @@ function PostDemoFollowupSection({ agency, theme, onSaved }: { agency: any; them
           )}
           <div className="mt-4">
             <label className="block text-xs sm:text-sm font-medium mb-1.5" style={{ color: theme.text }}>Signup Link</label>
-            <p className="text-xs mb-2 leading-relaxed" style={{ color: theme.textMuted }}>The link in this text. Leave blank to use your hosted signup page, or paste your own site&apos;s signup URL (e.g. your page with the embedded form).</p>
+            <p className="text-xs mb-2 leading-relaxed" style={{ color: theme.cardTextMuted }}>The link in this text. Leave blank to use your hosted signup page, or paste your own site&apos;s signup URL (e.g. your page with the embedded form).</p>
             <input type="url" value={url} onChange={(e) => { setUrl(e.target.value); setSaved(false); setError(null); }} placeholder="https://yourbrand.com/get-started" className="w-full rounded-xl px-3 sm:px-4 py-2.5 text-sm focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${!urlValid ? errColor : theme.inputBorder}`, color: theme.text }} />
             {!urlValid && <p className="mt-1.5 text-xs" style={{ color: errColor }}>Enter a full URL starting with http:// or https://</p>}
           </div>
@@ -225,7 +225,7 @@ function AudioPlayer({ url, theme }: { url: string; theme: any }) {
         onError={() => setFailed(true)}
       />
       {failed && (
-        <p className="text-[11px] mt-2" style={{ color: theme.textMuted }}>
+        <p className="text-[11px] mt-2" style={{ color: theme.cardTextMuted }}>
           This recording didn&apos;t load inline.{' '}
           <a href={url} target="_blank" rel="noreferrer" style={{ color: theme.primary, textDecoration: 'underline' }}>
             Open it in a new tab
@@ -243,10 +243,10 @@ function DemoCallDetailModal({ call, theme, onClose }: { call: DemoCall; theme: 
   const InfoCell = ({ icon: Icon, label, value, cap }: any) => (
     <div className="flex items-center gap-2.5 min-w-0">
       <div className="flex h-8 w-8 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.hover }}>
-        <Icon className="h-3.5 w-3.5" style={{ color: theme.textMuted }} />
+        <Icon className="h-3.5 w-3.5" style={{ color: theme.cardTextMuted }} />
       </div>
       <div className="min-w-0">
-        <p className="text-[10px]" style={{ color: theme.textMuted }}>{label}</p>
+        <p className="text-[10px]" style={{ color: theme.cardTextMuted }}>{label}</p>
         <p className={`text-sm font-medium truncate ${cap ? 'capitalize' : ''}`}>{value}</p>
       </div>
     </div>
@@ -270,7 +270,7 @@ function DemoCallDetailModal({ call, theme, onClose }: { call: DemoCall; theme: 
             <h2 className="text-base font-semibold truncate">
               {call.business_name || call.caller_name || 'Demo Call'}
             </h2>
-            <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>
+            <p className="text-xs mt-0.5" style={{ color: theme.cardTextMuted }}>
               {new Date(call.created_at).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}
               {call.duration_seconds ? ` · ${formatDuration(call.duration_seconds)}` : ''}
             </p>
@@ -282,7 +282,7 @@ function DemoCallDetailModal({ call, theme, onClose }: { call: DemoCall; theme: 
               className="flex items-center justify-center h-8 w-8 rounded-lg transition-colors"
               style={{ backgroundColor: theme.hover }}
             >
-              <X className="h-4 w-4" style={{ color: theme.textMuted }} />
+              <X className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
             </button>
           </div>
         </div>
@@ -308,7 +308,7 @@ function DemoCallDetailModal({ call, theme, onClose }: { call: DemoCall; theme: 
                   <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs" style={{ backgroundColor: theme.primary + '12', color: theme.primary }}>Asked follow-up questions</span>
                 )}
                 {call.caller_name && call.caller_name !== 'Unknown' && (
-                  <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>{call.caller_name}</span>
+                  <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs" style={{ backgroundColor: theme.hover, color: theme.cardTextMuted }}>{call.caller_name}</span>
                 )}
               </div>
             )}
@@ -319,7 +319,7 @@ function DemoCallDetailModal({ call, theme, onClose }: { call: DemoCall; theme: 
                   <Bot className="h-4 w-4" style={{ color: theme.iconColor }} />
                   <h3 className="text-xs font-semibold" style={{ color: theme.text }}>AI Summary</h3>
                 </div>
-                <p className="text-sm leading-relaxed" style={{ color: theme.textMuted }}>{call.summary}</p>
+                <p className="text-sm leading-relaxed" style={{ color: theme.cardTextMuted }}>{call.summary}</p>
               </div>
             )}
           </div>
@@ -340,7 +340,7 @@ function DemoCallDetailModal({ call, theme, onClose }: { call: DemoCall; theme: 
                   className="rounded-lg p-3 flex-1 min-h-0 overflow-y-auto"
                   style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, maxHeight: 'none' }}
                 >
-                  <p className="text-xs whitespace-pre-wrap leading-relaxed font-mono" style={{ color: theme.textMuted }}>
+                  <p className="text-xs whitespace-pre-wrap leading-relaxed font-mono" style={{ color: theme.cardTextMuted }}>
                     {call.transcript}
                   </p>
                 </div>
@@ -424,8 +424,8 @@ function DemoCallsList({ agencyId, theme }: { agencyId: string; theme: any }) {
     return (
       <div className="text-center py-10">
         <PhoneCall className="h-8 w-8 mx-auto mb-2" style={{ color: theme.textMuted, opacity: 0.3 }} />
-        <p className="text-sm font-medium" style={{ color: theme.textMuted }}>No demo calls yet</p>
-        <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
+        <p className="text-sm font-medium" style={{ color: theme.cardTextMuted }}>No demo calls yet</p>
+        <p className="text-xs mt-1" style={{ color: theme.cardTextMuted }}>
           When prospects call your demo number, their calls will appear here with full transcripts and AI summaries.
         </p>
       </div>
@@ -438,12 +438,12 @@ function DemoCallsList({ agencyId, theme }: { agencyId: string; theme: any }) {
       <div className="flex items-center gap-4 px-1 pb-3 mb-1">
         <div className="flex items-baseline gap-1.5">
           <span className="text-lg font-semibold tabular-nums leading-none" style={{ color: theme.text }}>{total}</span>
-          <span className="text-xs" style={{ color: theme.textMuted }}>all-time</span>
+          <span className="text-xs" style={{ color: theme.cardTextMuted }}>all-time</span>
         </div>
         <div style={{ width: 1, height: 16, backgroundColor: theme.border }} />
         <div className="flex items-baseline gap-1.5">
           <span className="text-lg font-semibold tabular-nums leading-none" style={{ color: theme.success }}>{thisWeek}</span>
-          <span className="text-xs" style={{ color: theme.textMuted }}>this week</span>
+          <span className="text-xs" style={{ color: theme.cardTextMuted }}>this week</span>
         </div>
       </div>
       <div className="divide-y" style={{ borderColor: theme.border }}>
@@ -475,7 +475,7 @@ function DemoCallsList({ agencyId, theme }: { agencyId: string; theme: any }) {
                     <p className="text-xs truncate" style={{ color: theme.textMuted, textTransform: 'capitalize' }}>{call.service_discussed}</p>
                   )}
                   {!call.service_discussed && call.business_type && (
-                    <p className="text-xs truncate capitalize" style={{ color: theme.textMuted }}>{call.business_type.replace(/_/g, ' ')}</p>
+                    <p className="text-xs truncate capitalize" style={{ color: theme.cardTextMuted }}>{call.business_type.replace(/_/g, ' ')}</p>
                   )}
                 </div>
               </div>
@@ -483,9 +483,9 @@ function DemoCallsList({ agencyId, theme }: { agencyId: string; theme: any }) {
 
             <div className="flex items-center gap-3 flex-shrink-0 ml-3">
               <div className="text-right">
-                <p className="text-xs" style={{ color: theme.textMuted }}>{formatTimeAgo(call.created_at)}</p>
+                <p className="text-xs" style={{ color: theme.cardTextMuted }}>{formatTimeAgo(call.created_at)}</p>
                 {call.duration_seconds && (
-                  <p className="text-[10px]" style={{ color: theme.textMuted }}>{formatDuration(call.duration_seconds)}</p>
+                  <p className="text-[10px]" style={{ color: theme.cardTextMuted }}>{formatDuration(call.duration_seconds)}</p>
                 )}
               </div>
               {call.recording_url && (
@@ -493,7 +493,7 @@ function DemoCallsList({ agencyId, theme }: { agencyId: string; theme: any }) {
                   <Play className="h-3 w-3" style={{ color: theme.iconColor }} />
                 </div>
               )}
-              <ChevronRight className="h-4 w-4" style={{ color: theme.textMuted }} />
+              <ChevronRight className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
             </div>
           </button>
         ))}
@@ -501,7 +501,7 @@ function DemoCallsList({ agencyId, theme }: { agencyId: string; theme: any }) {
 
       {total > calls.length && (
         <div className="text-center py-3" style={{ borderTop: `1px solid ${theme.border}` }}>
-          <p className="text-xs" style={{ color: theme.textMuted }}>
+          <p className="text-xs" style={{ color: theme.cardTextMuted }}>
             Showing {calls.length} of {total} demo calls
           </p>
         </div>
@@ -831,7 +831,7 @@ export default function DemoPhonePage() {
             <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Phone className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
             <div>
               <h1 className="text-xl sm:text-2xl font-semibold" style={{ color: theme.text }}>Demo Phone</h1>
-              <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>
+              <p className="mt-0.5 text-sm" style={{ color: theme.cardTextMuted }}>
                 A dedicated phone number that showcases AI receptionist capabilities to prospects
               </p>
             </div>
@@ -859,7 +859,7 @@ export default function DemoPhonePage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Phone className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold">Demo Phone</h1>
-            <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>
+            <p className="mt-0.5 text-sm" style={{ color: theme.cardTextMuted }}>
               Your dedicated demo line for showcasing AI receptionist capabilities
             </p>
           </div>
@@ -872,7 +872,7 @@ export default function DemoPhonePage() {
           <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: theme.warningText }} />
           <div>
             <p className="text-sm font-medium" style={{ color: theme.warningText }}>This is sample data (Demo Mode is on)</p>
-            <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
+            <p className="text-xs mt-1" style={{ color: theme.cardTextMuted }}>
               The number below is a placeholder for previewing the layout. It is not a real number and cannot be called. Turn off Demo Mode in Settings, then create a demo number to get a real, callable line.
             </p>
           </div>
@@ -884,12 +884,12 @@ export default function DemoPhonePage() {
         >
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ backgroundColor: theme.hover, color: theme.cardTextMuted }}>
                 <Phone className="h-5 w-5" />
               </div>
               <div>
                 <h3 className="font-semibold text-base sm:text-lg">Your Demo Number</h3>
-                <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full mt-0.5" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full mt-0.5" style={{ backgroundColor: theme.hover, color: theme.cardTextMuted }}>
                   Sample
                 </span>
               </div>
@@ -901,8 +901,8 @@ export default function DemoPhonePage() {
             style={{ backgroundColor: theme.hover, border: `1px dashed ${theme.border}` }}
           >
             <div className="flex items-center gap-3">
-              <PhoneCall className="h-6 w-6" style={{ color: theme.textMuted }} />
-              <span className="text-xl sm:text-2xl font-bold tracking-wide" style={{ color: theme.textMuted }}>{sampleDemoNumber}</span>
+              <PhoneCall className="h-6 w-6" style={{ color: theme.cardTextMuted }} />
+              <span className="text-xl sm:text-2xl font-bold tracking-wide" style={{ color: theme.cardTextMuted }}>{sampleDemoNumber}</span>
             </div>
             <span
               className="px-3 py-1.5 rounded-lg text-xs font-medium"
@@ -917,14 +917,14 @@ export default function DemoPhonePage() {
               <MessageSquare className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.iconColor }} />
               <div>
                 <p className="text-xs font-medium" style={{ color: theme.text }}>Post-call SMS</p>
-                <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>On a real demo line, callers get your signup link by text after they hang up</p>
+                <p className="text-[10px] sm:text-xs" style={{ color: theme.cardTextMuted }}>On a real demo line, callers get your signup link by text after they hang up</p>
               </div>
             </div>
             <div className="flex items-start gap-3 rounded-lg p-3" style={{ backgroundColor: theme.hover }}>
               <Headphones className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.iconColor }} />
               <div>
                 <p className="text-xs font-medium" style={{ color: theme.text }}>On your marketing site</p>
-                <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Your real demo number appears automatically in your "Experience It Live" section</p>
+                <p className="text-[10px] sm:text-xs" style={{ color: theme.cardTextMuted }}>Your real demo number appears automatically in your "Experience It Live" section</p>
               </div>
             </div>
           </div>
@@ -954,7 +954,7 @@ export default function DemoPhonePage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Phone className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold">Demo Phone</h1>
-            <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>
+            <p className="mt-0.5 text-sm" style={{ color: theme.cardTextMuted }}>
               Your dedicated demo line for showcasing AI receptionist capabilities
             </p>
           </div>
@@ -976,7 +976,7 @@ export default function DemoPhonePage() {
               </div>
               <div className="min-w-0">
                 <h3 className="font-semibold text-base sm:text-lg truncate">Your Demo Number</h3>
-                <p className="text-xs" style={{ color: theme.textMuted }}>Dedicated line for showcasing your AI receptionist</p>
+                <p className="text-xs" style={{ color: theme.cardTextMuted }}>Dedicated line for showcasing your AI receptionist</p>
               </div>
             </div>
             <span
@@ -994,7 +994,7 @@ export default function DemoPhonePage() {
             style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <PhoneOutgoing className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted }} />
+              <PhoneOutgoing className="h-4 w-4 flex-shrink-0" style={{ color: theme.cardTextMuted }} />
               <span className="text-lg sm:text-xl font-semibold tracking-wide truncate" style={{ color: theme.text }}>{demoNumber}</span>
             </div>
             <button
@@ -1015,7 +1015,7 @@ export default function DemoPhonePage() {
             return (
               <div className="rounded-xl p-3.5 mb-4 flex items-start gap-3" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
                 <Clock className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.warningText }} />
-                <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>
+                <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.cardTextMuted }}>
                   <span className="font-medium" style={{ color: theme.warningText }}>Free demo line, {days} day{days === 1 ? '' : 's'} left.</span>{' '}
                   It expires on {dateLabel} and the number is released automatically.{' '}
                   <a href="/agency/settings?tab=billing" className="underline font-medium" style={{ color: theme.primary }}>Upgrade to Pro</a> to keep a demo line that never expires.
@@ -1028,14 +1028,14 @@ export default function DemoPhonePage() {
           <div className="rounded-xl p-3.5 mb-4" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
             <button onClick={() => setShowHowTo((v) => !v)} className="w-full flex items-center justify-between gap-2 text-left">
               <p className="text-xs sm:text-sm font-medium" style={{ color: theme.text }}>How to use this</p>
-              <ChevronRight className={`h-4 w-4 flex-shrink-0 transition-transform ${showHowTo ? 'rotate-90' : ''}`} style={{ color: theme.textMuted }} />
+              <ChevronRight className={`h-4 w-4 flex-shrink-0 transition-transform ${showHowTo ? 'rotate-90' : ''}`} style={{ color: theme.cardTextMuted }} />
             </button>
             {showHowTo && (
               <div className="mt-2">
-                <p className="text-[11px] sm:text-xs leading-relaxed" style={{ color: theme.textMuted }}>
+                <p className="text-[11px] sm:text-xs leading-relaxed" style={{ color: theme.cardTextMuted }}>
                   Share this number with prospects. When they call it, they reach a live AI receptionist and hear exactly what their own would sound like, as if they were a customer calling a home service business. It's a hands-on test drive of what they'd be buying from you. Want prospects to reach it on a number you already own? Just forward that number's incoming calls to this one.
                 </p>
-                <p className="text-[11px] sm:text-xs leading-relaxed mt-2" style={{ color: theme.textMuted }}>
+                <p className="text-[11px] sm:text-xs leading-relaxed mt-2" style={{ color: theme.cardTextMuted }}>
                   <span style={{ color: theme.text, fontWeight: 500 }}>To forward a number here:</span> on most phones you dial *72, then this number, then press call to turn it on (*73 turns it off). On a business or VoIP line, set call forwarding to this number in your provider's settings. Exact steps vary by carrier.
                 </p>
               </div>
@@ -1048,14 +1048,14 @@ export default function DemoPhonePage() {
               <MessageSquare className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.iconColor }} />
               <div>
                 <p className="text-xs font-medium" style={{ color: theme.text }}>Post-call SMS</p>
-                <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Callers automatically receive your signup link via text after hanging up</p>
+                <p className="text-[10px] sm:text-xs" style={{ color: theme.cardTextMuted }}>Callers automatically receive your signup link via text after hanging up</p>
               </div>
             </div>
             <div className="flex items-start gap-3 rounded-lg p-3" style={{ backgroundColor: theme.hover }}>
               <Headphones className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.iconColor }} />
               <div>
                 <p className="text-xs font-medium" style={{ color: theme.text }}>On your marketing site</p>
-                <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>This number appears automatically in your "Experience It Live" section</p>
+                <p className="text-[10px] sm:text-xs" style={{ color: theme.cardTextMuted }}>This number appears automatically in your "Experience It Live" section</p>
               </div>
             </div>
           </div>
@@ -1082,7 +1082,7 @@ export default function DemoPhonePage() {
                   This will release the phone number permanently. Are you sure?
                 </p>
                 <div className="flex gap-2 flex-shrink-0 ml-3">
-                  <button onClick={() => setShowDeleteConfirm(false)} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>Cancel</button>
+                  <button onClick={() => setShowDeleteConfirm(false)} className="px-3 py-1.5 rounded-lg text-xs font-medium" style={{ backgroundColor: theme.hover, color: theme.cardTextMuted }}>Cancel</button>
                   <button onClick={handleDelete} disabled={deleting} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white disabled:opacity-50" style={{ backgroundColor: '#dc2626' }}>
                     {deleting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
                     Delete
@@ -1149,7 +1149,7 @@ export default function DemoPhonePage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Phone className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold">Demo Phone</h1>
-            <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>A dedicated line prospects call to hear your AI receptionist</p>
+            <p className="mt-0.5 text-sm" style={{ color: theme.cardTextMuted }}>A dedicated line prospects call to hear your AI receptionist</p>
           </div>
         </div>
         <div className="rounded-xl p-5 sm:p-6 max-w-xl" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
@@ -1157,7 +1157,7 @@ export default function DemoPhonePage() {
             <div className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ backgroundColor: theme.primary15, color: theme.primary }}><Clock className="h-5 w-5" /></div>
             <h3 className="font-semibold text-base sm:text-lg">{reactivation.title || 'Your free demo line has been used'}</h3>
           </div>
-          <p className="text-sm mb-5 leading-relaxed" style={{ color: theme.textMuted }}>
+          <p className="text-sm mb-5 leading-relaxed" style={{ color: theme.cardTextMuted }}>
             {reactivation.message || 'Your first demo line was free for 30 days. To start a new one, add a card so we can bill the minutes it uses, or upgrade to Pro for a demo line that does not expire plus lower rates.'}
           </p>
           <div className="flex flex-col sm:flex-row gap-3">
@@ -1168,7 +1168,7 @@ export default function DemoPhonePage() {
               {reactivation.cta_card || 'Add a card'}
             </a>
           </div>
-          <button onClick={() => setReactivation(null)} className="mt-4 text-xs underline" style={{ color: theme.textMuted }}>Back</button>
+          <button onClick={() => setReactivation(null)} className="mt-4 text-xs underline" style={{ color: theme.cardTextMuted }}>Back</button>
         </div>
       </div>
     );
@@ -1180,7 +1180,7 @@ export default function DemoPhonePage() {
         <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Phone className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
         <div>
           <h1 className="text-xl sm:text-2xl font-semibold">Demo Phone</h1>
-          <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>
+          <p className="mt-0.5 text-sm" style={{ color: theme.cardTextMuted }}>
             Create a dedicated phone number that showcases AI receptionist capabilities to prospects
           </p>
         </div>
@@ -1196,7 +1196,7 @@ export default function DemoPhonePage() {
           </div>
           <div>
             <h3 className="font-semibold text-base sm:text-lg">Create Your Demo Number</h3>
-            <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
+            <p className="text-xs sm:text-sm" style={{ color: theme.cardTextMuted }}>
               Get a phone number prospects can call to experience your AI receptionist
             </p>
           </div>
@@ -1205,7 +1205,7 @@ export default function DemoPhonePage() {
         {isFreePlanAgency && (
           <div className="mb-5 rounded-xl p-3.5 flex items-start gap-3" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
             <Sparkles className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.iconColor }} />
-            <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>
+            <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.cardTextMuted }}>
               <span className="font-medium" style={{ color: theme.text }}>Your first demo line is free for 30 days.</span> No card needed. After 30 days it expires and the number is released. Upgrade to Pro any time for a demo line that never expires.
             </p>
           </div>
@@ -1215,12 +1215,12 @@ export default function DemoPhonePage() {
           /* US: platform provisions a local US number by area code */
           <div className="mb-5">
             <label className="block text-xs sm:text-sm font-medium mb-1.5" style={{ color: theme.text }}>Area Code</label>
-            <p className="text-[10px] sm:text-xs mb-2" style={{ color: theme.textMuted }}>
+            <p className="text-[10px] sm:text-xs mb-2" style={{ color: theme.cardTextMuted }}>
               Choose an area code that matches your target market. We&apos;ll provision a local number.
             </p>
             <div className="flex items-center gap-3">
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium" style={{ color: theme.textMuted }}>(</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium" style={{ color: theme.cardTextMuted }}>(</span>
                 <input
                   type="text"
                   value={areaCode}
@@ -1230,9 +1230,9 @@ export default function DemoPhonePage() {
                   className="w-24 rounded-lg pl-6 pr-6 py-2.5 text-center text-lg font-mono font-bold tracking-widest transition-colors focus:outline-none"
                   style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium" style={{ color: theme.textMuted }}>)</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium" style={{ color: theme.cardTextMuted }}>)</span>
               </div>
-              <span className="text-sm" style={{ color: theme.textMuted }}>XXX-XXXX</span>
+              <span className="text-sm" style={{ color: theme.cardTextMuted }}>XXX-XXXX</span>
             </div>
           </div>
         ) : !byotEnabled ? (
@@ -1242,7 +1242,7 @@ export default function DemoPhonePage() {
             <Globe className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: theme.warningText }} />
             <div>
               <p className="text-sm font-medium" style={{ color: theme.warningText }}>Connect Twilio to enable your {agencyCountry} demo line</p>
-              <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
+              <p className="text-xs mt-1" style={{ color: theme.cardTextMuted }}>
                 Your agency is set to {agencyCountry}. Demo numbers outside the US are provisioned on your own Twilio account. Connect Twilio (and complete your {agencyCountry} regulatory bundle) in Settings, then come back here to create your demo line.
               </p>
               <a href="/agency/settings?tab=twilio" className="inline-flex items-center gap-1 text-xs font-medium mt-2 underline" style={{ color: theme.primary }}>
@@ -1256,7 +1256,7 @@ export default function DemoPhonePage() {
             <Globe className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: theme.infoText }} />
             <div>
               <p className="text-sm font-medium" style={{ color: theme.infoText }}>We&apos;ll provision a local {agencyCountry} number</p>
-              <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
+              <p className="text-xs mt-1" style={{ color: theme.cardTextMuted }}>
                 Your demo line is created on your connected Twilio account in {agencyCountry} and pointed at your AI demo. This needs an approved Twilio regulatory bundle for {agencyCountry}; if it is not complete, Twilio refuses the number and we&apos;ll tell you.
               </p>
             </div>
@@ -1279,7 +1279,7 @@ export default function DemoPhonePage() {
         )}
 
         {creating && (
-          <p className="mt-3 text-xs" style={{ color: theme.textMuted }}>
+          <p className="mt-3 text-xs" style={{ color: theme.cardTextMuted }}>
             Setting up your AI assistant and provisioning a phone number. This can take up to a minute, especially for international numbers. Keep this page open...
           </p>
         )}
@@ -1307,7 +1307,7 @@ function HowItWorksCard({ theme }: { theme: any }) {
   return (
     <div className="rounded-xl p-5 sm:p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
       <h3 className="font-semibold text-sm sm:text-base mb-1">How the Demo Works</h3>
-      <p className="text-xs sm:text-sm mb-5" style={{ color: theme.textMuted }}>
+      <p className="text-xs sm:text-sm mb-5" style={{ color: theme.cardTextMuted }}>
         When a prospect calls your demo number, the AI walks them through an interactive experience
       </p>
 
@@ -1328,7 +1328,7 @@ function HowItWorksCard({ theme }: { theme: any }) {
                 <span className="inline-flex items-center justify-center h-4 w-4 rounded-full text-[10px] font-bold mr-1.5" style={{ backgroundColor: theme.primary20, color: theme.primary }}>{item.step}</span>
                 {item.title}
               </p>
-              <p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>{item.desc}</p>
+              <p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.cardTextMuted }}>{item.desc}</p>
             </div>
           </div>
         ))}
@@ -1336,7 +1336,7 @@ function HowItWorksCard({ theme }: { theme: any }) {
 
       <div className="rounded-xl p-5 sm:p-6" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
         <p className="text-sm sm:text-base font-semibold mb-3" style={{ color: theme.text }}>Why this converts</p>
-        <p className="text-sm sm:text-base leading-relaxed" style={{ color: theme.textMuted }}>
+        <p className="text-sm sm:text-base leading-relaxed" style={{ color: theme.cardTextMuted }}>
           Instead of explaining what an AI receptionist does, prospects <strong style={{ color: theme.text }}>experience it firsthand</strong>.
           They hear the voice quality, feel the natural conversation flow, and see how it handles their specific industry,
           all in a 60-second phone call. The follow-up text makes it effortless to convert from &quot;that was cool&quot; to &quot;I want this for my business.&quot;
