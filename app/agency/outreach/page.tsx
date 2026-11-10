@@ -11,6 +11,7 @@ import { usePlanFeatures } from '@/hooks/usePlanFeatures';
 import LockedFeatureOverlay from '@/components/LockedFeature';
 import { useTheme } from '../../../hooks/useTheme';
 import FirstClientBanner from '@/components/agency/FirstClientBanner';
+import SignatureEditor from '@/components/agency/SignatureEditor';
 
 interface Template {
   id: string;
@@ -48,12 +49,42 @@ export default function OutreachPage() {
   const [plPreviewEmpty, setPlPreviewEmpty] = useState(false);
   const [plError, setPlError] = useState('');
 
+  // White-label email signature appended to email outreach copies.
+  const [signature, setSignature] = useState('');
+  const [signatureSaving, setSignatureSaving] = useState(false);
+  const [signatureSaved, setSignatureSaved] = useState(false);
+
   // Hydrate the opener settings from the agency record once it loads.
   useEffect(() => {
     if (!agency) return;
     setPlEnabled((agency as any).personalized_line_enabled !== false);
     setPlInstructions((agency as any).personalized_line_instructions || '');
+    setSignature((agency as any).outreach_signature || '');
   }, [agency]);
+
+  const saveSignature = async () => {
+    if (!agency) return;
+    setSignatureSaving(true);
+    setSignatureSaved(false);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const res = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ outreach_signature: signature.trim() || null }),
+      });
+      if (res.ok) {
+        await refreshAgency();
+        setSignatureSaved(true);
+        setTimeout(() => setSignatureSaved(false), 2500);
+      }
+    } catch (err) {
+      console.error('Failed to save email signature:', err);
+    } finally {
+      setSignatureSaving(false);
+    }
+  };
 
   const savePersonalizedLine = async (next?: { enabled?: boolean; instructions?: string }) => {
     if (!agency) return;
@@ -511,8 +542,10 @@ export default function OutreachPage() {
         <ChevronRight className="h-5 w-5 flex-shrink-0" style={{ color: theme.cardTextMuted }} />
       </Link>
 
+      {/* AI outreach tools: personalized opener + email signature, side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start mb-6 sm:mb-8">
       {/* AI Personalized Opener */}
-      <div className="rounded-xl p-5 sm:p-6 mb-6 sm:mb-8" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+      <div className="rounded-xl p-5 sm:p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex items-start gap-3 min-w-0">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>
@@ -616,6 +649,54 @@ export default function OutreachPage() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Email Signature */}
+      <div className="rounded-xl p-5 sm:p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+        <div className="flex items-start gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>
+            <Mail className="h-4 w-4" style={{ color: theme.primary }} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold" style={{ color: theme.text }}>Email Signature</p>
+            <p className="mt-1 text-xs leading-relaxed" style={{ color: theme.cardTextMuted }}>
+              Added to the bottom of every email you copy from a template, under your own name and brand. Add a logo, links, and formatting, it pastes into Gmail or Outlook with its styling intact. Nothing from the platform shows. SMS and call scripts are not touched.
+            </p>
+            <div className="mt-3">
+              <SignatureEditor
+                valueHtml={signature}
+                onChange={setSignature}
+                onBlurSave={saveSignature}
+                logoUrl={(agency as any)?.logo_url}
+                t={{ text: theme.text, muted: theme.cardTextMuted, card: theme.card, border: theme.border, input: theme.input, inputBorder: theme.inputBorder, primary: theme.primary, primary15: theme.primary15 }}
+                mergeFields={[
+                  { token: '{agency_owner_name}', label: 'Name' },
+                  { token: '{agency_name}', label: 'Business' },
+                  { token: '{agency_phone}', label: 'Phone' },
+                  { token: '{agency_email}', label: 'Email' },
+                  { token: '{signup_link}', label: 'Signup link' },
+                ]}
+              />
+            </div>
+            <p className="mt-2 text-[11px] leading-relaxed" style={{ color: theme.cardTextMuted }}>
+              The insert chips fill in per send. Leave it empty for no signature. To place it mid-email instead of the end, put <code style={{ color: theme.primary }}>{'{agency_signature}'}</code> in the template.
+            </p>
+            <div className="mt-2 flex items-center gap-3 min-h-[20px]">
+              <button
+                type="button"
+                onClick={saveSignature}
+                disabled={signatureSaving}
+                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
+                style={{ backgroundColor: theme.primary15, color: theme.primary, opacity: signatureSaving ? 0.6 : 1 }}
+              >
+                {signatureSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                {signatureSaving ? 'Saving' : 'Save Signature'}
+              </button>
+              {signatureSaved && <span className="text-xs" style={{ color: theme.primary }}>Saved</span>}
+            </div>
+          </div>
+        </div>
+      </div>
       </div>
 
       {/* Quick Links */}

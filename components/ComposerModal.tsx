@@ -112,6 +112,11 @@ export default function ComposerModal({
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
+  // Resolved white-label email signature from the compose endpoint. HTML powers
+  // a rich clipboard copy (logo + formatting survive the paste into Gmail); the
+  // text version is already appended to `body` for plain paste + logging.
+  const [signatureHtml, setSignatureHtml] = useState('');
+  const [signatureText, setSignatureText] = useState('');
   const [loading, setLoading] = useState(false);
   const [composing, setComposing] = useState(false);
   const [copied, setCopied] = useState<'none' | 'subject' | 'body' | 'all' | 'recipient' | 'note'>('none');
@@ -317,6 +322,8 @@ export default function ComposerModal({
       const result = composeDemoMessage(templateId, lead, agencyName);
       setSubject(result.subject);
       setBody(result.body);
+      setSignatureHtml('');
+      setSignatureText('');
       // For connect stage, populate the connection note instead
       if (type === 'linkedin' && countsRef.current.linkedin === 0) {
         setConnectionNote(result.body);
@@ -347,6 +354,8 @@ export default function ComposerModal({
         const data = await response.json();
         setSubject(data.subject || '');
         setBody(data.body || '');
+        setSignatureHtml(data.signatureHtml || '');
+        setSignatureText(data.signatureText || '');
         // For connect stage, populate the connection note from template body
         if (type === 'linkedin' && countsRef.current.linkedin === 0) {
           setConnectionNote(data.body || '');
@@ -375,8 +384,42 @@ export default function ComposerModal({
     setTimeout(() => setCopied('none'), 2000);
   };
 
+  // Escape + line-break plain text into safe HTML for the rich clipboard.
+  const textToHtml = (t: string) => t
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\r\n|\r|\n/g, '<br>');
+
+  // Write BOTH text/html and text/plain so email clients that keep HTML (Gmail,
+  // Outlook) render the signature with its logo/formatting, while plain-text
+  // clients still get a clean version. Falls back to plain if the Clipboard API
+  // can't write rich content.
+  const richCopy = async (plain: string, html: string) => {
+    try {
+      if (typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
+        await navigator.clipboard.write([new ClipboardItem({
+          'text/html': new Blob([html], { type: 'text/html' }),
+          'text/plain': new Blob([plain], { type: 'text/plain' }),
+        })]);
+        return;
+      }
+    } catch { /* fall through to plain */ }
+    await navigator.clipboard.writeText(plain);
+  };
+
   const handleCopyBody = async () => {
-    await navigator.clipboard.writeText(body);
+    if (type === 'email' && signatureHtml) {
+      // Rebuild the HTML copy from the body WITHOUT the trailing plain signature
+      // (so the rich signature isn't duplicated). If the user edited the body so
+      // the trailing match is gone, we degrade to copying it as-is.
+      let bodyNoSig = body;
+      if (signatureText && body.endsWith(signatureText)) {
+        bodyNoSig = body.slice(0, body.length - signatureText.length).replace(/\s+$/, '');
+      }
+      const html = `<div>${textToHtml(bodyNoSig)}</div><br>${signatureHtml}`;
+      await richCopy(body, html);
+    } else {
+      await navigator.clipboard.writeText(body);
+    }
     setCopied('body');
     setTimeout(() => setCopied('none'), 2000);
   };
