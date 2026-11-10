@@ -18,6 +18,24 @@ import { type DropdownUI } from '@/components/ui/custom-select';
 import { ICON_SETS, previewIcons } from '@/components/cc/navIcons';
 import { extractPalette } from '@/lib/colorExtraction';
 
+// A momentary backend blip (a cold start, a restart, or a 5xx at the edge)
+// comes back with no CORS header, which the browser reports as a scary CORS
+// error even though CORS is configured correctly. Retrying once on a transient
+// failure lets a save self-heal instead of surfacing that error to the user.
+const TRANSIENT_STATUS = new Set([408, 429, 500, 502, 503, 504]);
+async function fetchWithRetry(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch(input, init);
+      if (res.ok || !TRANSIENT_STATUS.has(res.status) || attempt === 1) return res;
+    } catch (err) {
+      if (attempt === 1) throw err;
+    }
+    await new Promise((r) => setTimeout(r, 1200));
+  }
+  return fetch(input, init);
+}
+
 interface ColorField { key: keyof BrandingOverrides; label: string; description: string; group: 'sidebar' | 'page' | 'cards' | 'text' | 'buttons'; icon: typeof PanelLeft; }
 
 const COLOR_FIELDS: ColorField[] = [
@@ -245,7 +263,7 @@ export default function BrandingPage() {
     try {
       const palette = await extractPalette(logoSrc).catch(() => null);
       const token = localStorage.getItem('auth_token');
-      const r = await fetch(`${backendUrl}/api/agency/${agency.id}/branding/analyze-logo`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ logo: logoSrc, palette, name: agency?.name || undefined }) });
+      const r = await fetchWithRetry(`${backendUrl}/api/agency/${agency.id}/branding/analyze-logo`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ logo: logoSrc, palette, name: agency?.name || undefined }) });
       const d = await r.json().catch(() => ({}));
       if (r.ok && d.success && d.kit) {
         const k = d.kit;
@@ -286,11 +304,11 @@ export default function BrandingPage() {
   const dirty = hasChanges || fontsChanged || marketingFontsChanged || kitChanged || logoScaleChanged || brandColorsChanged;
 
   const handleShuffle = () => { const isDark = mode === 'dark'; let idx = Math.floor(Math.random() * PALETTE_RECIPES.length); if (PALETTE_RECIPES.length > 1) { while (idx === lastShuffleIndex) { idx = Math.floor(Math.random() * PALETTE_RECIPES.length); } } setLastShuffleIndex(idx); const recipe = PALETTE_RECIPES[idx]; const result = recipe.build(primaryColor, secondaryColor, accentColor, isDark); setOverrides(result); setSaved(false); setError(null); };
-  const handleThemeSwitch = async (newMode: 'light' | 'dark') => { if (mode === newMode || !agency) return; setSwitchingTheme(true); setError(null); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ website_theme: newMode }) }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to update theme'); } await refreshAgency(); } catch (err) { setError(err instanceof Error ? err.message : 'Failed to update theme mode'); } finally { setSwitchingTheme(false); } };
+  const handleThemeSwitch = async (newMode: 'light' | 'dark') => { if (mode === newMode || !agency) return; setSwitchingTheme(true); setError(null); try { const token = localStorage.getItem('auth_token'); const response = await fetchWithRetry(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ website_theme: newMode }) }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to update theme'); } await refreshAgency(); } catch (err) { setError(err instanceof Error ? err.message : 'Failed to update theme mode'); } finally { setSwitchingTheme(false); } };
   const handleChange = (key: keyof BrandingOverrides, value: string) => { setOverrides(prev => ({ ...prev, [key]: value })); setSaved(false); setError(null); };
   const handleClear = (key: keyof BrandingOverrides) => { setOverrides(prev => { const next = { ...prev }; delete next[key]; return next; }); setSaved(false); setError(null); };
   const handleResetAll = () => { setOverrides({}); setSaved(false); setError(null); };
-  const handleSave = async () => { if (!agency) return; setSaving(true); setError(null); setSaved(false); try { const token = localStorage.getItem('auth_token'); const cleanOverrides: BrandingOverrides = {}; for (const field of COLOR_FIELDS) { const val = overrides[field.key]; if (isValidHex(val)) { cleanOverrides[field.key] = val; } } if (logoScale > 1) { (cleanOverrides as any).logo_scale = Math.round(logoScale * 100) / 100; } const payload = { branding_overrides: Object.keys(cleanOverrides).length > 0 ? cleanOverrides : null, display_font: displayFont || null, body_font: bodyFont || null, marketing_display_font: effMarketingDisplay, marketing_body_font: effMarketingBody, icon_style: iconStyle || null, brand_kit: brandKit || null, primary_color: isValidHex(brandPrimary) ? brandPrimary : (agency.primary_color || '#00a19b'), secondary_color: isValidHex(brandSecondary) ? brandSecondary : (agency.secondary_color || '#007e77'), accent_color: isValidHex(brandAccent) ? brandAccent : (agency.accent_color || '#01f5d1') }; const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload) }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to save branding'); } await refreshAgency(); setSaved(true); setTimeout(() => setSaved(false), 3000); } catch (err) { setError(err instanceof Error ? err.message : 'Failed to save'); } finally { setSaving(false); } };
+  const handleSave = async () => { if (!agency) return; setSaving(true); setError(null); setSaved(false); try { const token = localStorage.getItem('auth_token'); const cleanOverrides: BrandingOverrides = {}; for (const field of COLOR_FIELDS) { const val = overrides[field.key]; if (isValidHex(val)) { cleanOverrides[field.key] = val; } } if (logoScale > 1) { (cleanOverrides as any).logo_scale = Math.round(logoScale * 100) / 100; } const payload = { branding_overrides: Object.keys(cleanOverrides).length > 0 ? cleanOverrides : null, display_font: displayFont || null, body_font: bodyFont || null, marketing_display_font: effMarketingDisplay, marketing_body_font: effMarketingBody, icon_style: iconStyle || null, brand_kit: brandKit || null, primary_color: isValidHex(brandPrimary) ? brandPrimary : (agency.primary_color || '#00a19b'), secondary_color: isValidHex(brandSecondary) ? brandSecondary : (agency.secondary_color || '#007e77'), accent_color: isValidHex(brandAccent) ? brandAccent : (agency.accent_color || '#01f5d1') }; const response = await fetchWithRetry(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload) }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to save branding'); } await refreshAgency(); setSaved(true); setTimeout(() => setSaved(false), 3000); } catch (err) { setError(err instanceof Error ? err.message : 'Failed to save'); } finally { setSaving(false); } };
 
   // ── LOCKED FOR FREE PLAN ────────────────────────────────────────────
   if (!hasWhiteLabel) {

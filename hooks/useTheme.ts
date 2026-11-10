@@ -246,10 +246,12 @@ function buildDarkTheme(brandPrimary: string, overrides?: BrandingOverrides): Th
   const navHover = hasNavBgOverride ? autoNavHover(navBg) : 'rgba(255,255,255,0.04)';
 
   // Active nav item ("the highlight"). Agencies can set nav_accent to color the
-  // selected tab independently of the brand primary; without it, primary is used.
-  // An explicit accent is always honored (they see it in the preview); the auto
-  // fallback only kicks in when no accent is set and primary is low-contrast.
-  const navAccent = isValidHex(overrides?.nav_accent) ? overrides!.nav_accent! : primary;
+  // selected tab independently; without it, the brand color is used, NOT the
+  // button color (button_bg). Changing the button color must not move the nav
+  // highlight. An explicit accent is always honored (they see it in the preview);
+  // the auto fallback only kicks in when no accent is set and the brand color is
+  // low-contrast on the nav.
+  const navAccent = isValidHex(overrides?.nav_accent) ? overrides!.nav_accent! : brandPrimary;
   const accentVisibleOnNav = hasSufficientContrast(navAccent, navBg);
   const activeItemColor = accentVisibleOnNav ? navAccent : (isValidHex(overrides?.nav_accent) ? navAccent : '#ffffff');
   // The active-item highlight must stay visible even when the brand accent is
@@ -363,10 +365,11 @@ function buildLightTheme(brandPrimary: string, overrides?: BrandingOverrides): T
   const navBorder = hasNavBgOverride ? autoNavBorder(navBg) : baseBorder;
   const navHover = hasNavBgOverride ? autoNavHover(navBg) : 'rgba(0,0,0,0.02)';
 
-  // Active nav item. nav_accent colors the selected tab independently of primary.
-  // An explicit accent is honored; otherwise primary is used, falling back to the
-  // nav's own readable text when primary is low-contrast (never white-on-white).
-  const navAccent = isValidHex(overrides?.nav_accent) ? overrides!.nav_accent! : primary;
+  // Active nav item. nav_accent colors the selected tab independently. An explicit
+  // accent is honored; otherwise the brand color is used, NOT the button color
+  // (button_bg), falling back to the nav's own readable text when the brand color
+  // is low-contrast (never white-on-white).
+  const navAccent = isValidHex(overrides?.nav_accent) ? overrides!.nav_accent! : brandPrimary;
   const accentVisibleOnNav = hasSufficientContrast(navAccent, navBg);
   const activeItemColor = accentVisibleOnNav ? navAccent : (isValidHex(overrides?.nav_accent) ? navAccent : navText);
   // The active-item highlight must stay visible even when the brand accent is
@@ -451,14 +454,14 @@ export function useTheme(): Theme {
   // ── Determine mode ──────────────────────────────────────────────────
   // When agency data is loaded, use agency.website_theme (authoritative).
   // When agency is null (still loading), fall back to localStorage hint
-  // so the FIRST render uses the correct mode — prevents full-page dark
+  // so the FIRST render uses the correct mode, prevents full-page dark
   // flash on light-mode refresh.
   let mode: 'dark' | 'light';
   if (agency) {
-    // Agency loaded — use the real value
+    // Agency loaded, use the real value
     mode = agency.website_theme === 'light' ? 'light' : 'dark';
   } else {
-    // Agency not loaded yet — read localStorage hint
+    // Agency not loaded yet, read localStorage hint
     let hint: string | null = null;
     if (typeof window !== 'undefined') {
       try { hint = localStorage.getItem('voiceai_ui_theme'); } catch {}
