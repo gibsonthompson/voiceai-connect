@@ -16,6 +16,7 @@ import { useTheme } from '../../../../hooks/useTheme';
 import { CustomSelect } from '@/components/ui/custom-select';
 import { getDemoLeadDetail } from '../../demoData';
 import ActivityLog from '../../../../components/ActivityLog';
+import LeadBusinessProfile from '../../../../components/agency/LeadBusinessProfile';
 import ComposerModal from '../../../../components/ComposerModal';
 import CallScriptModal from '../../../../components/CallScriptModal';
 
@@ -682,8 +683,11 @@ export default function LeadDetailPage() {
             </div>
           </div>
 
+          {/* Live Google business profile: photos + outreach context */}
+          {agency?.id && leadId && <LeadBusinessProfile agencyId={agency.id} leadId={leadId} theme={theme} />}
+
           {/* Contact Information */}
-          <div 
+          <div
             className="rounded-xl p-4 sm:p-6"
             style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
           >
