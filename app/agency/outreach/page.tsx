@@ -13,6 +13,9 @@ import { useTheme } from '../../../hooks/useTheme';
 import FirstClientBanner from '@/components/agency/FirstClientBanner';
 import SignatureEditor from '@/components/agency/SignatureEditor';
 import { buildDefaultSignatureHtml } from '@/lib/default-signature';
+import { formatPhoneNumber } from '@/lib/utils';
+
+const PLATFORM_DOMAIN = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
 
 interface Template {
   id: string;
@@ -30,7 +33,7 @@ interface Template {
 }
 
 export default function OutreachPage() {
-  const { agency, loading: contextLoading, refreshAgency } = useAgency();
+  const { agency, user, loading: contextLoading, refreshAgency } = useAgency();
   const theme = useTheme();
   const { canUseLeadFinder } = usePlanFeatures();
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -56,6 +59,26 @@ export default function OutreachPage() {
   const [signatureSaved, setSignatureSaved] = useState(false);
 
   const sigHydrated = useRef(false);
+  // Build the branded default signature with this agency's own real info (name,
+  // website, demo line) so the editor shows actual branding, not {placeholders}.
+  // Any field the record is missing stays a token and the backend fills it on send.
+  const brandedDefaultSignature = () => {
+    const a = agency as any;
+    const website = a?.marketing_domain || (a?.slug ? `${a.slug}.${PLATFORM_DOMAIN}` : null);
+    // Owner name comes from the logged-in user only when they are the owner; for
+    // a staff member it stays a token so the backend fills in the real owner on
+    // send (never a staff member's name).
+    const ownerName = user?.role === 'agency_owner'
+      ? `${user.first_name || ''} ${user.last_name || ''}`.trim()
+      : null;
+    return buildDefaultSignatureHtml({
+      logoUrl: a?.logo_url,
+      ownerName,
+      agencyName: a?.name,
+      website,
+      demoNumber: a?.demo_phone_number ? formatPhoneNumber(a.demo_phone_number) : null,
+    });
+  };
   // Hydrate the opener settings from the agency record once it loads. The
   // signature prefills with a branded default (logo, name, website, demo line)
   // when the agency has not set their own, and is hydrated once so background
@@ -67,7 +90,7 @@ export default function OutreachPage() {
     if (!sigHydrated.current) {
       sigHydrated.current = true;
       const stored = (agency as any).outreach_signature;
-      setSignature(stored && String(stored).trim() ? stored : buildDefaultSignatureHtml((agency as any).logo_url, !!(agency as any).demo_phone_number));
+      setSignature(stored && String(stored).trim() ? stored : brandedDefaultSignature());
     }
   }, [agency]);
 
@@ -704,7 +727,7 @@ export default function OutreachPage() {
               </button>
               <button
                 type="button"
-                onClick={() => { const def = buildDefaultSignatureHtml((agency as any)?.logo_url, !!(agency as any)?.demo_phone_number); setSignature(def); saveSignature(def); }}
+                onClick={() => { const def = brandedDefaultSignature(); setSignature(def); saveSignature(def); }}
                 disabled={signatureSaving}
                 className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
                 style={{ color: theme.cardTextMuted, border: `1px solid ${theme.border}` }}
