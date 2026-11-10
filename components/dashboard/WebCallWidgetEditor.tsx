@@ -10,7 +10,7 @@
 
 import React, { useState } from 'react';
 import {
-  InlineText, SelectableRegion, PropertyPanel, ColorField, ToggleField, SegmentField, ReorderField, EditorTheme,
+  InlineText, SelectableRegion, PropertyPanel, ColorField, ToggleField, SegmentField, ReorderField, EditorTheme, BrandColors,
 } from '@/components/dashboard/inline-editor';
 import WebCallShell, { WebCallRegion } from '@/components/widgets/WebCallShell';
 import {
@@ -37,6 +37,7 @@ export interface WebCallWidgetEditorProps {
   agencyName?: string;
   fonts?: { display?: string | null; body?: string | null };
   editorTheme: EditorTheme;
+  brand?: BrandColors;
   disabled?: boolean;
 }
 
@@ -76,7 +77,7 @@ export default function WebCallWidgetEditor(props: WebCallWidgetEditorProps) {
 
       {/* Property panel for the selected part */}
       <PropertyPanel title={selected ? regionLabel(selected) : 'Widget style'} theme={t} onClose={selected ? () => setSelected(null) : undefined}>
-        {renderControls(selected, style, palette, set, t)}
+        {renderControls(selected, style, palette, set, t, props.brand)}
       </PropertyPanel>
 
       <style>{`@media (min-width: 900px){ .wce-grid{ grid-template-columns: minmax(0,1fr) 300px !important; align-items: start; } }`}</style>
@@ -102,6 +103,7 @@ function renderControls(
   palette: ReturnType<typeof resolveWebCallPalette>,
   set: (patch: Partial<WebCallStyle>) => void,
   t: EditorTheme,
+  brand?: BrandColors,
 ): React.ReactNode {
   const orderItems = palette.order.map((b: WebCallBlock) => ({ id: b, label: WEBCALL_BLOCK_LABELS[b] }));
 
@@ -109,29 +111,29 @@ function renderControls(
     case 'icon':
       return (<>
         <ToggleField label="Show icon" checked={palette.showIcon} onChange={(v) => set({ showIcon: v })} theme={t} />
-        <ColorField label="Accent (icon + ring)" value={style.accentColor} fallback={palette.accent} onChange={(v) => set({ accentColor: v })} theme={t} />
+        <ColorField label="Accent (icon + ring)" value={style.accentColor} fallback={palette.accent} onChange={(v) => set({ accentColor: v })} theme={t} brand={brand} />
       </>);
     case 'title':
-      return <ColorField label="Title color" value={style.headingColor} fallback={palette.heading} onChange={(v) => set({ headingColor: v })} theme={t} />;
+      return <ColorField label="Title color" value={style.headingColor} fallback={palette.heading} onChange={(v) => set({ headingColor: v })} theme={t} brand={brand} />;
     case 'subtitle':
-      return <ColorField label="Subtitle color" value={style.subTextColor} fallback={palette.muted} onChange={(v) => set({ subTextColor: v })} theme={t} />;
+      return <ColorField label="Subtitle color" value={style.subTextColor} fallback={palette.muted} onChange={(v) => set({ subTextColor: v })} theme={t} brand={brand} />;
     case 'button':
       return (<>
-        <ColorField label="Button color" value={style.buttonColor} fallback={palette.buttonColor} onChange={(v) => set({ buttonColor: v })} theme={t} />
-        <ColorField label="Button icon color" value={style.buttonIconColor} fallback={palette.buttonIcon} onChange={(v) => set({ buttonIconColor: v })} theme={t} />
+        <ColorField label="Button color" value={style.buttonColor} fallback={palette.buttonColor} onChange={(v) => set({ buttonColor: v })} theme={t} brand={brand} />
+        <ColorField label="Button icon color" value={style.buttonIconColor} fallback={palette.buttonIcon} onChange={(v) => set({ buttonIconColor: v })} theme={t} brand={brand} />
       </>);
     case 'phone':
       return (<>
         <ToggleField label="Show phone number" checked={palette.showPhone} onChange={(v) => set({ showPhone: v })} theme={t} />
-        <ColorField label="Number color" value={style.headingColor} fallback={palette.heading} onChange={(v) => set({ headingColor: v })} theme={t} />
+        <ColorField label="Number color" value={style.headingColor} fallback={palette.heading} onChange={(v) => set({ headingColor: v })} theme={t} brand={brand} />
       </>);
     case 'cta':
-      return <ColorField label="Prompt color" value={style.subTextColor} fallback={palette.muted} onChange={(v) => set({ subTextColor: v })} theme={t} />;
+      return <ColorField label="Prompt color" value={style.subTextColor} fallback={palette.muted} onChange={(v) => set({ subTextColor: v })} theme={t} brand={brand} />;
     case 'card':
     default:
       return (<>
         <SegmentField label="Theme" value={style.theme || 'auto'} options={[{ value: 'auto', label: 'Auto' }, { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }]} onChange={(v) => set({ theme: v })} theme={t} />
-        <ColorField label="Card background" value={style.cardBg} fallback={palette.cardBg} onChange={(v) => set({ cardBg: v })} theme={t} />
+        <ColorField label="Card background" value={style.cardBg} fallback={palette.cardBg} onChange={(v) => set({ cardBg: v })} theme={t} brand={brand} />
         <SegmentField label="Corners" value={style.radius || 'md'} options={[{ value: 'sm', label: 'Sharp' }, { value: 'md', label: 'Round' }, { value: 'lg', label: 'Soft' }]} onChange={(v) => set({ radius: v })} theme={t} />
         <SegmentField label="Size" value={style.size || 'md'} options={[{ value: 'sm', label: 'S' }, { value: 'md', label: 'M' }, { value: 'lg', label: 'L' }]} onChange={(v) => set({ size: v })} theme={t} />
         <ReorderField label="Body order (drag to reorder)" items={orderItems} onChange={(ids) => set({ order: ids as WebCallBlock[] })} theme={t} />

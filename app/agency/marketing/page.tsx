@@ -187,6 +187,10 @@ export default function MarketingWebsitePage() {
   const [webcallStyle, setWebcallStyle] = useState<WebCallStyle>({});
   const [webcallStyleSaved, setWebcallStyleSaved] = useState(false);
   const webcallStyleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Hydrate the editor's style ONCE per load. The background save calls
+  // refreshAgency to keep marketing_config fresh for other savers, but we must
+  // not let that reset the editor mid-edit (that was the "snaps back" bug).
+  const webcallHydrated = useRef(false);
   // Colors
   const [primaryColor, setPrimaryColor] = useState('#00a19b');
   const [secondaryColor, setSecondaryColor] = useState('#007e77');
@@ -319,8 +323,16 @@ export default function MarketingWebsitePage() {
 
   useEffect(() => {
     if (demoMode) { setTagline('AI-Powered Phone Answering'); setHeadline('Never Miss Another Call'); setSubheadline('Our AI receptionist answers calls 24/7.'); setCustomDomain('voiceai.youragency.com'); setDomainStatus('verified'); setPrimaryColor(agency?.primary_color || '#00a19b'); setSecondaryColor(agency?.secondary_color || '#007e77'); setAccentColor(agency?.accent_color || '#01f5d1'); setSelectedTemplate(agency?.marketing_template || 'classic'); setCustomNavLinks([{ label: 'Home', url: 'https://yourmainsite.com' }]); setDisplayCurrency(''); setGtmId(''); setFbPixelId(''); setGoogleAnalyticsId(''); setCustomHeadScripts(''); setCustomBodyScripts(''); setOgTitle(''); setOgDescription(''); setOgImageUrl(''); setPlans([]); return; }
-    if (agency) { if (agency.marketing_domain) { setCustomDomain(agency.marketing_domain); setDomainStatus(agency.domain_verified ? 'verified' : 'pending'); } setTagline(agency.company_tagline || ''); setHeadline(agency.website_headline || ''); setSubheadline(agency.website_subheadline || ''); setSignupHeadline((agency as any).signup_headline || ''); setSignupSubtitle((agency as any).signup_subtitle || ''); setWebcallTitle((agency as any).webcall_title || ''); setWebcallSubtitle((agency as any).webcall_subtitle || ''); setWebcallCta((agency as any).webcall_cta || ''); setWebcallStyle((((agency as any).marketing_config || {}).webcall || {}) as WebCallStyle); setSignupLogoAlign((agency as any).signup_logo_align === 'center' || (agency as any).signup_logo_align === 'right' ? (agency as any).signup_logo_align : 'left'); setPrimaryColor(agency.primary_color || '#00a19b'); setSecondaryColor(agency.secondary_color || '#007e77'); setAccentColor(agency.accent_color || '#01f5d1'); setSelectedTemplate(agency.marketing_template || 'classic'); setCustomNavLinks(Array.isArray((agency as any).custom_nav_links) ? (agency as any).custom_nav_links : []); setDisplayCurrency((agency as any).display_currency || ''); setGtmId(agency.gtm_id || ''); setFbPixelId(agency.fb_pixel_id || ''); setGoogleAnalyticsId(agency.google_analytics_id || ''); setCustomHeadScripts(agency.custom_head_scripts || ''); setCustomBodyScripts(agency.custom_body_scripts || ''); setOgTitle(agency.og_title || ''); setOgDescription(agency.og_description || ''); setOgImageUrl(agency.og_image_url || ''); setPlans(Array.isArray((agency as any).plans) ? (agency as any).plans : []); }
+    if (agency) { if (agency.marketing_domain) { setCustomDomain(agency.marketing_domain); setDomainStatus(agency.domain_verified ? 'verified' : 'pending'); } setTagline(agency.company_tagline || ''); setHeadline(agency.website_headline || ''); setSubheadline(agency.website_subheadline || ''); setSignupHeadline((agency as any).signup_headline || ''); setSignupSubtitle((agency as any).signup_subtitle || ''); setWebcallTitle((agency as any).webcall_title || ''); setWebcallSubtitle((agency as any).webcall_subtitle || ''); setWebcallCta((agency as any).webcall_cta || ''); setSignupLogoAlign((agency as any).signup_logo_align === 'center' || (agency as any).signup_logo_align === 'right' ? (agency as any).signup_logo_align : 'left'); setPrimaryColor(agency.primary_color || '#00a19b'); setSecondaryColor(agency.secondary_color || '#007e77'); setAccentColor(agency.accent_color || '#01f5d1'); setSelectedTemplate(agency.marketing_template || 'classic'); setCustomNavLinks(Array.isArray((agency as any).custom_nav_links) ? (agency as any).custom_nav_links : []); setDisplayCurrency((agency as any).display_currency || ''); setGtmId(agency.gtm_id || ''); setFbPixelId(agency.fb_pixel_id || ''); setGoogleAnalyticsId(agency.google_analytics_id || ''); setCustomHeadScripts(agency.custom_head_scripts || ''); setCustomBodyScripts(agency.custom_body_scripts || ''); setOgTitle(agency.og_title || ''); setOgDescription(agency.og_description || ''); setOgImageUrl(agency.og_image_url || ''); setPlans(Array.isArray((agency as any).plans) ? (agency as any).plans : []); }
   }, [agency, demoMode]);
+
+  // Hydrate the web-call widget style ONCE, so background saves + refreshAgency
+  // don't clobber the editor while the agency is actively styling it.
+  useEffect(() => {
+    if (!agency || webcallHydrated.current) return;
+    webcallHydrated.current = true;
+    setWebcallStyle((((agency as any).marketing_config || {}).webcall || {}) as WebCallStyle);
+  }, [agency]);
 
   // Load this agency's clients for the web-call "test client" option.
   useEffect(() => {
@@ -629,6 +641,7 @@ export default function MarketingWebsitePage() {
                 phoneNumber={(agency as any)?.demo_phone_number || ''}
                 agencyName={agency?.name || ''}
                 editorTheme={webcallEditorTheme}
+                brand={{ primary: agencyPrimaryColor, secondary: secondaryColor, accent: accentColor }}
                 disabled={demoMode}
               />
             </div>

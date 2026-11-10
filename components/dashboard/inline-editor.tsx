@@ -13,8 +13,9 @@
 // The composing editor owns the data + selection state; these are controlled.
 // ============================================================================
 
-import React, { useEffect, useRef, useState } from 'react';
-import { RotateCcw, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
+import { RotateCcw, GripVertical, ChevronUp, ChevronDown, Shuffle } from 'lucide-react';
 
 export interface EditorTheme {
   text: string;
@@ -27,6 +28,19 @@ export interface EditorTheme {
   primary: string;
   isDark: boolean;
 }
+
+export interface BrandColors { primary: string; secondary: string; accent: string; }
+
+// Shared swatch palette, matched to the Branding page picker: neutrals, brights,
+// light tints, mids, darks. Nine per row.
+const PALETTE: string[] = [
+  '#ffffff', '#f3f4f6', '#d1d5db', '#9ca3af', '#6b7280', '#4b5563', '#374151', '#111827', '#000000',
+  '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e', '#10b981', '#14b8a6', '#06b6d4',
+  '#0ea5e9', '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e', '#78716c',
+  '#fecaca', '#fed7aa', '#fde68a', '#fef08a', '#d9f99d', '#bbf7d0', '#a7f3d0', '#99f6e4', '#a5f3fc',
+  '#bae6fd', '#bfdbfe', '#c7d2fe', '#ddd6fe', '#e9d5ff', '#f5d0fe', '#fbcfe8', '#fecdd2', '#e7e5e4',
+  '#991b1b', '#9a3412', '#92400e', '#854d0e', '#3f6212', '#166534', '#065f46', '#115e59', '#155e75',
+];
 
 // ------------------------------------------------------------------ InlineText
 export function InlineText({
@@ -153,18 +167,93 @@ function FieldLabel({ children, theme }: { children: React.ReactNode; theme: Edi
   return <label style={{ fontSize: 12, fontWeight: 600, color: theme.text, marginBottom: 6, display: 'block' }}>{children}</label>;
 }
 
+// --------------------------------------------------------------- SwatchPopup
+// Themed color-picker popup (matches the Branding page): a body-level portal so
+// a card's overflow never clips it, brand swatches, shuffle, and a palette grid.
+function SwatchPopup({ value, brand, theme, onPick, onClose, anchorRef }: {
+  value?: string;
+  brand?: BrandColors;
+  theme: EditorTheme;
+  onPick: (hex: string) => void;
+  onClose: () => void;
+  anchorRef: React.RefObject<HTMLButtonElement | null>;
+}) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; up: boolean } | null>(null);
+  const WIDTH = 268;
+
+  const measure = useCallback(() => {
+    const r = anchorRef.current?.getBoundingClientRect();
+    if (!r) return;
+    const gap = 8;
+    const below = window.innerHeight - r.bottom;
+    const up = below < 320 && r.top > below;
+    const left = Math.max(8, Math.min(r.left, window.innerWidth - WIDTH - 8));
+    setPos({ top: up ? r.top - gap : r.bottom + gap, left, up });
+  }, [anchorRef]);
+
+  useEffect(() => {
+    measure();
+    const h = () => measure();
+    window.addEventListener('scroll', h, true);
+    window.addEventListener('resize', h);
+    return () => { window.removeEventListener('scroll', h, true); window.removeEventListener('resize', h); };
+  }, [measure]);
+
+  useEffect(() => {
+    const onDoc = (e: MouseEvent | TouchEvent) => {
+      const t = e.target as Node;
+      if (anchorRef.current?.contains(t) || panelRef.current?.contains(t)) return;
+      onClose();
+    };
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('touchstart', onDoc, { passive: true });
+    return () => { document.removeEventListener('mousedown', onDoc); document.removeEventListener('touchstart', onDoc); };
+  }, [anchorRef, onClose]);
+
+  if (!pos || typeof document === 'undefined') return null;
+  const cur = (value || '').toLowerCase();
+  const brandList = brand ? [{ name: 'Primary', color: brand.primary }, { name: 'Secondary', color: brand.secondary }, { name: 'Accent', color: brand.accent }].filter((b) => b.color) : [];
+  const shuffle = () => onPick(PALETTE[Math.floor(Math.random() * PALETTE.length)]);
+
+  return createPortal(
+    <div ref={panelRef} style={{ position: 'fixed', left: pos.left, width: WIDTH, zIndex: 9999, ...(pos.up ? { bottom: window.innerHeight - pos.top } : { top: pos.top }), backgroundColor: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: 14, boxShadow: '0 12px 34px rgba(0,0,0,0.28)', padding: 12 }}>
+      {brandList.length > 0 && (<>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <span style={{ fontSize: 12, fontWeight: 600, color: theme.text }}>Your brand</span>
+          <button type="button" onClick={shuffle} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 500, borderRadius: 6, padding: '4px 8px', color: theme.muted, border: `1px solid ${theme.border}`, background: 'none', cursor: 'pointer' }}><Shuffle style={{ height: 12, width: 12 }} /> Shuffle</button>
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+          {brandList.map((b) => (
+            <button key={b.name} type="button" onClick={() => onPick(b.color)} title={`${b.name} (${b.color})`} style={{ flex: 1, height: 36, borderRadius: 8, backgroundColor: b.color, border: `2px solid ${cur === b.color.toLowerCase() ? theme.primary : theme.border}`, cursor: 'pointer' }} />
+          ))}
+        </div>
+      </>)}
+      <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6, color: theme.text }}>Colors</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(9, 1fr)', gap: 6 }}>
+        {PALETTE.map((c) => (
+          <button key={c} type="button" onClick={() => onPick(c)} title={c} style={{ width: '100%', aspectRatio: '1 / 1', borderRadius: 6, backgroundColor: c, border: cur === c.toLowerCase() ? `2px solid ${theme.primary}` : `1px solid ${theme.border}`, cursor: 'pointer' }} />
+        ))}
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 // ------------------------------------------------------------------- ColorField
 export function ColorField({
-  label, value, fallback, onChange, theme,
+  label, value, fallback, onChange, theme, brand,
 }: {
   label: string;
   value?: string;            // the override, if any
   fallback: string;          // resolved default when no override
   onChange: (hex: string | undefined) => void;
   theme: EditorTheme;
+  brand?: BrandColors;
 }) {
   const current = value || fallback;
-  const nativeRef = useRef<HTMLInputElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(value || '');
   useEffect(() => { setDraft(value || ''); }, [value]);
   const commitHex = (v: string) => {
@@ -178,18 +267,13 @@ export function ColorField({
       <FieldLabel theme={theme}>{label}</FieldLabel>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <button
+          ref={btnRef}
           type="button"
-          onClick={() => nativeRef.current?.click()}
-          aria-label={`${label} color`}
-          style={{ height: 32, width: 32, flexShrink: 0, borderRadius: 8, border: `1px solid ${theme.inputBorder}`, backgroundColor: current, cursor: 'pointer', position: 'relative' }}
+          onClick={() => setOpen((o) => !o)}
+          aria-label={`Pick ${label}`}
+          style={{ height: 32, width: 32, flexShrink: 0, borderRadius: 8, border: `1px solid ${theme.inputBorder}`, backgroundColor: current, cursor: 'pointer' }}
         />
-        <input
-          ref={nativeRef}
-          type="color"
-          value={/^#[0-9a-f]{6}$/i.test(current) ? current : '#000000'}
-          onChange={(e) => onChange(e.target.value)}
-          style={{ position: 'absolute', width: 0, height: 0, opacity: 0, pointerEvents: 'none' }}
-        />
+        {open && <SwatchPopup value={value} brand={brand} theme={theme} anchorRef={btnRef} onPick={(hex) => { setDraft(hex); onChange(hex); setOpen(false); }} onClose={() => setOpen(false)} />}
         <input
           type="text"
           value={draft}
@@ -197,6 +281,7 @@ export function ColorField({
           onChange={(e) => setDraft(e.target.value)}
           onBlur={(e) => commitHex(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+          spellCheck={false}
           style={{ flex: 1, minWidth: 0, borderRadius: 8, padding: '7px 10px', fontSize: 13, fontFamily: 'ui-monospace, monospace', backgroundColor: theme.inputBg, border: `1px solid ${theme.inputBorder}`, color: theme.inputText }}
         />
         {value && (
