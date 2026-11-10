@@ -176,7 +176,7 @@ function WebcallInner() {
 
   const titleText = config?.title || `Talk to ${config?.label || 'Our AI Receptionist'}`;
   const subtitleText = config?.subtitle || 'AI receptionist';
-  const ctaText = config?.cta || 'Tap to call and talk to the AI. Allow your mic when asked.';
+  const ctaText = config?.cta || 'Talk to the AI right in your browser.\nAllow your mic when asked.';
 
   return (
     <div

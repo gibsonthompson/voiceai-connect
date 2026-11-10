@@ -73,7 +73,7 @@ export default function WebCallWidgetEditor(props: WebCallWidgetEditorProps) {
           selectable={selectable}
           title={<InlineText value={props.title} placeholder={`Talk to ${props.agencyName || 'your business'}`} maxLength={60} onCommit={(v) => props.onCommitText({ title: v })} ariaLabel="Widget title" style={{ color: palette.heading }} />}
           subtitle={<InlineText value={props.subtitle} placeholder="AI receptionist" maxLength={60} onCommit={(v) => props.onCommitText({ subtitle: v })} ariaLabel="Widget subtitle" style={{ color: palette.muted }} />}
-          cta={<InlineText value={props.cta} placeholder="Tap to call and talk to the AI. Allow your mic when asked." maxLength={160} multiline onCommit={(v) => props.onCommitText({ cta: v })} ariaLabel="Widget prompt" style={{ color: palette.muted }} />}
+          cta={<InlineText value={props.cta} placeholder={'Talk to the AI right in your browser.\nAllow your mic when asked.'} maxLength={160} multiline onCommit={(v) => props.onCommitText({ cta: v })} ariaLabel="Widget prompt" style={{ color: palette.muted }} />}
           phone={<InlineText value={style.phoneText || ''} placeholder={phoneDisplay} maxLength={24} onCommit={(v) => set({ phoneText: v })} ariaLabel="Phone number" style={{ color: palette.heading }} />}
         />
       </div>

@@ -445,7 +445,7 @@ function AiWebCall({ config }: { config: MarketingConfig }) {
   if (!agencyId) return null;
   const title = (wc.title || '').trim() || `Talk to ${config.branding.name}`;
   const subtitle = (wc.subtitle || '').trim() || 'Hear the AI receptionist answer, live, right now.';
-  const cta = (wc.cta || '').trim() || 'Tap to call and talk to the AI. Allow your mic when asked.';
+  const cta = (wc.cta || '').trim() || 'Talk to the AI right in your browser.\nAllow your mic when asked.';
   const src = `/webcall?embed=true&agency=${encodeURIComponent(agencyId)}&mode=demo`;
   return (
     <section className="ed-steps" id="ai-web-call">
@@ -455,7 +455,7 @@ function AiWebCall({ config }: { config: MarketingConfig }) {
           <div style={{ borderRadius: '1.25rem', overflow: 'hidden', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 24px 60px rgba(0,0,0,0.14)', background: '#f6f7f9' }}>
             <iframe title="AI web call" src={src} loading="lazy" allow="microphone" style={{ display: 'block', width: '100%', height: '32rem', border: 0 }} />
           </div>
-          <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.9rem', opacity: 0.6 }}>{cta}</p>
+          <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.9rem', opacity: 0.6, whiteSpace: 'pre-line' }}>{cta}</p>
         </div>
       </div>
     </section>
