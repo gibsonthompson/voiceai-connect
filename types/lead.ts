@@ -38,6 +38,9 @@ export interface Lead {
   website?: string | null;
   notes?: string | null;
   linkedin_url?: string | null;
+  // Google Place id (from the Maps lead finder). When present, the lead can show
+  // its live Google business photo as a thumbnail in the preview.
+  place_id?: string | null;
   converted_client_id?: string | null;
   updated_at?: string;
   last_outreach_at?: string | null;
