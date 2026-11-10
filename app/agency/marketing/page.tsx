@@ -95,9 +95,9 @@ function TemplateThumb({ id, bg, accent, ink }: { id: string; bg: string; accent
 // Which section toggles each template actually renders. The Sections tab filters
 // to these so an agency never sees a toggle that does nothing on its template.
 const TEMPLATE_SECTIONS: Record<string, string[]> = {
-  classic: ['showProblemSolution', 'showHowItWorks', 'showFeatures', 'showCommandCenter', 'showROICalculator', 'showPricing', 'showFAQ', 'showFinalCTA', 'showIndustries', 'showComparison'],
-  beside: ['showProofStrip', 'showProblemSolution', 'showHowItWorks', 'showFeatures', 'showCommandCenter', 'showROICalculator', 'showPricing', 'showFAQ', 'showFinalCTA', 'showIndustries', 'showComparison'],
-  editorial: ['showFeatures', 'showHowItWorks', 'showIndustries', 'showTestimonials', 'showPricing', 'showFAQ', 'showFinalCTA'],
+  classic: ['showProblemSolution', 'showHowItWorks', 'showFeatures', 'showCommandCenter', 'showROICalculator', 'showPricing', 'showFAQ', 'showFinalCTA', 'showIndustries', 'showComparison', 'showAiWebCall'],
+  beside: ['showProofStrip', 'showProblemSolution', 'showHowItWorks', 'showFeatures', 'showCommandCenter', 'showROICalculator', 'showPricing', 'showFAQ', 'showFinalCTA', 'showIndustries', 'showComparison', 'showAiWebCall'],
+  editorial: ['showFeatures', 'showHowItWorks', 'showIndustries', 'showTestimonials', 'showPricing', 'showFAQ', 'showFinalCTA', 'showAiWebCall'],
 };
 
 const CURRENCY_OPTIONS = [
@@ -353,7 +353,7 @@ export default function MarketingWebsitePage() {
   };
 
   // ── Website section visibility (show/hide marketing sections) ──
-  const SECTIONS: { key: string; label: string; defaultOff?: boolean; editKey?: string }[] = [
+  const SECTIONS: { key: string; label: string; defaultOff?: boolean; editKey?: string; editTab?: ActiveTab }[] = [
     { key: 'showProofStrip', label: 'Proof / stats strip', editKey: 'stats' },
     { key: 'showProblemSolution', label: 'Problem & solution', editKey: 'problems' },
     { key: 'showHowItWorks', label: 'How it works', editKey: 'steps' },
@@ -366,6 +366,7 @@ export default function MarketingWebsitePage() {
     { key: 'showIndustries', label: 'Industries', defaultOff: true },
     { key: 'showComparison', label: 'Comparison table', defaultOff: true },
     { key: 'showTestimonials', label: 'Testimonials', defaultOff: true },
+    { key: 'showAiWebCall', label: 'AI web call', defaultOff: true, editTab: 'embed' },
   ];
   const [savingSection, setSavingSection] = useState<string | null>(null);
   const sectionIsOn = (key: string, defaultOff?: boolean) => {
@@ -560,6 +561,66 @@ export default function MarketingWebsitePage() {
 
       {/* ══════════════ EMBED ══════════════ */}
       {activeTab === 'embed' && (<div className="space-y-4 sm:space-y-6">
+          {/* AI web-call widget embed */}
+          <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
+            <div className="flex items-center gap-2 mb-1.5"><Phone className="h-4 w-4" style={{ color: agencyPrimaryColor }} /><h3 className="font-medium text-sm sm:text-base" style={{ color: textColor }}>AI Web Call on Your Site</h3></div>
+            <p className="text-xs sm:text-sm mb-4" style={{ color: mutedTextColor }}>Let visitors talk to your AI right in the browser. Paste this wherever you want it. It uses your brand colors and fonts.</p>
+
+            {/* Editable widget text: header title, tagline, and the prompt above the call button. */}
+            <div className="mb-5">
+              <label className="text-xs font-medium" style={{ color: mutedTextColor }}>Widget text</label>
+              <p className="text-[10px] sm:text-xs mt-0.5 mb-2" style={{ color: mutedTextColor }}>What visitors see on the call widget: the header, the tagline under it, and the prompt above the call button. Leave blank to use the defaults.</p>
+              <div className="space-y-2">
+                <input type="text" value={webcallTitle} onChange={e => setWebcallTitle(e.target.value)} placeholder={`Talk to ${agency?.name || 'your business'}`} maxLength={60} className="w-full rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: inputText }} />
+                <input type="text" value={webcallSubtitle} onChange={e => setWebcallSubtitle(e.target.value)} placeholder="AI receptionist" maxLength={60} className="w-full rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: inputText }} />
+                <input type="text" value={webcallCta} onChange={e => setWebcallCta(e.target.value)} placeholder="Tap to call and talk to the AI. Allow your mic when asked." maxLength={160} className="w-full rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: inputText }} />
+              </div>
+              <div className="flex items-center gap-3 mt-2">
+                <button onClick={handleSaveWebcallText} disabled={savingWebcallText} className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50 transition-colors" style={{ backgroundColor: agencyPrimaryColor }}>{savingWebcallText ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save</button>
+                {webcallTextSaved && <span className="flex items-center gap-1.5 text-xs" style={{ color: agencyPrimaryColor }}><Check className="h-4 w-4" />Saved!</span>}
+              </div>
+            </div>
+
+            <div className="inline-flex rounded-lg p-0.5 mb-4" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
+              {(['demo', 'client'] as const).map((m) => (
+                <button key={m} onClick={() => setWebcallMode(m)} className="px-3 py-1.5 rounded-md text-xs font-semibold transition-colors" style={webcallMode === m ? { backgroundColor: agencyPrimaryColor, color: isLightColor(agencyPrimaryColor) ? '#050505' : '#ffffff' } : { color: inputMuted }}>{m === 'demo' ? 'Demo assistant' : 'A test client'}</button>
+              ))}
+            </div>
+
+            {webcallMode === 'client' && (
+              <div className="mb-4 max-w-sm relative">
+                <label className="block text-xs font-medium mb-1.5" style={{ color: mutedTextColor }}>Which client should visitors hear?</label>
+                <button type="button" onClick={() => setWebcallClientOpen((o) => !o)} className="w-full flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: inputText }}>
+                  <span className="truncate">{webcallSelectedClientName}</span><ChevronDown className="h-4 w-4 flex-shrink-0" style={{ color: mutedTextColor }} />
+                </button>
+                {webcallClientOpen && (
+                  <div className="absolute z-30 left-0 right-0 mt-1 rounded-lg overflow-hidden py-1 max-h-60 overflow-y-auto" style={{ backgroundColor: cardBg, border: `1px solid ${inputBorder}` }}>
+                    {webcallClients.length === 0 ? (
+                      <div className="px-3 py-2 text-xs" style={{ color: mutedTextColor }}>No clients yet</div>
+                    ) : webcallClients.map((c) => (
+                      <button key={c.id} onClick={() => { setWebcallClientId(c.id); setWebcallClientOpen(false); }} className="w-full text-left px-3 py-2 text-sm" style={{ color: textColor, backgroundColor: c.id === webcallClientId ? agencyPrimaryColor + '18' : 'transparent' }}>{c.business_name}</button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+              <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${inputBorder}` }}>
+                {agency?.id && !demoMode && (webcallMode === 'demo' || webcallClientId) ? (
+                  <iframe title="AI web call preview" src={webcallPreviewSrc} loading="lazy" allow="microphone" className="block w-full" style={{ height: 460, border: 0, backgroundColor: '#f6f7f9' }} />
+                ) : (
+                  <div className="flex items-center justify-center text-xs" style={{ height: 420, color: mutedTextColor }}>{demoMode ? 'Preview on a live agency account' : 'Pick a client to preview'}</div>
+                )}
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1.5"><label className="text-xs font-medium" style={{ color: mutedTextColor }}>Embed code</label><button onClick={() => copyToClipboard(webcallSnippet, 'webcall-code')} className="text-xs font-medium inline-flex items-center gap-1" style={{ color: agencyPrimaryColor }}>{copied === 'webcall-code' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} Copy</button></div>
+                <pre className="rounded-lg p-3 text-[10px] sm:text-xs font-mono overflow-x-auto leading-relaxed" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${inputBorder}`, color: textColor, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{webcallSnippet}</pre>
+                <p className="text-[10px] sm:text-xs mt-2" style={{ color: mutedTextColor }}>Visitors allow their mic, then talk to {webcallMode === 'demo' ? 'your demo assistant' : 'the selected client’s AI'}.</p>
+              </div>
+            </div>
+          </div>
+
 
         {/* ── Embed on Your Own Website ─────────────────────────────────────
             Two ways to bring signups onto the agency's existing site.
@@ -660,65 +721,6 @@ export default function MarketingWebsitePage() {
             <div className="mt-3 flex items-center gap-2"><span className="text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>Preview:</span><a href={signupUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', padding: '14px 32px', background: agencyPrimaryColor, color: isLightColor(agencyPrimaryColor) ? '#050505' : '#ffffff', borderRadius: '8px', textDecoration: 'none', fontWeight: 600, fontSize: '16px' }}>Start Free Trial</a></div>
           </div>
         </div>
-          {/* AI web-call widget embed */}
-          <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
-            <div className="flex items-center gap-2 mb-1.5"><Phone className="h-4 w-4" style={{ color: agencyPrimaryColor }} /><h3 className="font-medium text-sm sm:text-base" style={{ color: textColor }}>AI Web Call on Your Site</h3></div>
-            <p className="text-xs sm:text-sm mb-4" style={{ color: mutedTextColor }}>Let visitors talk to your AI right in the browser. Paste this wherever you want it. It uses your brand colors and fonts.</p>
-
-            {/* Editable widget text: header title, tagline, and the prompt above the call button. */}
-            <div className="mb-5">
-              <label className="text-xs font-medium" style={{ color: mutedTextColor }}>Widget text</label>
-              <p className="text-[10px] sm:text-xs mt-0.5 mb-2" style={{ color: mutedTextColor }}>What visitors see on the call widget: the header, the tagline under it, and the prompt above the call button. Leave blank to use the defaults.</p>
-              <div className="space-y-2">
-                <input type="text" value={webcallTitle} onChange={e => setWebcallTitle(e.target.value)} placeholder={`Talk to ${agency?.name || 'your business'}`} maxLength={60} className="w-full rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: inputText }} />
-                <input type="text" value={webcallSubtitle} onChange={e => setWebcallSubtitle(e.target.value)} placeholder="AI receptionist" maxLength={60} className="w-full rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: inputText }} />
-                <input type="text" value={webcallCta} onChange={e => setWebcallCta(e.target.value)} placeholder="Tap to call and talk to the AI. Allow your mic when asked." maxLength={160} className="w-full rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: inputText }} />
-              </div>
-              <div className="flex items-center gap-3 mt-2">
-                <button onClick={handleSaveWebcallText} disabled={savingWebcallText} className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50 transition-colors" style={{ backgroundColor: agencyPrimaryColor }}>{savingWebcallText ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save</button>
-                {webcallTextSaved && <span className="flex items-center gap-1.5 text-xs" style={{ color: agencyPrimaryColor }}><Check className="h-4 w-4" />Saved!</span>}
-              </div>
-            </div>
-
-            <div className="inline-flex rounded-lg p-0.5 mb-4" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
-              {(['demo', 'client'] as const).map((m) => (
-                <button key={m} onClick={() => setWebcallMode(m)} className="px-3 py-1.5 rounded-md text-xs font-semibold transition-colors" style={webcallMode === m ? { backgroundColor: agencyPrimaryColor, color: isLightColor(agencyPrimaryColor) ? '#050505' : '#ffffff' } : { color: inputMuted }}>{m === 'demo' ? 'Demo assistant' : 'A test client'}</button>
-              ))}
-            </div>
-
-            {webcallMode === 'client' && (
-              <div className="mb-4 max-w-sm relative">
-                <label className="block text-xs font-medium mb-1.5" style={{ color: mutedTextColor }}>Which client should visitors hear?</label>
-                <button type="button" onClick={() => setWebcallClientOpen((o) => !o)} className="w-full flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: inputText }}>
-                  <span className="truncate">{webcallSelectedClientName}</span><ChevronDown className="h-4 w-4 flex-shrink-0" style={{ color: mutedTextColor }} />
-                </button>
-                {webcallClientOpen && (
-                  <div className="absolute z-30 left-0 right-0 mt-1 rounded-lg overflow-hidden py-1 max-h-60 overflow-y-auto" style={{ backgroundColor: cardBg, border: `1px solid ${inputBorder}` }}>
-                    {webcallClients.length === 0 ? (
-                      <div className="px-3 py-2 text-xs" style={{ color: mutedTextColor }}>No clients yet</div>
-                    ) : webcallClients.map((c) => (
-                      <button key={c.id} onClick={() => { setWebcallClientId(c.id); setWebcallClientOpen(false); }} className="w-full text-left px-3 py-2 text-sm" style={{ color: textColor, backgroundColor: c.id === webcallClientId ? agencyPrimaryColor + '18' : 'transparent' }}>{c.business_name}</button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-              <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${inputBorder}` }}>
-                {agency?.id && !demoMode && (webcallMode === 'demo' || webcallClientId) ? (
-                  <iframe title="AI web call preview" src={webcallPreviewSrc} loading="lazy" allow="microphone" className="block w-full" style={{ height: 460, border: 0, backgroundColor: '#f6f7f9' }} />
-                ) : (
-                  <div className="flex items-center justify-center text-xs" style={{ height: 420, color: mutedTextColor }}>{demoMode ? 'Preview on a live agency account' : 'Pick a client to preview'}</div>
-                )}
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-1.5"><label className="text-xs font-medium" style={{ color: mutedTextColor }}>Embed code</label><button onClick={() => copyToClipboard(webcallSnippet, 'webcall-code')} className="text-xs font-medium inline-flex items-center gap-1" style={{ color: agencyPrimaryColor }}>{copied === 'webcall-code' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} Copy</button></div>
-                <pre className="rounded-lg p-3 text-[10px] sm:text-xs font-mono overflow-x-auto leading-relaxed" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${inputBorder}`, color: textColor, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{webcallSnippet}</pre>
-                <p className="text-[10px] sm:text-xs mt-2" style={{ color: mutedTextColor }}>Visitors allow their mic, then talk to {webcallMode === 'demo' ? 'your demo assistant' : 'the selected client’s AI'}.</p>
-              </div>
-            </div>
-          </div>
       </div>)}
 
       {/* ══════════════ TEMPLATE ══════════════ */}
@@ -766,7 +768,7 @@ export default function MarketingWebsitePage() {
               <div key={sec.key} className="flex items-center justify-between rounded-lg px-3 py-2.5" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
                 <span className="text-sm flex items-center gap-2" style={{ color: isDark ? '#fafaf9' : '#111827' }}>{sec.label}{saving && <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: agencyPrimaryColor }} />}</span>
                 <div className="flex items-center gap-3 shrink-0">
-                {sec.editKey && (<button type="button" onClick={() => { setContentScrollTarget(sec.editKey!); setActiveTab('content'); }} className="text-xs font-medium whitespace-nowrap hover:underline" style={{ color: agencyPrimaryColor }}>Edit content</button>)}
+                {(sec.editKey || sec.editTab) && (<button type="button" onClick={() => { if (sec.editTab) { setActiveTab(sec.editTab); } else { setContentScrollTarget(sec.editKey!); setActiveTab('content'); } }} className="text-xs font-medium whitespace-nowrap hover:underline" style={{ color: agencyPrimaryColor }}>Edit content</button>)}
                 <button onClick={() => toggleSection(sec.key, sec.defaultOff)} disabled={saving || demoMode} className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 shrink-0" style={{ backgroundColor: on ? agencyPrimaryColor : (isDark ? 'rgba(255,255,255,0.15)' : '#d1d5db') }} aria-pressed={on} aria-label={`Toggle ${sec.label}`}>
                   <span className="inline-block h-4 w-4 rounded-full bg-white transition-transform" style={{ transform: on ? 'translateX(22px)' : 'translateX(4px)' }} />
                 </button>

@@ -179,6 +179,21 @@ export interface MarketingConfig {
   showPricing?: boolean;
   showFAQ?: boolean;
   showFinalCTA?: boolean;
+  // Opt-IN (default hidden, like showIndustries): renders a live AI web-call
+  // section on the public marketing site so visitors can talk to the agency's
+  // AI without leaving the page. The embedded widget is served from the same
+  // app at /webcall; its content (title/subtitle/cta) is edited in the Embed
+  // tab and carried in `aiWebCall` below.
+  showAiWebCall?: boolean;
+  // Content + target for the public AI web-call section. agencyId drives the
+  // embedded /webcall widget; title/subtitle/cta are the agency's editable copy
+  // (fall back to sensible defaults in the templates when blank).
+  aiWebCall?: {
+    title?: string;
+    subtitle?: string;
+    cta?: string;
+    agencyId?: string;
+  };
   clientLoginPath?: string;
   // Agency-defined external links rendered in the marketing header + footer.
   customNavLinks?: CustomNavLink[];

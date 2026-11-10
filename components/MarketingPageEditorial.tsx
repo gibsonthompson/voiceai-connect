@@ -436,6 +436,31 @@ function FAQ({ config }: { config: MarketingConfig }) {
 // ============================================================================
 // FINAL CTA (artistic close, wave art)
 // ============================================================================
+// AI web call (opt-in): embeds the live /webcall widget so visitors can talk to
+// the agency's AI in-page. Content editable in the Embed tab, toggled in Sections.
+function AiWebCall({ config }: { config: MarketingConfig }) {
+  const wc = config.aiWebCall || {};
+  const agencyId = wc.agencyId || '';
+  if (!agencyId) return null;
+  const title = (wc.title || '').trim() || `Talk to ${config.branding.name}`;
+  const subtitle = (wc.subtitle || '').trim() || 'Hear the AI receptionist answer, live, right now.';
+  const cta = (wc.cta || '').trim() || 'Tap to call and talk to the AI. Allow your mic when asked.';
+  const src = `/webcall?embed=true&agency=${encodeURIComponent(agencyId)}&mode=demo`;
+  return (
+    <section className="ed-steps" id="ai-web-call">
+      <div className="ed-container">
+        <div className="ed-section-head"><h2 className="ed-h2">{title}</h2><p style={{ marginTop: '0.6rem', opacity: 0.6, fontSize: '1.0625rem' }}>{subtitle}</p></div>
+        <div style={{ maxWidth: '34rem', margin: '0 auto' }}>
+          <div style={{ borderRadius: '1.25rem', overflow: 'hidden', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 24px 60px rgba(0,0,0,0.14)', background: '#f6f7f9' }}>
+            <iframe title="AI web call" src={src} loading="lazy" allow="microphone" style={{ display: 'block', width: '100%', height: '32rem', border: 0 }} />
+          </div>
+          <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.9rem', opacity: 0.6 }}>{cta}</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function FinalCTA({ config }: { config: MarketingConfig }) {
   const { hero, branding } = config;
   const hasDemo = Boolean(hero.demoPhone && hero.demoPhone.trim());
@@ -472,10 +497,6 @@ function Footer({ config }: { config: MarketingConfig }) {
         <div className="ed-footer-brand">
           <a href={homeUrl} className="ed-logo">{branding.logoUrl ? <img src={branding.logoUrl} alt={branding.name} /> : <span>{branding.name}</span>}</a>
           {footer.address && <p className="ed-footer-addr">{footer.address}</p>}
-          <div className="ed-footer-contact">
-            {footer.phone && <a href={`tel:${footer.phone.replace(/\D/g, '')}`}>{footer.phone}</a>}
-            {footer.email && <a href={`mailto:${footer.email}`}>{footer.email}</a>}
-          </div>
         </div>
         {groups.map((g, gi) => (
           <nav className="ed-footer-col" key={gi}>
@@ -521,6 +542,7 @@ export default function MarketingPageEditorial({ config: partial }: { config: Pa
       {config.showFeatures !== false && <ValueCards config={config} />}
       {config.showIndustries !== false && <Industries config={config} />}
       {config.showTestimonials !== false && <Testimonial config={config} />}
+      {config.showAiWebCall === true && <AiWebCall config={config} />}
       {config.showPricing !== false && <Pricing config={config} />}
       {config.showFAQ !== false && <FAQ config={config} />}
       {config.showFinalCTA !== false && <FinalCTA config={config} />}

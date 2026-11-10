@@ -311,6 +311,18 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
     // isn't passing per-minute usage through to clients. The public agency shape
     // already resolves both into annual_billing_available.
     annualBillingAvailable: (agency as any).annual_billing_available === true,
+    // AI web-call section content. Re-applied AFTER the marketing_config spread
+    // so the dedicated agency columns (edited in the Embed tab) and the live
+    // agency id always win over any stale copy baked into marketing_config.
+    // showAiWebCall itself rides in via the spread above (it lives in
+    // marketing_config JSONB, toggled from the Sections tab), so visibility and
+    // content stay in sync. agencyId drives the embedded /webcall widget.
+    aiWebCall: {
+      title: (agency as any).webcall_title || '',
+      subtitle: (agency as any).webcall_subtitle || '',
+      cta: (agency as any).webcall_cta || '',
+      agencyId: agency.id,
+    },
     // Re-apply hero AFTER the marketing_config spread so the resolved demoPhone
     // (manual override -> auto-provisioned -> platform fallback) always wins. Without
     // this, a stale hero saved in marketing_config JSONB clobbered demoPhone and the

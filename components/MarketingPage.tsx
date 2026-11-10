@@ -653,7 +653,6 @@ function PricingSection({ config }: { config: MarketingConfig }) {
         </div>
         <div className="pricing-guarantee">
           <p><strong>All plans include:</strong> {[config.signup?.trialDays !== 0 ? `${config.signup?.trialDays ?? 7}-day free trial${config.signup?.cardRequired ? '' : ' (no credit card required)'}` : null, 'Cancel anytime', config.stats?.setupTime ? `Setup in ${config.stats.setupTime}` : null].filter(Boolean).join(' • ')}</p>
-          {config.footer.email && <p className="pricing-custom">Have 500+ calls per month? <a href={`mailto:${config.footer.email}`}>Contact us for custom pricing →</a></p>}
         </div>
       </div>
     </section>
@@ -688,6 +687,34 @@ function FAQSection({ config }: { config: MarketingConfig }) {
 // ============================================================================
 // FINAL CTA SECTION
 // ============================================================================
+// ============================================================================
+// AI WEB CALL (opt-in). Embeds the same live web-call widget served at /webcall
+// so visitors can talk to the agency's AI without leaving the page. Content is
+// agency-editable (Embed tab); visibility is toggled from the Sections tab.
+// ============================================================================
+function AiWebCallSection({ config }: { config: MarketingConfig }) {
+  const wc = config.aiWebCall || {};
+  const agencyId = wc.agencyId || '';
+  if (!agencyId) return null;
+  const title = (wc.title || '').trim() || `Talk to ${config.branding.name}`;
+  const subtitle = (wc.subtitle || '').trim() || 'Hear the AI receptionist answer, live, right now.';
+  const cta = (wc.cta || '').trim() || 'Tap to call and talk to the AI. Allow your mic when asked.';
+  const src = `/webcall?embed=true&agency=${encodeURIComponent(agencyId)}&mode=demo`;
+  return (
+    <section id="ai-web-call" className="how-it-works">
+      <div className="container">
+        <div className="section-header"><h2>{title}</h2><p className="subtitle">{subtitle}</p></div>
+        <div style={{ maxWidth: '34rem', margin: '0 auto' }}>
+          <div style={{ borderRadius: '1.25rem', overflow: 'hidden', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 24px 60px rgba(0,0,0,0.14)', background: '#f6f7f9' }}>
+            <iframe title="AI web call" src={src} loading="lazy" allow="microphone" style={{ display: 'block', width: '100%', height: '32rem', border: 0 }} />
+          </div>
+          <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.9rem', opacity: 0.68 }}>{cta}</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function FinalCTASection({ config, contrastColors }: { config: MarketingConfig; contrastColors: ContrastColors }) {
   const { hero, branding } = config;
   return (
@@ -781,8 +808,6 @@ function Footer({ config }: { config: MarketingConfig }) {
             <p className="footer-tagline">Professional AI that answers every call, books appointments, and sends you instant summaries, 24/7.</p>
             <div className="footer-contact">
               {footer.address && <p>{footer.address}</p>}
-              {footer.phone && <p><a href={`tel:${footer.phone.replace(/\D/g, '')}`}>{footer.phone}</a></p>}
-              {footer.email && <p><a href={`mailto:${footer.email}`}>{footer.email}</a></p>}
             </div>
           </div>
           <div className="footer-col">
@@ -912,6 +937,7 @@ export default function MarketingPage({ config: partialConfig }: MarketingPagePr
       {config.showIndustries && <IndustriesSection config={config} />}
       {config.showComparison && <ComparisonSection config={config} />}
       {config.showROICalculator !== false && <ROICalculatorSection config={config} />}
+      {config.showAiWebCall === true && <AiWebCallSection config={config} />}
       {config.showPricing !== false && <PricingSection config={config} />}
       {config.showFAQ !== false && <FAQSection config={config} />}
       {config.showFinalCTA !== false && <FinalCTASection config={config} contrastColors={contrastColors} />}
