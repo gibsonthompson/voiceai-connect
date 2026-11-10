@@ -29,8 +29,8 @@ import MarketingWebCall from '@/components/marketing/MarketingWebCall';
 // assistant in the dashboard, then paste its client id below to light up the
 // client demo (its card shows a "being set up" state until then).
 const DEMO_AGENCY_ID = '8e611704-7c1f-4605-a842-4b794a315171';
-const MED_SPA_CLIENT_ID = ''; // <-- paste the med spa test client id here
-const MED_SPA_NAME = 'Luxe Aesthetics';
+const MED_SPA_CLIENT_ID = '13bdef93-c447-4f4c-ab4a-dcfe19f378cf';
+const MED_SPA_NAME = 'Luxe Med Spa';
 
 // ─── Demo Data ─────────────────────────────────────────────────────────────────
 
