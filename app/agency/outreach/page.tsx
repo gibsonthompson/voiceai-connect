@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { 
   FileText, Mail, MessageSquare, PhoneCall, Plus, Search, Loader2,
@@ -12,6 +12,7 @@ import LockedFeatureOverlay from '@/components/LockedFeature';
 import { useTheme } from '../../../hooks/useTheme';
 import FirstClientBanner from '@/components/agency/FirstClientBanner';
 import SignatureEditor from '@/components/agency/SignatureEditor';
+import { buildDefaultSignatureHtml } from '@/lib/default-signature';
 
 interface Template {
   id: string;
@@ -54,25 +55,34 @@ export default function OutreachPage() {
   const [signatureSaving, setSignatureSaving] = useState(false);
   const [signatureSaved, setSignatureSaved] = useState(false);
 
-  // Hydrate the opener settings from the agency record once it loads.
+  const sigHydrated = useRef(false);
+  // Hydrate the opener settings from the agency record once it loads. The
+  // signature prefills with a branded default (logo, name, website, demo line)
+  // when the agency has not set their own, and is hydrated once so background
+  // refreshes don't clobber an in-progress edit.
   useEffect(() => {
     if (!agency) return;
     setPlEnabled((agency as any).personalized_line_enabled !== false);
     setPlInstructions((agency as any).personalized_line_instructions || '');
-    setSignature((agency as any).outreach_signature || '');
+    if (!sigHydrated.current) {
+      sigHydrated.current = true;
+      const stored = (agency as any).outreach_signature;
+      setSignature(stored && String(stored).trim() ? stored : buildDefaultSignatureHtml((agency as any).logo_url, !!(agency as any).demo_phone_number));
+    }
   }, [agency]);
 
-  const saveSignature = async () => {
+  const saveSignature = async (override?: string) => {
     if (!agency) return;
     setSignatureSaving(true);
     setSignatureSaved(false);
     try {
       const token = localStorage.getItem('auth_token');
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const val = override !== undefined ? override : signature;
       const res = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ outreach_signature: signature.trim() || null }),
+        body: JSON.stringify({ outreach_signature: val.trim() || null }),
       });
       if (res.ok) {
         await refreshAgency();
@@ -684,13 +694,22 @@ export default function OutreachPage() {
             <div className="mt-2 flex items-center gap-3 min-h-[20px]">
               <button
                 type="button"
-                onClick={saveSignature}
+                onClick={() => saveSignature()}
                 disabled={signatureSaving}
                 className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
                 style={{ backgroundColor: theme.primary15, color: theme.primary, opacity: signatureSaving ? 0.6 : 1 }}
               >
                 {signatureSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
                 {signatureSaving ? 'Saving' : 'Save Signature'}
+              </button>
+              <button
+                type="button"
+                onClick={() => { const def = buildDefaultSignatureHtml((agency as any)?.logo_url, !!(agency as any)?.demo_phone_number); setSignature(def); saveSignature(def); }}
+                disabled={signatureSaving}
+                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
+                style={{ color: theme.cardTextMuted, border: `1px solid ${theme.border}` }}
+              >
+                Reset to default
               </button>
               {signatureSaved && <span className="text-xs" style={{ color: theme.primary }}>Saved</span>}
             </div>
