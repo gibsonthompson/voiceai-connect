@@ -5,6 +5,7 @@ import ErrorReporter from "@/components/ErrorReporter";
 import SupportWidget from "@/components/support-widget";
 import AttributionCapture from "@/components/attribution-capture";
 import RouteProgress from "@/components/route-progress";
+import PwaUpdater from "@/components/PwaUpdater";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -173,6 +174,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           />
         </noscript>
         <ErrorReporter />
+        <PwaUpdater />
         <AttributionCapture />
         <RouteProgress />
         {children}

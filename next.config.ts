@@ -95,6 +95,12 @@ const VS_SLUGS: string[] = [
 const VS_HUB = "/best-white-label-ai-receptionist-platforms";
 
 const nextConfig: NextConfig = {
+  // Per-deploy build id, exposed to the client. The PWA updater compares this to
+  // what the server reports and reloads the app when a new version ships, so a
+  // home-screen PWA no longer has to be deleted and re-added to see updates.
+  env: {
+    NEXT_PUBLIC_BUILD_ID: process.env.VERCEL_GIT_COMMIT_SHA || process.env.NEXT_PUBLIC_BUILD_ID || String(Date.now()),
+  },
   experimental: {
     // Disable aggressive Router Cache that causes stale pages on client-side navigation.
     // Without this, Next.js caches RSC payloads from prefetched routes and reuses them,
