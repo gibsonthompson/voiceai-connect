@@ -12,15 +12,6 @@ const COLUMNS: { t: string; l: [string, string][] }[] = [
     ],
   },
   {
-    t: 'COMPARE',
-    l: [
-      ['vs Autocalls', '/blog/voiceai-connect-vs-autocalls'],
-      ['vs echowin', '/blog/voiceai-connect-vs-echowin'],
-      ['vs Bland AI', '/voiceai-connect-vs-bland-ai'],
-      ['vs Synthflow', '/voiceai-connect-vs-synthflow'],
-    ],
-  },
-  {
     t: 'RESOURCES',
     l: [
       ['Blog', '/blog'],
@@ -46,7 +37,7 @@ export default function MarketingFooter() {
   return (
     <footer className="bg-paper py-16 border-t border-black/[0.05]">
       <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
-        <div className="grid sm:grid-cols-2 lg:grid-cols-6 gap-10 mb-12">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-10 mb-12">
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center gap-2 mb-4">
               <img src="/icon-512x512.png" alt="VoiceAI Connect" className="w-7 h-7 rounded-md" />
