@@ -19,6 +19,8 @@ import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Phone, PhoneOff, Mic, MicOff, Loader2, AlertCircle } from 'lucide-react';
 import { fontStack, googleFontsHref } from '@/lib/brandFonts';
+import WebCallShell from '@/components/widgets/WebCallShell';
+import { resolveWebCallPalette, WebCallStyle } from '@/lib/webcall-style';
 
 type Phase = 'loading' | 'idle' | 'connecting' | 'live' | 'ended' | 'error';
 interface Line { role: 'user' | 'assistant'; text: string; }
@@ -26,6 +28,7 @@ interface WebcallConfig {
   assistantId: string; label: string; phoneNumber: string | null; title: string | null; subtitle: string | null; cta: string | null; agencyName: string | null; logoUrl: string | null;
   primaryColor: string; accentColor: string; websiteTheme: string;
   displayFont: string | null; bodyFont: string | null;
+  style?: WebCallStyle | null;
 }
 
 function hexToRgba(hex: string, a: number): string {
@@ -156,16 +159,24 @@ function WebcallInner() {
     try { v.setMuted(next); } catch {}
   }, [muted]);
 
-  const isDark = (config?.websiteTheme || 'light') === 'dark';
-  const primary = config?.primaryColor || '#01f5d1';
-  const bg = isDark ? '#0b0c0f' : '#f6f7f9';
-  const cardBg = isDark ? '#15161a' : '#ffffff';
-  const text = isDark ? '#f5f5f7' : '#0f172a';
-  const muted2 = isDark ? 'rgba(245,245,247,0.6)' : '#64748b';
-  const border = isDark ? 'rgba(255,255,255,0.10)' : '#e8ebf0';
+  // One resolved palette drives every surface (editor preview, this live
+  // widget, the on-site section) so what an agency styles is what ships.
+  const palette = resolveWebCallPalette(config?.style, { primaryColor: config?.primaryColor, websiteTheme: config?.websiteTheme });
+  const isDark = palette.isDark;
+  const primary = palette.accent;
+  const bg = palette.pageBg;
+  const cardBg = palette.cardBg;
+  const text = palette.text;
+  const muted2 = palette.muted;
+  const border = palette.border;
+  const fonts = { display: config?.displayFont, body: config?.bodyFont };
   const mmss = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
 
   const rendered = [...lines]; if (interim) rendered.push(interim);
+
+  const titleText = config?.title || `Talk to ${config?.label || 'Our AI Receptionist'}`;
+  const subtitleText = config?.subtitle || 'AI receptionist';
+  const ctaText = config?.cta || 'Tap to call and talk to the AI. Allow your mic when asked.';
 
   return (
     <div
@@ -179,25 +190,45 @@ function WebcallInner() {
         display: 'flex', justifyContent: 'center',
       }}
     >
+      {/* Idle + connecting: the agency-styled widget, rendered by the shared
+          shell so it matches the dashboard editor pixel-for-pixel. */}
+      {(phase === 'idle' || phase === 'connecting') ? (
+        <div style={{ width: '100%', maxWidth: 440 }}>
+          <WebCallShell
+            palette={palette}
+            fonts={fonts}
+            title={titleText}
+            subtitle={subtitleText}
+            phone={config?.phoneNumber ? formatPhone(config.phoneNumber) : undefined}
+            cta={ctaText}
+            connecting={phase === 'connecting'}
+            interactive
+            onCall={startCall}
+          />
+          {!isEmbed && config?.agencyName && (
+            <p style={{ textAlign: 'center', fontSize: 11.5, color: muted2, marginTop: 12 }}>Powered by {config.agencyName}</p>
+          )}
+        </div>
+      ) : (
       <div style={{ width: '100%', maxWidth: 440, position: 'relative' }}>
         {/* Soft brand glow so the widget reads as intentional on any site. */}
         <div style={{ position: 'absolute', top: -36, left: 24, right: 24, height: 150, borderRadius: '50%', background: `radial-gradient(60% 100% at 50% 0%, ${hexToRgba(primary, 0.18)}, transparent 72%)`, pointerEvents: 'none' }} />
-        <div style={{ position: 'relative', borderRadius: 22, border: `1px solid ${border}`, backgroundColor: cardBg, overflow: 'hidden', boxShadow: isDark ? '0 20px 50px rgba(0,0,0,0.45)' : '0 18px 50px rgba(2,6,23,0.12)' }}>
+        <div style={{ position: 'relative', borderRadius: palette.radius, border: `1px solid ${border}`, backgroundColor: cardBg, overflow: 'hidden', boxShadow: isDark ? '0 20px 50px rgba(0,0,0,0.45)' : '0 18px 50px rgba(2,6,23,0.12)' }}>
           {/* Header */}
           <div style={{ padding: '18px 20px', borderBottom: `1px solid ${border}`, display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ height: 40, width: 40, borderRadius: 12, backgroundColor: hexToRgba(primary, 0.14), display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <Phone style={{ height: 20, width: 20, color: primary }} />
             </div>
             <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 16, fontFamily: fontStack(config?.displayFont, 'display'), lineHeight: 1.15 }}>
-                {config?.title || `Talk to ${config?.label || 'Our AI Receptionist'}`}
+              <div style={{ fontWeight: 700, fontSize: 16, fontFamily: fontStack(config?.displayFont, 'display'), lineHeight: 1.15, color: palette.heading }}>
+                {titleText}
               </div>
               <div style={{ fontSize: 12.5, color: muted2, marginTop: 2 }}>
-                {phase === 'live' ? 'On Call' : phase === 'connecting' ? 'Calling…' : phase === 'ended' ? 'Call Ended' : (config?.subtitle || 'AI receptionist')}
+                {phase === 'live' ? 'On Call' : phase === 'ended' ? 'Call Ended' : subtitleText}
               </div>
             </div>
-            {(phase === 'live' || phase === 'connecting') && (
-              <span style={{ fontSize: 13, fontWeight: 700, color: text, fontVariantNumeric: 'tabular-nums' }}>{phase === 'connecting' ? '•••' : mmss}</span>
+            {phase === 'live' && (
+              <span style={{ fontSize: 13, fontWeight: 700, color: text, fontVariantNumeric: 'tabular-nums' }}>{mmss}</span>
             )}
           </div>
 
@@ -211,31 +242,6 @@ function WebcallInner() {
               <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 0' }}>
                 <AlertCircle style={{ height: 18, width: 18, color: '#ef4444', flexShrink: 0, marginTop: 1 }} />
                 <p style={{ fontSize: 14, color: muted2, margin: 0 }}>{error || 'This web call is not available right now.'}</p>
-              </div>
-            )}
-
-            {(phase === 'idle' || phase === 'connecting') && (
-              <div style={{ textAlign: 'center', padding: '14px 0 6px' }}>
-                <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
-                  <span className="va-ring" style={{ position: 'absolute', height: 104, width: 104, borderRadius: '50%', backgroundColor: hexToRgba(primary, 0.35) }} />
-                  <span className="va-ring va-ring2" style={{ position: 'absolute', height: 104, width: 104, borderRadius: '50%', backgroundColor: hexToRgba(primary, 0.22) }} />
-                  <button
-                    onClick={phase === 'connecting' ? undefined : startCall}
-                    disabled={phase === 'connecting'}
-                    aria-label="Call"
-                    style={{ position: 'relative', height: 92, width: 92, borderRadius: '50%', backgroundColor: primary, border: 'none', cursor: phase === 'connecting' ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isDark ? '#050505' : '#ffffff', boxShadow: `0 12px 34px ${hexToRgba(primary, 0.45)}` }}
-                  >
-                    {phase === 'connecting' ? <Loader2 style={{ height: 30, width: 30, animation: 'vaspin 1s linear infinite' }} /> : <Phone style={{ height: 32, width: 32 }} />}
-                  </button>
-                </div>
-                {config?.phoneNumber && (
-                  <p style={{ fontSize: 23, fontWeight: 800, color: text, margin: '0 0 4px', fontFamily: fontStack(config?.displayFont, 'display'), letterSpacing: '0.3px' }}>
-                    {formatPhone(config.phoneNumber)}
-                  </p>
-                )}
-                <p style={{ fontSize: 13.5, color: muted2, margin: '0 auto', maxWidth: 320 }}>
-                  {phase === 'connecting' ? 'Calling…' : (config?.cta || 'Tap to call and talk to the AI. Allow your mic when asked.')}
-                </p>
               </div>
             )}
 
@@ -275,7 +281,7 @@ function WebcallInner() {
                       <PhoneOff style={{ height: 16, width: 16 }} />End call
                     </button>
                   ) : (
-                    <button onClick={startCall} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, borderRadius: 999, padding: '12px 24px', fontSize: 15, fontWeight: 600, color: isDark ? '#050505' : '#ffffff', backgroundColor: primary, border: 'none', cursor: 'pointer' }}>
+                    <button onClick={startCall} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, borderRadius: 999, padding: '12px 24px', fontSize: 15, fontWeight: 600, color: palette.buttonIcon, backgroundColor: palette.buttonColor, border: 'none', cursor: 'pointer' }}>
                       <Phone style={{ height: 16, width: 16 }} />Call again
                     </button>
                   )}
@@ -289,6 +295,7 @@ function WebcallInner() {
           <p style={{ textAlign: 'center', fontSize: 11.5, color: muted2, marginTop: 12 }}>Powered by {config.agencyName}</p>
         )}
       </div>
+      )}
       <style>{`
         @keyframes vaspin { to { transform: rotate(360deg); } }
         @keyframes vapulse { 0% { transform: scale(0.85); opacity: 0.7; } 70% { transform: scale(1.5); opacity: 0; } 100% { transform: scale(1.5); opacity: 0; } }

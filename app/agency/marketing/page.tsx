@@ -14,6 +14,8 @@ import { useAgency } from '../context';
 import { usePlanFeatures } from '../../../hooks/usePlanFeatures';
 import { useTheme } from '../../../hooks/useTheme';
 import MarketingContentEditor from '@/components/agency/MarketingContentEditor';
+import WebCallWidgetEditor from '@/components/dashboard/WebCallWidgetEditor';
+import { WebCallStyle } from '@/lib/webcall-style';
 
 type ActiveTab = 'overview' | 'template' | 'sections' | 'content' | 'colors' | 'domain' | 'tracking' | 'seo' | 'navigation' | 'legal' | 'embed';
 
@@ -181,6 +183,10 @@ export default function MarketingWebsitePage() {
   const [webcallCta, setWebcallCta] = useState('');
   const [savingWebcallText, setSavingWebcallText] = useState(false);
   const [webcallTextSaved, setWebcallTextSaved] = useState(false);
+  // Visual style for the AI web-call widget (lives under marketing_config.webcall).
+  const [webcallStyle, setWebcallStyle] = useState<WebCallStyle>({});
+  const [webcallStyleSaved, setWebcallStyleSaved] = useState(false);
+  const webcallStyleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Colors
   const [primaryColor, setPrimaryColor] = useState('#00a19b');
   const [secondaryColor, setSecondaryColor] = useState('#007e77');
@@ -313,7 +319,7 @@ export default function MarketingWebsitePage() {
 
   useEffect(() => {
     if (demoMode) { setTagline('AI-Powered Phone Answering'); setHeadline('Never Miss Another Call'); setSubheadline('Our AI receptionist answers calls 24/7.'); setCustomDomain('voiceai.youragency.com'); setDomainStatus('verified'); setPrimaryColor(agency?.primary_color || '#00a19b'); setSecondaryColor(agency?.secondary_color || '#007e77'); setAccentColor(agency?.accent_color || '#01f5d1'); setSelectedTemplate(agency?.marketing_template || 'classic'); setCustomNavLinks([{ label: 'Home', url: 'https://yourmainsite.com' }]); setDisplayCurrency(''); setGtmId(''); setFbPixelId(''); setGoogleAnalyticsId(''); setCustomHeadScripts(''); setCustomBodyScripts(''); setOgTitle(''); setOgDescription(''); setOgImageUrl(''); setPlans([]); return; }
-    if (agency) { if (agency.marketing_domain) { setCustomDomain(agency.marketing_domain); setDomainStatus(agency.domain_verified ? 'verified' : 'pending'); } setTagline(agency.company_tagline || ''); setHeadline(agency.website_headline || ''); setSubheadline(agency.website_subheadline || ''); setSignupHeadline((agency as any).signup_headline || ''); setSignupSubtitle((agency as any).signup_subtitle || ''); setWebcallTitle((agency as any).webcall_title || ''); setWebcallSubtitle((agency as any).webcall_subtitle || ''); setWebcallCta((agency as any).webcall_cta || ''); setSignupLogoAlign((agency as any).signup_logo_align === 'center' || (agency as any).signup_logo_align === 'right' ? (agency as any).signup_logo_align : 'left'); setPrimaryColor(agency.primary_color || '#00a19b'); setSecondaryColor(agency.secondary_color || '#007e77'); setAccentColor(agency.accent_color || '#01f5d1'); setSelectedTemplate(agency.marketing_template || 'classic'); setCustomNavLinks(Array.isArray((agency as any).custom_nav_links) ? (agency as any).custom_nav_links : []); setDisplayCurrency((agency as any).display_currency || ''); setGtmId(agency.gtm_id || ''); setFbPixelId(agency.fb_pixel_id || ''); setGoogleAnalyticsId(agency.google_analytics_id || ''); setCustomHeadScripts(agency.custom_head_scripts || ''); setCustomBodyScripts(agency.custom_body_scripts || ''); setOgTitle(agency.og_title || ''); setOgDescription(agency.og_description || ''); setOgImageUrl(agency.og_image_url || ''); setPlans(Array.isArray((agency as any).plans) ? (agency as any).plans : []); }
+    if (agency) { if (agency.marketing_domain) { setCustomDomain(agency.marketing_domain); setDomainStatus(agency.domain_verified ? 'verified' : 'pending'); } setTagline(agency.company_tagline || ''); setHeadline(agency.website_headline || ''); setSubheadline(agency.website_subheadline || ''); setSignupHeadline((agency as any).signup_headline || ''); setSignupSubtitle((agency as any).signup_subtitle || ''); setWebcallTitle((agency as any).webcall_title || ''); setWebcallSubtitle((agency as any).webcall_subtitle || ''); setWebcallCta((agency as any).webcall_cta || ''); setWebcallStyle((((agency as any).marketing_config || {}).webcall || {}) as WebCallStyle); setSignupLogoAlign((agency as any).signup_logo_align === 'center' || (agency as any).signup_logo_align === 'right' ? (agency as any).signup_logo_align : 'left'); setPrimaryColor(agency.primary_color || '#00a19b'); setSecondaryColor(agency.secondary_color || '#007e77'); setAccentColor(agency.accent_color || '#01f5d1'); setSelectedTemplate(agency.marketing_template || 'classic'); setCustomNavLinks(Array.isArray((agency as any).custom_nav_links) ? (agency as any).custom_nav_links : []); setDisplayCurrency((agency as any).display_currency || ''); setGtmId(agency.gtm_id || ''); setFbPixelId(agency.fb_pixel_id || ''); setGoogleAnalyticsId(agency.google_analytics_id || ''); setCustomHeadScripts(agency.custom_head_scripts || ''); setCustomBodyScripts(agency.custom_body_scripts || ''); setOgTitle(agency.og_title || ''); setOgDescription(agency.og_description || ''); setOgImageUrl(agency.og_image_url || ''); setPlans(Array.isArray((agency as any).plans) ? (agency as any).plans : []); }
   }, [agency, demoMode]);
 
   // Load this agency's clients for the web-call "test client" option.
@@ -426,6 +432,43 @@ export default function MarketingWebsitePage() {
   const handleSaveSignupText = async () => { if (demoMode) { setSignupTextSaved(true); setTimeout(() => setSignupTextSaved(false), 3000); return; } if (!agency) return; setSavingSignupText(true); setSignupTextSaved(false); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ signup_headline: signupHeadline.trim() || null, signup_subtitle: signupSubtitle.trim() || null, signup_logo_align: signupLogoAlign }) }); if (response.ok) { await refreshAgency(); setSignupTextSaved(true); setTimeout(() => setSignupTextSaved(false), 3000); } else { const data = await response.json(); alert(data.error || 'Failed to save signup text'); } } catch (error) { console.error('Failed to save signup text:', error); } finally { setSavingSignupText(false); } };
 
   const handleSaveWebcallText = async () => { if (demoMode) { setWebcallTextSaved(true); setTimeout(() => setWebcallTextSaved(false), 3000); return; } if (!agency) return; setSavingWebcallText(true); setWebcallTextSaved(false); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ webcall_title: webcallTitle.trim() || null, webcall_subtitle: webcallSubtitle.trim() || null, webcall_cta: webcallCta.trim() || null }) }); if (response.ok) { await refreshAgency(); setWebcallTextSaved(true); setTimeout(() => setWebcallTextSaved(false), 3000); } else { const data = await response.json(); alert(data.error || 'Failed to save web call text'); } } catch (error) { console.error('Failed to save web call text:', error); } finally { setSavingWebcallText(false); } };
+
+  // Inline-editor text commit (fires per field on blur). Persists the three
+  // webcall text columns, merging the one that changed with current state.
+  const handleCommitWebcallText = async (patch: { title?: string; subtitle?: string; cta?: string }) => {
+    const title = patch.title !== undefined ? patch.title : webcallTitle;
+    const subtitle = patch.subtitle !== undefined ? patch.subtitle : webcallSubtitle;
+    const cta = patch.cta !== undefined ? patch.cta : webcallCta;
+    if (patch.title !== undefined) setWebcallTitle(patch.title);
+    if (patch.subtitle !== undefined) setWebcallSubtitle(patch.subtitle);
+    if (patch.cta !== undefined) setWebcallCta(patch.cta);
+    if (demoMode || !agency) { setWebcallTextSaved(true); setTimeout(() => setWebcallTextSaved(false), 2000); return; }
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ webcall_title: title.trim() || null, webcall_subtitle: subtitle.trim() || null, webcall_cta: cta.trim() || null }) });
+      if (response.ok) { await refreshAgency(); setWebcallTextSaved(true); setTimeout(() => setWebcallTextSaved(false), 2000); }
+    } catch (error) { console.error('Failed to save web call text:', error); }
+  };
+
+  // Inline-editor style change (color/toggle/size/order). Updates local state
+  // immediately for a live preview, then debounces a save into
+  // marketing_config.webcall so dragging a color picker does not spam the API.
+  const handleChangeWebcallStyle = (next: WebCallStyle) => {
+    setWebcallStyle(next);
+    if (demoMode || !agency) return;
+    if (webcallStyleTimer.current) clearTimeout(webcallStyleTimer.current);
+    webcallStyleTimer.current = setTimeout(async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        const current = (agency.marketing_config || {}) as any;
+        const updated = { ...current, webcall: next };
+        const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ marketing_config: updated }) });
+        if (response.ok) { await refreshAgency(); setWebcallStyleSaved(true); setTimeout(() => setWebcallStyleSaved(false), 2000); }
+      } catch (error) { console.error('Failed to save web call style:', error); }
+    }, 600);
+  };
+
+  const webcallEditorTheme = { text: textColor, muted: mutedTextColor, border: borderColor, inputBg, inputBorder, inputText, cardBg, primary: agencyPrimaryColor, isDark };
   const handleSaveTemplate = async () => { if (demoMode) { setTemplateSaved(true); setTimeout(() => setTemplateSaved(false), 3000); return; } if (!agency) return; setSavingTemplate(true); setTemplateSaved(false); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ marketing_template: selectedTemplate }) }); if (response.ok) { await refreshAgency(); setTemplateSaved(true); setTimeout(() => setTemplateSaved(false), 3000); } else { const data = await response.json(); alert(data.error || 'Failed to save template'); } } catch (error) { console.error('Failed to save template:', error); } finally { setSavingTemplate(false); } };
 
   // ── Custom nav links (external header/footer links) ──
@@ -566,19 +609,28 @@ export default function MarketingWebsitePage() {
             <div className="flex items-center gap-2 mb-1.5"><Phone className="h-4 w-4" style={{ color: agencyPrimaryColor }} /><h3 className="font-medium text-sm sm:text-base" style={{ color: textColor }}>AI Web Call on Your Site</h3></div>
             <p className="text-xs sm:text-sm mb-4" style={{ color: mutedTextColor }}>Let visitors talk to your AI right in the browser. Paste this wherever you want it. It uses your brand colors and fonts.</p>
 
-            {/* Editable widget text: header title, tagline, and the prompt above the call button. */}
+            {/* Inline WYSIWYG editor: click any part of the widget to edit its
+                text in place or restyle it from the side panel. This preview is
+                the exact widget that ships (same shared shell as the live page). */}
             <div className="mb-5">
-              <label className="text-xs font-medium" style={{ color: mutedTextColor }}>Widget text</label>
-              <p className="text-[10px] sm:text-xs mt-0.5 mb-2" style={{ color: mutedTextColor }}>What visitors see on the call widget: the header, the tagline under it, and the prompt above the call button. Leave blank to use the defaults.</p>
-              <div className="space-y-2">
-                <input type="text" value={webcallTitle} onChange={e => setWebcallTitle(e.target.value)} placeholder={`Talk to ${agency?.name || 'your business'}`} maxLength={60} className="w-full rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: inputText }} />
-                <input type="text" value={webcallSubtitle} onChange={e => setWebcallSubtitle(e.target.value)} placeholder="AI receptionist" maxLength={60} className="w-full rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: inputText }} />
-                <input type="text" value={webcallCta} onChange={e => setWebcallCta(e.target.value)} placeholder="Tap to call and talk to the AI. Allow your mic when asked." maxLength={160} className="w-full rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: inputText }} />
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>Click any part of the widget to edit its text or style. Changes save automatically.</p>
+                {(webcallTextSaved || webcallStyleSaved) && <span className="flex items-center gap-1.5 text-xs flex-shrink-0" style={{ color: agencyPrimaryColor }}><Check className="h-4 w-4" />Saved</span>}
               </div>
-              <div className="flex items-center gap-3 mt-2">
-                <button onClick={handleSaveWebcallText} disabled={savingWebcallText} className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50 transition-colors" style={{ backgroundColor: agencyPrimaryColor }}>{savingWebcallText ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save</button>
-                {webcallTextSaved && <span className="flex items-center gap-1.5 text-xs" style={{ color: agencyPrimaryColor }}><Check className="h-4 w-4" />Saved!</span>}
-              </div>
+              <WebCallWidgetEditor
+                title={webcallTitle}
+                subtitle={webcallSubtitle}
+                cta={webcallCta}
+                onCommitText={handleCommitWebcallText}
+                style={webcallStyle}
+                onChangeStyle={handleChangeWebcallStyle}
+                primaryColor={agencyPrimaryColor}
+                websiteTheme={(agency as any)?.website_theme || 'dark'}
+                phoneNumber={(agency as any)?.demo_phone_number || ''}
+                agencyName={agency?.name || ''}
+                editorTheme={webcallEditorTheme}
+                disabled={demoMode}
+              />
             </div>
 
             <div className="inline-flex rounded-lg p-0.5 mb-4" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
@@ -605,19 +657,10 @@ export default function MarketingWebsitePage() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-              <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${inputBorder}` }}>
-                {agency?.id && !demoMode && (webcallMode === 'demo' || webcallClientId) ? (
-                  <iframe title="AI web call preview" src={webcallPreviewSrc} loading="lazy" allow="microphone" className="block w-full" style={{ height: 460, border: 0, backgroundColor: '#f6f7f9' }} />
-                ) : (
-                  <div className="flex items-center justify-center text-xs" style={{ height: 420, color: mutedTextColor }}>{demoMode ? 'Preview on a live agency account' : 'Pick a client to preview'}</div>
-                )}
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-1.5"><label className="text-xs font-medium" style={{ color: mutedTextColor }}>Embed code</label><button onClick={() => copyToClipboard(webcallSnippet, 'webcall-code')} className="text-xs font-medium inline-flex items-center gap-1" style={{ color: agencyPrimaryColor }}>{copied === 'webcall-code' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} Copy</button></div>
-                <pre className="rounded-lg p-3 text-[10px] sm:text-xs font-mono overflow-x-auto leading-relaxed" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${inputBorder}`, color: textColor, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{webcallSnippet}</pre>
-                <p className="text-[10px] sm:text-xs mt-2" style={{ color: mutedTextColor }}>Visitors allow their mic, then talk to {webcallMode === 'demo' ? 'your demo assistant' : 'the selected client’s AI'}.</p>
-              </div>
+            <div>
+              <div className="flex items-center justify-between mb-1.5"><label className="text-xs font-medium" style={{ color: mutedTextColor }}>Embed code</label><button onClick={() => copyToClipboard(webcallSnippet, 'webcall-code')} className="text-xs font-medium inline-flex items-center gap-1" style={{ color: agencyPrimaryColor }}>{copied === 'webcall-code' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} Copy</button></div>
+              <pre className="rounded-lg p-3 text-[10px] sm:text-xs font-mono overflow-x-auto leading-relaxed" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${inputBorder}`, color: textColor, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{webcallSnippet}</pre>
+              <p className="text-[10px] sm:text-xs mt-2" style={{ color: mutedTextColor }}>Visitors allow their mic, then talk to {webcallMode === 'demo' ? 'your demo assistant' : 'the selected client’s AI'}.</p>
             </div>
           </div>
 
