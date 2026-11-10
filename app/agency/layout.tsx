@@ -561,7 +561,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       {sidebarOpen && isMobile && (<div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden" onClick={() => setSidebarOpen(false)} />)}
 
       {/* Sidebar */}
-      <aside className={`brand-shell brand-display fixed inset-y-0 left-0 z-50 w-72 md:w-64 flex flex-col overflow-y-auto transform transition-transform duration-300 ease-out ${isMobile ? `${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}` : 'translate-x-0'}`} style={{ backgroundColor: theme.sidebarBg, borderRight: `1px solid ${theme.sidebarBorder}`, paddingTop: isMobile ? 'env(safe-area-inset-top)' : 0, top: showBanner ? bannerH : 0 }}>
+      <aside className={`brand-shell brand-display fixed inset-y-0 left-0 z-50 w-72 md:w-64 flex flex-col overflow-y-auto transform transition-transform duration-300 ease-out ${isMobile ? `${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}` : 'translate-x-0'}`} style={{ backgroundColor: theme.sidebarBg, borderRight: `1px solid ${theme.sidebarBorder}`, paddingTop: 'env(safe-area-inset-top)', top: showBanner ? bannerH : 0 }}>
         <div className="flex md:hidden items-center justify-between h-16 px-4" style={{ borderBottom: `1px solid ${theme.sidebarBorder}` }}><span className="font-semibold text-lg" style={{ color: theme.sidebarText }}>Menu</span><button onClick={() => setSidebarOpen(false)} className="flex items-center justify-center w-11 h-11 -mr-2 rounded-xl transition-colors" style={{ color: theme.sidebarText }}><X className="h-7 w-7" /></button></div>
         <div className="hidden md:flex items-center gap-3 px-6 py-3 overflow-hidden" style={{ flexGrow: 0, flexShrink: 1, flexBasis: navLogoHeight(32), minHeight: '48px', maxHeight: navLogoHeight(32), borderBottom: `1px solid ${theme.sidebarBorder}` }}>{branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} style={{ maxHeight: '100%', width: 'auto', maxWidth: '100%' }} className="object-contain flex-shrink-0" />) : (<><div className="flex items-center justify-center rounded-lg" style={{ height: '32px', width: '32px', backgroundColor: theme.primary15, border: `1px solid ${theme.sidebarBorder}` }}><WaveformIcon className="h-5 w-5" color={theme.primary} /></div><span className="font-semibold truncate" style={{ color: theme.sidebarText }}>{branding.name}</span></>)}</div>
 
@@ -587,7 +587,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
       {/* Content. <main> stays mounted and painted with theme.bg the whole time,
           so no base color is ever exposed during a tab switch. Only the keyed
           inner wrapper remounts per route and fades in via .agency-page-enter. */}
-      <main className="brand-shell md:pl-64 min-h-screen" style={{ backgroundColor: theme.bg }}>
+      <main className="brand-shell md:pl-64 min-h-screen" style={{ backgroundColor: theme.bg, paddingTop: isMobile ? undefined : 'env(safe-area-inset-top)' }}>
         <div key={pathname} className="agency-page-enter">{children}</div>
       </main>
       {/* FAQ/help bot: desktop only. On mobile it floats over action buttons
