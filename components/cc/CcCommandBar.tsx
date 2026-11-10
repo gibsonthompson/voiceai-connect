@@ -334,7 +334,7 @@ export default function CcCommandBar() {
           <div className="absolute left-0 right-0 mt-2 rounded-2xl overflow-hidden z-[70] max-h-[60vh] overflow-y-auto"
             style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, boxShadow: '0 20px 60px rgba(0,0,0,0.28)' }}>
             {results.length === 0 ? (
-              <div className="px-4 py-6 text-center text-[13px]" style={{ color: theme.textMuted }}>
+              <div className="px-4 py-6 text-center text-[13px]" style={{ color: theme.cardTextMuted }}>
                 {searching ? <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Searching...</span>
                   : intentHint ? intentHint
                   : q.trim() ? 'No matches. Try a name, a business, or "create a new business".'
@@ -365,7 +365,7 @@ export default function CcCommandBar() {
                         </span>
                         <span className="min-w-0 flex-1">
                           <span className="block text-[13px] font-medium truncate" style={{ color: theme.text }}>{r.label}</span>
-                          {r.sub && <span className="block text-[11.5px] truncate" style={{ color: theme.textMuted }}>{r.sub}</span>}
+                          {r.sub && <span className="block text-[11.5px] truncate" style={{ color: theme.cardTextMuted }}>{r.sub}</span>}
                         </span>
                         {active && <CornerDownLeft className="h-3.5 w-3.5 flex-shrink-0" style={{ color: theme.textSubtle }} />}
                       </button>

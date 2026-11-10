@@ -288,7 +288,7 @@ export default function NeedToSearch() {
       <div className="flex items-center gap-3 rounded-2xl px-4 py-3.5 transition-all"
         style={{ backgroundColor: theme.card, border: `1px solid ${open ? theme.primary : theme.border}` }}>
         <Search className="h-5 w-5 flex-shrink-0" style={{ color: theme.iconColor }} />
-        <span className="text-sm font-medium flex-shrink-0 hidden sm:inline" style={{ color: theme.textMuted }}>I need to</span>
+        <span className="text-sm font-medium flex-shrink-0 hidden sm:inline" style={{ color: theme.cardTextMuted }}>I need to</span>
         <input
           value={query}
           onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
@@ -304,7 +304,7 @@ export default function NeedToSearch() {
         <div className="absolute z-50 mt-2 w-full rounded-2xl overflow-hidden shadow-xl"
           style={{ background: `linear-gradient(${theme.card}, ${theme.card}), ${theme.bg}`, border: `1px solid ${theme.border}` }}>
           {!qClean && (
-            <div className="px-4 pt-3 pb-1 text-[11px] font-medium uppercase tracking-wider" style={{ color: theme.textMuted }}>Popular</div>
+            <div className="px-4 pt-3 pb-1 text-[11px] font-medium uppercase tracking-wider" style={{ color: theme.cardTextMuted }}>Popular</div>
           )}
           {rows.map((r, i) => {
             const Icon = r.Icon;
@@ -319,9 +319,9 @@ export default function NeedToSearch() {
                 </span>
                 <span className="flex-1 min-w-0">
                   <span className="block text-sm font-medium truncate" style={{ color: theme.text }}>{r.label}</span>
-                  {r.hint && <span className="block text-[11px]" style={{ color: theme.textMuted }}>{r.hint}</span>}
+                  {r.hint && <span className="block text-[11px]" style={{ color: theme.cardTextMuted }}>{r.hint}</span>}
                 </span>
-                <ArrowRight className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted }} />
+                <ArrowRight className="h-4 w-4 flex-shrink-0" style={{ color: theme.cardTextMuted }} />
               </button>
             );
           })}
@@ -334,15 +334,15 @@ export default function NeedToSearch() {
               </span>
               <span className="flex-1 min-w-0">
                 <span className="block text-sm font-medium" style={{ color: theme.text }}>Ask the support assistant</span>
-                <span className="block text-[11px] truncate" style={{ color: theme.textMuted }}>&ldquo;{qClean}&rdquo;</span>
+                <span className="block text-[11px] truncate" style={{ color: theme.cardTextMuted }}>&ldquo;{qClean}&rdquo;</span>
               </span>
-              <ArrowRight className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted }} />
+              <ArrowRight className="h-4 w-4 flex-shrink-0" style={{ color: theme.cardTextMuted }} />
             </button>
           )}
 
           {!noMatch && qClean && (
             <button onClick={askSupport} className="w-full flex items-center gap-2 px-4 py-2.5 text-left border-t text-[12px]"
-              style={{ borderColor: theme.border, color: theme.textMuted }}>
+              style={{ borderColor: theme.border, color: theme.cardTextMuted }}>
               <HelpCircle className="h-3.5 w-3.5" /> Not here? Ask the support assistant
             </button>
           )}

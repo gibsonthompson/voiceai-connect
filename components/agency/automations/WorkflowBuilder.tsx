@@ -202,7 +202,7 @@ function Select({ value, options, onChange, theme }: { value: string; options: {
     <div className="relative">
       <button type="button" onClick={() => setOpen((o) => !o)} className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-sm" style={{ backgroundColor: theme.inputBg || theme.card, border: `1px solid ${theme.inputBorder || theme.border}`, color: theme.text }}>
         <span className="truncate">{cur ? cur.label : 'Select'}</span>
-        <ChevronDown className="h-4 w-4 shrink-0" style={{ color: theme.textMuted }} />
+        <ChevronDown className="h-4 w-4 shrink-0" style={{ color: theme.cardTextMuted }} />
       </button>
       {open && (
         <>
@@ -300,11 +300,11 @@ function AddStepMenu({ plan, theme, onPick, onClose }: { plan: string; theme: an
       <div className="w-full max-w-md rounded-2xl p-4 max-h-[80vh] overflow-y-auto" style={{ background: theme.card, border: `1px solid ${theme.border}` }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold" style={{ color: theme.text }}>Add a step</h3>
-          <button type="button" onClick={onClose}><X className="h-5 w-5" style={{ color: theme.textMuted }} /></button>
+          <button type="button" onClick={onClose}><X className="h-5 w-5" style={{ color: theme.cardTextMuted }} /></button>
         </div>
         {groups.map((g) => (
           <div key={g} className="mb-3">
-            <div className="text-xs font-medium uppercase tracking-wide mb-1.5" style={{ color: theme.textMuted }}>{g}</div>
+            <div className="text-xs font-medium uppercase tracking-wide mb-1.5" style={{ color: theme.cardTextMuted }}>{g}</div>
             <div className="grid grid-cols-2 gap-2">
               {Object.entries(CATALOG).filter(([, c]) => c.group === g).map(([type, c]) => {
                 const locked = c.tier === 'advanced' && plan !== 'scale';
@@ -314,8 +314,8 @@ function AddStepMenu({ plan, theme, onPick, onClose }: { plan: string; theme: an
                     className="text-left p-2.5 rounded-xl flex items-start gap-2" style={{ background: theme.hover, opacity: locked ? 0.55 : 1, cursor: locked ? 'not-allowed' : 'pointer' }}>
                     <Icon className="h-4 w-4 mt-0.5 shrink-0" style={{ color: theme.iconColor }} />
                     <div className="min-w-0">
-                      <div className="text-sm font-medium flex items-center gap-1" style={{ color: theme.text }}>{c.label}{locked && <Lock className="h-3 w-3" style={{ color: theme.textMuted }} />}</div>
-                      <div className="text-xs" style={{ color: theme.textMuted }}>{locked ? 'Scale only' : c.blurb}</div>
+                      <div className="text-sm font-medium flex items-center gap-1" style={{ color: theme.text }}>{c.label}{locked && <Lock className="h-3 w-3" style={{ color: theme.cardTextMuted }} />}</div>
+                      <div className="text-xs" style={{ color: theme.cardTextMuted }}>{locked ? 'Scale only' : c.blurb}</div>
                     </div>
                   </button>
                 );
@@ -347,7 +347,7 @@ function ConfigDrawer({ node, workflow, theme, plan, onPatchNode, onDeleteNode, 
     <div className="absolute top-0 right-0 h-full w-full sm:w-96 z-30 overflow-y-auto" style={{ background: theme.card, borderLeft: `1px solid ${theme.border}` }}>
       <div className="flex items-center justify-between p-4 sticky top-0" style={{ background: theme.card, borderBottom: `1px solid ${theme.border}` }}>
         <h3 className="font-semibold" style={{ color: theme.text }}>{header}</h3>
-        <button type="button" onClick={onClose}><X className="h-5 w-5" style={{ color: theme.textMuted }} /></button>
+        <button type="button" onClick={onClose}><X className="h-5 w-5" style={{ color: theme.cardTextMuted }} /></button>
       </div>
       <div className="p-4 space-y-4">
         {node.type === 'trigger' && (
@@ -356,7 +356,7 @@ function ConfigDrawer({ node, workflow, theme, plan, onPatchNode, onDeleteNode, 
               <div className="space-y-3">
                 {(['customer', 'account'] as const).map((grp) => (
                   <div key={grp}>
-                    <div className="text-[11px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: theme.textMuted }}>
+                    <div className="text-[11px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: theme.cardTextMuted }}>
                       {grp === 'customer' ? 'A customer does something' : 'A client account changes'}
                     </div>
                     <div className="grid grid-cols-2 gap-2">
@@ -386,7 +386,7 @@ function ConfigDrawer({ node, workflow, theme, plan, onPatchNode, onDeleteNode, 
               </div>
             </Field>
             {ACCOUNT_TRIGGERS.includes(workflow.trigger_type) ? (
-              <p className="text-xs" style={{ color: theme.textMuted }}>This runs on a billing event for the business. A Send SMS step texts the business owner. You can also branch, wait, or call a webhook.</p>
+              <p className="text-xs" style={{ color: theme.cardTextMuted }}>This runs on a billing event for the business. A Send SMS step texts the business owner. You can also branch, wait, or call a webhook.</p>
             ) : (
               <Field label="Stop automatically when the customer" theme={theme}>
                 <label className="flex items-center gap-2 text-sm cursor-pointer mb-1.5" style={{ color: theme.text }}>
@@ -404,7 +404,7 @@ function ConfigDrawer({ node, workflow, theme, plan, onPatchNode, onDeleteNode, 
           <Field label="Message" theme={theme}>
             <textarea value={d.message || ''} onChange={(e) => msgRef(e.target.value)} rows={5} className="w-full px-3 py-2 rounded-xl text-sm resize-y" style={{ background: theme.inputBg || theme.card, border: `1px solid ${theme.inputBorder || theme.border}`, color: theme.text }} />
             <div className="flex flex-wrap gap-1 mt-2">
-              {TOKENS.map((tk) => <button key={tk} type="button" onClick={() => insertToken('message', tk)} className="text-xs px-2 py-0.5 rounded-full" style={{ background: theme.hover, color: theme.textMuted }}>{`{{${tk}}}`}</button>)}
+              {TOKENS.map((tk) => <button key={tk} type="button" onClick={() => insertToken('message', tk)} className="text-xs px-2 py-0.5 rounded-full" style={{ background: theme.hover, color: theme.cardTextMuted }}>{`{{${tk}}}`}</button>)}
             </div>
           </Field>
         )}
@@ -439,7 +439,7 @@ function ConfigDrawer({ node, workflow, theme, plan, onPatchNode, onDeleteNode, 
             {(d.op === 'eq' || d.op === 'ne') && (
               <Field label="Value" theme={theme}><input value={d.value || ''} onChange={(e) => set({ value: e.target.value })} className="w-full px-3 py-2 rounded-xl text-sm" style={{ background: theme.inputBg || theme.card, border: `1px solid ${theme.inputBorder || theme.border}`, color: theme.text }} placeholder="e.g. true" /></Field>
             )}
-            <p className="text-xs" style={{ color: theme.textMuted }}>The Yes branch continues; the No branch ends. Click the + on either branch to add steps.</p>
+            <p className="text-xs" style={{ color: theme.cardTextMuted }}>The Yes branch continues; the No branch ends. Click the + on either branch to add steps.</p>
           </>
         )}
 
@@ -464,7 +464,7 @@ function ConfigDrawer({ node, workflow, theme, plan, onPatchNode, onDeleteNode, 
 }
 
 function Field({ label, theme, children }: any) {
-  return <div><label className="block text-xs font-medium mb-1.5" style={{ color: theme.textMuted }}>{label}</label>{children}</div>;
+  return <div><label className="block text-xs font-medium mb-1.5" style={{ color: theme.cardTextMuted }}>{label}</label>{children}</div>;
 }
 function Checkbox({ on, theme, onClick }: any) {
   return <button type="button" onClick={onClick} className="h-4 w-4 rounded flex items-center justify-center shrink-0" style={{ background: on ? theme.primary : 'transparent', border: `1px solid ${on ? theme.primary : theme.border}` }}>{on && <Check className="h-3 w-3" style={{ color: theme.primaryText }} />}</button>;
@@ -490,7 +490,7 @@ function ReminderEditor({ d, set, theme }: any) {
         <div className="flex-1"><Select theme={theme} value={d.unit || 'days'} options={[{ value: 'minutes', label: 'minutes' }, { value: 'hours', label: 'hours' }, { value: 'days', label: 'days' }]} onChange={(u) => set({ unit: u })} /></div>
       </div>
       <Select theme={theme} value={d.direction || 'before'} options={[{ value: 'before', label: 'before the appointment' }, { value: 'after', label: 'after the appointment' }]} onChange={(dir) => set({ direction: dir })} />
-      <p className="text-xs" style={{ color: theme.textMuted }}>Uses the real appointment time from the booking. If the appointment is sooner than this, the next step runs right away.</p>
+      <p className="text-xs" style={{ color: theme.cardTextMuted }}>Uses the real appointment time from the booking. If the appointment is sooner than this, the next step runs right away.</p>
     </div>
   );
 }
@@ -586,12 +586,12 @@ function Inner({ workflow, plan, saving, onSaveDraft, onActivate, onPause, onBac
       {/* toolbar */}
       <div className="flex items-center justify-between gap-3 px-4 py-3" style={{ borderBottom: `1px solid ${theme.border}` }}>
         <div className="flex items-center gap-3 min-w-0">
-          <button type="button" onClick={onBack} className="p-2 rounded-lg" style={{ color: theme.textMuted }}><ArrowLeft className="h-5 w-5" /></button>
+          <button type="button" onClick={onBack} className="p-2 rounded-lg" style={{ color: theme.cardTextMuted }}><ArrowLeft className="h-5 w-5" /></button>
           <input value={wf.name} onChange={(e) => patchWorkflow({ name: e.target.value })} className="font-semibold text-lg bg-transparent outline-none min-w-0" style={{ color: theme.text }} />
-          <span className="text-xs px-2 py-0.5 rounded-full shrink-0 inline-flex items-center gap-1" style={{ background: theme.hover, color: theme.textMuted }}>
+          <span className="text-xs px-2 py-0.5 rounded-full shrink-0 inline-flex items-center gap-1" style={{ background: theme.hover, color: theme.cardTextMuted }}>
             <Building2 className="h-3 w-3" /> {workflow.client_name || 'All clients'}
           </span>
-          {dirty && <span className="text-xs px-2 py-0.5 rounded-full shrink-0" style={{ background: theme.hover, color: theme.textMuted }}>Unsaved</span>}
+          {dirty && <span className="text-xs px-2 py-0.5 rounded-full shrink-0" style={{ background: theme.hover, color: theme.cardTextMuted }}>Unsaved</span>}
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <button type="button" onClick={doSave} disabled={saving || !dirty} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium" style={{ color: theme.text, border: `1px solid ${theme.border}`, opacity: saving || !dirty ? 0.5 : 1 }}>
@@ -619,7 +619,7 @@ function Inner({ workflow, plan, saving, onSaveDraft, onActivate, onPause, onBac
           <Controls showInteractive={false} />
         </ReactFlow>
 
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 text-xs px-3 py-1.5 rounded-full pointer-events-none whitespace-nowrap" style={{ background: theme.card, border: `1px solid ${theme.border}`, color: theme.textMuted }}>
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 text-xs px-3 py-1.5 rounded-full pointer-events-none whitespace-nowrap" style={{ background: theme.card, border: `1px solid ${theme.border}`, color: theme.cardTextMuted }}>
           Click a step to edit, or a <span style={{ color: theme.primary, fontWeight: 600 }}>+</span> to add one
         </div>
 

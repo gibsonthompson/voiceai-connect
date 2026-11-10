@@ -100,7 +100,7 @@ export default function AILabSearchBar({ agencyId, api, theme, logoUrl }: { agen
       <div className="min-h-[75vh] flex flex-col items-center justify-center px-6 text-center">
         <Loader2 className="h-7 w-7 animate-spin mb-4" style={{ color: theme.iconColor }} />
         <p className="text-[15px] font-medium" style={{ color: theme.text }}>Building your receptionist</p>
-        <p className="text-sm mt-1" style={{ color: theme.textMuted }}>Setting up the AI, pulling in your details, and assigning a number.</p>
+        <p className="text-sm mt-1" style={{ color: theme.cardTextMuted }}>Setting up the AI, pulling in your details, and assigning a number.</p>
       </div>
     );
   }
@@ -149,7 +149,7 @@ export default function AILabSearchBar({ agencyId, api, theme, logoUrl }: { agen
 
         {/* Hint — paste a link and we read the site */}
         {!result && !loading && (
-          <p className="text-center text-[12px] mt-3" style={{ color: theme.textMuted }}>
+          <p className="text-center text-[12px] mt-3" style={{ color: theme.cardTextMuted }}>
             Paste a website and we’ll read it to fill in the details.
           </p>
         )}
@@ -185,14 +185,14 @@ export default function AILabSearchBar({ agencyId, api, theme, logoUrl }: { agen
             {result.mode === 'clarify' && (
               <div>
                 <p className="text-sm font-medium mb-1" style={{ color: theme.text }}>{result.clarifying_question}</p>
-                <p className="text-sm mb-3" style={{ color: theme.textMuted }}>Add a word or two about the business and try again.</p>
+                <p className="text-sm mb-3" style={{ color: theme.cardTextMuted }}>Add a word or two about the business and try again.</p>
                 <button onClick={() => inputRef.current?.focus()} className="text-sm font-semibold" style={{ color: theme.primary }}>Edit my description</button>
               </div>
             )}
 
             {result.mode === 'matched' && result.industry && (
               <div>
-                <p className="text-sm mb-3" style={{ color: theme.textMuted }}>We’ll build a <span style={{ color: theme.text, fontWeight: 600 }}>{result.industry.label}</span> receptionist{result.business_name ? ` for ${result.business_name}` : ''} and assign it a number.</p>
+                <p className="text-sm mb-3" style={{ color: theme.cardTextMuted }}>We’ll build a <span style={{ color: theme.text, fontWeight: 600 }}>{result.industry.label}</span> receptionist{result.business_name ? ` for ${result.business_name}` : ''} and assign it a number.</p>
                 <button onClick={() => build(result.industry!.value, result)} className="inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.98]" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
                   <Phone className="h-4 w-4" /> Build this receptionist
                 </button>
@@ -201,16 +201,16 @@ export default function AILabSearchBar({ agencyId, api, theme, logoUrl }: { agen
 
             {result.mode === 'disambiguate' && result.industry && (
               <div>
-                <p className="text-sm mb-3" style={{ color: theme.textMuted }}>Closest match for {label}:</p>
+                <p className="text-sm mb-3" style={{ color: theme.cardTextMuted }}>Closest match for {label}:</p>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <button onClick={() => build(result.industry!.value, result)} className="flex-1 text-left rounded-xl p-4 transition-all" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary}40` }}>
                     <p className="font-semibold text-sm" style={{ color: theme.text }}>{result.industry.label}</p>
-                    <p className="text-sm mt-0.5" style={{ color: theme.textMuted }}>{result.industry.description}</p>
+                    <p className="text-sm mt-0.5" style={{ color: theme.cardTextMuted }}>{result.industry.description}</p>
                     <span className="inline-flex items-center gap-1 text-sm font-semibold mt-2" style={{ color: theme.primary }}>Build with this <ArrowRight className="h-3.5 w-3.5" /></span>
                   </button>
                   <button onClick={() => generateCustomThenBuild(result)} className="flex-1 text-left rounded-xl p-4 transition-all" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
                     <p className="font-semibold text-sm flex items-center gap-1.5" style={{ color: theme.text }}><Sparkles className="h-3.5 w-3.5" style={{ color: theme.iconColor }} /> Build a custom one</p>
-                    <p className="text-sm mt-0.5" style={{ color: theme.textMuted }}>Generate a receptionist tailored to {label}.</p>
+                    <p className="text-sm mt-0.5" style={{ color: theme.cardTextMuted }}>Generate a receptionist tailored to {label}.</p>
                   </button>
                 </div>
               </div>
@@ -219,7 +219,7 @@ export default function AILabSearchBar({ agencyId, api, theme, logoUrl }: { agen
             {result.mode === 'custom' && (
               <div>
                 <p className="text-sm mb-1" style={{ color: theme.text }}>No built-in template fits {label} exactly.</p>
-                <p className="text-sm mb-3" style={{ color: theme.textMuted }}>We’ll generate a custom knowledge base for it, then build the receptionist.</p>
+                <p className="text-sm mb-3" style={{ color: theme.cardTextMuted }}>We’ll generate a custom knowledge base for it, then build the receptionist.</p>
                 <button onClick={() => generateCustomThenBuild(result)} className="inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.98]" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
                   <Sparkles className="h-4 w-4" /> Generate &amp; build it
                 </button>
@@ -227,17 +227,17 @@ export default function AILabSearchBar({ agencyId, api, theme, logoUrl }: { agen
             )}
 
             {(result.business_name || result.city || result.website_url) && (
-              <p className="text-[12px] mt-3" style={{ color: theme.textMuted }}>
+              <p className="text-[12px] mt-3" style={{ color: theme.cardTextMuted }}>
                 Picked up:{result.business_name ? ` ${result.business_name}` : ''}{result.city ? ` · ${result.city}` : ''}{result.website_url ? ` · ${result.website_url}` : ''}
               </p>
             )}
-            <button onClick={() => { setResult(null); setQuery(''); inputRef.current?.focus(); }} className="text-[12px] mt-2" style={{ color: theme.textMuted }}>Start over</button>
+            <button onClick={() => { setResult(null); setQuery(''); inputRef.current?.focus(); }} className="text-[12px] mt-2" style={{ color: theme.cardTextMuted }}>Start over</button>
           </div>
         )}
 
         {!result && (
           <div className="text-center mt-9">
-            <button onClick={() => router.push('/agency/templates')} className="inline-flex items-center gap-1.5 text-[13px] transition-colors hover:opacity-80" style={{ color: theme.textMuted }}>
+            <button onClick={() => router.push('/agency/templates')} className="inline-flex items-center gap-1.5 text-[13px] transition-colors hover:opacity-80" style={{ color: theme.cardTextMuted }}>
               <Package className="h-3.5 w-3.5" /> Browse all industry templates
             </button>
           </div>

@@ -138,7 +138,7 @@ export default function AgencyClientThread({ agencyId, backendUrl, requestId, re
           {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Send
         </button>
       </div>
-      <div className="px-4 pb-3 text-[11px]" style={{ color: theme.textMuted }}>
+      <div className="px-4 pb-3 text-[11px]" style={{ color: theme.cardTextMuted }}>
         {recipientKind === 'visitor'
           ? 'This visitor has no dashboard, so your reply is texted straight to their number.'
           : 'Your reply is sent to the client in their dashboard and they get a text to check it.'}

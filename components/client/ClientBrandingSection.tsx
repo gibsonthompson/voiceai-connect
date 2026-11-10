@@ -348,7 +348,7 @@ export default function ClientBrandingSection({ clientId, theme }: Props) {
 
         {/* ── Logo Upload ──────────────────────────────────────────── */}
         <div>
-          <label className="text-[12px] font-semibold uppercase tracking-wider block mb-2" style={{ color: theme.textMuted }}>
+          <label className="text-[12px] font-semibold uppercase tracking-wider block mb-2" style={{ color: theme.cardTextMuted }}>
             Logo
           </label>
           <div className="flex items-center gap-4">
@@ -386,7 +386,7 @@ export default function ClientBrandingSection({ clientId, theme }: Props) {
 
         {/* ── Brand Colors ─────────────────────────────────────────── */}
         <div>
-          <label className="text-[12px] font-semibold uppercase tracking-wider block mb-3" style={{ color: theme.textMuted }}>
+          <label className="text-[12px] font-semibold uppercase tracking-wider block mb-3" style={{ color: theme.cardTextMuted }}>
             Brand Colors
           </label>
           <div className="space-y-3">
@@ -406,8 +406,8 @@ export default function ClientBrandingSection({ clientId, theme }: Props) {
             className="flex items-center justify-between w-full group"
           >
             <div className="flex items-center gap-2">
-              <Paintbrush className="w-3.5 h-3.5" style={{ color: theme.textMuted }} />
-              <span className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>
+              <Paintbrush className="w-3.5 h-3.5" style={{ color: theme.cardTextMuted }} />
+              <span className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: theme.cardTextMuted }}>
                 Advanced Appearance
               </span>
               {hasAdvancedOverrides && (
@@ -426,7 +426,7 @@ export default function ClientBrandingSection({ clientId, theme }: Props) {
             <div className="mt-4 space-y-4">
               {/* Theme Mode */}
               <div>
-                <label className="text-[11px] font-medium block mb-2" style={{ color: theme.textMuted }}>Theme Mode</label>
+                <label className="text-[11px] font-medium block mb-2" style={{ color: theme.cardTextMuted }}>Theme Mode</label>
                 <div className="flex gap-2">
                   {[
                     { value: '', label: 'Auto', icon: null },
@@ -455,7 +455,7 @@ export default function ClientBrandingSection({ clientId, theme }: Props) {
 
               {/* Nav Colors */}
               <div>
-                <label className="text-[11px] font-medium block mb-2" style={{ color: theme.textMuted }}>Navigation</label>
+                <label className="text-[11px] font-medium block mb-2" style={{ color: theme.cardTextMuted }}>Navigation</label>
                 <div className="space-y-2.5">
                   <ColorPicker label="Nav Background" value={navBg} onChange={setNavBg} previewDerived={derivedNavBg} theme={theme} />
                   <ColorPicker label="Nav Text" value={navText} onChange={setNavText} previewDerived={derivedNavText} theme={theme} />
@@ -464,13 +464,13 @@ export default function ClientBrandingSection({ clientId, theme }: Props) {
 
               {/* Button */}
               <div>
-                <label className="text-[11px] font-medium block mb-2" style={{ color: theme.textMuted }}>Buttons</label>
+                <label className="text-[11px] font-medium block mb-2" style={{ color: theme.cardTextMuted }}>Buttons</label>
                 <ColorPicker label="Button Text" value={buttonText} onChange={setButtonText} previewDerived={derivedButtonText} theme={theme} />
               </div>
 
               {/* Page */}
               <div>
-                <label className="text-[11px] font-medium block mb-2" style={{ color: theme.textMuted }}>Page</label>
+                <label className="text-[11px] font-medium block mb-2" style={{ color: theme.cardTextMuted }}>Page</label>
                 <div className="space-y-2.5">
                   <ColorPicker label="Page Background" value={pageBg} onChange={setPageBg} theme={theme} />
                   <ColorPicker label="Card Background" value={cardBg} onChange={setCardBg} theme={theme} />
@@ -497,7 +497,7 @@ export default function ClientBrandingSection({ clientId, theme }: Props) {
           <button
             onClick={() => setPreviewOpen(!previewOpen)}
             className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-wider"
-            style={{ color: theme.textMuted }}
+            style={{ color: theme.cardTextMuted }}
           >
             <Eye className="w-3.5 h-3.5" />
             Live Preview
@@ -555,7 +555,7 @@ export default function ClientBrandingSection({ clientId, theme }: Props) {
                   }}
                 >
                   <p className="text-[11px] font-medium" style={{ color: theme.text }}>Sample Card</p>
-                  <p className="text-[10px] mt-0.5" style={{ color: theme.textMuted }}>This shows your card and page colors</p>
+                  <p className="text-[10px] mt-0.5" style={{ color: theme.cardTextMuted }}>This shows your card and page colors</p>
                 </div>
                 <button
                   className="w-full py-2 rounded-lg text-[11px] font-semibold"

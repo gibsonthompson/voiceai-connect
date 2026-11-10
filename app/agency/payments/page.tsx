@@ -242,7 +242,7 @@ export default function AgencyPaymentsPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Wallet className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Payments</h1>
-            <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>Your balance, payouts, and client payments.</p>
+            <p className="mt-0.5 text-sm" style={{ color: theme.cardTextMuted }}>Your balance, payouts, and client payments.</p>
           </div>
         </div>
 
@@ -251,7 +251,7 @@ export default function AgencyPaymentsPage() {
             <AlertCircle className="h-7 w-7" style={{ color: theme.warningText }} />
           </div>
           <h2 className="text-lg font-semibold" style={{ color: theme.text }}>Your session expired</h2>
-          <p className="mt-1.5 text-sm max-w-md mx-auto" style={{ color: theme.textMuted }}>
+          <p className="mt-1.5 text-sm max-w-md mx-auto" style={{ color: theme.cardTextMuted }}>
             Sign in again to see your balance and payouts. Your Stripe account and your payments are unaffected.
           </p>
           <div className="mt-5 flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -267,7 +267,7 @@ export default function AgencyPaymentsPage() {
               onClick={() => fetchFinancials(true)}
               disabled={refreshing}
               className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
-              style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, color: theme.textMuted }}
+              style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, color: theme.cardTextMuted }}
             >
               {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
               Try again
@@ -289,7 +289,7 @@ export default function AgencyPaymentsPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Wallet className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Payments</h1>
-            <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>Your balance, payouts, and client payments.</p>
+            <p className="mt-0.5 text-sm" style={{ color: theme.cardTextMuted }}>Your balance, payouts, and client payments.</p>
           </div>
         </div>
 
@@ -305,7 +305,7 @@ export default function AgencyPaymentsPage() {
             <CreditCard className="h-7 w-7" style={{ color: theme.iconColor }} />
           </div>
           <h2 className="text-lg font-semibold" style={{ color: theme.text }}>Connect Stripe to see your money</h2>
-          <p className="mt-1.5 text-sm max-w-md mx-auto" style={{ color: theme.textMuted }}>
+          <p className="mt-1.5 text-sm max-w-md mx-auto" style={{ color: theme.cardTextMuted }}>
             Once Stripe Connect is set up, your available balance, upcoming payouts, and every client payment show up here. Payments go straight to your own Stripe account.
           </p>
           <a
@@ -351,7 +351,7 @@ export default function AgencyPaymentsPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Wallet className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Payments</h1>
-            <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>Your balance, payouts, and client payments.</p>
+            <p className="mt-0.5 text-sm" style={{ color: theme.cardTextMuted }}>Your balance, payouts, and client payments.</p>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -368,7 +368,7 @@ export default function AgencyPaymentsPage() {
             onClick={() => fetchFinancials(true)}
             disabled={refreshing || demoMode}
             className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors disabled:opacity-50"
-            style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, color: theme.textMuted }}
+            style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, color: theme.cardTextMuted }}
           >
             {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             <span className="hidden sm:inline">Refresh</span>
@@ -388,7 +388,7 @@ export default function AgencyPaymentsPage() {
           <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.warningText }} />
           <div className="text-xs sm:text-sm" style={{ color: theme.warningText }}>
             <p className="font-medium mb-0.5">Stripe setup is incomplete</p>
-            <p style={{ color: theme.textMuted }}>
+            <p style={{ color: theme.cardTextMuted }}>
               {data.charges_enabled === false ? 'Charges are not enabled yet. ' : ''}
               {data.payouts_enabled === false ? 'Payouts are not enabled yet. ' : ''}
               <a href="/agency/settings?tab=payments" className="underline" style={{ color: theme.primary }}>Finish setup</a>
@@ -404,11 +404,11 @@ export default function AgencyPaymentsPage() {
           <div className="absolute inset-0" style={{ background: theme.isDark ? `linear-gradient(135deg, ${theme.primary}12 0%, transparent 60%)` : `linear-gradient(135deg, ${theme.primary}08 0%, transparent 60%)` }} />
           <div className="relative flex items-start justify-between">
             <div className="min-w-0">
-              <p className="text-xs font-medium uppercase tracking-wider" style={{ color: theme.textMuted }}>Available balance</p>
+              <p className="text-xs font-medium uppercase tracking-wider" style={{ color: theme.cardTextMuted }}>Available balance</p>
               <p className="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight" style={{ color: theme.text }}>{formatMoney(available, cur)}</p>
-              <p className="mt-1.5 text-xs sm:text-sm" style={{ color: theme.textMuted }}>Ready to pay out to your bank</p>
+              <p className="mt-1.5 text-xs sm:text-sm" style={{ color: theme.cardTextMuted }}>Ready to pay out to your bank</p>
               {otherAvailable.length > 0 && (
-                <p className="mt-1 text-[11px]" style={{ color: theme.textMuted }}>
+                <p className="mt-1 text-[11px]" style={{ color: theme.cardTextMuted }}>
                   Plus {otherAvailable.map((b) => formatMoney(b.amount, b.currency)).join(', ')}
                 </p>
               )}
@@ -423,9 +423,9 @@ export default function AgencyPaymentsPage() {
         <div className="rounded-2xl p-4 sm:p-5" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-xs font-medium uppercase tracking-wider" style={{ color: theme.textMuted }}>Pending</p>
+              <p className="text-xs font-medium uppercase tracking-wider" style={{ color: theme.cardTextMuted }}>Pending</p>
               <p className="mt-2 text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>{formatMoney(pending, cur)}</p>
-              <p className="mt-1 text-[11px] sm:text-xs" style={{ color: theme.textMuted }}>Clearing soon</p>
+              <p className="mt-1 text-[11px] sm:text-xs" style={{ color: theme.cardTextMuted }}>Clearing soon</p>
             </div>
             <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: theme.infoBg }}>
               <Clock className="h-4 w-4" style={{ color: theme.info }} />
@@ -437,18 +437,18 @@ export default function AgencyPaymentsPage() {
         <div className="rounded-2xl p-4 sm:p-5" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-xs font-medium uppercase tracking-wider" style={{ color: theme.textMuted }}>Next payout</p>
+              <p className="text-xs font-medium uppercase tracking-wider" style={{ color: theme.cardTextMuted }}>Next payout</p>
               {data.next_payout ? (
                 <>
                   <p className="mt-2 text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>{formatMoney(data.next_payout.amount, data.next_payout.currency)}</p>
-                  <p className="mt-1 text-[11px] sm:text-xs" style={{ color: theme.textMuted }}>
+                  <p className="mt-1 text-[11px] sm:text-xs" style={{ color: theme.cardTextMuted }}>
                     {data.next_payout.arrival_date ? `Arrives ${formatDate(data.next_payout.arrival_date)}` : 'In transit'}
                   </p>
                 </>
               ) : (
                 <>
-                  <p className="mt-2 text-lg sm:text-xl font-semibold tracking-tight" style={{ color: theme.textMuted }}>{pending > 0 ? 'After funds clear' : 'None scheduled'}</p>
-                  <p className="mt-1 text-[11px] sm:text-xs" style={{ color: theme.textMuted }}>{scheduleLabel(data.payout_schedule)}</p>
+                  <p className="mt-2 text-lg sm:text-xl font-semibold tracking-tight" style={{ color: theme.cardTextMuted }}>{pending > 0 ? 'After funds clear' : 'None scheduled'}</p>
+                  <p className="mt-1 text-[11px] sm:text-xs" style={{ color: theme.cardTextMuted }}>{scheduleLabel(data.payout_schedule)}</p>
                 </>
               )}
             </div>
@@ -462,23 +462,23 @@ export default function AgencyPaymentsPage() {
       {/* Payout schedule */}
       <div className="mb-6 sm:mb-8 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
         <div className="flex items-center gap-2.5">
-          <Calendar className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted }} />
-          <span className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Payout schedule:</span>
+          <Calendar className="h-4 w-4 flex-shrink-0" style={{ color: theme.cardTextMuted }} />
+          <span className="text-xs sm:text-sm" style={{ color: theme.cardTextMuted }}>Payout schedule:</span>
           <span className="text-xs sm:text-sm font-medium" style={{ color: theme.text }}>{scheduleLabel(data.payout_schedule)}</span>
-          <span className="text-[11px]" style={{ color: theme.textMuted }}>(managed in Stripe)</span>
+          <span className="text-[11px]" style={{ color: theme.cardTextMuted }}>(managed in Stripe)</span>
         </div>
       </div>
 
       {/* Recent payouts */}
       <div className="mb-6 sm:mb-8 rounded-xl" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
         <div className="flex items-center gap-2.5 p-4 sm:p-5" style={{ borderBottom: `1px solid ${theme.border}` }}>
-          <ArrowDownToLine className="h-4 w-4" style={{ color: theme.textMuted }} />
+          <ArrowDownToLine className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
           <h2 className="font-medium text-sm sm:text-base" style={{ color: theme.text }}>Recent payouts</h2>
         </div>
         <div className="p-4 sm:p-5">
           {payouts.length === 0 ? (
             <div className="py-8 text-center">
-              <p className="text-sm" style={{ color: theme.textMuted }}>No payouts yet. They appear once you have an available balance and Stripe sends it to your bank.</p>
+              <p className="text-sm" style={{ color: theme.cardTextMuted }}>No payouts yet. They appear once you have an available balance and Stripe sends it to your bank.</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -488,11 +488,11 @@ export default function AgencyPaymentsPage() {
                   <div key={p.id} className="flex items-center justify-between rounded-xl p-3 sm:p-4" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="flex h-9 w-9 items-center justify-center rounded-full flex-shrink-0" style={{ backgroundColor: theme.card }}>
-                        <ArrowDownToLine className="h-4 w-4" style={{ color: theme.textMuted }} />
+                        <ArrowDownToLine className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
                       </div>
                       <div className="min-w-0">
                         <p className="font-medium text-sm" style={{ color: theme.text }}>{formatMoney(p.amount, p.currency)}</p>
-                        <p className="text-xs" style={{ color: theme.textMuted }}>
+                        <p className="text-xs" style={{ color: theme.cardTextMuted }}>
                           {p.status === 'paid'
                             ? `Paid ${formatDate(p.arrival_date)}`
                             : p.arrival_date ? `Expected ${formatDate(p.arrival_date)}` : `Initiated ${formatDate(p.created)}`}
@@ -511,13 +511,13 @@ export default function AgencyPaymentsPage() {
       {/* Recent client payments */}
       <div className="rounded-xl" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
         <div className="flex items-center gap-2.5 p-4 sm:p-5" style={{ borderBottom: `1px solid ${theme.border}` }}>
-          <Receipt className="h-4 w-4" style={{ color: theme.textMuted }} />
+          <Receipt className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
           <h2 className="font-medium text-sm sm:text-base" style={{ color: theme.text }}>Recent client payments</h2>
         </div>
         <div className="p-4 sm:p-5">
           {clientPayments.length === 0 ? (
             <div className="py-8 text-center">
-              <p className="text-sm" style={{ color: theme.textMuted }}>No client payments yet. When a client subscribes, the payment and the business show up here.</p>
+              <p className="text-sm" style={{ color: theme.cardTextMuted }}>No client payments yet. When a client subscribes, the payment and the business show up here.</p>
             </div>
           ) : (
             <div className="space-y-2.5">
@@ -534,9 +534,9 @@ export default function AgencyPaymentsPage() {
                       </div>
                       <div className="min-w-0">
                         <p className="font-semibold text-sm truncate" style={{ color: theme.text }}>{title}</p>
-                        <p className="text-xs truncate" style={{ color: theme.textMuted }}>{subBits.join(' · ')}</p>
+                        <p className="text-xs truncate" style={{ color: theme.cardTextMuted }}>{subBits.join(' · ')}</p>
                         {c.customer_email && c.business_name && (
-                          <p className="text-[11px] truncate" style={{ color: theme.textMuted }}>{c.customer_email}</p>
+                          <p className="text-[11px] truncate" style={{ color: theme.cardTextMuted }}>{c.customer_email}</p>
                         )}
                       </div>
                     </div>

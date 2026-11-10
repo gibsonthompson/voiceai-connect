@@ -102,7 +102,7 @@ export default function ReferralsPage() {
               </div>
               <h1 className="text-2xl font-semibold" style={{ color: theme.text }}>Referral Program</h1>
             </div>
-            <p style={{ color: theme.textMuted }}>Earn 40% recurring commission for every agency you refer</p>
+            <p style={{ color: theme.cardTextMuted }}>Earn 40% recurring commission for every agency you refer</p>
           </div>
 
           <div className="rounded-2xl p-6 mb-8" style={{ backgroundColor: theme.primary + '08', border: `1px solid ${theme.primary}30` }}>
@@ -112,7 +112,7 @@ export default function ReferralsPage() {
             </h2>
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1 rounded-xl px-4 py-3" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                <span className="text-sm" style={{ color: theme.textMuted }}>myvoiceaiconnect.com/signup?ref=your-code</span>
+                <span className="text-sm" style={{ color: theme.cardTextMuted }}>myvoiceaiconnect.com/signup?ref=your-code</span>
               </div>
               <div className="px-6 py-3 rounded-xl font-medium flex items-center gap-2" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>
                 <Copy className="h-4 w-4" /> Copy Link
@@ -128,7 +128,7 @@ export default function ReferralsPage() {
               { label: 'Available Balance', value: '$0.00' },
             ].map((stat) => (
               <div key={stat.label} className="rounded-2xl p-5" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-                <p className="text-sm mb-1" style={{ color: theme.textMuted }}>{stat.label}</p>
+                <p className="text-sm mb-1" style={{ color: theme.cardTextMuted }}>{stat.label}</p>
                 <p className="text-2xl font-semibold" style={{ color: theme.text }}>{stat.value}</p>
               </div>
             ))}
@@ -148,7 +148,7 @@ export default function ReferralsPage() {
                   </div>
                   <div>
                     <p className="font-medium text-sm" style={{ color: theme.text }}>{step.title}</p>
-                    <p className="text-xs mt-1" style={{ color: theme.textMuted }}>{step.desc}</p>
+                    <p className="text-xs mt-1" style={{ color: theme.cardTextMuted }}>{step.desc}</p>
                   </div>
                 </div>
               ))}
@@ -374,12 +374,12 @@ export default function ReferralsPage() {
             </span>
           )}
         </div>
-        <p className="text-sm mb-1" style={{ color: theme.textMuted }}>{label}</p>
+        <p className="text-sm mb-1" style={{ color: theme.cardTextMuted }}>{label}</p>
         <p className="text-2xl font-semibold" style={{ color: highlight ? theme.primary : theme.text }}>
           {value}
         </p>
         {subValue && (
-          <p className="text-xs mt-1" style={{ color: theme.textMuted }}>{subValue}</p>
+          <p className="text-xs mt-1" style={{ color: theme.cardTextMuted }}>{subValue}</p>
         )}
       </div>
     );
@@ -390,7 +390,7 @@ export default function ReferralsPage() {
       <div className="p-6 md:p-8 flex items-center justify-center min-h-[60vh]">
         <div className="text-center" style={{ color: theme.primary }}>
           <Loader2 className="h-8 w-8 animate-spin mx-auto" />
-          <p className="mt-4 text-sm" style={{ color: theme.textMuted }}>Loading referrals...</p>
+          <p className="mt-4 text-sm" style={{ color: theme.cardTextMuted }}>Loading referrals...</p>
         </div>
       </div>
     );
@@ -425,7 +425,7 @@ export default function ReferralsPage() {
           </div>
           <h1 className="text-2xl font-semibold" style={{ color: theme.text }}>Referral Program</h1>
         </div>
-        <p style={{ color: theme.textMuted }}>
+        <p style={{ color: theme.cardTextMuted }}>
           Earn 40% recurring commission for every agency you refer
         </p>
       </div>
@@ -444,7 +444,7 @@ export default function ReferralsPage() {
               <span style={{ color: theme.primary }}><Sparkles className="h-4 w-4" /></span>
               Your Referral Link
             </h2>
-            <p className="text-sm mt-1" style={{ color: theme.textMuted }}>
+            <p className="text-sm mt-1" style={{ color: theme.cardTextMuted }}>
               Share this link to earn commissions
             </p>
           </div>
@@ -479,7 +479,7 @@ export default function ReferralsPage() {
               className="flex-1 flex items-center gap-2 rounded-xl px-4 py-3"
               style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}
             >
-              <span className="text-sm whitespace-nowrap" style={{ color: theme.textMuted }}>
+              <span className="text-sm whitespace-nowrap" style={{ color: theme.cardTextMuted }}>
                 {process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com'}/signup?ref=
               </span>
               <input
@@ -570,7 +570,7 @@ export default function ReferralsPage() {
               </div>
               <div>
                 <p className="font-medium text-base" style={{ color: theme.text }}>{step.title}</p>
-                <p className="text-sm mt-1" style={{ color: theme.textMuted }}>
+                <p className="text-sm mt-1" style={{ color: theme.cardTextMuted }}>
                   {step.desc}
                 </p>
               </div>
@@ -586,7 +586,7 @@ export default function ReferralsPage() {
             </div>
             <div>
               <p className="font-medium text-base mb-1" style={{ color: theme.text }}>Recurring, hands-off income</p>
-              <p className="text-sm leading-relaxed" style={{ color: theme.textMuted }}>
+              <p className="text-sm leading-relaxed" style={{ color: theme.cardTextMuted }}>
                 This isn't a one-time bounty. You do the work once, when you make the referral, and the 40% commission repeats every single month that agency stays subscribed. No follow-up, no maintenance, and no cap on how many you refer. Stack enough referrals and it becomes standing monthly income that keeps paying in the background.
               </p>
             </div>
@@ -600,19 +600,19 @@ export default function ReferralsPage() {
               { count: '25 agencies', plan: 'on Scale ($499/mo)', monthly: '$4,990/mo', yearly: '≈ $59,880/yr' },
             ].map((ex, i) => (
               <div key={i} className="rounded-lg p-3" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-                <p className="text-sm" style={{ color: theme.textMuted }}>{ex.count} {ex.plan}</p>
+                <p className="text-sm" style={{ color: theme.cardTextMuted }}>{ex.count} {ex.plan}</p>
                 <p className="text-xl font-semibold mt-1" style={{ color: theme.primary }}>{ex.monthly}</p>
-                <p className="text-xs" style={{ color: theme.textMuted }}>{ex.yearly} recurring</p>
+                <p className="text-xs" style={{ color: theme.cardTextMuted }}>{ex.yearly} recurring</p>
               </div>
             ))}
           </div>
-          <p className="text-xs mt-3" style={{ color: theme.textMuted }}>
+          <p className="text-xs mt-3" style={{ color: theme.cardTextMuted }}>
             Illustrative, based on 40% of each agency's monthly plan. Your actual earnings depend on how many agencies you refer and which plans they choose. Commissions accrue automatically as your referred agencies are billed each month.
           </p>
         </div>
 
         {/* Payout terms */}
-        <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm" style={{ color: theme.textMuted }}>
+        <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm" style={{ color: theme.cardTextMuted }}>
           <span className="inline-flex items-center gap-1.5"><DollarSign className="h-3.5 w-3.5" style={{ color: theme.iconColor }} />40% recurring commission</span>
           <span className="inline-flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" style={{ color: theme.iconColor }} />Paid every month they stay</span>
           <span className="inline-flex items-center gap-1.5"><Banknote className="h-3.5 w-3.5" style={{ color: theme.iconColor }} />Withdraw to your Stripe account ($10 minimum)</span>
@@ -622,7 +622,7 @@ export default function ReferralsPage() {
         {/* Ways to grow your referrals */}
         <div className="mt-6 pt-6" style={{ borderTop: `1px solid ${theme.border}` }}>
           <p className="font-medium text-base mb-1" style={{ color: theme.text }}>Ways to grow your referrals</p>
-          <p className="text-sm mb-4" style={{ color: theme.textMuted }}>
+          <p className="text-sm mb-4" style={{ color: theme.cardTextMuted }}>
             The link earns for you, but content is what drives people to it. A few approaches that compound over time:
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -636,11 +636,11 @@ export default function ReferralsPage() {
                   <s.icon className="h-4 w-4" />
                 </div>
                 <p className="font-medium text-sm" style={{ color: theme.text }}>{s.title}</p>
-                <p className="text-xs leading-relaxed" style={{ color: theme.textMuted }}>{s.desc}</p>
+                <p className="text-xs leading-relaxed" style={{ color: theme.cardTextMuted }}>{s.desc}</p>
               </div>
             ))}
           </div>
-          <p className="text-xs mt-4" style={{ color: theme.textMuted }}>
+          <p className="text-xs mt-4" style={{ color: theme.cardTextMuted }}>
             Tip: put your referral link everywhere it makes sense, video descriptions, link-in-bio, email signatures, community posts. Every place it lives is another door into your recurring commission.
           </p>
         </div>
@@ -684,7 +684,7 @@ export default function ReferralsPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h3 className="font-medium" style={{ color: theme.text }}>Request Payout</h3>
-              <p className="text-sm mt-1" style={{ color: theme.textMuted }}>
+              <p className="text-sm mt-1" style={{ color: theme.cardTextMuted }}>
                 {data?.canReceivePayouts 
                   ? `Minimum payout: $10. Your balance: ${formatCurrency(data?.stats.availableBalance || 0)}`
                   : 'Complete Stripe Connect onboarding to receive payouts'
@@ -783,7 +783,7 @@ export default function ReferralsPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium" style={{ color: theme.text }}>{referral.name}</p>
-                        <p className="text-sm" style={{ color: theme.textMuted }}>
+                        <p className="text-sm" style={{ color: theme.cardTextMuted }}>
                           Joined {formatDate(referral.created_at)}
                         </p>
                       </div>
@@ -803,7 +803,7 @@ export default function ReferralsPage() {
               })}
             </div>
           ) : (
-            <div className="p-8 text-center" style={{ color: theme.textMuted }}>
+            <div className="p-8 text-center" style={{ color: theme.cardTextMuted }}>
               <Users className="h-10 w-10 mx-auto mb-3" />
               <p className="text-sm">No referrals yet</p>
               <p className="text-xs mt-1">Share your link to start earning</p>
@@ -841,7 +841,7 @@ export default function ReferralsPage() {
                         <p className="font-medium" style={{ color: theme.primary }}>
                           +{formatCurrency(commission.commission_amount_cents)}
                         </p>
-                        <p className="text-sm" style={{ color: theme.textMuted }}>
+                        <p className="text-sm" style={{ color: theme.cardTextMuted }}>
                           From {commission.referred?.name || 'Unknown'}
                         </p>
                       </div>
@@ -856,7 +856,7 @@ export default function ReferralsPage() {
                         >
                           {commission.status === 'transferred' ? 'Paid' : commission.status === 'pending' ? 'Pending' : commission.status}
                         </span>
-                        <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
+                        <p className="text-xs mt-1" style={{ color: theme.cardTextMuted }}>
                           {formatDate(commission.created_at)}
                         </p>
                       </div>
@@ -866,7 +866,7 @@ export default function ReferralsPage() {
               })}
             </div>
           ) : (
-            <div className="p-8 text-center" style={{ color: theme.textMuted }}>
+            <div className="p-8 text-center" style={{ color: theme.cardTextMuted }}>
               <DollarSign className="h-10 w-10 mx-auto mb-3" />
               <p className="text-sm">No commissions yet</p>
               <p className="text-xs mt-1">Commissions appear when referrals pay</p>

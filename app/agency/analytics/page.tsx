@@ -88,9 +88,9 @@ function ListCard({ title, count, empty, children, theme }: { title: string; cou
   return (
     <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
       <h3 className="font-medium mb-2 text-sm sm:text-base flex items-center justify-between" style={{ color: theme.text }}>
-        <span>{title}</span>{typeof count === 'number' && count > 0 && <span className="text-xs font-normal" style={{ color: theme.textMuted }}>{count}</span>}
+        <span>{title}</span>{typeof count === 'number' && count > 0 && <span className="text-xs font-normal" style={{ color: theme.cardTextMuted }}>{count}</span>}
       </h3>
-      {empty ? <p className="text-xs sm:text-sm py-2" style={{ color: theme.textMuted }}>{empty}</p> : children}
+      {empty ? <p className="text-xs sm:text-sm py-2" style={{ color: theme.cardTextMuted }}>{empty}</p> : children}
     </div>
   );
 }
@@ -124,8 +124,8 @@ function OutreachRow({ item, kind, onEmail, loggedAt, theme, first }: { item: an
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="text-sm font-medium truncate" style={{ color: theme.text }}>{item.business_name}</div>
-          {meta && <div className="text-xs mt-0.5 capitalize truncate" style={{ color: theme.textMuted }}>{meta}</div>}
-          <div className="text-[11px] mt-1 font-medium" style={{ color: kind === 'pastDue' ? '#ef4444' : (theme.warning || '#f59e0b') }}>{statusLine}{loggedAt ? <span style={{ color: theme.textMuted }}> \u00b7 reached out {relTime(loggedAt)}</span> : null}</div>
+          {meta && <div className="text-xs mt-0.5 capitalize truncate" style={{ color: theme.cardTextMuted }}>{meta}</div>}
+          <div className="text-[11px] mt-1 font-medium" style={{ color: kind === 'pastDue' ? '#ef4444' : (theme.warning || '#f59e0b') }}>{statusLine}{loggedAt ? <span style={{ color: theme.cardTextMuted }}> \u00b7 reached out {relTime(loggedAt)}</span> : null}</div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           {item.id && <Link href={`/agency/clients/${item.id}`} className="inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-medium transition-colors" style={{ backgroundColor: theme.card, color: theme.text, border: `1px solid ${theme.border}` }}>View</Link>}
@@ -144,7 +144,7 @@ function CallStat({ icon: Icon, label, value, theme }: { icon: any; label: strin
           <Icon className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: theme.iconColor }} />
         </div>
         <div className="min-w-0">
-          <p className="text-[10px] sm:text-sm" style={{ color: theme.textMuted }}>{label}</p>
+          <p className="text-[10px] sm:text-sm" style={{ color: theme.cardTextMuted }}>{label}</p>
           <p className="text-lg sm:text-2xl font-semibold" style={{ color: theme.text }}>{(value || 0).toLocaleString()}</p>
         </div>
       </div>
@@ -263,13 +263,13 @@ export default function AgencyAnalyticsPage() {
         <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><TrendingUp className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
         <div>
           <h1 data-tour="tour-analytics" className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Analytics & Revenue</h1>
-          <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>Track your earnings and client metrics.</p>
+          <p className="mt-0.5 text-sm" style={{ color: theme.cardTextMuted }}>Track your earnings and client metrics.</p>
         </div>
       </div>
 
       {/* ── CALLS & PERFORMANCE — what the AI actually did for your clients ── */}
       <div className="mb-6 sm:mb-8">
-        <h2 className="text-sm font-semibold mb-3" style={{ color: theme.textMuted }}>Calls &amp; performance (this month)</h2>
+        <h2 className="text-sm font-semibold mb-3" style={{ color: theme.cardTextMuted }}>Calls &amp; performance (this month)</h2>
         <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-3 mb-4 sm:mb-6">
           <CallStat icon={Phone} label="Calls answered" value={callStats.callsThisMonth} theme={theme} />
           <CallStat icon={CalendarCheck} label="Appointments booked" value={callStats.appointmentsBooked} theme={theme} />
@@ -282,7 +282,7 @@ export default function AgencyAnalyticsPage() {
           <div className="lg:col-span-2 rounded-xl p-4 sm:p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
             <h3 className="font-medium mb-4 sm:mb-6 text-sm sm:text-base" style={{ color: theme.text }}>Calls over time</h3>
             {callsByMonth.length === 0 || maxCalls <= 0 ? (
-              <div className="h-32 sm:h-48 flex items-center justify-center"><p className="text-sm" style={{ color: theme.textMuted }}>No calls yet</p></div>
+              <div className="h-32 sm:h-48 flex items-center justify-center"><p className="text-sm" style={{ color: theme.cardTextMuted }}>No calls yet</p></div>
             ) : (
               <div className="h-32 sm:h-48">
                 <div className="flex items-end justify-between h-full gap-1 sm:gap-2">
@@ -291,10 +291,10 @@ export default function AgencyAnalyticsPage() {
                     return (
                       <div key={item.month} className="flex-1 flex flex-col items-center gap-1 sm:gap-2">
                         <div className="w-full flex flex-col items-center justify-end h-24 sm:h-36">
-                          <span className="text-[9px] sm:text-xs font-medium mb-1" style={{ color: theme.textMuted }}>{item.count}</span>
+                          <span className="text-[9px] sm:text-xs font-medium mb-1" style={{ color: theme.cardTextMuted }}>{item.count}</span>
                           <div className="w-full max-w-[32px] sm:max-w-[40px] rounded-t-lg transition-all duration-300" style={{ height: `${Math.max(height, 2)}%`, backgroundColor: theme.primary, opacity: 0.6 + (index / callsByMonth.length) * 0.4 }} title={`${item.count} calls`} />
                         </div>
-                        <span className="text-[8px] sm:text-xs" style={{ color: theme.textMuted }}>{formatMonth(item.month)}</span>
+                        <span className="text-[8px] sm:text-xs" style={{ color: theme.cardTextMuted }}>{formatMonth(item.month)}</span>
                       </div>
                     );
                   })}
@@ -305,7 +305,7 @@ export default function AgencyAnalyticsPage() {
           <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
             <h3 className="font-medium mb-3 sm:mb-4 text-sm sm:text-base" style={{ color: theme.text }}>Busiest clients</h3>
             {callsByClient.length === 0 ? (
-              <p className="text-sm" style={{ color: theme.textMuted }}>No calls yet this month</p>
+              <p className="text-sm" style={{ color: theme.cardTextMuted }}>No calls yet this month</p>
             ) : (
               <div className="space-y-2.5">
                 {callsByClient.map((c) => (
@@ -323,7 +323,7 @@ export default function AgencyAnalyticsPage() {
       {/* ── CLIENT BILLING & TRIALS ── */}
       {billing && (
         <div className="mb-6 sm:mb-8">
-          <h2 className="text-sm font-semibold mb-3" style={{ color: theme.textMuted }}>Client billing &amp; trials</h2>
+          <h2 className="text-sm font-semibold mb-3" style={{ color: theme.cardTextMuted }}>Client billing &amp; trials</h2>
           <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4 mb-4 sm:mb-6">
             {[
               { label: 'Paying', value: billing.counts.active + billing.counts.manual, sub: billing.counts.manual > 0 ? `${billing.counts.manual} billed by you` : '', color: theme.primary, icon: Wallet },
@@ -340,10 +340,10 @@ export default function AgencyAnalyticsPage() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-lg sm:text-2xl font-semibold leading-tight" style={{ color: theme.text }}>{c.value}</p>
-                    <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>{c.label}</p>
+                    <p className="text-[10px] sm:text-xs" style={{ color: theme.cardTextMuted }}>{c.label}</p>
                   </div>
                 </div>
-                {c.sub && <p className="text-[10px] mt-1.5" style={{ color: theme.textMuted }}>{c.sub}</p>}
+                {c.sub && <p className="text-[10px] mt-1.5" style={{ color: theme.cardTextMuted }}>{c.sub}</p>}
               </div>
             ); })}
           </div>
@@ -399,7 +399,7 @@ export default function AgencyAnalyticsPage() {
               <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: theme.iconColor }} />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] sm:text-sm" style={{ color: theme.textMuted }}>Monthly Recurring</p>
+              <p className="text-[10px] sm:text-sm" style={{ color: theme.cardTextMuted }}>Monthly Recurring</p>
               <p className="text-lg sm:text-2xl font-semibold truncate" style={{ color: theme.text }}>{formatCurrency(stats.mrr, agencyCountry)}</p>
             </div>
           </div>
@@ -418,7 +418,7 @@ export default function AgencyAnalyticsPage() {
               <DollarSign className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: theme.info }} />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] sm:text-sm" style={{ color: theme.textMuted }}>Total Earned</p>
+              <p className="text-[10px] sm:text-sm" style={{ color: theme.cardTextMuted }}>Total Earned</p>
               <p className="text-lg sm:text-2xl font-semibold truncate" style={{ color: theme.text }}>{formatCurrency(stats.totalEarned, agencyCountry)}</p>
             </div>
           </div>
@@ -437,7 +437,7 @@ export default function AgencyAnalyticsPage() {
               <Wallet className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: theme.warning }} />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] sm:text-sm" style={{ color: theme.textMuted }}>Pending Payout</p>
+              <p className="text-[10px] sm:text-sm" style={{ color: theme.cardTextMuted }}>Pending Payout</p>
               <p className="text-lg sm:text-2xl font-semibold truncate" style={{ color: theme.text }}>{formatCurrency(stats.pendingPayout, agencyCountry)}</p>
             </div>
           </div>
@@ -456,10 +456,10 @@ export default function AgencyAnalyticsPage() {
               <Users className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: theme.isDark ? '#a78bfa' : '#7c3aed' }} />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] sm:text-sm" style={{ color: theme.textMuted }}>Paying Clients</p>
+              <p className="text-[10px] sm:text-sm" style={{ color: theme.cardTextMuted }}>Paying Clients</p>
               <p className="text-lg sm:text-2xl font-semibold" style={{ color: theme.text }}>{stats.activeClients}</p>
               {stats.trialClients > 0 && (
-                <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>+{stats.trialClients} in trial</p>
+                <p className="text-[10px] sm:text-xs" style={{ color: theme.cardTextMuted }}>+{stats.trialClients} in trial</p>
               )}
             </div>
           </div>
@@ -476,7 +476,7 @@ export default function AgencyAnalyticsPage() {
           
           {revenueByMonth.length === 0 ? (
             <div className="h-32 sm:h-48 flex items-center justify-center">
-              <p className="text-sm" style={{ color: theme.textMuted }}>No revenue data yet</p>
+              <p className="text-sm" style={{ color: theme.cardTextMuted }}>No revenue data yet</p>
             </div>
           ) : (
             <div className="h-32 sm:h-48">
@@ -496,7 +496,7 @@ export default function AgencyAnalyticsPage() {
                           title={formatCurrency(item.amount, agencyCountry)}
                         />
                       </div>
-                      <span className="text-[8px] sm:text-xs" style={{ color: theme.textMuted }}>
+                      <span className="text-[8px] sm:text-xs" style={{ color: theme.cardTextMuted }}>
                         {formatMonth(item.month)}
                       </span>
                     </div>
@@ -546,7 +546,7 @@ export default function AgencyAnalyticsPage() {
                       }}
                     />
                   </div>
-                  <p className="text-[10px] sm:text-xs mt-1" style={{ color: theme.textMuted }}>
+                  <p className="text-[10px] sm:text-xs mt-1" style={{ color: theme.cardTextMuted }}>
                     {planClients.length} client{planClients.length !== 1 ? 's' : ''}
                   </p>
                 </div>
@@ -576,8 +576,8 @@ export default function AgencyAnalyticsPage() {
             >
               <CreditCard className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: theme.primary, opacity: 0.8 }} />
             </div>
-            <p className="text-sm" style={{ color: theme.textMuted }}>No transactions yet</p>
-            <p className="text-xs sm:text-sm mt-1" style={{ color: theme.textMuted }}>
+            <p className="text-sm" style={{ color: theme.cardTextMuted }}>No transactions yet</p>
+            <p className="text-xs sm:text-sm mt-1" style={{ color: theme.cardTextMuted }}>
               Transactions will appear here when clients pay
             </p>
           </div>
@@ -625,7 +625,7 @@ export default function AgencyAnalyticsPage() {
                           </div>
                           <div className="min-w-0">
                             <span className="truncate block text-sm" style={{ color: theme.text }}>{clientName}</span>
-                            {planName && <span className="text-[11px]" style={{ color: theme.textMuted }}>{planName} plan</span>}
+                            {planName && <span className="text-[11px]" style={{ color: theme.cardTextMuted }}>{planName} plan</span>}
                           </div>
                         </div>
                         <span className="font-medium text-sm" style={{ color: theme.text }}>{formatCurrency(payment.amount, agencyCountry)}</span>
@@ -637,7 +637,7 @@ export default function AgencyAnalyticsPage() {
                         >
                           {payment.status}
                         </span>
-                        <span style={{ color: theme.textMuted }}>
+                        <span style={{ color: theme.cardTextMuted }}>
                           {new Date(payment.created_at).toLocaleDateString()}
                         </span>
                       </div>
@@ -654,7 +654,7 @@ export default function AgencyAnalyticsPage() {
                         </div>
                         <div className="min-w-0">
                           <span className="truncate block" style={{ color: theme.text }}>{clientName}</span>
-                          {planName && <span className="text-xs" style={{ color: theme.textMuted }}>{planName} plan</span>}
+                          {planName && <span className="text-xs" style={{ color: theme.cardTextMuted }}>{planName} plan</span>}
                         </div>
                       </div>
                       
@@ -671,11 +671,11 @@ export default function AgencyAnalyticsPage() {
                         </span>
                       </div>
                       
-                      <div className="col-span-2 capitalize" style={{ color: theme.textMuted }}>
+                      <div className="col-span-2 capitalize" style={{ color: theme.cardTextMuted }}>
                         {payment.type || 'subscription'}
                       </div>
                       
-                      <div className="col-span-2 text-right" style={{ color: theme.textMuted }}>
+                      <div className="col-span-2 text-right" style={{ color: theme.cardTextMuted }}>
                         {new Date(payment.created_at).toLocaleDateString()}
                       </div>
                     </div>
@@ -732,15 +732,15 @@ export default function AgencyAnalyticsPage() {
               <div className="flex items-start justify-between gap-3 p-4 sm:p-5" style={{ borderBottom: `1px solid ${theme.border}` }}>
                 <div className="min-w-0">
                   <h3 className="text-sm sm:text-base font-semibold truncate" style={{ color: theme.text }}>Reach out to {outreach.item.business_name}</h3>
-                  <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{outreach.kind === 'pastDue' ? 'Payment failed, nudge them to update their card.' : "Signed up but didn't finish, nudge them to complete it."}</p>
+                  <p className="text-xs mt-0.5" style={{ color: theme.cardTextMuted }}>{outreach.kind === 'pastDue' ? 'Payment failed, nudge them to update their card.' : "Signed up but didn't finish, nudge them to complete it."}</p>
                 </div>
-                <button onClick={() => setOutreach(null)} className="flex-shrink-0 rounded-lg p-1.5 transition-colors" style={{ color: theme.textMuted }}><X className="h-4 w-4" /></button>
+                <button onClick={() => setOutreach(null)} className="flex-shrink-0 rounded-lg p-1.5 transition-colors" style={{ color: theme.cardTextMuted }}><X className="h-4 w-4" /></button>
               </div>
               <div className="p-4 sm:p-5 space-y-3">
-                <div className="flex items-center gap-2 text-xs"><span style={{ color: theme.textMuted }}>To</span><span className="font-medium truncate" style={{ color: theme.text }}>{d.email || 'No email on file'}</span></div>
-                <div className="flex items-center gap-2 text-xs"><span style={{ color: theme.textMuted }}>Subject</span><span className="font-medium truncate" style={{ color: theme.text }}>{d.subject}</span></div>
+                <div className="flex items-center gap-2 text-xs"><span style={{ color: theme.cardTextMuted }}>To</span><span className="font-medium truncate" style={{ color: theme.text }}>{d.email || 'No email on file'}</span></div>
+                <div className="flex items-center gap-2 text-xs"><span style={{ color: theme.cardTextMuted }}>Subject</span><span className="font-medium truncate" style={{ color: theme.text }}>{d.subject}</span></div>
                 <div>
-                  <label className="text-[11px] font-medium" style={{ color: theme.textMuted }}>Message (edit before sending)</label>
+                  <label className="text-[11px] font-medium" style={{ color: theme.cardTextMuted }}>Message (edit before sending)</label>
                   <textarea value={draftBody} onChange={(e) => setDraftBody(e.target.value)} rows={9} className="w-full mt-1 rounded-xl px-3 py-2 text-sm leading-relaxed resize-none focus:outline-none" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.text }} />
                 </div>
               </div>

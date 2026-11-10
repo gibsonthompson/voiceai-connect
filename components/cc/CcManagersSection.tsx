@@ -144,7 +144,7 @@ export default function CcManagersSection({ theme }: { theme: any }) {
   if (!canManageTeam) return null;
 
   const field = { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text } as React.CSSProperties;
-  const Label = ({ children }: { children: React.ReactNode }) => (<label className="block text-[12px] font-medium mb-1.5" style={{ color: theme.textMuted }}>{children}</label>);
+  const Label = ({ children }: { children: React.ReactNode }) => (<label className="block text-[12px] font-medium mb-1.5" style={{ color: theme.cardTextMuted }}>{children}</label>);
   const Switch = ({ on, onClick }: { on: boolean; onClick: () => void }) => (
     <button type="button" onClick={onClick} className="relative rounded-full flex-shrink-0 transition-colors" style={{ backgroundColor: on ? theme.primary : theme.hover, width: '2.5rem', height: '1.5rem' }}>
       <span className="absolute rounded-full bg-white shadow-sm transition-all" style={{ width: '1.125rem', height: '1.125rem', top: '0.1875rem', left: on ? 'calc(100% - 1.3125rem)' : '0.1875rem' }} />
@@ -158,7 +158,7 @@ export default function CcManagersSection({ theme }: { theme: any }) {
           <span className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Users className="h-4 w-4" style={{ color: theme.iconColor }} /></span>
           <div className="min-w-0">
             <h2 className="text-sm font-semibold" style={{ color: theme.text }}>Managers</h2>
-            <p className="text-[12px]" style={{ color: theme.textMuted }}>{managers.length} {managers.length === 1 ? 'manager' : 'managers'} who run the dashboard. Agents are managed on the Agents page.</p>
+            <p className="text-[12px]" style={{ color: theme.cardTextMuted }}>{managers.length} {managers.length === 1 ? 'manager' : 'managers'} who run the dashboard. Agents are managed on the Agents page.</p>
           </div>
         </div>
         <button onClick={() => { setShowAdd((s) => !s); setError(null); }} className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold flex-shrink-0" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
@@ -174,12 +174,12 @@ export default function CcManagersSection({ theme }: { theme: any }) {
         <div className="mt-4 rounded-2xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold" style={{ color: theme.text }}>New manager</h3>
-            <button onClick={() => setShowAdd(false)} style={{ color: theme.textMuted }}><X className="h-4 w-4" /></button>
+            <button onClick={() => setShowAdd(false)} style={{ color: theme.cardTextMuted }}><X className="h-4 w-4" /></button>
           </div>
           <div className="grid sm:grid-cols-2 gap-3">
             <div><Label>Name</Label><input value={aName} onChange={(e) => setAName(e.target.value)} placeholder="Jordan Diaz" className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={field} /></div>
             <div><Label>Email (their login)</Label><input type="email" value={aEmail} onChange={(e) => setAEmail(e.target.value)} placeholder="jordan@callcenter.com" className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={field} /></div>
-            <div className="sm:col-span-2"><Label>Mobile (optional)</Label><input type="tel" value={aPhone} onChange={(e) => setAPhone(e.target.value)} placeholder="(555) 555-5555" className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={field} /><p className="mt-1 text-[11px] leading-snug" style={{ color: theme.textMuted }}>If you add a number, we text them their login details. Otherwise reveal the temp password on their card to share it.</p></div>
+            <div className="sm:col-span-2"><Label>Mobile (optional)</Label><input type="tel" value={aPhone} onChange={(e) => setAPhone(e.target.value)} placeholder="(555) 555-5555" className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={field} /><p className="mt-1 text-[11px] leading-snug" style={{ color: theme.cardTextMuted }}>If you add a number, we text them their login details. Otherwise reveal the temp password on their card to share it.</p></div>
           </div>
           <div className="mt-4">
             <Label>What this manager can access</Label>
@@ -189,7 +189,7 @@ export default function CcManagersSection({ theme }: { theme: any }) {
                 const critical = pr.key === 'manage_team';
                 return (
                   <div key={pr.key} className="flex items-center justify-between gap-3 px-3 py-2.5" style={{ ...(i > 0 ? { borderTop: `1px solid ${theme.borderSubtle}` } : {}), ...(critical ? { backgroundColor: theme.primary15 } : {}) }}>
-                    <div className="min-w-0"><p className="text-[13px] font-medium" style={{ color: theme.text }}>{pr.label}</p><p className="text-[11px]" style={{ color: theme.textMuted }}>{pr.desc}</p></div>
+                    <div className="min-w-0"><p className="text-[13px] font-medium" style={{ color: theme.text }}>{pr.label}</p><p className="text-[11px]" style={{ color: theme.cardTextMuted }}>{pr.desc}</p></div>
                     <Switch on={on} onClick={() => setAPerms((p) => ({ ...p, [pr.key]: !on }))} />
                   </div>
                 );
@@ -206,12 +206,12 @@ export default function CcManagersSection({ theme }: { theme: any }) {
       {/* Roster */}
       <div className="mt-4">
         {loading ? (
-          <div className="flex items-center gap-2 text-sm py-6" style={{ color: theme.textMuted }}><Loader2 className="h-4 w-4 animate-spin" /> Loading managers...</div>
+          <div className="flex items-center gap-2 text-sm py-6" style={{ color: theme.cardTextMuted }}><Loader2 className="h-4 w-4 animate-spin" /> Loading managers...</div>
         ) : managers.length === 0 ? (
           <div className="rounded-2xl py-10 flex flex-col items-center justify-center text-center" style={{ border: `1px dashed ${theme.border}` }}>
             <Users className="h-7 w-7 mb-2" style={{ color: theme.textSubtle }} />
             <p className="text-[13px] font-medium" style={{ color: theme.text }}>No managers yet</p>
-            <p className="text-[12px] mt-1 max-w-[260px]" style={{ color: theme.textMuted }}>You run the dashboard as the owner. Add a manager to delegate parts of it.</p>
+            <p className="text-[12px] mt-1 max-w-[260px]" style={{ color: theme.cardTextMuted }}>You run the dashboard as the owner. Add a manager to delegate parts of it.</p>
           </div>
         ) : (
           <div className="space-y-2.5">
@@ -227,10 +227,10 @@ export default function CcManagersSection({ theme }: { theme: any }) {
                         <p className="text-sm font-semibold truncate" style={{ color: theme.text }}>{m.display_name}</p>
                         {canTeam && <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-md" style={{ backgroundColor: theme.primary15, color: theme.primary }}><ShieldCheck className="h-2.5 w-2.5" /> Can manage team</span>}
                       </div>
-                      <p className="text-[12px] truncate" style={{ color: theme.textMuted }}>{m.email || 'No email'}</p>
+                      <p className="text-[12px] truncate" style={{ color: theme.cardTextMuted }}>{m.email || 'No email'}</p>
                     </div>
                     <div className="flex items-center gap-1.5 flex-shrink-0">
-                      <button onClick={() => setExpandedId(expanded ? null : m.id)} className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>Manage <ChevronDown className="h-3.5 w-3.5 transition-transform" style={{ transform: expanded ? 'rotate(180deg)' : 'none' }} /></button>
+                      <button onClick={() => setExpandedId(expanded ? null : m.id)} className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium" style={{ backgroundColor: theme.hover, color: theme.cardTextMuted }}>Manage <ChevronDown className="h-3.5 w-3.5 transition-transform" style={{ transform: expanded ? 'rotate(180deg)' : 'none' }} /></button>
                       <button onClick={() => removeManager(m)} className="inline-flex items-center justify-center rounded-lg h-[30px] w-[30px]" style={{ backgroundColor: theme.hover, color: theme.error }} title="Remove manager"><Trash2 className="h-3.5 w-3.5" /></button>
                     </div>
                   </div>
@@ -246,7 +246,7 @@ export default function CcManagersSection({ theme }: { theme: any }) {
                             const critical = pr.key === 'manage_team';
                             return (
                               <div key={pr.key} className="flex items-center justify-between gap-3 px-3 py-2.5" style={{ ...(i > 0 ? { borderTop: `1px solid ${theme.borderSubtle}` } : {}), ...(critical ? { backgroundColor: theme.primary15 } : {}) }}>
-                                <div className="min-w-0"><p className="text-[13px] font-medium" style={{ color: theme.text }}>{pr.label}</p><p className="text-[11px]" style={{ color: theme.textMuted }}>{pr.desc}</p></div>
+                                <div className="min-w-0"><p className="text-[13px] font-medium" style={{ color: theme.text }}>{pr.label}</p><p className="text-[11px]" style={{ color: theme.cardTextMuted }}>{pr.desc}</p></div>
                                 <Switch on={on} onClick={() => togglePermission(m, pr.key)} />
                               </div>
                             );
@@ -259,21 +259,21 @@ export default function CcManagersSection({ theme }: { theme: any }) {
                         <Label>Login &amp; access</Label>
                         <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${theme.inputBorder}` }}>
                           <div className="flex items-center justify-between gap-3 px-3 py-2.5">
-                            <div className="min-w-0"><p className="text-[11px]" style={{ color: theme.textMuted }}>Login page</p><p className="text-[13px] truncate" style={{ color: theme.text }}>{loginUrl}</p></div>
+                            <div className="min-w-0"><p className="text-[11px]" style={{ color: theme.cardTextMuted }}>Login page</p><p className="text-[13px] truncate" style={{ color: theme.text }}>{loginUrl}</p></div>
                             <div className="flex items-center gap-1 flex-shrink-0">
-                              <a href={loginUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center rounded-lg h-[30px] w-[30px]" style={{ backgroundColor: theme.hover, color: theme.textMuted }} title="Open"><ExternalLink className="h-3.5 w-3.5" /></a>
+                              <a href={loginUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center rounded-lg h-[30px] w-[30px]" style={{ backgroundColor: theme.hover, color: theme.cardTextMuted }} title="Open"><ExternalLink className="h-3.5 w-3.5" /></a>
                               <button onClick={() => copyText(`url-${m.id}`, loginUrl)} className="inline-flex items-center justify-center rounded-lg h-[30px] w-[30px]" style={{ backgroundColor: theme.hover, color: copied === `url-${m.id}` ? '#22c55e' : theme.textMuted }} title="Copy">{copied === `url-${m.id}` ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}</button>
                             </div>
                           </div>
                           <div className="flex items-center justify-between gap-3 px-3 py-2.5" style={{ borderTop: `1px solid ${theme.borderSubtle}` }}>
-                            <div className="min-w-0"><p className="text-[11px]" style={{ color: theme.textMuted }}>Email</p><p className="text-[13px] truncate" style={{ color: theme.text }}>{m.email || '—'}</p></div>
+                            <div className="min-w-0"><p className="text-[11px]" style={{ color: theme.cardTextMuted }}>Email</p><p className="text-[13px] truncate" style={{ color: theme.text }}>{m.email || '—'}</p></div>
                             {m.email && <button onClick={() => copyText(`email-${m.id}`, m.email!)} className="inline-flex items-center justify-center rounded-lg h-[30px] w-[30px] flex-shrink-0" style={{ backgroundColor: theme.hover, color: copied === `email-${m.id}` ? '#22c55e' : theme.textMuted }} title="Copy">{copied === `email-${m.id}` ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}</button>}
                           </div>
                           <div className="flex items-center justify-between gap-3 px-3 py-2.5" style={{ borderTop: `1px solid ${theme.borderSubtle}` }}>
-                            <div className="min-w-0"><p className="text-[11px]" style={{ color: theme.textMuted }}>Temp password</p><p className="text-[13px] font-mono truncate" style={{ color: theme.text }}>{m.visible_password ? (revealPw[m.id] ? m.visible_password : '••••••••') : 'Set by the manager'}</p></div>
+                            <div className="min-w-0"><p className="text-[11px]" style={{ color: theme.cardTextMuted }}>Temp password</p><p className="text-[13px] font-mono truncate" style={{ color: theme.text }}>{m.visible_password ? (revealPw[m.id] ? m.visible_password : '••••••••') : 'Set by the manager'}</p></div>
                             {m.visible_password && (
                               <div className="flex items-center gap-1 flex-shrink-0">
-                                <button onClick={() => setRevealPw((pw) => ({ ...pw, [m.id]: !pw[m.id] }))} className="inline-flex items-center justify-center rounded-lg h-[30px] w-[30px]" style={{ backgroundColor: theme.hover, color: theme.textMuted }} title={revealPw[m.id] ? 'Hide' : 'Reveal'}>{revealPw[m.id] ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}</button>
+                                <button onClick={() => setRevealPw((pw) => ({ ...pw, [m.id]: !pw[m.id] }))} className="inline-flex items-center justify-center rounded-lg h-[30px] w-[30px]" style={{ backgroundColor: theme.hover, color: theme.cardTextMuted }} title={revealPw[m.id] ? 'Hide' : 'Reveal'}>{revealPw[m.id] ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}</button>
                                 <button onClick={() => copyText(`pw-${m.id}`, m.visible_password!)} className="inline-flex items-center justify-center rounded-lg h-[30px] w-[30px]" style={{ backgroundColor: theme.hover, color: copied === `pw-${m.id}` ? '#22c55e' : theme.textMuted }} title="Copy">{copied === `pw-${m.id}` ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}</button>
                               </div>
                             )}
@@ -285,7 +285,7 @@ export default function CcManagersSection({ theme }: { theme: any }) {
                               {copied === `all-${m.id}` ? <><Check className="h-3.5 w-3.5" /> Copied</> : <><Copy className="h-3.5 w-3.5" /> Copy login details</>}
                             </button>
                           )}
-                          <button onClick={() => resetPassword(m)} disabled={resetting === m.id} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[12px] font-semibold disabled:opacity-60" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>
+                          <button onClick={() => resetPassword(m)} disabled={resetting === m.id} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[12px] font-semibold disabled:opacity-60" style={{ backgroundColor: theme.hover, color: theme.cardTextMuted }}>
                             {resetting === m.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />} Reset password
                           </button>
                         </div>

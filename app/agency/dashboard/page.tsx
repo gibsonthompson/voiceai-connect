@@ -185,22 +185,22 @@ export default function AgencyDashboardPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !sendingFeedback && setShowFeedbackModal(false)} />
           <div className="relative w-full max-w-md rounded-2xl p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-            <button onClick={() => setShowFeedbackModal(false)} className="absolute top-4 right-4 p-1 rounded-lg transition-colors" style={{ color: theme.textMuted }}><X className="h-5 w-5" /></button>
+            <button onClick={() => setShowFeedbackModal(false)} className="absolute top-4 right-4 p-1 rounded-lg transition-colors" style={{ color: theme.cardTextMuted }}><X className="h-5 w-5" /></button>
             {feedbackSent ? (
               <div className="text-center py-4">
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full mb-3" style={{ backgroundColor: theme.iconBg }}><Check className="h-6 w-6" style={{ color: theme.iconColor }} /></div>
                 <h3 className="text-lg font-semibold" style={{ color: theme.text }}>Message Sent</h3>
-                <p className="text-sm mt-1" style={{ color: theme.textMuted }}>Thanks, we'll get back to you soon.</p>
+                <p className="text-sm mt-1" style={{ color: theme.cardTextMuted }}>Thanks, we'll get back to you soon.</p>
               </div>
             ) : (
               <>
                 <div className="flex items-center gap-3 mb-4">
                   <div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.iconBg }}><LifeBuoy className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
-                  <div><h3 className="text-lg font-semibold" style={{ color: theme.text }}>Contact Support</h3><p className="text-sm" style={{ color: theme.textMuted }}>Questions or need a hand? We'll get back to you.</p></div>
+                  <div><h3 className="text-lg font-semibold" style={{ color: theme.text }}>Contact Support</h3><p className="text-sm" style={{ color: theme.cardTextMuted }}>Questions or need a hand? We'll get back to you.</p></div>
                 </div>
                 {feedbackError && (<div className="mb-4 rounded-xl p-3 text-sm" style={{ backgroundColor: theme.errorBg, color: theme.errorText, border: `1px solid ${theme.errorBorder}` }}>{feedbackError}</div>)}
                 <textarea value={feedbackMessage} onChange={(e) => setFeedbackMessage(e.target.value)} placeholder="How can we help?" rows={4} maxLength={2000} className="w-full rounded-xl px-4 py-3 text-sm resize-none transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} autoFocus />
-                <div className="flex items-center justify-between mt-1 mb-4"><span className="text-xs" style={{ color: theme.textMuted }}>{feedbackMessage.length}/2000</span></div>
+                <div className="flex items-center justify-between mt-1 mb-4"><span className="text-xs" style={{ color: theme.cardTextMuted }}>{feedbackMessage.length}/2000</span></div>
                 <button onClick={handleSendFeedback} disabled={sendingFeedback || !feedbackMessage.trim()} className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
                   {sendingFeedback ? (<><Loader2 className="h-4 w-4 animate-spin" />Sending...</>) : (<><Send className="h-4 w-4" />Send</>)}
                 </button>
@@ -217,9 +217,9 @@ export default function AgencyDashboardPage() {
       <div className="mb-6 sm:mb-8 flex items-start justify-between">
         <div>
           <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Welcome back{user?.first_name ? `, ${user.first_name}` : ''}!</h1>
-          <p className="mt-1 text-sm sm:text-base" style={{ color: theme.textMuted }}>Here&apos;s how your agency is performing.</p>
+          <p className="mt-1 text-sm sm:text-base" style={{ color: theme.cardTextMuted }}>Here&apos;s how your agency is performing.</p>
         </div>
-        <button onClick={() => setShowFeedbackModal(true)} className={`inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors flex-shrink-0 ${theme.isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'}`} style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, color: theme.textMuted }}>
+        <button onClick={() => setShowFeedbackModal(true)} className={`inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors flex-shrink-0 ${theme.isDark ? 'hover:bg-white/[0.06]' : 'hover:bg-black/[0.02]'}`} style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, color: theme.cardTextMuted }}>
           <LifeBuoy className="h-4 w-4" /><span className="hidden sm:inline">Support</span>
         </button>
       </div>
@@ -249,10 +249,10 @@ export default function AgencyDashboardPage() {
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: theme.iconBg }}><Headphones className="h-4 w-4" style={{ color: theme.iconColor }} /></div>
                 <h3 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>Try Your AI Receptionist</h3>
               </div>
-              <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>Call your demo number to hear it in action. Tell it what kind of business you run and watch it roleplay as your receptionist.</p>
+              <p className="text-xs sm:text-sm mb-4" style={{ color: theme.cardTextMuted }}>Call your demo number to hear it in action. Tell it what kind of business you run and watch it roleplay as your receptionist.</p>
               <div className="flex items-center gap-3 flex-wrap mt-auto">
                 <a href={`tel:${agency?.demo_phone_number}`} className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.98]" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Phone className="h-4 w-4" />Call {demoPhoneDisplay}</a>
-                <button onClick={copyDemoNumber} className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.textMuted }}>{demoCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}{demoCopied ? 'Copied' : 'Copy Number'}</button>
+                <button onClick={copyDemoNumber} className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.cardTextMuted }}>{demoCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}{demoCopied ? 'Copied' : 'Copy Number'}</button>
               </div>
             </div>
           </div>
@@ -269,7 +269,7 @@ export default function AgencyDashboardPage() {
           </div>
           <div className="flex items-center gap-3 flex-wrap mt-auto">
             <button onClick={copySignupLink} className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-colors" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{copied ? (<><Check className="h-4 w-4" />Copied!</>) : (<><Copy className="h-4 w-4" />Copy Link</>)}</button>
-            <a href={signupLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.textMuted }}>Open <ArrowUpRight className="h-3.5 w-3.5" /></a>
+            <a href={signupLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.cardTextMuted }}>Open <ArrowUpRight className="h-3.5 w-3.5" /></a>
           </div>
         </div>
       </div>
@@ -319,9 +319,9 @@ export default function AgencyDashboardPage() {
         <div className="p-4 sm:p-5">
           {!stats?.recentClients || stats.recentClients.length === 0 ? (
             <div className="py-8 sm:py-12 text-center">
-              <div className="mx-auto flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full" style={{ backgroundColor: theme.iconBg }}><Users className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: theme.textMuted }} /></div>
+              <div className="mx-auto flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full" style={{ backgroundColor: theme.iconBg }}><Users className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: theme.cardTextMuted }} /></div>
               <p className="mt-4 font-medium text-sm sm:text-base" style={{ color: theme.text, opacity: 0.7 }}>No clients yet</p>
-              <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>Share your signup link to start acquiring clients.</p>
+              <p className="text-xs sm:text-sm mb-4" style={{ color: theme.cardTextMuted }}>Share your signup link to start acquiring clients.</p>
               <button onClick={copySignupLink} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Copy className="h-4 w-4" />Copy Signup Link</button>
             </div>
           ) : (
@@ -339,7 +339,7 @@ export default function AgencyDashboardPage() {
                           <p className="font-medium text-sm sm:text-base truncate" style={{ color: theme.text }}>{client.business_name}</p>
                           {isTest && (<span className="flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ backgroundColor: theme.isDark ? 'rgba(139,92,246,0.15)' : 'rgba(139,92,246,0.1)', color: '#8b5cf6' }}>Test</span>)}
                         </div>
-                        <p className="text-xs sm:text-sm capitalize" style={{ color: theme.textMuted }}>{isTest ? 'Test client' : `${client.plan_type || 'starter'} plan`}</p>
+                        <p className="text-xs sm:text-sm capitalize" style={{ color: theme.cardTextMuted }}>{isTest ? 'Test client' : `${client.plan_type || 'starter'} plan`}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
@@ -363,7 +363,7 @@ export default function AgencyDashboardPage() {
                         })();
                         return <span className="rounded-full px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-medium" style={{ backgroundColor: meta.bg, color: meta.text }}>{meta.label}</span>;
                       })()}
-                      <ArrowUpRight className="h-4 w-4 hidden sm:block" style={{ color: theme.textMuted }} />
+                      <ArrowUpRight className="h-4 w-4 hidden sm:block" style={{ color: theme.cardTextMuted }} />
                     </div>
                   </a>
                 );

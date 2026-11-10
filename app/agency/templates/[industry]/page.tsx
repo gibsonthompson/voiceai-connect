@@ -359,14 +359,14 @@ export default function TemplateEditorPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="mb-6">
-        <Link href="/agency/templates" className="inline-flex items-center gap-2 text-sm mb-4 transition-colors" style={{ color: theme.textMuted }}>
+        <Link href="/agency/templates" className="inline-flex items-center gap-2 text-sm mb-4 transition-colors" style={{ color: theme.cardTextMuted }}>
           <ArrowLeft className="h-4 w-4" /> Back to AI Lab
         </Link>
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>{industryInfo?.label || 'Edit Template'}</h1>
-            <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>{industryInfo?.description}</p>
-            <p className="mt-1 text-xs" style={{ color: theme.textMuted }}>New clients in this industry will inherit this configuration.</p>
+            <p className="mt-1 text-sm" style={{ color: theme.cardTextMuted }}>{industryInfo?.description}</p>
+            <p className="mt-1 text-xs" style={{ color: theme.cardTextMuted }}>New clients in this industry will inherit this configuration.</p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             {template?.isCustom && (
@@ -383,7 +383,7 @@ export default function TemplateEditorPage() {
           <Loader2 className="h-5 w-5 flex-shrink-0 mt-0.5 animate-spin" style={{ color: theme.iconColor }} />
           <div>
             <p className="text-sm font-medium" style={{ color: theme.text }}>Building your {industryInfo.label} receptionist…</p>
-            <p className="text-sm mt-0.5" style={{ color: theme.textMuted }}>The AI is writing an industry-specific knowledge base and system prompt for this vertical. This page updates on its own when it's ready, usually under a minute. Hold off on editing until it finishes so your changes aren't overwritten.</p>
+            <p className="text-sm mt-0.5" style={{ color: theme.cardTextMuted }}>The AI is writing an industry-specific knowledge base and system prompt for this vertical. This page updates on its own when it's ready, usually under a minute. Hold off on editing until it finishes so your changes aren't overwritten.</p>
           </div>
         </div>
       )}
@@ -402,7 +402,7 @@ export default function TemplateEditorPage() {
 
       <div className="mb-6 rounded-xl p-3 flex items-start gap-3" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.06 : 0.04), border: `1px solid ${hexToRgba(theme.primary, 0.15)}` }}>
         <Info className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.iconColor }} />
-        <p className="text-xs" style={{ color: theme.textMuted }}>
+        <p className="text-xs" style={{ color: theme.cardTextMuted }}>
           Use <code className="px-1.5 py-0.5 rounded text-xs" style={{ backgroundColor: theme.hover }}>{'{businessName}'}</code> in prompts - it&apos;s replaced with the client&apos;s actual business name at signup.
         </p>
       </div>
@@ -411,74 +411,74 @@ export default function TemplateEditorPage() {
         <div className="flex-1 space-y-4 min-w-0">
           <div className="rounded-xl p-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
             <div className="mb-3">
-              <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Response model</label>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: theme.cardTextMuted }}>Response model</label>
               <CustomSelect value={model} onChange={(v) => setModel(v)} options={[...MODEL_OPTIONS.map(m => ({ value: m.id, label: `${m.name}${m.tag ? ` (${m.tag})` : ''}` })), ...(MODEL_OPTIONS.find(m => m.id === model) ? [] : [{ value: model, label: model }])]} ui={{ inputStyle, text: theme.text, muted: theme.textMuted, panelBg: theme.card, panelBorder: theme.border, hover: theme.hover, accent: theme.primary, isDark: theme.isDark }} />
-              {selectedModelObj && <p className="text-xs mt-1" style={{ color: theme.textMuted }}>{selectedModelObj.desc}</p>}
+              {selectedModelObj && <p className="text-xs mt-1" style={{ color: theme.cardTextMuted }}>{selectedModelObj.desc}</p>}
             </div>
             <div className="mb-3">
-              <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Voice engine</label>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: theme.cardTextMuted }}>Voice engine</label>
               <CustomSelect value={ttsModel} onChange={(v) => setTtsModel(v)} options={[...TTS_MODEL_OPTIONS.filter(m => !m.comingSoon).map(m => ({ value: m.id, label: `${m.name}${m.tag ? ` (${m.tag})` : ''}` })), ...(TTS_MODEL_OPTIONS.find(m => m.id === ttsModel) ? [] : [{ value: ttsModel, label: ttsModel }])]} ui={{ inputStyle, text: theme.text, muted: theme.textMuted, panelBg: theme.card, panelBorder: theme.border, hover: theme.hover, accent: theme.primary, isDark: theme.isDark }} />
-              {selectedTtsObj && <p className="text-xs mt-1" style={{ color: theme.textMuted }}>{selectedTtsObj.desc}</p>}
+              {selectedTtsObj && <p className="text-xs mt-1" style={{ color: theme.cardTextMuted }}>{selectedTtsObj.desc}</p>}
               {TTS_MODEL_OPTIONS.some(m => m.comingSoon) && <p className="text-[11px] mt-1.5" style={{ color: theme.primary }}>Coming soon: {TTS_MODEL_OPTIONS.filter(m => m.comingSoon).map(m => m.name).join(', ')} - we'll add it automatically once our voice provider supports it.</p>}
             </div>
             <div className="mb-3">
-              <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Speech recognition</label>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: theme.cardTextMuted }}>Speech recognition</label>
               <CustomSelect value={transcriberModel} onChange={(v) => setTranscriberModel(v)} options={[...TRANSCRIBER_OPTIONS.map(m => ({ value: m.id, label: `${m.name}${m.tag ? ` (${m.tag})` : ''}` })), ...(TRANSCRIBER_OPTIONS.find(m => m.id === transcriberModel) ? [] : [{ value: transcriberModel, label: transcriberModel }])]} ui={{ inputStyle, text: theme.text, muted: theme.textMuted, panelBg: theme.card, panelBorder: theme.border, hover: theme.hover, accent: theme.primary, isDark: theme.isDark }} />
-              {selectedTranscriberObj && <p className="text-xs mt-1" style={{ color: theme.textMuted }}>{selectedTranscriberObj.desc}</p>}
+              {selectedTranscriberObj && <p className="text-xs mt-1" style={{ color: theme.cardTextMuted }}>{selectedTranscriberObj.desc}</p>}
             </div>
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Temperature: {temperature}</label>
+                <label className="block text-sm font-medium mb-1.5" style={{ color: theme.cardTextMuted }}>Temperature: {temperature}</label>
                 <input type="range" min="0" max="1" step="0.1" value={temperature} onChange={e => setTemperature(parseFloat(e.target.value))} className="w-full mt-1" style={{ accentColor: theme.primary }} />
-                <div className="flex justify-between text-sm mt-0.5" style={{ color: theme.textMuted }}><span>Precise</span><span>Creative</span></div>
+                <div className="flex justify-between text-sm mt-0.5" style={{ color: theme.cardTextMuted }}><span>Precise</span><span>Creative</span></div>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Voice Speed: {speed.toFixed(2)}x</label>
+                <label className="block text-sm font-medium mb-1.5" style={{ color: theme.cardTextMuted }}>Voice Speed: {speed.toFixed(2)}x</label>
                 <input type="range" min="0.7" max="1.2" step="0.05" value={speed} onChange={e => setSpeed(parseFloat(e.target.value))} className="w-full mt-1" style={{ accentColor: theme.primary }} />
-                <div className="flex justify-between text-sm mt-0.5" style={{ color: theme.textMuted }}><span>Slower</span><span>Faster</span></div>
+                <div className="flex justify-between text-sm mt-0.5" style={{ color: theme.cardTextMuted }}><span>Slower</span><span>Faster</span></div>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Expressiveness: {stability.toFixed(2)}</label>
+                <label className="block text-sm font-medium mb-1.5" style={{ color: theme.cardTextMuted }}>Expressiveness: {stability.toFixed(2)}</label>
                 <input type="range" min="0" max="1" step="0.05" value={stability} onChange={e => setStability(parseFloat(e.target.value))} className="w-full mt-1" style={{ accentColor: theme.primary }} />
-                <div className="flex justify-between text-sm mt-0.5" style={{ color: theme.textMuted }}><span>Expressive</span><span>Flat</span></div>
+                <div className="flex justify-between text-sm mt-0.5" style={{ color: theme.cardTextMuted }}><span>Expressive</span><span>Flat</span></div>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Style: {styleVal.toFixed(2)}</label>
+                <label className="block text-sm font-medium mb-1.5" style={{ color: theme.cardTextMuted }}>Style: {styleVal.toFixed(2)}</label>
                 <input type="range" min="0" max="1" step="0.05" value={styleVal} onChange={e => setStyleVal(parseFloat(e.target.value))} className="w-full mt-1" style={{ accentColor: theme.primary }} />
-                <div className="flex justify-between text-sm mt-0.5" style={{ color: theme.textMuted }}><span>Neutral</span><span>Dramatic</span></div>
+                <div className="flex justify-between text-sm mt-0.5" style={{ color: theme.cardTextMuted }}><span>Neutral</span><span>Dramatic</span></div>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Clarity: {similarity.toFixed(2)}</label>
+                <label className="block text-sm font-medium mb-1.5" style={{ color: theme.cardTextMuted }}>Clarity: {similarity.toFixed(2)}</label>
                 <input type="range" min="0" max="1" step="0.05" value={similarity} onChange={e => setSimilarity(parseFloat(e.target.value))} className="w-full mt-1" style={{ accentColor: theme.primary }} />
-                <div className="flex justify-between text-sm mt-0.5" style={{ color: theme.textMuted }}><span>Lower</span><span>Higher</span></div>
+                <div className="flex justify-between text-sm mt-0.5" style={{ color: theme.cardTextMuted }}><span>Lower</span><span>Higher</span></div>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Speaker Boost</label>
+                <label className="block text-sm font-medium mb-1.5" style={{ color: theme.cardTextMuted }}>Speaker Boost</label>
                 <div className="flex rounded-lg overflow-hidden" style={{ border: `1px solid ${theme.inputBorder}`, maxWidth: '240px' }}>
                   <button type="button" onClick={() => setSpeakerBoost(true)} className="flex-1 px-3 py-2 text-sm font-medium transition" style={{ backgroundColor: speakerBoost ? theme.primary : 'transparent', color: speakerBoost ? theme.primaryText : theme.textMuted }}>On</button>
                   <button type="button" onClick={() => setSpeakerBoost(false)} className="flex-1 px-3 py-2 text-sm font-medium transition" style={{ backgroundColor: !speakerBoost ? theme.primary : 'transparent', color: !speakerBoost ? theme.primaryText : theme.textMuted }}>Off</button>
                 </div>
-                <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>Sharpens the voice on a phone line.</p>
+                <p className="text-xs mt-0.5" style={{ color: theme.cardTextMuted }}>Sharpens the voice on a phone line.</p>
               </div>
             </div>
             <div className="mb-3">
-              <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Voice tuning</label>
-              <p className="text-xs mb-2" style={{ color: theme.textMuted }}>Lower Expressiveness makes the voice vary its tone and sound less robotic. Style adds emphasis. These apply to every client on this template.</p>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: theme.cardTextMuted }}>Voice tuning</label>
+              <p className="text-xs mb-2" style={{ color: theme.cardTextMuted }}>Lower Expressiveness makes the voice vary its tone and sound less robotic. Style adds emphasis. These apply to every client on this template.</p>
             </div>
             <div className="mb-3">
-              <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Background Denoising (Krisp)</label>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: theme.cardTextMuted }}>Background Denoising (Krisp)</label>
               <div className="flex rounded-lg overflow-hidden" style={{ border: `1px solid ${theme.inputBorder}`, maxWidth: '240px' }}>
                 <button type="button" onClick={() => setDenoising(true)} className="flex-1 px-3 py-2 text-sm font-medium transition" style={{ backgroundColor: denoising ? theme.primary : 'transparent', color: denoising ? theme.primaryText : theme.textMuted }}>On</button>
                 <button type="button" onClick={() => setDenoising(false)} className="flex-1 px-3 py-2 text-sm font-medium transition" style={{ backgroundColor: !denoising ? theme.primary : 'transparent', color: !denoising ? theme.primaryText : theme.textMuted }}>Off</button>
               </div>
-              <p className="text-xs mt-1" style={{ color: theme.textMuted }}>Filters background voices and noise so the AI hears only the caller. Recommended on.</p>
+              <p className="text-xs mt-1" style={{ color: theme.cardTextMuted }}>Filters background voices and noise so the AI hears only the caller. Recommended on.</p>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: theme.textMuted }}>Opening Greeting</label>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: theme.cardTextMuted }}>Opening Greeting</label>
               <textarea value={firstMessage} onChange={e => setFirstMessage(e.target.value)} rows={2}
                 className="w-full rounded-lg px-3 py-2 text-sm resize-none" style={inputStyle} placeholder="Hi, you've reached {businessName}..." />
             </div>
@@ -495,7 +495,7 @@ export default function TemplateEditorPage() {
                   </button>
                 ) : (
                   <div className="rounded-xl p-3 space-y-2" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-                    <p className="text-xs" style={{ color: theme.textMuted }}>Paste an ElevenLabs voice ID and we'll add it to your voice options.</p>
+                    <p className="text-xs" style={{ color: theme.cardTextMuted }}>Paste an ElevenLabs voice ID and we'll add it to your voice options.</p>
                     <div className="flex flex-col sm:flex-row gap-2">
                       <input value={newVoiceId} onChange={e => setNewVoiceId(e.target.value)} placeholder="ElevenLabs voice ID" className="flex-1 rounded-lg px-2.5 py-1.5 text-sm" style={inputStyle} />
                       <input value={newVoiceName} onChange={e => setNewVoiceName(e.target.value)} placeholder="Label (optional)" className="flex-1 rounded-lg px-2.5 py-1.5 text-sm" style={inputStyle} />
@@ -509,7 +509,7 @@ export default function TemplateEditorPage() {
                         ))}
                       </div>
                       <div className="flex items-center gap-2">
-                        <button onClick={() => { setShowAddVoice(false); setVoiceError(''); }} className="text-xs font-medium px-2.5 py-1.5" style={{ color: theme.textMuted }}>Cancel</button>
+                        <button onClick={() => { setShowAddVoice(false); setVoiceError(''); }} className="text-xs font-medium px-2.5 py-1.5" style={{ color: theme.cardTextMuted }}>Cancel</button>
                         <button onClick={handleAddVoice} disabled={addingVoice || !newVoiceId.trim()} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
                           {addingVoice ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Checking...</> : <><Plus className="h-3.5 w-3.5" /> Add voice</>}
                         </button>
@@ -518,7 +518,7 @@ export default function TemplateEditorPage() {
                   </div>
                 )
               ) : (
-                <p className="text-xs" style={{ color: theme.textMuted }}>Want to use your own ElevenLabs voice? Custom voices are available on the Scale plan.</p>
+                <p className="text-xs" style={{ color: theme.cardTextMuted }}>Want to use your own ElevenLabs voice? Custom voices are available on the Scale plan.</p>
               )}
             </div>
           </div>
@@ -526,7 +526,7 @@ export default function TemplateEditorPage() {
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <BookOpen className="h-3.5 w-3.5" style={{ color: theme.iconColor }} />
-                <span className="text-sm font-medium" style={{ color: theme.textMuted }}>Knowledge Base</span>
+                <span className="text-sm font-medium" style={{ color: theme.cardTextMuted }}>Knowledge Base</span>
               </div>
               <button onClick={() => setKbExpanded(!kbExpanded)} className="flex items-center gap-1 text-xs font-medium transition" style={{ color: theme.primary }}>
                 {kbExpanded ? 'Hide' : 'Edit'}
@@ -534,7 +534,7 @@ export default function TemplateEditorPage() {
               </button>
             </div>
             {!kbExpanded ? (
-              <p className="text-xs" style={{ color: theme.textMuted }}>
+              <p className="text-xs" style={{ color: theme.cardTextMuted }}>
                 {kbServices.filter(s => s.name.trim()).length} services · {kbFaqs.filter(f => f.question.trim()).length} FAQs{kbAdditionalInfo ? ' · Has additional info' : ''}
                 {!kbServices.some(s => s.name.trim()) && !kbFaqs.some(f => f.question.trim()) && !kbAdditionalInfo ? 'No KB data - clients inherit industry default.' : ''}
               </p>
@@ -542,30 +542,30 @@ export default function TemplateEditorPage() {
               <div className="space-y-3 mt-2">
                 <div className="flex items-start gap-2 p-2 rounded-lg" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.06 : 0.04) }}>
                   <Info className="h-3 w-3 flex-shrink-0 mt-0.5" style={{ color: theme.iconColor }} />
-                  <p className="text-sm leading-relaxed" style={{ color: theme.textMuted }}>Inherited by new clients. They can customize from their dashboard.</p>
+                  <p className="text-sm leading-relaxed" style={{ color: theme.cardTextMuted }}>Inherited by new clients. They can customize from their dashboard.</p>
                 </div>
                 <div>
-                  <label className="flex items-center gap-1 text-xs font-medium mb-1" style={{ color: theme.textMuted }}><Globe className="w-3 h-3" style={{ color: theme.iconColor }} /> Website</label>
+                  <label className="flex items-center gap-1 text-xs font-medium mb-1" style={{ color: theme.cardTextMuted }}><Globe className="w-3 h-3" style={{ color: theme.iconColor }} /> Website</label>
                   <input type="url" value={kbWebsite} onChange={e => setKbWebsite(e.target.value)} placeholder="https://yourbusiness.com" className="w-full rounded-lg px-2.5 py-1.5 text-xs" style={inputStyle} />
                 </div>
                 <div>
-                  <label className="flex items-center gap-1 text-xs font-medium mb-1" style={{ color: theme.textMuted }}><Briefcase className="w-3 h-3" style={{ color: theme.iconColor }} /> Services</label>
+                  <label className="flex items-center gap-1 text-xs font-medium mb-1" style={{ color: theme.cardTextMuted }}><Briefcase className="w-3 h-3" style={{ color: theme.iconColor }} /> Services</label>
                   {kbServices.map(s => (
                     <div key={s.id} className="flex gap-1.5 mb-1.5">
                       <input type="text" value={s.name} onChange={e => updateService(s.id, 'name', e.target.value)} placeholder="Service" className="flex-1 rounded-lg px-2 py-1 text-sm min-w-0" style={inputStyle} />
                       <input type="text" value={s.price} onChange={e => updateService(s.id, 'price', e.target.value)} placeholder="$" className="w-20 rounded-lg px-2.5 py-1.5 text-sm" style={inputStyle} />
-                      <button onClick={() => removeService(s.id)} disabled={kbServices.length === 1} className="p-1 disabled:opacity-20" style={{ color: theme.textMuted }}><Trash2 className="w-3 h-3" /></button>
+                      <button onClick={() => removeService(s.id)} disabled={kbServices.length === 1} className="p-1 disabled:opacity-20" style={{ color: theme.cardTextMuted }}><Trash2 className="w-3 h-3" /></button>
                     </div>
                   ))}
                   <button onClick={addService} className="flex items-center gap-1 text-sm font-medium mt-1 px-2 py-1 rounded transition hover:opacity-80" style={{ color: theme.primary, backgroundColor: hexToRgba(theme.primary, 0.08) }}><Plus className="w-2.5 h-2.5" /> Add</button>
                 </div>
                 <div>
-                  <label className="flex items-center gap-1 text-xs font-medium mb-1" style={{ color: theme.textMuted }}><HelpCircle className="w-3 h-3" style={{ color: theme.iconColor }} /> FAQs</label>
+                  <label className="flex items-center gap-1 text-xs font-medium mb-1" style={{ color: theme.cardTextMuted }}><HelpCircle className="w-3 h-3" style={{ color: theme.iconColor }} /> FAQs</label>
                   {kbFaqs.map(f => (
                     <div key={f.id} className="mb-1.5 space-y-1">
                       <div className="flex gap-1.5">
                         <input type="text" value={f.question} onChange={e => updateFaq(f.id, 'question', e.target.value)} placeholder="Q:" className="flex-1 rounded-lg px-2 py-1 text-sm min-w-0" style={inputStyle} />
-                        <button onClick={() => removeFaq(f.id)} disabled={kbFaqs.length === 1} className="p-1 disabled:opacity-20" style={{ color: theme.textMuted }}><Trash2 className="w-3 h-3" /></button>
+                        <button onClick={() => removeFaq(f.id)} disabled={kbFaqs.length === 1} className="p-1 disabled:opacity-20" style={{ color: theme.cardTextMuted }}><Trash2 className="w-3 h-3" /></button>
                       </div>
                       <textarea value={f.answer} onChange={e => updateFaq(f.id, 'answer', e.target.value)} placeholder="A:" rows={1} className="w-full rounded-lg px-2 py-1 text-sm resize-none" style={inputStyle} />
                     </div>
@@ -573,7 +573,7 @@ export default function TemplateEditorPage() {
                   <button onClick={addFaq} className="flex items-center gap-1 text-sm font-medium mt-1 px-2 py-1 rounded transition hover:opacity-80" style={{ color: theme.primary, backgroundColor: hexToRgba(theme.primary, 0.08) }}><Plus className="w-2.5 h-2.5" /> Add</button>
                 </div>
                 <div>
-                  <label className="flex items-center gap-1 text-xs font-medium mb-1" style={{ color: theme.textMuted }}><FileText className="w-3 h-3" style={{ color: theme.iconColor }} /> Additional Info</label>
+                  <label className="flex items-center gap-1 text-xs font-medium mb-1" style={{ color: theme.cardTextMuted }}><FileText className="w-3 h-3" style={{ color: theme.iconColor }} /> Additional Info</label>
                   <textarea value={kbAdditionalInfo} onChange={e => setKbAdditionalInfo(e.target.value)} placeholder="Policies, service areas..." rows={2} className="w-full rounded-lg px-2.5 py-1.5 text-sm resize-none" style={inputStyle} />
                 </div>
               </div>
@@ -589,17 +589,17 @@ export default function TemplateEditorPage() {
                   {uploadingDoc ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Reading...</> : <><Plus className="h-3.5 w-3.5" /> Attach document</>}
                 </button>
               </div>
-              <p className="text-xs mb-3" style={{ color: theme.textMuted }}>Upload reference docs (what this business does, policies, service details). The AI reads them as part of this industry's knowledge base. PDF, Word, text, or markdown, up to 6MB each.</p>
+              <p className="text-xs mb-3" style={{ color: theme.cardTextMuted }}>Upload reference docs (what this business does, policies, service details). The AI reads them as part of this industry's knowledge base. PDF, Word, text, or markdown, up to 6MB each.</p>
               {docError && <p className="text-xs mb-2" style={{ color: '#ef4444' }}>{docError}</p>}
               {documents.length === 0 ? (
-                <p className="text-xs" style={{ color: theme.textMuted }}>No documents attached yet.</p>
+                <p className="text-xs" style={{ color: theme.cardTextMuted }}>No documents attached yet.</p>
               ) : (
                 <div className="space-y-1.5">
                   {documents.map((d) => (
                     <div key={d.id} className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ backgroundColor: theme.hover }}>
                       <FileText className="w-3.5 h-3.5 flex-shrink-0" style={{ color: theme.iconColor }} />
                       <span className="text-sm truncate flex-1" style={{ color: theme.text }}>{d.name}</span>
-                      <button onClick={() => handleDeleteDoc(d.id)} className="p-1" style={{ color: theme.textMuted }} title="Remove"><Trash2 className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => handleDeleteDoc(d.id)} className="p-1" style={{ color: theme.cardTextMuted }} title="Remove"><Trash2 className="w-3.5 h-3.5" /></button>
                     </div>
                   ))}
                 </div>
@@ -624,14 +624,14 @@ export default function TemplateEditorPage() {
         <div className="lg:w-[45%] xl:w-[50%] flex-shrink-0">
           <div className="rounded-xl p-4 lg:sticky lg:top-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium" style={{ color: theme.textMuted }}>System Prompt</label>
-              <span className="text-xs font-mono" style={{ color: theme.textMuted }}>{systemPrompt.length.toLocaleString()} chars</span>
+              <label className="text-sm font-medium" style={{ color: theme.cardTextMuted }}>System Prompt</label>
+              <span className="text-xs font-mono" style={{ color: theme.cardTextMuted }}>{systemPrompt.length.toLocaleString()} chars</span>
             </div>
             <textarea value={systemPrompt} onChange={e => setSystemPrompt(e.target.value)}
               className="w-full rounded-lg px-3 py-2.5 text-xs font-mono leading-relaxed"
               style={{ ...inputStyle, resize: 'vertical', minHeight: '500px', height: '70vh', maxHeight: '80vh' }}
               placeholder="Enter the system prompt..." />
-            <p className="text-sm mt-1.5" style={{ color: theme.textMuted }}>
+            <p className="text-sm mt-1.5" style={{ color: theme.cardTextMuted }}>
               Use <code className="px-1 py-0.5 rounded text-sm" style={{ backgroundColor: theme.hover }}>{'{businessName}'}</code> - auto-replaced at signup.
             </p>
           </div>

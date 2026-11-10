@@ -100,7 +100,7 @@ function IndustryGatingBody({ hideHeader, embedded }: { hideHeader?: boolean; em
     return (
       <div className={outerClass} style={outerStyle}>
         {Header}
-        <p className="text-[11px] sm:text-xs mb-3" style={{ color: theme.textMuted }}>
+        <p className="text-[11px] sm:text-xs mb-3" style={{ color: theme.cardTextMuted }}>
           Limit which industries clients can choose at signup, or lock your agency to a single vertical.
         </p>
         <div className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm" style={{ background: theme.primary15, color: theme.text }}>
@@ -114,7 +114,7 @@ function IndustryGatingBody({ hideHeader, embedded }: { hideHeader?: boolean; em
   return (
     <div className={outerClass} style={outerStyle}>
       {Header}
-      <p className="text-[11px] sm:text-xs mb-3" style={{ color: theme.textMuted }}>
+      <p className="text-[11px] sm:text-xs mb-3" style={{ color: theme.cardTextMuted }}>
         Control which industries a client can pick when they sign up on your site.
       </p>
 
@@ -131,7 +131,7 @@ function IndustryGatingBody({ hideHeader, embedded }: { hideHeader?: boolean; em
         {([['all', 'Allow all'], ['limit', 'Limit to selected']] as const).map(([m, label]) => (
           <button key={m} type="button" onClick={() => setMode(m)}
             className="rounded-md px-3 py-1.5 text-xs font-medium transition-colors"
-            style={mode === m ? { background: theme.card, color: theme.text, boxShadow: '0 1px 2px rgba(0,0,0,0.08)' } : { background: 'transparent', color: theme.textMuted }}>
+            style={mode === m ? { background: theme.card, color: theme.text, boxShadow: '0 1px 2px rgba(0,0,0,0.08)' } : { background: 'transparent', color: theme.cardTextMuted }}>
             {label}
           </button>
         ))}
@@ -156,12 +156,12 @@ function IndustryGatingBody({ hideHeader, embedded }: { hideHeader?: boolean; em
                     {on && <Check className="h-3 w-3" style={{ color: theme.primaryText }} />}
                   </span>
                   <span className="truncate flex-1">{o.label}</span>
-                  {o.custom && <span className="text-[9px] font-semibold px-1 py-0.5 rounded-full shrink-0" style={{ background: theme.isDark ? 'rgba(255,255,255,0.08)' : '#f1f5f9', color: theme.textMuted }}>Custom</span>}
+                  {o.custom && <span className="text-[9px] font-semibold px-1 py-0.5 rounded-full shrink-0" style={{ background: theme.isDark ? 'rgba(255,255,255,0.08)' : '#f1f5f9', color: theme.cardTextMuted }}>Custom</span>}
                 </button>
               );
             })}
           </div>
-          <p className="text-[11px] mt-2.5" style={{ color: theme.textMuted }}>
+          <p className="text-[11px] mt-2.5" style={{ color: theme.cardTextMuted }}>
             {selected.size === 0 ? 'None selected yet.' : `${selected.size} selected.`} Your own custom verticals from the AI Lab show up here too.
           </p>
         </>

@@ -174,12 +174,12 @@ export default function CcLiveCallPops({ agencyId }: { agencyId?: string }) {
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full animate-pulse flex-shrink-0" style={{ backgroundColor: c.humanOnCall ? '#f59e0b' : '#22c55e' }} />
                 <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: c.humanOnCall ? '#f59e0b' : '#22c55e' }}>{c.humanOnCall ? 'Agent on call' : 'In progress'}</span>
-                <span className="text-[11px] tabular-nums ml-auto" style={{ color: theme.textMuted }}>{fmtElapsed(c.startedAt, now)}</span>
+                <span className="text-[11px] tabular-nums ml-auto" style={{ color: theme.cardTextMuted }}>{fmtElapsed(c.startedAt, now)}</span>
               </div>
               <p className="text-sm font-semibold truncate mt-1" style={{ color: theme.text }}>{c.businessName}</p>
-              <p className="text-[12px] truncate" style={{ color: theme.textMuted }}>{fmtPhone(c.callerNumber)}{c.beingMonitored ? ' · being monitored' : ''}</p>
+              <p className="text-[12px] truncate" style={{ color: theme.cardTextMuted }}>{fmtPhone(c.callerNumber)}{c.beingMonitored ? ' · being monitored' : ''}</p>
             </div>
-            <button onClick={() => setDismissed((prev) => new Set(prev).add(c.sessionId))} className="p-1 -mr-1 -mt-1 flex-shrink-0 rounded-lg" style={{ color: theme.textMuted }} title="Dismiss"><X className="h-4 w-4" /></button>
+            <button onClick={() => setDismissed((prev) => new Set(prev).add(c.sessionId))} className="p-1 -mr-1 -mt-1 flex-shrink-0 rounded-lg" style={{ color: theme.cardTextMuted }} title="Dismiss"><X className="h-4 w-4" /></button>
           </div>
           <Link
             href={`/live/${c.clientId}?mode=monitor&back=/cc/live-calls`}
@@ -197,17 +197,17 @@ export default function CcLiveCallPops({ agencyId }: { agencyId?: string }) {
       {ended.slice(-4).map((e) => (
         <div key={`ended-${e.call.sessionId}`} className="w-80 max-w-full rounded-2xl p-4 shadow-xl" style={card}>
           <div className="flex items-start gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.hover }}><Check className="h-4 w-4" style={{ color: theme.textMuted }} /></div>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.hover }}><Check className="h-4 w-4" style={{ color: theme.cardTextMuted }} /></div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: theme.textSubtle }} />
-                <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Call completed</span>
-                <span className="text-[11px] tabular-nums ml-auto" style={{ color: theme.textMuted }}>{fmtDuration(e.endedAt - Date.parse(e.call.startedAt))}</span>
+                <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: theme.cardTextMuted }}>Call completed</span>
+                <span className="text-[11px] tabular-nums ml-auto" style={{ color: theme.cardTextMuted }}>{fmtDuration(e.endedAt - Date.parse(e.call.startedAt))}</span>
               </div>
               <p className="text-sm font-semibold truncate mt-1" style={{ color: theme.text }}>{e.call.businessName}</p>
-              <p className="text-[12px] truncate" style={{ color: theme.textMuted }}>{fmtPhone(e.call.callerNumber)}</p>
+              <p className="text-[12px] truncate" style={{ color: theme.cardTextMuted }}>{fmtPhone(e.call.callerNumber)}</p>
             </div>
-            <button onClick={() => setEnded((prev) => prev.filter((x) => x.call.sessionId !== e.call.sessionId))} className="p-1 -mr-1 -mt-1 flex-shrink-0 rounded-lg" style={{ color: theme.textMuted }} title="Dismiss"><X className="h-4 w-4" /></button>
+            <button onClick={() => setEnded((prev) => prev.filter((x) => x.call.sessionId !== e.call.sessionId))} className="p-1 -mr-1 -mt-1 flex-shrink-0 rounded-lg" style={{ color: theme.cardTextMuted }} title="Dismiss"><X className="h-4 w-4" /></button>
           </div>
           <Link
             href="/cc/calls"

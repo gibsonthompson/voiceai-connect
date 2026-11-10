@@ -341,7 +341,7 @@ export default function LeadDetailPage() {
         <Link 
           href="/agency/leads"
           className="inline-flex items-center gap-2 text-sm transition-colors mb-8"
-          style={{ color: theme.textMuted }}
+          style={{ color: theme.cardTextMuted }}
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Leads
@@ -386,7 +386,7 @@ export default function LeadDetailPage() {
         <Link 
           href="/agency/leads"
           className="inline-flex items-center gap-2 text-sm transition-colors mb-4"
-          style={{ color: theme.textMuted }}
+          style={{ color: theme.cardTextMuted }}
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Leads
@@ -397,7 +397,7 @@ export default function LeadDetailPage() {
             <div className="flex h-12 w-12 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><span className="text-lg font-semibold" style={{ color: theme.primary }}>{lead?.business_name?.charAt(0) || '?'}</span></div>
             <div className="min-w-0">
               <h1 className="text-lg sm:text-2xl font-semibold tracking-tight truncate" style={{ color: theme.text }}>{lead?.business_name}</h1>
-              <p className="text-sm mt-0.5" style={{ color: theme.textMuted }}>
+              <p className="text-sm mt-0.5" style={{ color: theme.cardTextMuted }}>
                 {lead?.industry ? `${lead.industry} · ` : ''}Added {lead?.created_at ? new Date(lead.created_at).toLocaleDateString() : '\u2014'}
               </p>
             </div>
@@ -488,7 +488,7 @@ export default function LeadDetailPage() {
             </div>
             <div>
               <h3 className="font-semibold text-sm sm:text-base leading-tight" style={{ color: theme.text }}>Outreach Progress</h3>
-              <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>
+              <p className="text-xs mt-0.5" style={{ color: theme.cardTextMuted }}>
                 {(outreach?.total_count || 0)} touch{(outreach?.total_count || 0) === 1 ? '' : 'es'}
                 {outreach?.last_outreach ? ` · last ${timeAgo(outreach.last_outreach.sent_at)} via ${outreach.last_outreach.type}` : ' · no contact yet'}
               </p>
@@ -506,10 +506,10 @@ export default function LeadDetailPage() {
             <div key={s.label} className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.015)', border: `1px solid ${theme.border}` }}>
               <div className="flex items-center gap-2 mb-2.5">
                 <s.Icon className="h-4 w-4" style={{ color: s.color }} />
-                <span className="text-xs font-medium" style={{ color: theme.textMuted }}>{s.label}</span>
+                <span className="text-xs font-medium" style={{ color: theme.cardTextMuted }}>{s.label}</span>
               </div>
               <div className="text-2xl font-semibold leading-none tabular-nums" style={{ color: theme.text }}>{s.count}</div>
-              <p className="text-[11px] mt-1.5" style={{ color: theme.textMuted }}>
+              <p className="text-[11px] mt-1.5" style={{ color: theme.cardTextMuted }}>
                 {s.last ? `Last ${timeAgo(s.last)}` : (s.label === 'Total' ? 'All channels' : 'None yet')}
               </p>
             </div>
@@ -615,7 +615,7 @@ export default function LeadDetailPage() {
                 }}>
                   Next: {sequenceInfo.next_template_name}
                 </p>
-                <p className="text-xs" style={{ color: theme.textMuted }}>
+                <p className="text-xs" style={{ color: theme.cardTextMuted }}>
                   {sequenceInfo.urgency === 'overdue' 
                     ? `Overdue by ${sequenceInfo.days_overdue} day${sequenceInfo.days_overdue !== 1 ? 's' : ''}`
                     : sequenceInfo.urgency === 'due_today'
@@ -653,29 +653,29 @@ export default function LeadDetailPage() {
             style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
           >
             <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base" style={{ color: theme.text }}>
-              <Building2 className="h-4 w-4" style={{ color: theme.textMuted }} />
+              <Building2 className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
               Business Information
             </h3>
             <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
               <div>
-                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Business Name *</label>
+                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.cardTextMuted }}>Business Name *</label>
                 <input type="text" value={formData.business_name} onChange={(e) => setFormData(prev => ({ ...prev, business_name: e.target.value }))} readOnly={demoMode} className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none" style={inputStyle} />
               </div>
               <div>
-                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Industry</label>
+                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.cardTextMuted }}>Industry</label>
                 <input type="text" value={formData.industry} onChange={(e) => setFormData(prev => ({ ...prev, industry: e.target.value }))} readOnly={demoMode} placeholder="e.g., Plumbing, HVAC" className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none" style={inputStyle} />
               </div>
               <div>
-                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Phone</label>
+                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.cardTextMuted }}>Phone</label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted }} />
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.cardTextMuted }} />
                   <input type="tel" value={formData.phone} onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))} readOnly={demoMode} className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none" style={inputStyle} />
                 </div>
               </div>
               <div>
-                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Website</label>
+                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.cardTextMuted }}>Website</label>
                 <div className="relative">
-                  <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted }} />
+                  <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.cardTextMuted }} />
                   <input type="url" value={formData.website} onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))} readOnly={demoMode} placeholder="example.com" className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none" style={inputStyle} />
                 </div>
               </div>
@@ -688,18 +688,18 @@ export default function LeadDetailPage() {
             style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
           >
             <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base" style={{ color: theme.text }}>
-              <User className="h-4 w-4" style={{ color: theme.textMuted }} />
+              <User className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
               Contact Information
             </h3>
             <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
               <div>
-                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Contact Name</label>
+                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.cardTextMuted }}>Contact Name</label>
                 <input type="text" value={formData.contact_name} onChange={(e) => setFormData(prev => ({ ...prev, contact_name: e.target.value }))} readOnly={demoMode} className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm focus:outline-none" style={inputStyle} />
               </div>
               <div>
-                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Email</label>
+                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.cardTextMuted }}>Email</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted }} />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.cardTextMuted }} />
                   <input type="email" value={formData.email} onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))} readOnly={demoMode} className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none" style={inputStyle} />
                 </div>
               </div>
@@ -712,7 +712,7 @@ export default function LeadDetailPage() {
             style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
           >
             <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base" style={{ color: theme.text }}>
-              <FileText className="h-4 w-4" style={{ color: theme.textMuted }} />
+              <FileText className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
               Internal Notes
             </h3>
             <textarea value={formData.notes} onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))} readOnly={demoMode} placeholder="Add notes about this lead..." rows={4} className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-sm resize-none focus:outline-none" style={inputStyle} />
@@ -737,12 +737,12 @@ export default function LeadDetailPage() {
             style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
           >
             <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base" style={{ color: theme.text }}>
-              <Tag className="h-4 w-4" style={{ color: theme.textMuted }} />
+              <Tag className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
               Details
             </h3>
             <div className="space-y-3 sm:space-y-4">
               <div>
-                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Source</label>
+                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.cardTextMuted }}>Source</label>
                 <CustomSelect
                   value={formData.source}
                   onChange={(v) => setFormData(prev => ({ ...prev, source: v }))}
@@ -753,15 +753,15 @@ export default function LeadDetailPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>
+                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.cardTextMuted }}>
                   Scheduled Follow-up
-                  <span className="ml-1 text-[10px]" style={{ color: theme.textMuted }}>(optional)</span>
+                  <span className="ml-1 text-[10px]" style={{ color: theme.cardTextMuted }}>(optional)</span>
                 </label>
                 <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted }} />
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.cardTextMuted }} />
                   <input type="date" value={formData.next_follow_up} onChange={(e) => setFormData(prev => ({ ...prev, next_follow_up: e.target.value }))} readOnly={demoMode} className="w-full rounded-xl pl-10 pr-4 py-2 sm:py-2.5 text-sm focus:outline-none" style={inputStyle} />
                 </div>
-                <p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>
+                <p className="text-[10px] mt-1" style={{ color: theme.cardTextMuted }}>
                   Set a reminder date for manual follow-up
                 </p>
               </div>
@@ -774,21 +774,21 @@ export default function LeadDetailPage() {
             style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
           >
             <h3 className="font-medium mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base" style={{ color: theme.text }}>
-              <Clock className="h-4 w-4" style={{ color: theme.textMuted }} />
+              <Clock className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
               Timestamps
             </h3>
             <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
               <div className="flex justify-between">
-                <span style={{ color: theme.textMuted }}>Created</span>
+                <span style={{ color: theme.cardTextMuted }}>Created</span>
                 <span style={{ color: theme.text }}>{lead?.created_at ? new Date(lead.created_at).toLocaleString() : '\u2014'}</span>
               </div>
               <div className="flex justify-between">
-                <span style={{ color: theme.textMuted }}>Last Updated</span>
+                <span style={{ color: theme.cardTextMuted }}>Last Updated</span>
                 <span style={{ color: theme.text }}>{lead?.updated_at ? new Date(lead.updated_at).toLocaleString() : '\u2014'}</span>
               </div>
               {outreach?.last_outreach && (
                 <div className="flex justify-between">
-                  <span style={{ color: theme.textMuted }}>Last Outreach</span>
+                  <span style={{ color: theme.cardTextMuted }}>Last Outreach</span>
                   <span style={{ color: theme.text }}>{new Date(outreach.last_outreach.sent_at).toLocaleString()}</span>
                 </div>
               )}

@@ -19,7 +19,7 @@ export default function AILabHomePage() {
   if (loading || !agency) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.textMuted }} />
+        <Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.cardTextMuted }} />
       </div>
     );
   }

@@ -52,7 +52,7 @@ function ThemedDropdown({ value, onChange, options, theme, disabled }: { value: 
         className="w-full rounded-lg px-3 py-2 text-sm text-left flex items-center justify-between disabled:opacity-40 disabled:cursor-not-allowed"
         style={{ backgroundColor: theme.input || theme.bg, border: `1px solid ${theme.inputBorder || theme.border}`, color: theme.text }}>
         <span>{selected ? selected.label : 'Select'}</span>
-        <svg className={`h-4 w-4 flex-shrink-0 ml-2 transition-transform ${open ? 'rotate-180' : ''}`} style={{ color: theme.textMuted }} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+        <svg className={`h-4 w-4 flex-shrink-0 ml-2 transition-transform ${open ? 'rotate-180' : ''}`} style={{ color: theme.cardTextMuted }} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
       </button>
       {open && (
         <div className="absolute z-50 mt-1 w-full rounded-lg border shadow-lg overflow-hidden" style={{ backgroundColor: menuBg, borderColor: theme.inputBorder || theme.border }}>
@@ -105,7 +105,7 @@ function ThemedDatePicker({ value, onChange, theme, placeholder = 'No expiry' }:
         className="w-full rounded-lg px-3 py-2 text-sm text-left flex items-center justify-between"
         style={{ backgroundColor: theme.input || theme.bg, border: `1px solid ${theme.inputBorder || theme.border}`, color: value ? theme.text : theme.textMuted }}>
         <span>{display}</span>
-        <Calendar className="h-4 w-4 flex-shrink-0 ml-2" style={{ color: theme.textMuted }} />
+        <Calendar className="h-4 w-4 flex-shrink-0 ml-2" style={{ color: theme.cardTextMuted }} />
       </button>
       {open && (
         <div className="absolute z-50 mt-1 rounded-xl border shadow-xl p-3" style={{ backgroundColor: menuBg, borderColor: theme.inputBorder || theme.border, width: '15rem' }}>
@@ -115,7 +115,7 @@ function ThemedDatePicker({ value, onChange, theme, placeholder = 'No expiry' }:
             <button type="button" onClick={() => setView(new Date(year, month + 1, 1))} className="p-1 rounded-md" style={{ color: theme.text }}><ChevronRight className="h-4 w-4" /></button>
           </div>
           <div className="grid grid-cols-7 gap-0.5 mb-1">
-            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((w, i) => <div key={i} className="text-center text-[10px] font-medium" style={{ color: theme.textMuted }}>{w}</div>)}
+            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((w, i) => <div key={i} className="text-center text-[10px] font-medium" style={{ color: theme.cardTextMuted }}>{w}</div>)}
           </div>
           <div className="grid grid-cols-7 gap-0.5">
             {cells.map((d, i) => {
@@ -136,7 +136,7 @@ function ThemedDatePicker({ value, onChange, theme, placeholder = 'No expiry' }:
             })}
           </div>
           <div className="flex items-center justify-between mt-2 pt-2" style={{ borderTop: `1px solid ${theme.inputBorder || theme.border}` }}>
-            <button type="button" onClick={() => { onChange(''); setOpen(false); }} className="text-xs font-medium" style={{ color: theme.textMuted }}>Clear</button>
+            <button type="button" onClick={() => { onChange(''); setOpen(false); }} className="text-xs font-medium" style={{ color: theme.cardTextMuted }}>Clear</button>
             <button type="button" onClick={() => { onChange(fmt(today)); setOpen(false); }} className="text-xs font-medium" style={{ color: prim }}>Today</button>
           </div>
         </div>
@@ -247,9 +247,9 @@ export default function DiscountCodesManager({ theme, agencyId, isPaid }: Props)
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="min-w-0">
           <h3 className="text-base sm:text-lg font-medium flex items-center gap-2" style={{ color: theme.text }}>
-            <Tag className="h-4 w-4" style={{ color: theme.textMuted }} />Discount codes
+            <Tag className="h-4 w-4" style={{ color: theme.cardTextMuted }} />Discount codes
           </h3>
-          <p className="text-xs sm:text-sm mt-0.5" style={{ color: theme.textMuted }}>Optional. Codes a client can enter at signup to waive the setup fee or take a percentage off their monthly price.</p>
+          <p className="text-xs sm:text-sm mt-0.5" style={{ color: theme.cardTextMuted }}>Optional. Codes a client can enter at signup to waive the setup fee or take a percentage off their monthly price.</p>
         </div>
         {isPaid && (
           <button onClick={() => { if (showForm) { cancelForm(); } else { setEditingId(null); setForm({ ...emptyForm }); setError(''); setShowForm(true); } }} className="shrink-0 inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium transition-colors" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>
@@ -259,34 +259,34 @@ export default function DiscountCodesManager({ theme, agencyId, isPaid }: Props)
       </div>
 
       {!isPaid ? (
-        <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Available on Pro and Scale.</p>
+        <p className="text-xs sm:text-sm" style={{ color: theme.cardTextMuted }}>Available on Pro and Scale.</p>
       ) : (
         <>
           {showForm && (
             <div className="rounded-xl p-4 mb-4" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className={labelClass} style={{ color: theme.textMuted }}>Code</label>
+                  <label className={labelClass} style={{ color: theme.cardTextMuted }}>Code</label>
                   <input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} placeholder="LAUNCH10" className="w-full rounded-lg px-3 py-2 text-sm" style={inputStyle} />
                 </div>
                 <div>
-                  <label className={labelClass} style={{ color: theme.textMuted }}>Percent Off Monthly</label>
+                  <label className={labelClass} style={{ color: theme.cardTextMuted }}>Percent Off Monthly</label>
                   <input type="number" min={1} max={100} value={form.percent_off} onChange={(e) => setForm({ ...form, percent_off: e.target.value })} placeholder="e.g. 10" className="w-full rounded-lg px-3 py-2 text-sm" style={inputStyle} />
                 </div>
                 <div>
-                  <label className={labelClass} style={{ color: theme.textMuted }}>Percent-Off Duration</label>
+                  <label className={labelClass} style={{ color: theme.cardTextMuted }}>Percent-Off Duration</label>
                   <ThemedDropdown value={form.duration} onChange={(v) => setForm({ ...form, duration: v })} theme={theme} options={[{ value: 'forever', label: 'Ongoing (Forever)' }, { value: 'once', label: 'First Month Only' }, { value: 'repeating', label: 'A Set Number Of Months' }]} />
                 </div>
                 <div>
-                  <label className={labelClass} style={{ color: theme.textMuted }}>Number Of Months {form.duration !== 'repeating' && '(repeating only)'}</label>
+                  <label className={labelClass} style={{ color: theme.cardTextMuted }}>Number Of Months {form.duration !== 'repeating' && '(repeating only)'}</label>
                   <input type="number" min={1} max={36} value={form.duration_months} disabled={form.duration !== 'repeating'} onChange={(e) => setForm({ ...form, duration_months: e.target.value })} className="w-full rounded-lg px-3 py-2 text-sm disabled:opacity-40" style={inputStyle} />
                 </div>
                 <div>
-                  <label className={labelClass} style={{ color: theme.textMuted }}>Max Redemptions</label>
+                  <label className={labelClass} style={{ color: theme.cardTextMuted }}>Max Redemptions</label>
                   <input type="number" min={1} value={form.max_redemptions} onChange={(e) => setForm({ ...form, max_redemptions: e.target.value })} placeholder="Unlimited" className="w-full rounded-lg px-3 py-2 text-sm" style={inputStyle} />
                 </div>
                 <div>
-                  <label className={labelClass} style={{ color: theme.textMuted }}>Expires (Optional)</label>
+                  <label className={labelClass} style={{ color: theme.cardTextMuted }}>Expires (Optional)</label>
                   <ThemedDatePicker value={form.expires_at} onChange={(v) => setForm({ ...form, expires_at: v })} theme={theme} placeholder="No expiry" />
                 </div>
                 <div className="sm:col-span-2 mt-0.5 space-y-2">
@@ -296,11 +296,11 @@ export default function DiscountCodesManager({ theme, agencyId, isPaid }: Props)
                   </label>
                   {!form.waive_setup && (
                     <div className="ml-6">
-                      <label className={labelClass} style={{ color: theme.textMuted }}>Or, Percent Off The Setup Fee</label>
+                      <label className={labelClass} style={{ color: theme.cardTextMuted }}>Or, Percent Off The Setup Fee</label>
                       <input type="number" min={1} max={100} value={form.setup_fee_percent_off} onChange={(e) => setForm({ ...form, setup_fee_percent_off: e.target.value })} placeholder="e.g. 50" className="w-full sm:w-40 rounded-lg px-3 py-2 text-sm" style={inputStyle} />
                     </div>
                   )}
-                  <p className="text-[11px] ml-6" style={{ color: theme.textMuted }}>Waive removes the setup fee entirely; a percent takes that much off it. Only applies if you charge a setup fee. The monthly percent above is separate.</p>
+                  <p className="text-[11px] ml-6" style={{ color: theme.cardTextMuted }}>Waive removes the setup fee entirely; a percent takes that much off it. Only applies if you charge a setup fee. The monthly percent above is separate.</p>
                 </div>
               </div>
               {error && <p className="text-xs mt-2" style={{ color: theme.errorText || '#dc2626' }}>{error}</p>}
@@ -314,9 +314,9 @@ export default function DiscountCodesManager({ theme, agencyId, isPaid }: Props)
           )}
 
           {loading ? (
-            <div className="py-6 text-center"><Loader2 className="h-5 w-5 animate-spin mx-auto" style={{ color: theme.textMuted }} /></div>
+            <div className="py-6 text-center"><Loader2 className="h-5 w-5 animate-spin mx-auto" style={{ color: theme.cardTextMuted }} /></div>
           ) : codes.length === 0 ? (
-            !showForm && <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>No codes yet.</p>
+            !showForm && <p className="text-xs sm:text-sm" style={{ color: theme.cardTextMuted }}>No codes yet.</p>
           ) : (
             <div className="space-y-2">
               {codes.map((c) => (
@@ -324,16 +324,16 @@ export default function DiscountCodesManager({ theme, agencyId, isPaid }: Props)
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="font-mono font-semibold text-sm" style={{ color: theme.text }}>{c.code}</span>
-                      {!c.active && <span className="text-[10px] rounded px-1.5 py-0.5" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>Inactive</span>}
+                      {!c.active && <span className="text-[10px] rounded px-1.5 py-0.5" style={{ backgroundColor: theme.hover, color: theme.cardTextMuted }}>Inactive</span>}
                     </div>
-                    <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>
+                    <p className="text-xs mt-0.5" style={{ color: theme.cardTextMuted }}>
                       {describe(c)}
                       {c.max_redemptions ? ` • ${c.redemption_count}/${c.max_redemptions} used` : c.redemption_count ? ` • ${c.redemption_count} used` : ''}
                       {c.expires_at ? ` • expires ${new Date(c.expires_at).toLocaleDateString()}` : ''}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <button onClick={() => startEdit(c)} className="p-1.5 rounded-lg" style={{ color: theme.textMuted }} aria-label="Edit"><Pencil className="h-4 w-4" /></button>
+                    <button onClick={() => startEdit(c)} className="p-1.5 rounded-lg" style={{ color: theme.cardTextMuted }} aria-label="Edit"><Pencil className="h-4 w-4" /></button>
                     <button onClick={() => toggleActive(c)} className="text-xs font-medium rounded-lg px-2.5 py-1.5" style={{ backgroundColor: theme.hover, color: theme.text }}>{c.active ? 'Disable' : 'Enable'}</button>
                     <button onClick={() => remove(c)} className="p-1.5 rounded-lg" style={{ color: theme.errorText || '#dc2626' }} aria-label="Delete"><Trash2 className="h-4 w-4" /></button>
                   </div>

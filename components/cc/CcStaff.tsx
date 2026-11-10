@@ -45,7 +45,7 @@ export default function CcStaff({ clientId, theme }: { clientId: string; theme: 
 
   const field = { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text } as React.CSSProperties;
   const card = { backgroundColor: theme.card, border: `1px solid ${theme.border}` } as React.CSSProperties;
-  const Label = ({ children }: { children: React.ReactNode }) => (<label className="block text-[12px] font-medium mb-1.5" style={{ color: theme.textMuted }}>{children}</label>);
+  const Label = ({ children }: { children: React.ReactNode }) => (<label className="block text-[12px] font-medium mb-1.5" style={{ color: theme.cardTextMuted }}>{children}</label>);
 
   const startNew = () => { setDraft(EMPTY); setEditing('new'); setErr(null); };
   const startEdit = (s: Staff) => { setDraft({ name: s.name || '', role: s.role || '', phone: s.phone || '', email: s.email || '', transferable: !!s.transferable, transfer_criteria: s.transfer_criteria || '' }); setEditing(s.id); setErr(null); };
@@ -98,7 +98,7 @@ export default function CcStaff({ clientId, theme }: { clientId: string; theme: 
       )}
       {err && <p className="text-[12px] mt-2" style={{ color: theme.error }}>{err}</p>}
       <div className="flex justify-end gap-2 mt-3">
-        <button onClick={() => { setEditing(null); setErr(null); }} className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium" style={{ backgroundColor: theme.hover, color: theme.textMuted }}><X className="h-4 w-4" /> Cancel</button>
+        <button onClick={() => { setEditing(null); setErr(null); }} className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium" style={{ backgroundColor: theme.hover, color: theme.cardTextMuted }}><X className="h-4 w-4" /> Cancel</button>
         <button onClick={save} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold disabled:opacity-60" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Save</button>
       </div>
     </div>
@@ -110,13 +110,13 @@ export default function CcStaff({ clientId, theme }: { clientId: string; theme: 
         <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Users className="h-4 w-4" style={{ color: theme.iconColor }} /></div>
         <div className="min-w-0 flex-1">
           <h2 className="font-semibold text-sm sm:text-[15px]" style={{ color: theme.text }}>Staff</h2>
-          <p className="text-[12px]" style={{ color: theme.textMuted }}>Who works here, and who the AI may transfer a caller to.</p>
+          <p className="text-[12px]" style={{ color: theme.cardTextMuted }}>Who works here, and who the AI may transfer a caller to.</p>
         </div>
         {editing !== 'new' && <button onClick={startNew} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold flex-shrink-0" style={{ backgroundColor: theme.primary15, color: theme.primary }}><Plus className="h-3.5 w-3.5" /> Add</button>}
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 text-sm py-4" style={{ color: theme.textMuted }}><Loader2 className="h-4 w-4 animate-spin" /> Loading...</div>
+        <div className="flex items-center gap-2 text-sm py-4" style={{ color: theme.cardTextMuted }}><Loader2 className="h-4 w-4 animate-spin" /> Loading...</div>
       ) : (
         <>
           {rows.length === 0 && editing !== 'new' && <p className="text-[13px] py-2" style={{ color: theme.textSubtle }}>No staff added yet.</p>}
@@ -125,10 +125,10 @@ export default function CcStaff({ clientId, theme }: { clientId: string; theme: 
               editing === s.id ? <div key={s.id}>{form}</div> : (
                 <div key={s.id} className="flex items-center gap-3 rounded-xl px-3 py-2.5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate" style={{ color: theme.text }}>{s.name}{s.role ? <span style={{ color: theme.textMuted }}> · {s.role}</span> : ''}</p>
+                    <p className="text-sm font-medium truncate" style={{ color: theme.text }}>{s.name}{s.role ? <span style={{ color: theme.cardTextMuted }}> · {s.role}</span> : ''}</p>
                     <p className="text-[11.5px] truncate" style={{ color: theme.textSubtle }}>{s.transferable ? `Transferable${s.transfer_criteria ? `: ${s.transfer_criteria}` : ''}` : 'Not transferable'}</p>
                   </div>
-                  <button onClick={() => startEdit(s)} className="flex-shrink-0" style={{ color: theme.textMuted }}><Pencil className="h-4 w-4" /></button>
+                  <button onClick={() => startEdit(s)} className="flex-shrink-0" style={{ color: theme.cardTextMuted }}><Pencil className="h-4 w-4" /></button>
                   <button onClick={() => remove(s)} className="flex-shrink-0" style={{ color: theme.error }}><Trash2 className="h-4 w-4" /></button>
                 </div>
               )

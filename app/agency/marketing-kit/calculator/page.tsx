@@ -73,7 +73,7 @@ export default function MissedCallCalculatorPage() {
 
   const field = (label: string, value: number, setter: (n: number) => void, opts: { min?: number; max?: number; step?: number; prefix?: string; suffix?: string } = {}) => (
     <div>
-      <label className="block text-xs font-medium mb-1.5" style={{ color: theme.textMuted }}>{label}</label>
+      <label className="block text-xs font-medium mb-1.5" style={{ color: theme.cardTextMuted }}>{label}</label>
       <div className="flex items-center rounded-xl overflow-hidden" style={{ border: `1px solid ${theme.inputBorder}` }}>
         {opts.prefix && <span className="px-3 text-sm" style={{ color: theme.textMuted, backgroundColor: theme.hover }}>{opts.prefix}</span>}
         <input type="number" value={Number.isFinite(value) ? value : 0} min={opts.min ?? 0} max={opts.max} step={opts.step ?? 1}
@@ -88,7 +88,7 @@ export default function MissedCallCalculatorPage() {
     <div className="p-4 sm:p-6 lg:p-8 max-w-[1000px]">
       <style>{`@media print { body * { visibility: hidden !important; } #mcalc-result, #mcalc-result * { visibility: visible !important; } #mcalc-result { position: absolute !important; inset: 0 !important; margin: 0 !important; width: 100% !important; border: none !important; box-shadow: none !important; } @page { margin: 0.5in; } }`}</style>
 
-      <Link href="/agency/marketing-kit" className="inline-flex items-center gap-2 text-sm mb-4 transition-colors" style={{ color: theme.textMuted }}>
+      <Link href="/agency/marketing-kit" className="inline-flex items-center gap-2 text-sm mb-4 transition-colors" style={{ color: theme.cardTextMuted }}>
         <ArrowLeft className="h-4 w-4" /> Back to Marketing Kit
       </Link>
 
@@ -98,7 +98,7 @@ export default function MissedCallCalculatorPage() {
         </div>
         <div>
           <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Missed-Call Revenue Calculator</h1>
-          <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>Plug in a prospect&apos;s numbers to show what missed calls are costing them, then print a branded sheet to hand over.</p>
+          <p className="mt-0.5 text-sm" style={{ color: theme.cardTextMuted }}>Plug in a prospect&apos;s numbers to show what missed calls are costing them, then print a branded sheet to hand over.</p>
         </div>
       </div>
 
@@ -108,7 +108,7 @@ export default function MissedCallCalculatorPage() {
           <h2 className="text-sm font-semibold mb-4" style={{ color: theme.text }}>Their numbers</h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: theme.textMuted }}>Business name (optional)</label>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: theme.cardTextMuted }}>Business name (optional)</label>
               <input type="text" value={prospect} onChange={(e) => setProspect(e.target.value)} placeholder="e.g. Ridgeline Plumbing"
                 className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none" style={inputStyle} />
             </div>
@@ -117,22 +117,22 @@ export default function MissedCallCalculatorPage() {
             {field('Percent of calls missed', missedPct, setMissedPct, { min: 0, max: 100, suffix: '%' })}
             {field('Close rate on answered calls', closeRate, setCloseRate, { min: 0, max: 100, suffix: '%' })}
           </div>
-          <p className="text-[11px] mt-4" style={{ color: theme.textMuted }}>Defaults are typical for local service businesses. Adjust to match the prospect.</p>
+          <p className="text-[11px] mt-4" style={{ color: theme.cardTextMuted }}>Defaults are typical for local service businesses. Adjust to match the prospect.</p>
         </div>
 
         {/* Live result */}
         <div className="p-5 flex flex-col" style={cardStyle}>
           <h2 className="text-sm font-semibold mb-4" style={{ color: theme.text }}>What it&apos;s costing them</h2>
           <div className="rounded-xl p-5 text-center" style={{ background: `${primary}14`, border: `1px solid ${primary}33` }}>
-            <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Lost revenue / month</p>
+            <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.cardTextMuted }}>Lost revenue / month</p>
             <p className="text-4xl font-extrabold mt-1" style={{ color: primary }}>{money(r.lostMonth)}</p>
-            <p className="text-sm mt-2" style={{ color: theme.textMuted }}>{money(r.lostYear)} per year</p>
+            <p className="text-sm mt-2" style={{ color: theme.cardTextMuted }}>{money(r.lostYear)} per year</p>
           </div>
           <div className="grid grid-cols-3 gap-2 mt-4 text-center">
             {[['Missed calls/mo', String(r.missedMonth)], ['Lost jobs/mo', String(r.lostJobsMonth)], ['Missed calls/wk', String(r.missedWeek)]].map(([l, v]) => (
               <div key={l} className="rounded-lg p-3" style={{ backgroundColor: theme.hover }}>
                 <p className="text-lg font-bold" style={{ color: theme.text }}>{v}</p>
-                <p className="text-[10px]" style={{ color: theme.textMuted }}>{l}</p>
+                <p className="text-[10px]" style={{ color: theme.cardTextMuted }}>{l}</p>
               </div>
             ))}
           </div>

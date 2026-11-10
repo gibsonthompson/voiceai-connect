@@ -336,7 +336,7 @@ export default function AgencyClientsPage() {
             <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Users className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
             <div>
               <h1 data-tour="tour-clients" className="text-xl sm:text-2xl font-semibold tracking-tight">Clients</h1>
-              <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>
+              <p className="mt-0.5 text-sm" style={{ color: theme.cardTextMuted }}>
                 {billableClients.length} client{billableClients.length !== 1 ? 's' : ''}
                 {testClients.length > 0 && (
                   <span> · {testClients.length} test</span>
@@ -371,7 +371,7 @@ export default function AgencyClientsPage() {
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hover}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
-                    {exportingClients ? <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" /> : <Users className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted }} />}
+                    {exportingClients ? <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" /> : <Users className="h-4 w-4 flex-shrink-0" style={{ color: theme.cardTextMuted }} />}
                     <span>{exportingClients ? 'Exporting...' : 'Export Client Roster'}</span>
                   </button>
                   <div style={{ borderTop: `1px solid ${theme.border}` }} />
@@ -382,7 +382,7 @@ export default function AgencyClientsPage() {
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hover}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
-                    <PhoneCall className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted }} />
+                    <PhoneCall className="h-4 w-4 flex-shrink-0" style={{ color: theme.cardTextMuted }} />
                     <span>Export All Calls</span>
                   </button>
                 </div>
@@ -395,13 +395,13 @@ export default function AgencyClientsPage() {
                 >
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-sm font-semibold" style={{ color: theme.isDark ? 'rgba(250,250,249,0.9)' : '#111827' }}>Export All Calls</p>
-                    <button onClick={() => { setShowCallsDatePicker(false); setShowExportMenu(false); }} className="p-1 rounded-lg hover:opacity-70" style={{ color: theme.textMuted }}>
+                    <button onClick={() => { setShowCallsDatePicker(false); setShowExportMenu(false); }} className="p-1 rounded-lg hover:opacity-70" style={{ color: theme.cardTextMuted }}>
                       <X className="h-4 w-4" />
                     </button>
                   </div>
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>From</label>
+                      <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.cardTextMuted }}>From</label>
                       <input
                         type="date"
                         value={callsExportFrom}
@@ -411,7 +411,7 @@ export default function AgencyClientsPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>To</label>
+                      <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.cardTextMuted }}>To</label>
                       <input
                         type="date"
                         value={callsExportTo}
@@ -420,7 +420,7 @@ export default function AgencyClientsPage() {
                         style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.isDark ? 'rgba(250,250,249,0.9)' : '#111827' }}
                       />
                     </div>
-                    <p className="text-[11px]" style={{ color: theme.textMuted }}>Leave blank to export all calls across all clients</p>
+                    <p className="text-[11px]" style={{ color: theme.cardTextMuted }}>Leave blank to export all calls across all clients</p>
                     <button
                       onClick={handleExportAllCalls}
                       disabled={exportingCalls}
@@ -449,7 +449,7 @@ export default function AgencyClientsPage() {
         {/* Search & Filter Row */}
         <div className="mt-4 flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted }} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.cardTextMuted }} />
             <input
               type="text"
               placeholder="Search clients..."
@@ -525,7 +525,7 @@ export default function AgencyClientsPage() {
                   Free · no billing
                 </span>
               </div>
-              <p className="text-xs sm:text-sm mb-3 sm:max-w-[640px]" style={{ color: theme.textMuted }}>
+              <p className="text-xs sm:text-sm mb-3 sm:max-w-[640px]" style={{ color: theme.cardTextMuted }}>
                 {pendingTestClient?.business_name
                   ? <>This is the receptionist you built on our site. Activate it to give it a real phone number and call it live, set up exactly as you configured. Doesn&apos;t count toward your client limit and isn&apos;t billed.</>
                   : <>Activate a working AI receptionist with its own phone number so you can call it and experience exactly what your clients get. Doesn&apos;t count toward your client limit and isn&apos;t billed.</>}
@@ -584,10 +584,10 @@ export default function AgencyClientsPage() {
                   <h3 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>{testClient.business_name}</h3>
                   <span className="text-[10px] px-2 py-0.5 rounded-full font-medium uppercase tracking-wider" style={{ backgroundColor: theme.primary15, color: theme.primary }}>Test client</span>
                   {testClient.industry && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>{getIndustry(testClient.industry)?.label || testClient.industry}</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: theme.hover, color: theme.cardTextMuted }}>{getIndustry(testClient.industry)?.label || testClient.industry}</span>
                   )}
                 </div>
-                <p className="text-xs sm:text-sm mt-1" style={{ color: theme.textMuted }}>
+                <p className="text-xs sm:text-sm mt-1" style={{ color: theme.cardTextMuted }}>
                   A real, free AI receptionist with its own phone number, separate from your public demo line. Point it at one business you are pitching: rename it to their name and set their services, pricing, and booking in the AI Lab. Then give them this number so they can call and hear their own AI answer, quote, and book before they sign up. It does not count toward your billing.{testClient.vapi_phone_number ? ` Number to share: ${testClient.vapi_phone_number.replace(/^\+?1?\s*\(?(\d{3})\)?[\s.-]*(\d{3})[\s.-]*(\d{4})$/, '($1) $2-$3')}.` : ''}
                 </p>
               </div>
@@ -616,7 +616,7 @@ export default function AgencyClientsPage() {
             <p className="mt-4 font-medium" style={{ color: theme.isDark ? 'rgba(250,250,249,0.7)' : '#374151' }}>
               {searchQuery ? 'No clients match your search' : 'No clients yet'}
             </p>
-            <p className="text-sm mt-1" style={{ color: theme.textMuted }}>
+            <p className="text-sm mt-1" style={{ color: theme.cardTextMuted }}>
               {searchQuery ? 'Try a different search' : 'Share your signup link to get started!'}
             </p>
           </div>
@@ -676,10 +676,10 @@ export default function AgencyClientsPage() {
                                 <SetupBadge status={client.onboarding_status} theme={theme} />
                               )}
                             </div>
-                            <p className="text-sm truncate" style={{ color: theme.textMuted }}>{client.email}</p>
+                            <p className="text-sm truncate" style={{ color: theme.cardTextMuted }}>{client.email}</p>
                           </div>
                         </div>
-                        <ArrowUpRight className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted }} />
+                        <ArrowUpRight className="h-4 w-4 flex-shrink-0" style={{ color: theme.cardTextMuted }} />
                       </div>
                       <div className="flex items-center justify-between text-sm pl-[52px]">
                         <span 
@@ -688,7 +688,7 @@ export default function AgencyClientsPage() {
                         >
                           <statusMeta.Icon className="h-3 w-3 flex-shrink-0" />{statusMeta.label}
                         </span>
-                        <div className="flex items-center gap-3" style={{ color: theme.textMuted }}>
+                        <div className="flex items-center gap-3" style={{ color: theme.cardTextMuted }}>
                           {!isTest && <span className="capitalize">{client.plan_type || 'starter'}</span>}
                           {!isTest && <span>·</span>}
                           <span>{client.calls_this_month || 0} calls</span>
@@ -720,7 +720,7 @@ export default function AgencyClientsPage() {
                               <SetupBadge status={client.onboarding_status} theme={theme} />
                             )}
                           </div>
-                          <p className="text-sm truncate" style={{ color: theme.textMuted }}>{client.email}</p>
+                          <p className="text-sm truncate" style={{ color: theme.cardTextMuted }}>{client.email}</p>
                         </div>
                       </div>
                       
@@ -730,7 +730,7 @@ export default function AgencyClientsPage() {
                         ) : (
                           <>
                             <p className="text-sm capitalize">{client.plan_type || 'starter'}</p>
-                            <p className="text-xs" style={{ color: theme.textMuted }}>
+                            <p className="text-xs" style={{ color: theme.cardTextMuted }}>
                               ${((((client as any).effective_price_cents ?? getPlanPrice(client.plan_type, client))) / 100).toFixed(0)}/mo
                             </p>
                           </>
@@ -738,9 +738,9 @@ export default function AgencyClientsPage() {
                       </div>
                       
                       <div className="col-span-2 flex items-center gap-2">
-                        <PhoneCall className="h-4 w-4" style={{ color: theme.textMuted }} />
+                        <PhoneCall className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
                         <span className="text-sm">{client.calls_this_month || 0}</span>
-                        <span className="text-xs" style={{ color: theme.textMuted }}>this month</span>
+                        <span className="text-xs" style={{ color: theme.cardTextMuted }}>this month</span>
                       </div>
                       
                       <div className="col-span-2">
@@ -753,10 +753,10 @@ export default function AgencyClientsPage() {
                       </div>
                       
                       <div className="col-span-2 flex items-center justify-end gap-2">
-                        <span className="text-sm" style={{ color: theme.textMuted }}>
+                        <span className="text-sm" style={{ color: theme.cardTextMuted }}>
                           {new Date(client.created_at).toLocaleDateString()}
                         </span>
-                        <ChevronRight className="h-4 w-4" style={{ color: theme.textMuted }} />
+                        <ChevronRight className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
                       </div>
                     </div>
                   </Link>

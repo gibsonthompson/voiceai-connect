@@ -184,18 +184,18 @@ export default function TourOverlay() {
                   <div className="h-1 w-16 rounded-full overflow-hidden" style={{ backgroundColor: theme.hover }}>
                     <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: theme.primary }} />
                   </div>
-                  <span className="text-[10px]" style={{ color: theme.textMuted }}>{tour.stepIndex + 1} of {total}</span>
+                  <span className="text-[10px]" style={{ color: theme.cardTextMuted }}>{tour.stepIndex + 1} of {total}</span>
                 </div>
-                <button onClick={tour.skip} className="p-1" style={{ color: theme.textMuted }} aria-label="Close tour"><X className="h-4 w-4" /></button>
+                <button onClick={tour.skip} className="p-1" style={{ color: theme.cardTextMuted }} aria-label="Close tour"><X className="h-4 w-4" /></button>
               </div>
             )}
 
             <p className={`font-semibold ${isCentered ? 'text-lg' : 'text-sm'} mb-1`} style={{ color: theme.text }}>{step.title}</p>
-            <p className="text-[13px] leading-relaxed" style={{ color: theme.textMuted }}>{step.body}</p>
+            <p className="text-[13px] leading-relaxed" style={{ color: theme.cardTextMuted }}>{step.body}</p>
 
             <div className={`flex items-center gap-2 mt-4 ${isCentered ? 'justify-center' : 'justify-between'}`}>
               {!isCentered && (
-                <button onClick={tour.skip} className="text-xs font-medium" style={{ color: theme.textMuted }}>Skip tour</button>
+                <button onClick={tour.skip} className="text-xs font-medium" style={{ color: theme.cardTextMuted }}>Skip tour</button>
               )}
               <div className="flex items-center gap-2">
                 {tour.stepIndex > 0 && (

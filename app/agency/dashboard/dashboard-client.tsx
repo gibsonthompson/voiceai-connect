@@ -197,7 +197,7 @@ export default function AgencyDashboardPage() {
       <div className="mb-6 sm:mb-8">
         <div>
           <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Welcome back{user?.first_name ? `, ${user.first_name}` : ''}!</h1>
-          <p className="mt-1 text-sm sm:text-base" style={{ color: theme.textMuted }}>Here&apos;s how your agency is performing.</p>
+          <p className="mt-1 text-sm sm:text-base" style={{ color: theme.cardTextMuted }}>Here&apos;s how your agency is performing.</p>
         </div>
       </div>
 
@@ -223,15 +223,15 @@ export default function AgencyDashboardPage() {
                 <h3 className="font-semibold text-sm" style={{ color: theme.text }}>Your Test AI</h3>
                 <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.primary15, color: theme.primary }}>Test Client</span>
               </div>
-              <p className="text-xs mb-3" style={{ color: theme.textMuted }}>Call this number to experience what your clients get. This is a fully working AI receptionist.</p>
+              <p className="text-xs mb-3" style={{ color: theme.cardTextMuted }}>Call this number to experience what your clients get. This is a fully working AI receptionist.</p>
               <div className="flex items-center gap-2 flex-wrap">
                 <a href={`tel:${testClient.vapi_phone_number}`} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Phone className="h-3.5 w-3.5" />Call {formatDemoPhone(testClient.vapi_phone_number)}</a>
-                <button onClick={() => handlePreviewClient(testClient.id)} disabled={previewLoading} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.textMuted }}>{previewLoading ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Loading...</> : 'Preview Client Dashboard'}</button>
+                <button onClick={() => handlePreviewClient(testClient.id)} disabled={previewLoading} className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.cardTextMuted }}>{previewLoading ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Loading...</> : 'Preview Client Dashboard'}</button>
               </div>
             </div>
             <div className="text-right flex-shrink-0 hidden sm:block">
-              <p className="text-xs" style={{ color: theme.textMuted }}>Usage</p>
-              <p className="text-lg font-bold" style={{ color: theme.text }}>{testClient.calls_this_month || 0}<span className="text-sm font-normal" style={{ color: theme.textMuted }}>/{testClient.monthly_call_limit || 30} calls</span></p>
+              <p className="text-xs" style={{ color: theme.cardTextMuted }}>Usage</p>
+              <p className="text-lg font-bold" style={{ color: theme.text }}>{testClient.calls_this_month || 0}<span className="text-sm font-normal" style={{ color: theme.cardTextMuted }}>/{testClient.monthly_call_limit || 30} calls</span></p>
             </div>
           </div>
         </div>
@@ -259,7 +259,7 @@ export default function AgencyDashboardPage() {
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ backgroundColor: theme.infoBg }}><FlaskConical className="h-4 w-4" style={{ color: theme.info }} /></div>
                 <h3 className="font-semibold text-sm" style={{ color: theme.text }}>Try Your Test AI Receptionist</h3>
               </div>
-              <p className="text-xs mb-3" style={{ color: theme.textMuted }}>
+              <p className="text-xs mb-3" style={{ color: theme.cardTextMuted }}>
                 We&apos;ll set up a fully working AI receptionist with its own phone number that you can call right now. Experience exactly what your clients will get.
               </p>
               {provisionError && (
@@ -295,10 +295,10 @@ export default function AgencyDashboardPage() {
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: theme.primary15 }}><Headphones className="h-4 w-4" style={{ color: theme.iconColor }} /></div>
                 <h3 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>Try Your AI Receptionist</h3>
               </div>
-              <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>Call your demo number to hear it in action. Tell it what kind of business you run and watch it roleplay as your receptionist.</p>
+              <p className="text-xs sm:text-sm mb-4" style={{ color: theme.cardTextMuted }}>Call your demo number to hear it in action. Tell it what kind of business you run and watch it roleplay as your receptionist.</p>
               <div className="flex items-center gap-3 flex-wrap mt-auto">
                 <a href={`tel:${agency?.demo_phone_number}`} className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.98]" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Phone className="h-4 w-4" />Call {demoPhoneDisplay}</a>
-                <button onClick={copyDemoNumber} className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.textMuted }}>{demoCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}{demoCopied ? 'Copied' : 'Copy Number'}</button>
+                <button onClick={copyDemoNumber} className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.cardTextMuted }}>{demoCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}{demoCopied ? 'Copied' : 'Copy Number'}</button>
               </div>
             </div>
           </div>
@@ -315,7 +315,7 @@ export default function AgencyDashboardPage() {
           </div>
           <div className="flex items-center gap-3 flex-wrap mt-auto">
             <button onClick={copySignupLink} className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-colors" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{copied ? (<><Check className="h-4 w-4" />Copied!</>) : (<><Copy className="h-4 w-4" />Copy Link</>)}</button>
-            <a href={signupLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.textMuted }}>Open <ArrowUpRight className="h-3.5 w-3.5" /></a>
+            <a href={signupLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.cardTextMuted }}>Open <ArrowUpRight className="h-3.5 w-3.5" /></a>
           </div>
           {needsBillingSetup && (
             <div className="mt-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 rounded-lg px-3 py-2.5" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningText}30` }}>
@@ -337,7 +337,7 @@ export default function AgencyDashboardPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Megaphone className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
           <div className="min-w-0">
             <h3 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>Marketing Kit</h3>
-            <p className="text-xs sm:text-sm truncate" style={{ color: theme.textMuted }}>Branded QR codes, a print-ready one-pager, and scripts to land your first clients.</p>
+            <p className="text-xs sm:text-sm truncate" style={{ color: theme.cardTextMuted }}>Branded QR codes, a print-ready one-pager, and scripts to land your first clients.</p>
           </div>
         </div>
         <span className="inline-flex items-center gap-1 text-sm font-medium flex-shrink-0" style={{ color: theme.primary }}>Open <ChevronRight className="h-4 w-4" /></span>
@@ -347,24 +347,24 @@ export default function AgencyDashboardPage() {
       {hasDemo && (
         <div className="mb-6 sm:mb-8 rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
           <div className="flex items-center gap-2 mb-1"><Sparkles className="h-4 w-4" style={{ color: theme.iconColor }} /><h3 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>Share Your Demo</h3></div>
-          <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>Send prospects your demo number with a ready-to-go message. They call, experience the AI, and get a signup link automatically.</p>
+          <p className="text-xs sm:text-sm mb-4" style={{ color: theme.cardTextMuted }}>Send prospects your demo number with a ready-to-go message. They call, experience the AI, and get a signup link automatically.</p>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             <div className="rounded-xl p-4" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
               <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2"><MessageCircle className="h-3.5 w-3.5" style={{ color: theme.iconColor }} /><span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>SMS</span></div>
+                <div className="flex items-center gap-2"><MessageCircle className="h-3.5 w-3.5" style={{ color: theme.iconColor }} /><span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.cardTextMuted }}>SMS</span></div>
                 <button onClick={copySmsTemplate} className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-medium transition-colors" style={{ backgroundColor: smsCopied ? `${theme.primary}15` : theme.card, border: `1px solid ${smsCopied ? theme.primary + '40' : theme.border}`, color: smsCopied ? theme.primary : theme.textMuted }}>{smsCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}{smsCopied ? 'Copied' : 'Copy'}</button>
               </div>
               <p className="text-xs leading-relaxed whitespace-pre-line" style={{ color: theme.text, opacity: 0.8 }}>{smsTemplate}</p>
             </div>
             <div className="rounded-xl p-4" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
               <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5" style={{ color: theme.iconColor }} /><span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Email</span></div>
+                <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5" style={{ color: theme.iconColor }} /><span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.cardTextMuted }}>Email</span></div>
                 <button onClick={copyEmailTemplate} className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-medium transition-colors" style={{ backgroundColor: emailCopied ? `${theme.primary}15` : theme.card, border: `1px solid ${emailCopied ? theme.primary + '40' : theme.border}`, color: emailCopied ? theme.primary : theme.textMuted }}>{emailCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}{emailCopied ? 'Copied' : 'Copy'}</button>
               </div>
               <p className="text-xs leading-relaxed whitespace-pre-line" style={{ color: theme.text, opacity: 0.8, display: '-webkit-box', WebkitLineClamp: 6, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>{emailTemplate}</p>
             </div>
           </div>
-          <p className="text-[10px] sm:text-xs mt-3" style={{ color: theme.textMuted }}>After prospects call your demo, they automatically receive a follow-up text with your signup link.</p>
+          <p className="text-[10px] sm:text-xs mt-3" style={{ color: theme.cardTextMuted }}>After prospects call your demo, they automatically receive a follow-up text with your signup link.</p>
         </div>
       )}
 
@@ -373,7 +373,7 @@ export default function AgencyDashboardPage() {
         {statCards.map((stat) => (
           <div key={stat.label} className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, boxShadow: theme.isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)' }}>
             <div className="flex items-center justify-between sm:justify-start sm:gap-4">
-              <div className="order-2 sm:order-1"><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>{stat.label}</p><p className="mt-0.5 sm:mt-1 text-2xl sm:text-3xl font-semibold" style={{ color: theme.text }}>{stat.value}</p></div>
+              <div className="order-2 sm:order-1"><p className="text-xs sm:text-sm" style={{ color: theme.cardTextMuted }}>{stat.label}</p><p className="mt-0.5 sm:mt-1 text-2xl sm:text-3xl font-semibold" style={{ color: theme.text }}>{stat.value}</p></div>
               <div className="order-1 sm:order-2 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl" style={{ backgroundColor: `${stat.color}15` }}><stat.icon className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: stat.color }} /></div>
             </div>
           </div>
@@ -389,9 +389,9 @@ export default function AgencyDashboardPage() {
         <div className="p-4 sm:p-5">
           {!stats?.recentClients || stats.recentClients.length === 0 ? (
             <div className="py-8 sm:py-12 text-center">
-              <div className="mx-auto flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full" style={{ backgroundColor: theme.primary15 }}><Users className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: theme.textMuted }} /></div>
+              <div className="mx-auto flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full" style={{ backgroundColor: theme.primary15 }}><Users className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: theme.cardTextMuted }} /></div>
               <p className="mt-4 font-medium text-sm sm:text-base" style={{ color: theme.text, opacity: 0.7 }}>No clients yet</p>
-              <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>Share your signup link to start acquiring clients.</p>
+              <p className="text-xs sm:text-sm mb-4" style={{ color: theme.cardTextMuted }}>Share your signup link to start acquiring clients.</p>
               <button onClick={copySignupLink} className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Copy className="h-4 w-4" />Copy Signup Link</button>
             </div>
           ) : (
@@ -409,7 +409,7 @@ export default function AgencyDashboardPage() {
                           <p className="font-medium text-sm sm:text-base truncate" style={{ color: theme.text }}>{client.business_name}</p>
                           {isTest && (<span className="flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ backgroundColor: theme.isDark ? 'rgba(139,92,246,0.15)' : 'rgba(139,92,246,0.1)', color: '#8b5cf6' }}>Test</span>)}
                         </div>
-                        <p className="text-xs sm:text-sm capitalize" style={{ color: theme.textMuted }}>{isTest ? 'Test client' : `${client.plan_type || 'starter'} plan`}</p>
+                        <p className="text-xs sm:text-sm capitalize" style={{ color: theme.cardTextMuted }}>{isTest ? 'Test client' : `${client.plan_type || 'starter'} plan`}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
@@ -421,7 +421,7 @@ export default function AgencyDashboardPage() {
                           </span>
                         );
                       })()}
-                      <ArrowUpRight className="h-4 w-4 hidden sm:block" style={{ color: theme.textMuted }} />
+                      <ArrowUpRight className="h-4 w-4 hidden sm:block" style={{ color: theme.cardTextMuted }} />
                     </div>
                   </a>
                 );

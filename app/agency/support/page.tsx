@@ -237,7 +237,7 @@ export default function SupportPage() {
         {/* Page header, same chrome as every other dashboard tab */}
         <div className="mb-5 sm:mb-6">
           <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Support</h1>
-          <p className="mt-1 text-sm leading-relaxed" style={{ color: theme.textMuted }}>
+          <p className="mt-1 text-sm leading-relaxed" style={{ color: theme.cardTextMuted }}>
             Get instant answers about your dashboard, billing, clients, and troubleshooting, or send your chat to our team.
           </p>
         </div>
@@ -258,7 +258,7 @@ export default function SupportPage() {
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-semibold leading-tight" style={{ color: theme.text }}>Support Assistant</p>
-                <p className="text-xs leading-tight mt-0.5" style={{ color: theme.textMuted }}>Trained on your dashboard · replies instantly</p>
+                <p className="text-xs leading-tight mt-0.5" style={{ color: theme.cardTextMuted }}>Trained on your dashboard · replies instantly</p>
               </div>
             </div>
 
@@ -267,7 +267,7 @@ export default function SupportPage() {
               <div className="px-4 sm:px-8 py-6 sm:py-10">
                 {!historyLoaded && !hasChat ? (
                   <div className="flex items-center justify-center py-10">
-                    <Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.textMuted }} />
+                    <Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.cardTextMuted }} />
                   </div>
                 ) : !hasChat ? (
                   <div className="mx-auto max-w-xl text-center">
@@ -275,7 +275,7 @@ export default function SupportPage() {
                       <Sparkles className="h-8 w-8" style={{ color: theme.iconColor }} />
                     </div>
                     <h2 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>How can I help?</h2>
-                    <p className="mt-2.5 text-sm sm:text-[15px] leading-relaxed mx-auto max-w-md" style={{ color: theme.textMuted }}>
+                    <p className="mt-2.5 text-sm sm:text-[15px] leading-relaxed mx-auto max-w-md" style={{ color: theme.cardTextMuted }}>
                       Ask me anything about running your agency. Every answer comes straight from the VoiceAI Connect knowledge base.
                     </p>
 
@@ -307,7 +307,7 @@ export default function SupportPage() {
                         </div>
                         {m.role === 'user' && (
                           <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-1" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6' }}>
-                            <User className="h-3.5 w-3.5" style={{ color: theme.textMuted }} />
+                            <User className="h-3.5 w-3.5" style={{ color: theme.cardTextMuted }} />
                           </div>
                         )}
                       </div>
@@ -356,7 +356,7 @@ export default function SupportPage() {
                   {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 </button>
               </div>
-              <p className="mt-2 text-center text-[11px]" style={{ color: theme.textMuted }}>
+              <p className="mt-2 text-center text-[11px]" style={{ color: theme.cardTextMuted }}>
                 Press Enter to send, Shift + Enter for a new line. The assistant can occasionally be wrong, so confirm anything important.
               </p>
             </div>
@@ -389,7 +389,7 @@ export default function SupportPage() {
               </div>
               <div className="p-4">
                 <p className="text-sm font-semibold" style={{ color: theme.text }}>Full Dashboard Walkthrough</p>
-                <p className="mt-1 text-xs leading-relaxed" style={{ color: theme.textMuted }}>
+                <p className="mt-1 text-xs leading-relaxed" style={{ color: theme.cardTextMuted }}>
                   A complete tour of your dashboard, tab by tab.
                 </p>
               </div>
@@ -411,7 +411,7 @@ export default function SupportPage() {
                     <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: theme.iconColor }} />
                     <p className="text-sm font-semibold" style={{ color: theme.text }}>Sent to the team</p>
                   </div>
-                  <p className="mt-1.5 text-xs leading-relaxed" style={{ color: theme.textMuted }}>
+                  <p className="mt-1.5 text-xs leading-relaxed" style={{ color: theme.cardTextMuted }}>
                     We&apos;ve got your conversation. We&apos;ll reply right in your Inbox, and you&apos;ll get a text too.
                   </p>
                   <Link href="/agency/inbox?channel=platform"
@@ -425,7 +425,7 @@ export default function SupportPage() {
                     <Headphones className="h-4 w-4 flex-shrink-0" style={{ color: theme.iconColor }} />
                     <p className="text-sm font-semibold" style={{ color: theme.text }}>Talk to a human</p>
                   </div>
-                  <p className="mt-1.5 text-xs leading-relaxed" style={{ color: theme.textMuted }}>
+                  <p className="mt-1.5 text-xs leading-relaxed" style={{ color: theme.cardTextMuted }}>
                     Still stuck? Send this conversation to the VoiceAI Connect team and we&apos;ll reply right in your Inbox.
                   </p>
                   <button onClick={escalateToHuman} disabled={!canEscalate}
@@ -435,7 +435,7 @@ export default function SupportPage() {
                     Message the team
                   </button>
                   {!canEscalate && !escalating && (
-                    <p className="mt-2 text-[11px] text-center" style={{ color: theme.textMuted }}>Ask a question first, or type one above.</p>
+                    <p className="mt-2 text-[11px] text-center" style={{ color: theme.cardTextMuted }}>Ask a question first, or type one above.</p>
                   )}
                   {escalateError && <p className="mt-2 text-xs text-center" style={{ color: '#dc2626' }}>{escalateError}</p>}
                 </>

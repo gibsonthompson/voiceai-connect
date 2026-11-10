@@ -111,7 +111,7 @@ export default function NativeCalendarSection({ client, theme, primaryColor }: {
             </span>
             <div className="min-w-0">
               <p className="text-sm font-semibold leading-tight" style={{ color: theme.successText }}>Built-in calendar active</p>
-              <p className="text-[11px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>The AI books on the call and every booking triggers your automations.</p>
+              <p className="text-[11px] sm:text-xs mt-0.5" style={{ color: theme.cardTextMuted }}>The AI books on the call and every booking triggers your automations.</p>
             </div>
           </div>
 
@@ -120,7 +120,7 @@ export default function NativeCalendarSection({ client, theme, primaryColor }: {
             <div className="flex items-center justify-between mb-1.5">
               <p className="text-xs font-semibold" style={{ color: theme.text }}>Default appointment length</p>
               {savingDuration ? (
-                <span className="text-[11px] flex items-center gap-1" style={{ color: theme.textMuted }}><Loader2 className="w-3 h-3 animate-spin" /> Saving</span>
+                <span className="text-[11px] flex items-center gap-1" style={{ color: theme.cardTextMuted }}><Loader2 className="w-3 h-3 animate-spin" /> Saving</span>
               ) : durationSaved ? (
                 <span className="text-[11px] flex items-center gap-1" style={{ color: theme.successText }}><Check className="w-3 h-3" /> Saved</span>
               ) : null}
@@ -139,7 +139,7 @@ export default function NativeCalendarSection({ client, theme, primaryColor }: {
             </div>
           </div>
 
-          <div className="p-2.5 sm:p-3 rounded-lg text-[11px] sm:text-xs leading-relaxed" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}`, color: theme.textMuted }}>
+          <div className="p-2.5 sm:p-3 rounded-lg text-[11px] sm:text-xs leading-relaxed" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}`, color: theme.cardTextMuted }}>
             Your open times come from the business hours on your{' '}
             <a href="/client/my-business" className="font-semibold underline" style={{ color: primaryColor }}>My Business</a> page. See and manage every booking on the{' '}
             <a href="/client/calendar" className="font-semibold underline" style={{ color: primaryColor }}>Calendar</a> tab.
@@ -153,7 +153,7 @@ export default function NativeCalendarSection({ client, theme, primaryColor }: {
         </div>
       ) : (
         <div className="space-y-4">
-          <p className="text-sm leading-relaxed" style={{ color: theme.textMuted }}>
+          <p className="text-sm leading-relaxed" style={{ color: theme.cardTextMuted }}>
             No calendar account to connect. Turn this on and your AI books appointments straight into VoiceAI Connect, 24/7, using your business hours, then texts you the details and runs your automations.
           </p>
 

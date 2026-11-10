@@ -61,7 +61,7 @@ export default function PlatformUnreadNudge({ agencyId }: { agencyId?: string })
         <p className="text-sm font-medium" style={{ color: theme.text }}>
           {unread} new message{unread !== 1 ? 's' : ''} from VoiceAI Connect
         </p>
-        <p className="text-xs" style={{ color: theme.textMuted }}>Open your inbox to read and reply.</p>
+        <p className="text-xs" style={{ color: theme.cardTextMuted }}>Open your inbox to read and reply.</p>
       </div>
       <ArrowRight className="h-4 w-4 flex-shrink-0" style={{ color: theme.iconColor }} />
     </Link>

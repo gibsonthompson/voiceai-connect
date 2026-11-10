@@ -470,9 +470,9 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
             )}
           </div>
           <h1 className="text-2xl font-bold mb-3" style={{ color: theme.text }}>Finish Setting Up Your Agency</h1>
-          <p className="mb-7 text-sm leading-relaxed" style={{ color: theme.textMuted }}>You&apos;re almost there. Complete your setup to start your <strong style={{ color: theme.text, whiteSpace: 'nowrap' }}>14-day free trial</strong> and unlock your dashboard.</p>
+          <p className="mb-7 text-sm leading-relaxed" style={{ color: theme.cardTextMuted }}>You&apos;re almost there. Complete your setup to start your <strong style={{ color: theme.text, whiteSpace: 'nowrap' }}>14-day free trial</strong> and unlock your dashboard.</p>
           <a href={`/onboarding?agency=${agency?.id}`} className="inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 font-semibold transition-all hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Zap className="h-5 w-5" />Continue Setup</a>
-          <button onClick={handleSignOut} className="block w-full mt-4 text-sm transition-colors hover:opacity-70" style={{ color: theme.textMuted }}>Sign out</button>
+          <button onClick={handleSignOut} className="block w-full mt-4 text-sm transition-colors hover:opacity-70" style={{ color: theme.cardTextMuted }}>Sign out</button>
         </div>
       </div>
     );
@@ -489,7 +489,7 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
             <div className="mb-6">{branding.logoUrl ? (<img src={branding.logoUrl} alt={branding.name} style={{ height: '48px', width: 'auto' }} className="object-contain mx-auto" />) : (<div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto" style={{ backgroundColor: theme.primary15 }}><WaveformIcon className="h-8 w-8" color={theme.primary} /></div>)}</div>
             <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5" style={{ backgroundColor: 'rgba(251,191,36,0.1)' }}><Clock className="h-7 w-7" style={{ color: '#fbbf24' }} /></div>
             <h1 className="text-2xl font-bold mb-3" style={{ color: theme.text }}>Your Free Trial Has Ended</h1>
-            <p className="mb-2 text-base max-w-lg mx-auto" style={{ color: theme.textMuted }}>Choose a plan to keep your agency, clients, and AI receptionists active.</p>
+            <p className="mb-2 text-base max-w-lg mx-auto" style={{ color: theme.cardTextMuted }}>Choose a plan to keep your agency, clients, and AI receptionists active.</p>
           </div>
           <div className="grid md:grid-cols-3 gap-4 mb-8">
             {AGENCY_PLAN_TIER_LIST.map((plan) => { const isSelected = selectedPlan === plan.id; const isLoading = subscribeLoading && isSelected; const isFree = plan.id === 'free'; return (
@@ -497,18 +497,18 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
                 {plan.popular && (<div className="absolute -top-3 left-1/2 -translate-x-1/2"><span className="px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: theme.primary, color: theme.primaryText, boxShadow: `0 0 16px #3b82f640` }}>Recommended</span></div>)}
                 <div className="text-center mb-5">
                   <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl mb-3" style={{ backgroundColor: plan.popular ? `${theme.primary}20` : (theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)') }}><plan.icon className="h-5 w-5" style={{ color: plan.popular ? theme.primary : theme.text }} /></div>
-                  <p className="text-xs mb-1" style={{ color: theme.textMuted }}>{plan.description}</p>
+                  <p className="text-xs mb-1" style={{ color: theme.cardTextMuted }}>{plan.description}</p>
                   <h3 className="text-lg font-semibold" style={{ color: theme.text }}>{plan.name}</h3>
-                  <div className="mt-2">{isFree ? (<span className="text-3xl font-bold" style={{ color: theme.text }}>Free</span>) : (<><span className="text-3xl font-bold" style={{ color: theme.text }}>${plan.price}</span><span className="text-sm" style={{ color: theme.textMuted }}>/mo</span></>)}</div>
+                  <div className="mt-2">{isFree ? (<span className="text-3xl font-bold" style={{ color: theme.text }}>Free</span>) : (<><span className="text-3xl font-bold" style={{ color: theme.text }}>${plan.price}</span><span className="text-sm" style={{ color: theme.cardTextMuted }}>/mo</span></>)}</div>
                 </div>
                 <ul className="space-y-2.5 mb-5">
-                  {plan.features.map((feature) => (<li key={feature} className="flex items-start gap-2.5 text-sm"><div className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full mt-0.5" style={{ backgroundColor: `${theme.primary}15` }}><Check className="h-3 w-3" style={{ color: theme.iconColor }} /></div><span style={{ color: theme.textMuted }}>{feature}</span></li>))}
-                  <li className="flex items-start gap-2.5 text-sm"><div className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full mt-0.5" style={{ backgroundColor: `${theme.primary}15` }}><Check className="h-3 w-3" style={{ color: theme.iconColor }} /></div><span style={{ color: theme.textMuted }}>{plan.rate}</span></li>
+                  {plan.features.map((feature) => (<li key={feature} className="flex items-start gap-2.5 text-sm"><div className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full mt-0.5" style={{ backgroundColor: `${theme.primary}15` }}><Check className="h-3 w-3" style={{ color: theme.iconColor }} /></div><span style={{ color: theme.cardTextMuted }}>{feature}</span></li>))}
+                  <li className="flex items-start gap-2.5 text-sm"><div className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full mt-0.5" style={{ backgroundColor: `${theme.primary}15` }}><Check className="h-3 w-3" style={{ color: theme.iconColor }} /></div><span style={{ color: theme.cardTextMuted }}>{plan.rate}</span></li>
                 </ul>
                 <button onClick={() => handleSelectPlan(plan.id)} disabled={subscribeLoading} className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed" style={plan.popular ? { backgroundColor: theme.primary, color: theme.primaryText } : { backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', color: theme.text, border: `1px solid ${theme.border}` }}>{isLoading ? (<><Loader2 className="h-4 w-4 animate-spin" />Redirecting...</>) : isFree ? (<>Continue on Free</>) : (<><CreditCard className="h-4 w-4" />Subscribe - ${plan.price}/mo</>)}</button>
               </div>); })}
           </div>
-          <div className="text-center"><p className="text-sm mb-4" style={{ color: theme.textMuted }}>Pro and Scale include a 14-day money-back guarantee. Cancel anytime.</p><button onClick={handleSignOut} className="text-sm transition-colors hover:opacity-70" style={{ color: theme.textMuted }}>Sign out</button></div>
+          <div className="text-center"><p className="text-sm mb-4" style={{ color: theme.cardTextMuted }}>Pro and Scale include a 14-day money-back guarantee. Cancel anytime.</p><button onClick={handleSignOut} className="text-sm transition-colors hover:opacity-70" style={{ color: theme.cardTextMuted }}>Sign out</button></div>
         </div>
       </div>
     );
@@ -522,12 +522,12 @@ function AgencyDashboardLayout({ children }: { children: ReactNode }) {
         <div className="max-w-lg w-full rounded-2xl p-8 sm:p-10 text-center" style={{ backgroundColor: theme.card, border: `1px solid ${theme.isDark ? 'rgba(239,68,68,0.35)' : '#fecaca'}`, boxShadow: theme.isDark ? 'none' : '0 10px 40px rgba(0,0,0,0.08)' }}>
           <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6" style={{ backgroundColor: theme.errorBg }}><CreditCard className="h-8 w-8" style={{ color: theme.error }} /></div>
           <h1 className="text-2xl sm:text-3xl font-bold mb-3" style={{ color: theme.text }}>Your Payment Failed</h1>
-          <p className="mb-8 text-sm sm:text-base leading-relaxed max-w-md mx-auto" style={{ color: theme.textMuted }}>Your agency is paused until your payment method is updated. Your clients and settings are safe, update your card and everything comes right back.</p>
+          <p className="mb-8 text-sm sm:text-base leading-relaxed max-w-md mx-auto" style={{ color: theme.cardTextMuted }}>Your agency is paused until your payment method is updated. Your clients and settings are safe, update your card and everything comes right back.</p>
           <button onClick={openBillingPortal} disabled={billingLoading} className="w-full inline-flex items-center justify-center gap-2.5 rounded-xl px-6 py-4 text-base font-semibold text-white transition-all hover:opacity-90 disabled:opacity-60" style={{ backgroundColor: '#ef4444', boxShadow: '0 4px 20px rgba(239,68,68,0.3)' }}>{billingLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <CreditCard className="h-5 w-5" />}{billingLoading ? 'Opening secure checkout...' : 'Update Payment Method'}</button>
-          <p className="text-xs mt-4" style={{ color: theme.textMuted }}>Opens a secure Stripe page to update your card.</p>
+          <p className="text-xs mt-4" style={{ color: theme.cardTextMuted }}>Opens a secure Stripe page to update your card.</p>
           <div className="mt-6 pt-6" style={{ borderTop: `1px solid ${theme.border}` }}>
-            <p className="text-xs mb-3" style={{ color: theme.textMuted }}>Need a hand? Email <a href="mailto:support@myvoiceaiconnect.com" className="underline" style={{ color: theme.primary }}>support@myvoiceaiconnect.com</a></p>
-            <button onClick={handleSignOut} className="text-sm transition-colors hover:opacity-70" style={{ color: theme.textMuted }}>Sign out</button>
+            <p className="text-xs mb-3" style={{ color: theme.cardTextMuted }}>Need a hand? Email <a href="mailto:support@myvoiceaiconnect.com" className="underline" style={{ color: theme.primary }}>support@myvoiceaiconnect.com</a></p>
+            <button onClick={handleSignOut} className="text-sm transition-colors hover:opacity-70" style={{ color: theme.cardTextMuted }}>Sign out</button>
           </div>
         </div>
       </div>

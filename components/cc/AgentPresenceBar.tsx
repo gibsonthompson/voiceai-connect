@@ -113,7 +113,7 @@ export default function AgentPresenceBar({ agencyId }: { agencyId: string | unde
         className="flex items-center gap-3 px-4 sm:px-6 lg:px-8 py-2 overflow-x-auto md:sticky md:top-0 z-20"
         style={{ backgroundColor: theme.bg }}
       >
-        <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold flex-shrink-0" style={{ color: theme.textMuted }}>
+        <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold flex-shrink-0" style={{ color: theme.cardTextMuted }}>
           <Users className="h-3.5 w-3.5" /> Agents
         </span>
         <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold flex-shrink-0 px-2 py-0.5 rounded-full" style={{ backgroundColor: `${GREEN}1a`, color: GREEN }}>
@@ -171,7 +171,7 @@ export default function AgentPresenceBar({ agencyId }: { agencyId: string | unde
 function Stat({ theme, icon: Icon, label, value }: { theme: any; icon: any; label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <span className="inline-flex items-center gap-1.5 text-[11.5px]" style={{ color: theme.textMuted }}><Icon className="h-3.5 w-3.5" style={{ color: theme.textSubtle }} /> {label}</span>
+      <span className="inline-flex items-center gap-1.5 text-[11.5px]" style={{ color: theme.cardTextMuted }}><Icon className="h-3.5 w-3.5" style={{ color: theme.textSubtle }} /> {label}</span>
       <span className="text-[12px] font-semibold tabular-nums text-right" style={{ color: theme.text }}>{value}</span>
     </div>
   );

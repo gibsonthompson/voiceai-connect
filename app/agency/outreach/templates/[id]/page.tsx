@@ -302,12 +302,12 @@ export default function TemplateEditorPage() {
     >
       <div className="min-w-0">
         <p className="text-sm font-mono truncate" style={{ color: accentColor }}>{v.key}</p>
-        <p className="text-xs truncate" style={{ color: theme.textMuted }}>{v.description}</p>
+        <p className="text-xs truncate" style={{ color: theme.cardTextMuted }}>{v.description}</p>
       </div>
       {copiedVar === v.key ? (
         <Check className="h-3.5 w-3.5 shrink-0" style={{ color: theme.iconColor }} />
       ) : (
-        <Plus className="h-3.5 w-3.5 shrink-0 opacity-0 group-hover:opacity-100" style={{ color: theme.textMuted }} />
+        <Plus className="h-3.5 w-3.5 shrink-0 opacity-0 group-hover:opacity-100" style={{ color: theme.cardTextMuted }} />
       )}
     </button>
   );
@@ -361,7 +361,7 @@ export default function TemplateEditorPage() {
         <Link 
           href="/agency/outreach"
           className="inline-flex items-center gap-2 text-sm transition-colors mb-4"
-          style={{ color: theme.textMuted }}
+          style={{ color: theme.cardTextMuted }}
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Outreach
@@ -372,7 +372,7 @@ export default function TemplateEditorPage() {
             <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>
               {isNew ? 'Create Template' : 'Edit Template'}
             </h1>
-            <p className="mt-1 text-sm flex items-center gap-1.5" style={{ color: theme.textMuted }}>
+            <p className="mt-1 text-sm flex items-center gap-1.5" style={{ color: theme.cardTextMuted }}>
               {getTypeIcon()}
               {getTypeLabel()}
             </p>
@@ -420,7 +420,7 @@ export default function TemplateEditorPage() {
             <div className="space-y-3 sm:space-y-4">
               <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>
+                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.cardTextMuted }}>
                     Name <span style={{ color: theme.error }}>*</span>
                   </label>
                   <input
@@ -433,7 +433,7 @@ export default function TemplateEditorPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Type</label>
+                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.cardTextMuted }}>Type</label>
                   <ThemedSelect
                     value={formData.type}
                     onChange={(v) => setFormData(prev => ({ ...prev, type: v }))}
@@ -449,7 +449,7 @@ export default function TemplateEditorPage() {
               </div>
               <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Description</label>
+                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.cardTextMuted }}>Description</label>
                   <input
                     type="text"
                     value={formData.description}
@@ -460,7 +460,7 @@ export default function TemplateEditorPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Industry</label>
+                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.cardTextMuted }}>Industry</label>
                   <ThemedSelect
                     value={formData.buyer_type}
                     onChange={(v) => setFormData(prev => ({ ...prev, buyer_type: v }))}
@@ -471,7 +471,7 @@ export default function TemplateEditorPage() {
                       ...SELECTABLE_INDUSTRIES.map(i => ({ value: i.value, label: i.label })),
                     ]}
                   />
-                  <p className="text-[11px] mt-1.5" style={{ color: theme.textMuted }}>Auto-matches leads in this industry when you reach out</p>
+                  <p className="text-[11px] mt-1.5" style={{ color: theme.cardTextMuted }}>Auto-matches leads in this industry when you reach out</p>
                 </div>
               </div>
             </div>
@@ -507,7 +507,7 @@ export default function TemplateEditorPage() {
               {/* Subject — only for email */}
               {formData.type === 'email' && (
                 <div>
-                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>
+                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.cardTextMuted }}>
                     Subject <span style={{ color: theme.error }}>*</span>
                   </label>
                   <input
@@ -524,7 +524,7 @@ export default function TemplateEditorPage() {
               )}
 
               <div>
-                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>
+                <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.cardTextMuted }}>
                   {isCallScript ? 'Script' : 'Body'} <span style={{ color: theme.error }}>*</span>
                 </label>
                 <textarea
@@ -539,12 +539,12 @@ export default function TemplateEditorPage() {
                   style={inputStyle}
                 />
                 {isSms && (
-                  <p className="text-[10px] sm:text-xs mt-1" style={{ color: theme.textMuted }}>
+                  <p className="text-[10px] sm:text-xs mt-1" style={{ color: theme.cardTextMuted }}>
                     {formData.body.length} characters (SMS limit: 160/segment)
                   </p>
                 )}
                 {isCallScript && (
-                  <p className="text-[10px] sm:text-xs mt-1" style={{ color: theme.textMuted }}>
+                  <p className="text-[10px] sm:text-xs mt-1" style={{ color: theme.cardTextMuted }}>
                     Tip: Use [BRACKETS] for stage directions and → for response branches
                   </p>
                 )}
@@ -559,23 +559,23 @@ export default function TemplateEditorPage() {
               style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
             >
               <h3 className="font-medium text-sm mb-3" style={{ color: theme.text }}>Variables</h3>
-              <p className="text-[10px] mb-3" style={{ color: theme.textMuted }}>Tap to insert at your cursor</p>
+              <p className="text-[10px] mb-3" style={{ color: theme.cardTextMuted }}>Tap to insert at your cursor</p>
               
               <div className="space-y-3">
                 <div>
-                  <p className="text-[10px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Lead</p>
+                  <p className="text-[10px] font-medium mb-1.5" style={{ color: theme.cardTextMuted }}>Lead</p>
                   <div className="flex flex-wrap gap-1.5">
                     {variables.lead.map((v) => renderVariableButton(v, '#01f5d1'))}
                   </div>
                 </div>
                 <div>
-                  <p className="text-[10px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Agency</p>
+                  <p className="text-[10px] font-medium mb-1.5" style={{ color: theme.cardTextMuted }}>Agency</p>
                   <div className="flex flex-wrap gap-1.5">
                     {variables.agency.map((v) => renderVariableButton(v, '#60a5fa'))}
                   </div>
                 </div>
                 <div>
-                  <p className="text-[10px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Dynamic</p>
+                  <p className="text-[10px] font-medium mb-1.5" style={{ color: theme.cardTextMuted }}>Dynamic</p>
                   <div className="flex flex-wrap gap-1.5">
                     {variables.dynamic.map((v) => renderVariableButton(v, '#a78bfa'))}
                   </div>
@@ -594,27 +594,27 @@ export default function TemplateEditorPage() {
               style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
             >
               <h3 className="font-medium mb-4" style={{ color: theme.text }}>Available Variables</h3>
-              <p className="text-xs mb-4" style={{ color: theme.textMuted }}>
+              <p className="text-xs mb-4" style={{ color: theme.cardTextMuted }}>
                 Click to insert it at your cursor
               </p>
               
               <div className="space-y-4">
                 <div>
-                  <p className="text-xs font-medium mb-2" style={{ color: theme.textMuted }}>Lead Info</p>
+                  <p className="text-xs font-medium mb-2" style={{ color: theme.cardTextMuted }}>Lead Info</p>
                   <div className="space-y-1">
                     {variables.lead.map((v) => renderVariableRow(v, '#01f5d1'))}
                   </div>
                 </div>
 
                 <div>
-                  <p className="text-xs font-medium mb-2" style={{ color: theme.textMuted }}>Your Info</p>
+                  <p className="text-xs font-medium mb-2" style={{ color: theme.cardTextMuted }}>Your Info</p>
                   <div className="space-y-1">
                     {variables.agency.map((v) => renderVariableRow(v, '#60a5fa'))}
                   </div>
                 </div>
 
                 <div>
-                  <p className="text-xs font-medium mb-2" style={{ color: theme.textMuted }}>Dynamic</p>
+                  <p className="text-xs font-medium mb-2" style={{ color: theme.cardTextMuted }}>Dynamic</p>
                   <div className="space-y-1">
                     {variables.dynamic.map((v) => renderVariableRow(v, '#a78bfa'))}
                   </div>

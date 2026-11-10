@@ -98,14 +98,14 @@ export default function MessageEditor({ def, value, onChange, theme, agencyName,
         <div className="flex items-start justify-between gap-3 mb-2">
           <div className="min-w-0">
             <h3 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>{titleCaseLabel(def.label)}</h3>
-            <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{def.description}</p>
+            <p className="text-xs mt-0.5" style={{ color: theme.cardTextMuted }}>{def.description}</p>
           </div>
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0" style={isCustom ? { backgroundColor: theme.primary15, color: theme.primary } : { backgroundColor: theme.hover, color: theme.textMuted }}>{isCustom ? 'Custom' : 'Default'}</span>
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0" style={isCustom ? { backgroundColor: theme.primary15, color: theme.primary } : { backgroundColor: theme.hover, color: theme.cardTextMuted }}>{isCustom ? 'Custom' : 'Default'}</span>
         </div>
 
         {/* Readable preview, styled like a text message */}
         <div className="rounded-xl p-3 mb-3" style={{ backgroundColor: theme.hover }}>
-          <p className="text-[13px] whitespace-pre-wrap leading-relaxed" style={{ color: theme.text }}>{preview || <span style={{ color: theme.textMuted }}>Empty</span>}</p>
+          <p className="text-[13px] whitespace-pre-wrap leading-relaxed" style={{ color: theme.text }}>{preview || <span style={{ color: theme.cardTextMuted }}>Empty</span>}</p>
         </div>
 
         {!expanded ? (
@@ -123,7 +123,7 @@ export default function MessageEditor({ def, value, onChange, theme, agencyName,
               className="w-full rounded-lg px-3 py-2.5 text-sm leading-relaxed resize-y focus:outline-none"
               style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
             />
-            <p className="text-[11px] mt-2 mb-1" style={{ color: theme.textMuted }}>Tap a detail to drop it in. It&apos;s filled in automatically when the text sends.</p>
+            <p className="text-[11px] mt-2 mb-1" style={{ color: theme.cardTextMuted }}>Tap a detail to drop it in. It&apos;s filled in automatically when the text sends.</p>
             <div className="flex flex-wrap gap-1.5">
               {def.variables.map((v) => (
                 <button key={v.name} type="button" title={v.desc} onClick={() => insert(v.name)} className="text-[11px] font-medium px-2 py-0.5 rounded-full transition-colors" style={{ backgroundColor: theme.hover, color: theme.text, border: `1px solid ${theme.border}` }}>
@@ -134,7 +134,7 @@ export default function MessageEditor({ def, value, onChange, theme, agencyName,
             <div className="flex items-center gap-4 mt-3">
               <button type="button" onClick={() => setExpanded(false)} className="inline-flex items-center gap-1.5 text-xs font-semibold" style={{ color: theme.primary }}><Check className="h-3.5 w-3.5" />Done</button>
               {isCustom && (
-                <button type="button" onClick={() => onChange(def.template)} className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: theme.textMuted }}><RotateCcw className="h-3.5 w-3.5" />Reset to default</button>
+                <button type="button" onClick={() => onChange(def.template)} className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: theme.cardTextMuted }}><RotateCcw className="h-3.5 w-3.5" />Reset to default</button>
               )}
             </div>
           </>

@@ -63,7 +63,7 @@ export default function PaidFeatureNotice({
               Paid plans
             </span>
           </div>
-          <p className="text-xs sm:text-sm mb-3 sm:max-w-[640px]" style={{ color: theme.textMuted }}>
+          <p className="text-xs sm:text-sm mb-3 sm:max-w-[640px]" style={{ color: theme.cardTextMuted }}>
             {message}
           </p>
           <Link

@@ -152,7 +152,7 @@ export default function AgencyClientCallsPage() {
       <Link 
         href={`/agency/clients/${clientId}`}
         className="inline-flex items-center gap-2 text-sm transition-colors mb-4 sm:mb-6 hover:opacity-80"
-        style={{ color: theme.textMuted }}
+        style={{ color: theme.cardTextMuted }}
       >
         <ArrowLeft className="h-4 w-4" />
         Back to {client?.business_name || 'Client'}
@@ -165,7 +165,7 @@ export default function AgencyClientCallsPage() {
             <h1 className="text-xl sm:text-2xl font-semibold" style={{ color: theme.text }}>
               Call History
             </h1>
-            <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>
+            <p className="mt-1 text-sm" style={{ color: theme.cardTextMuted }}>
               {client?.business_name ? `${client.business_name} · ` : ''}{calls.length} total calls
             </p>
           </div>
@@ -210,13 +210,13 @@ export default function AgencyClientCallsPage() {
                 >
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-sm font-semibold" style={{ color: theme.text }}>Export Calls</p>
-                    <button onClick={() => setShowExport(false)} className="p-1 rounded-lg hover:opacity-70" style={{ color: theme.textMuted }}>
+                    <button onClick={() => setShowExport(false)} className="p-1 rounded-lg hover:opacity-70" style={{ color: theme.cardTextMuted }}>
                       <X className="h-4 w-4" />
                     </button>
                   </div>
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>From</label>
+                      <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.cardTextMuted }}>From</label>
                       <input
                         type="date"
                         value={exportFrom}
@@ -226,7 +226,7 @@ export default function AgencyClientCallsPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>To</label>
+                      <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.cardTextMuted }}>To</label>
                       <input
                         type="date"
                         value={exportTo}
@@ -258,7 +258,7 @@ export default function AgencyClientCallsPage() {
         {callsLoading ? (
           <div className="py-12 sm:py-20 flex items-center justify-center">
             <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin" style={{ color: theme.textSubtle }} />
-            <span className="ml-2 text-sm" style={{ color: theme.textMuted }}>Loading calls...</span>
+            <span className="ml-2 text-sm" style={{ color: theme.cardTextMuted }}>Loading calls...</span>
           </div>
         ) : filteredCalls.length === 0 ? (
           <div className="py-12 sm:py-20 text-center px-4">
@@ -268,7 +268,7 @@ export default function AgencyClientCallsPage() {
             >
               <PhoneCall className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: theme.textSubtle }} />
             </div>
-            <p className="mt-4 font-medium text-sm sm:text-base" style={{ color: theme.textMuted }}>
+            <p className="mt-4 font-medium text-sm sm:text-base" style={{ color: theme.cardTextMuted }}>
               {searchQuery ? 'No matching calls found' : 'No calls yet'}
             </p>
             <p className="text-xs sm:text-sm" style={{ color: theme.textSubtle }}>
@@ -365,7 +365,7 @@ export default function AgencyClientCallsPage() {
                           )}
                         </div>
                       </div>
-                      <p className="text-xs truncate" style={{ color: theme.textMuted }}>
+                      <p className="text-xs truncate" style={{ color: theme.cardTextMuted }}>
                         {call.customer_phone || call.caller_phone}
                       </p>
                       <div className="flex items-center justify-between mt-1">
@@ -411,7 +411,7 @@ export default function AgencyClientCallsPage() {
                       <p className="font-medium text-sm lg:text-base" style={{ color: theme.text }}>
                         {call.customer_name || 'Unknown Caller'}
                       </p>
-                      <p className="text-xs lg:text-sm" style={{ color: theme.textMuted }}>
+                      <p className="text-xs lg:text-sm" style={{ color: theme.cardTextMuted }}>
                         {call.customer_phone || call.caller_phone}
                       </p>
                     </div>
@@ -419,7 +419,7 @@ export default function AgencyClientCallsPage() {
                   
                   <div className="flex items-center gap-4 lg:gap-6">
                     <div className="text-right hidden lg:block">
-                      <p className="text-sm" style={{ color: theme.textMuted }}>
+                      <p className="text-sm" style={{ color: theme.cardTextMuted }}>
                         {call.service_requested || 'General inquiry'}
                       </p>
                       <p className="text-xs" style={{ color: theme.textSubtle }}>

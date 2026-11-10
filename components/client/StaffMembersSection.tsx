@@ -204,20 +204,20 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
   const renderFormFields = (includeAction = true) => (
     <div className="space-y-3">
       <div>
-        <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>Name *</label>
+        <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.cardTextMuted }}>Name *</label>
         <input type="text" placeholder={ph.name} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none" style={inputStyle} />
       </div>
       <div>
-        <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>Role</label>
+        <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.cardTextMuted }}>Role</label>
         <input type="text" placeholder={ph.role} value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none" style={inputStyle} />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>Phone</label>
+          <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.cardTextMuted }}>Phone</label>
           <input type="tel" placeholder="(555) 123-4567" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none" style={inputStyle} />
         </div>
         <div>
-          <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>Email</label>
+          <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.cardTextMuted }}>Email</label>
           <input type="email" placeholder="name@business.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none" style={inputStyle} />
         </div>
       </div>
@@ -237,9 +237,9 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
       {/* When to route a caller here. Fed into the live prompt's transfer routing so the AI connects the right caller to the right person. Only relevant when transferable. */}
       {form.transferable && (
         <div>
-          <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>When should callers go to this person?</label>
+          <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.cardTextMuted }}>When should callers go to this person?</label>
           <textarea rows={2} placeholder="e.g. Billing and payment questions, or anyone asking about an existing invoice" value={form.transferCriteria} onChange={(e) => setForm({ ...form, transferCriteria: e.target.value })} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none resize-none" style={inputStyle} />
-          <p className="text-[11px] mt-0.5 leading-snug" style={{ color: theme.textMuted }}>The AI reads this on live calls to decide which callers to connect to this person. Leave blank to let it route by name and role.</p>
+          <p className="text-[11px] mt-0.5 leading-snug" style={{ color: theme.cardTextMuted }}>The AI reads this on live calls to decide which callers to connect to this person. Leave blank to let it route by name and role.</p>
         </div>
       )}
       {/* Working hours (optional): powers "is X in?" answers and gates transfers */}
@@ -247,7 +247,7 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-sm font-medium" style={{ color: theme.text }}>Set working hours</p>
-            <p className="text-[11px] mt-0.5 leading-snug" style={{ color: theme.textMuted }}>Lets the AI say when this person is in, and only offer to transfer callers while they are on shift. Leave off to keep them always available.</p>
+            <p className="text-[11px] mt-0.5 leading-snug" style={{ color: theme.cardTextMuted }}>Lets the AI say when this person is in, and only offer to transfer callers while they are on shift. Leave off to keep them always available.</p>
           </div>
           <button type="button" role="switch" aria-checked={form.hoursEnabled} onClick={() => setForm({ ...form, hoursEnabled: !form.hoursEnabled })} className="relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors focus:outline-none" style={{ backgroundColor: form.hoursEnabled ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
             <span className="pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transition" style={{ transform: form.hoursEnabled ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
@@ -265,7 +265,7 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
                   {!day.closed && (
                     <div className="flex items-center gap-1 flex-1 min-w-0">
                       <div className="flex-1 min-w-0"><CustomSelect ui={ddUI} size="sm" value={day.open} options={timeOptions} onChange={(v) => setDay({ open: v })} /></div>
-                      <span className="text-[10px] flex-shrink-0" style={{ color: theme.textMuted }}>to</span>
+                      <span className="text-[10px] flex-shrink-0" style={{ color: theme.cardTextMuted }}>to</span>
                       <div className="flex-1 min-w-0"><CustomSelect ui={ddUI} size="sm" value={day.close} options={timeOptions} onChange={(v) => setDay({ close: v })} /></div>
                     </div>
                   )}
@@ -276,7 +276,7 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
         )}
       </div>
       <div>
-        <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>Notes</label>
+        <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.cardTextMuted }}>Notes</label>
         <textarea placeholder={ph.notes} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none resize-none" style={inputStyle} />
       </div>
       {includeAction && (
@@ -296,20 +296,20 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
         </h2>
       )}
       {!compact && (
-        <p className="text-[10px] sm:text-xs mb-2 sm:mb-3" style={{ color: theme.textMuted }}>
+        <p className="text-[10px] sm:text-xs mb-2 sm:mb-3" style={{ color: theme.cardTextMuted }}>
           People your AI knows about, for call routing, scheduling, and referrals
         </p>
       )}
       {compact && !hideHeader && (
         <div className="flex items-center gap-2 mb-3">
           <Users className="w-4 h-4" style={{ color: theme.iconColor }} />
-          <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Staff Directory</span>
+          <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.cardTextMuted }}>Staff Directory</span>
         </div>
       )}
 
       <div className={compact ? '' : 'rounded-xl border p-3 sm:p-4 shadow-sm'} style={compact ? {} : { borderColor: theme.border, backgroundColor: theme.card }}>
         {loading ? (
-          <div className="flex items-center justify-center py-6"><Loader2 className="h-4 w-4 animate-spin" style={{ color: theme.textMuted }} /><span className="ml-2 text-xs" style={{ color: theme.textMuted }}>Loading staff...</span></div>
+          <div className="flex items-center justify-center py-6"><Loader2 className="h-4 w-4 animate-spin" style={{ color: theme.cardTextMuted }} /><span className="ml-2 text-xs" style={{ color: theme.cardTextMuted }}>Loading staff...</span></div>
         ) : (
           <>
             {/* Staff list (hidden when inline form is open in compact mode) */}
@@ -318,8 +318,8 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
                 {staff.length === 0 ? (
                   <div className="text-center py-6">
                     <Users className="h-8 w-8 mx-auto mb-2" style={{ color: theme.textMuted, opacity: 0.2 }} />
-                    <p className="text-xs" style={{ color: theme.textMuted }}>No staff members yet</p>
-                    <p className="text-[10px] mt-0.5" style={{ color: theme.textMuted }}>Add your team so the AI can route calls and book the right person</p>
+                    <p className="text-xs" style={{ color: theme.cardTextMuted }}>No staff members yet</p>
+                    <p className="text-[10px] mt-0.5" style={{ color: theme.cardTextMuted }}>Add your team so the AI can route calls and book the right person</p>
                   </div>
                 ) : (
                   <div className="space-y-2 mb-3">
@@ -333,16 +333,16 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
                             {!member.is_active && <span className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: theme.isDark ? 'rgba(239,68,68,0.1)' : '#fef2f2', color: '#ef4444' }}>Inactive</span>}
                             {member.google_calendar_id && <span className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: theme.isDark ? 'rgba(34,197,94,0.1)' : '#f0fdf4', color: '#22c55e' }}>Calendar</span>}
                             {member.transferable && member.phone && <span className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 inline-flex items-center gap-0.5" style={{ backgroundColor: hexToRgba(theme.primary, 0.1), color: theme.primary }}><Phone className="h-2 w-2" />Transfers</span>}
-                            {member.available_hours && typeof member.available_hours === 'object' && Object.keys(member.available_hours).length > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6', color: theme.textMuted }}>Hours set</span>}
+                            {member.available_hours && typeof member.available_hours === 'object' && Object.keys(member.available_hours).length > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6', color: theme.cardTextMuted }}>Hours set</span>}
                           </div>
                           <div className="flex items-center gap-3 mt-0.5">
-                            {member.phone && <span className="text-[10px] flex items-center gap-1" style={{ color: theme.textMuted }}><Phone className="h-2.5 w-2.5" />{member.phone}</span>}
-                            {member.email && <span className="text-[10px] flex items-center gap-1 truncate" style={{ color: theme.textMuted }}><Mail className="h-2.5 w-2.5" />{member.email}</span>}
+                            {member.phone && <span className="text-[10px] flex items-center gap-1" style={{ color: theme.cardTextMuted }}><Phone className="h-2.5 w-2.5" />{member.phone}</span>}
+                            {member.email && <span className="text-[10px] flex items-center gap-1 truncate" style={{ color: theme.cardTextMuted }}><Mail className="h-2.5 w-2.5" />{member.email}</span>}
                           </div>
                         </div>
                         <div className="flex items-center gap-1 flex-shrink-0">
                           <button onClick={() => handleToggleActive(member)} disabled={togglingId === member.id} className="p-1.5 rounded-lg transition hover:opacity-70" style={{ color: member.is_active ? '#22c55e' : theme.textMuted }} title={member.is_active ? 'Deactivate' : 'Activate'}>{togglingId === member.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : member.is_active ? <ToggleRight className="h-3.5 w-3.5" /> : <ToggleLeft className="h-3.5 w-3.5" />}</button>
-                          <button onClick={() => openEdit(member)} className="p-1.5 rounded-lg transition hover:opacity-70" style={{ color: theme.textMuted }} title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
+                          <button onClick={() => openEdit(member)} className="p-1.5 rounded-lg transition hover:opacity-70" style={{ color: theme.cardTextMuted }} title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
                           <button onClick={() => handleDelete(member.id)} disabled={deletingId === member.id} className="p-1.5 rounded-lg transition hover:opacity-70" style={{ color: '#ef4444' }} title="Remove">{deletingId === member.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}</button>
                         </div>
                       </div>
@@ -352,14 +352,14 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
                 {suggestions.length > 0 && (
                   <div className="mb-3 rounded-xl p-3" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.06 : 0.04), border: `1px solid ${hexToRgba(theme.primary, theme.isDark ? 0.15 : 0.12)}` }}>
                     <div className="flex items-center gap-1.5 mb-1.5"><Globe className="w-3.5 h-3.5" style={{ color: theme.iconColor }} /><span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: theme.primary }}>Found on your website</span></div>
-                    <p className="text-[10px] mb-2.5 leading-relaxed" style={{ color: theme.textMuted }}>People we spotted on your site. Add the ones on your team (you can set a phone and role), or dismiss the rest.</p>
+                    <p className="text-[10px] mb-2.5 leading-relaxed" style={{ color: theme.cardTextMuted }}>People we spotted on your site. Add the ones on your team (you can set a phone and role), or dismiss the rest.</p>
                     <div className="flex flex-wrap gap-2">
                       {suggestions.map((sg, i) => (
                         <div key={`${sg.name}-${i}`} className="inline-flex items-center gap-1.5 rounded-full pl-3 pr-1 py-1" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : '#ffffff', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb'}` }}>
                           <span className="text-[12px] font-medium" style={{ color: theme.text }}>{sg.name}</span>
                           {sg.role && <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: hexToRgba(theme.primary, 0.12), color: theme.primary }}>{sg.role}</span>}
                           <button onClick={() => openSuggestion(sg)} title="Add this person" className="inline-flex items-center justify-center w-6 h-6 rounded-full transition hover:opacity-90 flex-shrink-0" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Plus className="w-3.5 h-3.5" /></button>
-                          <button onClick={() => dismissSuggestion(sg.name)} title="Dismiss" className="inline-flex items-center justify-center w-5 h-5 rounded-full transition hover:opacity-70 flex-shrink-0" style={{ color: theme.textMuted }}><X className="w-3 h-3" /></button>
+                          <button onClick={() => dismissSuggestion(sg.name)} title="Dismiss" className="inline-flex items-center justify-center w-5 h-5 rounded-full transition hover:opacity-70 flex-shrink-0" style={{ color: theme.cardTextMuted }}><X className="w-3 h-3" /></button>
                         </div>
                       ))}
                     </div>
@@ -374,7 +374,7 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
               <div className="rounded-xl p-4 sm:p-5" style={glass}>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold text-sm" style={{ color: theme.text }}>{editingId ? 'Edit Staff Member' : 'Add Staff Member'}</h3>
-                  <button onClick={() => setShowModal(false)} className="p-1 rounded-lg" style={{ color: theme.textMuted }}><X className="h-4 w-4" /></button>
+                  <button onClick={() => setShowModal(false)} className="p-1 rounded-lg" style={{ color: theme.cardTextMuted }}><X className="h-4 w-4" /></button>
                 </div>
                 {renderFormFields()}
               </div>
@@ -390,7 +390,7 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
           <div className="relative w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl flex flex-col max-h-[90vh] sm:max-h-[85vh] overflow-hidden" style={{ backgroundColor: theme.card || theme.cardBg || '#fff', border: `1px solid ${theme.border}` }} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 sm:px-6 pt-5 sm:pt-6 pb-4 flex-shrink-0" style={{ borderBottom: `1px solid ${theme.border}` }}>
               <h2 className="font-semibold text-base tracking-tight" style={{ color: theme.text }}>{editingId ? 'Edit Staff Member' : 'Add Staff Member'}</h2>
-              <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg" style={{ color: theme.textMuted }}><X className="h-5 w-5" /></button>
+              <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg" style={{ color: theme.cardTextMuted }}><X className="h-5 w-5" /></button>
             </div>
             <div className="px-5 sm:px-6 py-5 overflow-y-auto flex-1 min-h-0">
               {renderFormFields(false)}

@@ -175,7 +175,7 @@ export default function SetupChecklist({ agency, clientCount, theme, userRole, d
               <div className="h-full rounded-full transition-all duration-700 ease-out" style={{ width: `${Math.max(progressPercent, 3)}%`, background: `linear-gradient(90deg, ${theme.primary}, ${theme.primary}cc)` }} />
             </div>
             {nextStep && (
-              <p className="text-xs mt-1.5 truncate" style={{ color: theme.textMuted }}>Up Next: <span className="font-medium capitalize" style={{ color: theme.text }}>{nextStep.title}</span></p>
+              <p className="text-xs mt-1.5 truncate" style={{ color: theme.cardTextMuted }}>Up Next: <span className="font-medium capitalize" style={{ color: theme.text }}>{nextStep.title}</span></p>
             )}
           </div>
           <span className="hidden sm:inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold flex-shrink-0 shadow-sm transition-transform group-hover:translate-x-0.5" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
@@ -197,11 +197,11 @@ export default function SetupChecklist({ agency, clientCount, theme, userRole, d
             </div>
             <div>
               <h3 className="text-sm sm:text-base font-semibold" style={{ color: theme.text }}>{isFree ? 'Get Started' : 'Finish Setting Up Your Agency'}</h3>
-              <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{completedCount} of {steps.length} steps, {steps.length - completedCount} remaining</p>
+              <p className="text-xs mt-0.5" style={{ color: theme.cardTextMuted }}>{completedCount} of {steps.length} steps, {steps.length - completedCount} remaining</p>
             </div>
           </div>
           <button onClick={() => { setDismissed(true); try { localStorage.setItem('voiceai_setup_dismissed', 'true'); } catch {} }}
-            className="p-1.5 rounded-lg transition-colors flex-shrink-0" style={{ color: theme.textMuted }}
+            className="p-1.5 rounded-lg transition-colors flex-shrink-0" style={{ color: theme.cardTextMuted }}
             onMouseEnter={e => (e.currentTarget.style.backgroundColor = theme.hover)}
             onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')} title="Dismiss for now">
             <X className="h-4 w-4" />
@@ -220,7 +220,7 @@ export default function SetupChecklist({ agency, clientCount, theme, userRole, d
         onMouseLeave={e => (e.currentTarget.style.backgroundColor = `${theme.primary}10`)}>
         <PlayCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.iconColor }} />
         <span className="text-sm font-medium flex-1" style={{ color: theme.text }}>Watch the full dashboard walkthrough</span>
-        <span className="text-xs flex-shrink-0" style={{ color: theme.textMuted }}>25 min</span>
+        <span className="text-xs flex-shrink-0" style={{ color: theme.cardTextMuted }}>25 min</span>
       </a>
       <div className="px-2 sm:px-3 pb-2 sm:pb-3">
         {steps.map((step) => <StepRow key={step.id} step={step} Icon={step.icon} theme={theme} />)}
@@ -257,7 +257,7 @@ function StepRow({ step, Icon, theme }: { step: SetupStep; Icon: React.ElementTy
         ) : step.loading ? (
           <Loader2 className="h-4 w-4 animate-spin" style={{ color: theme.iconColor }} />
         ) : (
-          <Icon className="h-4 w-4" style={{ color: theme.textMuted }} />
+          <Icon className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
         )}
       </div>
       <div className="flex-1 min-w-0">
@@ -286,8 +286,8 @@ function CelebrationCard({ theme, onDismiss }: { theme: any; onDismiss: () => vo
           <h3 className="text-lg font-semibold" style={{ color: theme.primary }}>Setup Complete!</h3>
           <Sparkles className="h-5 w-5" style={{ color: theme.iconColor }} />
         </div>
-        <p className="text-sm" style={{ color: theme.textMuted }}>Your agency is ready. Start adding clients and growing your business.</p>
-        <button onClick={onDismiss} className="mt-3 text-xs font-medium transition-colors" style={{ color: theme.textMuted }}>Dismiss</button>
+        <p className="text-sm" style={{ color: theme.cardTextMuted }}>Your agency is ready. Start adding clients and growing your business.</p>
+        <button onClick={onDismiss} className="mt-3 text-xs font-medium transition-colors" style={{ color: theme.cardTextMuted }}>Dismiss</button>
       </div>
     </div>
   );

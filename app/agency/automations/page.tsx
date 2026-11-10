@@ -75,9 +75,9 @@ function ScopeDropdown({ clients, value, onChange, theme }: { clients: { id: str
   return (
     <div className="relative">
       <button type="button" onClick={() => setOpen((o) => !o)} className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, color: theme.text }}>
-        <Building2 className="h-4 w-4" style={{ color: theme.textMuted }} />
+        <Building2 className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
         <span className="font-medium truncate max-w-[200px]">{label}</span>
-        <ChevronDown className="h-4 w-4" style={{ color: theme.textMuted }} />
+        <ChevronDown className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
       </button>
       {open && (
         <>
@@ -86,7 +86,7 @@ function ScopeDropdown({ clients, value, onChange, theme }: { clients: { id: str
             <button type="button" onClick={() => { onChange(null); setOpen(false); }} className="w-full text-left px-3 py-2 text-sm flex items-center justify-between" style={{ color: theme.text, backgroundColor: value === null ? theme.hover : 'transparent' }}>
               All clients {value === null && <Check className="h-3.5 w-3.5" style={{ color: theme.iconColor }} />}
             </button>
-            {clients.length === 0 && <div className="px-3 py-2 text-xs" style={{ color: theme.textMuted }}>No businesses yet.</div>}
+            {clients.length === 0 && <div className="px-3 py-2 text-xs" style={{ color: theme.cardTextMuted }}>No businesses yet.</div>}
             {clients.map((c) => (
               <button key={c.id} type="button" onClick={() => { onChange(c.id); setOpen(false); }} className="w-full text-left px-3 py-2 text-sm flex items-center justify-between gap-2" style={{ color: theme.text, backgroundColor: value === c.id ? theme.hover : 'transparent' }}>
                 <span className="truncate">{c.business_name}</span>{value === c.id && <Check className="h-3.5 w-3.5 shrink-0" style={{ color: theme.iconColor }} />}
@@ -261,7 +261,7 @@ export default function AutomationsPage() {
       paused: { label: 'Paused', bg: theme.warningBg || theme.hover, fg: theme.warningText || theme.text },
     };
     const s = status ? map[status] : null;
-    if (!s) return <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>Off</span>;
+    if (!s) return <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.hover, color: theme.cardTextMuted }}>Off</span>;
     return <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: s.bg, color: s.fg }}>{s.label}</span>;
   };
 
@@ -319,7 +319,7 @@ export default function AutomationsPage() {
                 <h3 className="font-semibold truncate" style={{ color: theme.text }}>{t.name}</h3>
                 {statusPill(t.workflow_status)}
               </div>
-              <p className="text-xs mt-0.5 flex items-center gap-1" style={{ color: theme.textMuted }}>
+              <p className="text-xs mt-0.5 flex items-center gap-1" style={{ color: theme.cardTextMuted }}>
                 <Zap className="h-3 w-3" /> {triggerLabel(t.trigger_type)}
               </p>
             </div>
@@ -327,18 +327,18 @@ export default function AutomationsPage() {
           <Switch on={isOn} busy={busyKey === t.key} disabled={disableSwitch} onClick={() => toggle(t)} />
         </div>
 
-        <p className="text-sm mt-3 leading-relaxed" style={{ color: theme.textMuted }}>{t.description}</p>
+        <p className="text-sm mt-3 leading-relaxed" style={{ color: theme.cardTextMuted }}>{t.description}</p>
 
         {t.activated && (
           <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-xl px-3 py-2" style={{ backgroundColor: theme.hover }}>
                 <div className="text-lg font-semibold" style={{ color: theme.text }}>{stats ? stats.messages_sent : 0}</div>
-                <div className="text-xs" style={{ color: theme.textMuted }}>Texts sent</div>
+                <div className="text-xs" style={{ color: theme.cardTextMuted }}>Texts sent</div>
               </div>
               <div className="rounded-xl px-3 py-2" style={{ backgroundColor: theme.hover }}>
                 <div className="text-lg font-semibold" style={{ color: theme.text }}>{stats ? stats.active : 0}</div>
-                <div className="text-xs" style={{ color: theme.textMuted }}>In progress</div>
+                <div className="text-xs" style={{ color: theme.cardTextMuted }}>In progress</div>
               </div>
             </div>
             {wfId && (
@@ -354,7 +354,7 @@ export default function AutomationsPage() {
                     <ChevronDown className="h-3.5 w-3.5 transition-transform" style={{ transform: expanded === wfId ? 'rotate(180deg)' : 'none' }} />
                   </button>
                   {interactive && (
-                    <a href={`/agency/automations/${wfId}`} className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: theme.textMuted }}>
+                    <a href={`/agency/automations/${wfId}`} className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: theme.cardTextMuted }}>
                       <SlidersHorizontal className="h-3.5 w-3.5" /> Edit steps
                     </a>
                   )}
@@ -363,16 +363,16 @@ export default function AutomationsPage() {
                 {expanded === wfId && (
                   <div className="mt-3 rounded-xl overflow-hidden" style={{ border: `1px solid ${theme.border}` }}>
                     {loadingRuns && !runsByWf[wfId] ? (
-                      <div className="flex items-center justify-center py-6"><Loader2 className="h-4 w-4 animate-spin" style={{ color: theme.textMuted }} /></div>
+                      <div className="flex items-center justify-center py-6"><Loader2 className="h-4 w-4 animate-spin" style={{ color: theme.cardTextMuted }} /></div>
                     ) : (runsByWf[wfId] || []).length === 0 ? (
-                      <div className="text-xs text-center py-6" style={{ color: theme.textMuted }}>No one has gone through this yet.</div>
+                      <div className="text-xs text-center py-6" style={{ color: theme.cardTextMuted }}>No one has gone through this yet.</div>
                     ) : (
                       (runsByWf[wfId] || []).map((run) => (
                         <div key={run.id} className="flex items-center justify-between px-3 py-2 text-sm" style={{ borderBottom: `1px solid ${theme.border}` }}>
                           <span style={{ color: theme.text }}>{maskPhone(run.contact_phone)}</span>
                           <div className="flex items-center gap-3">
                             {runStatusChip(run)}
-                            <span className="text-xs" style={{ color: theme.textMuted }}>{fmtWhen(run.enrolled_at)}</span>
+                            <span className="text-xs" style={{ color: theme.cardTextMuted }}>{fmtWhen(run.enrolled_at)}</span>
                           </div>
                         </div>
                       ))
@@ -427,7 +427,7 @@ export default function AutomationsPage() {
           <h1 className="text-2xl font-bold flex items-center gap-2" style={{ color: theme.text }}>
             <Zap className="h-6 w-6" style={{ color: theme.iconColor }} /> Automations
           </h1>
-          <p className="text-sm mt-1" style={{ color: theme.textMuted }}>
+          <p className="text-sm mt-1" style={{ color: theme.cardTextMuted }}>
             {category === 'account'
               ? "Automations that run on your clients' billing and account events. Internal to your agency, they text the business owner."
               : scopeClientId
@@ -475,7 +475,7 @@ export default function AutomationsPage() {
           <ScopeDropdown clients={clients} value={scopeClientId} onChange={setScopeClientId} theme={theme} />
         </div>
       ) : (
-        <div className="mb-6 flex items-center gap-2 text-sm" style={{ color: theme.textMuted }}>
+        <div className="mb-6 flex items-center gap-2 text-sm" style={{ color: theme.cardTextMuted }}>
           <Building2 className="h-4 w-4" /> Runs across your whole agency, on your clients&apos; billing events.
         </div>
       )}
@@ -492,11 +492,11 @@ export default function AutomationsPage() {
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center py-24"><Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.textMuted }} /></div>
+        <div className="flex items-center justify-center py-24"><Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.cardTextMuted }} /></div>
       ) : error ? (
         <div className="rounded-2xl p-8 text-center" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
           <AlertCircle className="h-8 w-8 mx-auto mb-3" style={{ color: theme.error }} />
-          <p className="text-sm mb-4" style={{ color: theme.textMuted }}>{error}</p>
+          <p className="text-sm mb-4" style={{ color: theme.cardTextMuted }}>{error}</p>
           <button type="button" onClick={() => { setLoading(true); loadAll(); }} className="inline-flex items-center gap-1.5 text-sm px-4 py-2 rounded-xl font-medium" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
             <RefreshCw className="h-4 w-4" /> Try again
           </button>
@@ -506,24 +506,24 @@ export default function AutomationsPage() {
           {/* summary tiles: three across so the row is always filled */}
           <div className="grid grid-cols-3 gap-3 mb-6">
             <div className="rounded-2xl p-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-              <div className="flex items-center gap-2 text-xs mb-1" style={{ color: theme.textMuted }}><Zap className="h-3.5 w-3.5" /> Active</div>
+              <div className="flex items-center gap-2 text-xs mb-1" style={{ color: theme.cardTextMuted }}><Zap className="h-3.5 w-3.5" /> Active</div>
               <div className="text-2xl font-bold" style={{ color: theme.text }}>
-                {activeCount}{ent && ent.max_workflows !== null ? <span className="text-base font-normal" style={{ color: theme.textMuted }}> / {ent.max_workflows}</span> : <span className="text-base font-normal" style={{ color: theme.textMuted }}> / unlimited</span>}
+                {activeCount}{ent && ent.max_workflows !== null ? <span className="text-base font-normal" style={{ color: theme.cardTextMuted }}> / {ent.max_workflows}</span> : <span className="text-base font-normal" style={{ color: theme.cardTextMuted }}> / unlimited</span>}
               </div>
             </div>
             <div className="rounded-2xl p-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-              <div className="flex items-center gap-2 text-xs mb-1" style={{ color: theme.textMuted }}><Send className="h-3.5 w-3.5" /> Texts sent</div>
+              <div className="flex items-center gap-2 text-xs mb-1" style={{ color: theme.cardTextMuted }}><Send className="h-3.5 w-3.5" /> Texts sent</div>
               <div className="text-2xl font-bold" style={{ color: theme.text }}>{totalSent}</div>
             </div>
             <div className="rounded-2xl p-4" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-              <div className="flex items-center gap-2 text-xs mb-1" style={{ color: theme.textMuted }}><Activity className="h-3.5 w-3.5" /> Contacts reached</div>
+              <div className="flex items-center gap-2 text-xs mb-1" style={{ color: theme.cardTextMuted }}><Activity className="h-3.5 w-3.5" /> Contacts reached</div>
               <div className="text-2xl font-bold" style={{ color: theme.text }}>{totalReached}</div>
             </div>
           </div>
 
           {/* Pro: note that advanced steps live on Scale */}
           {pf.isPro && (
-            <div className="mb-5 rounded-xl px-4 py-3 flex items-center gap-2 text-sm" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>
+            <div className="mb-5 rounded-xl px-4 py-3 flex items-center gap-2 text-sm" style={{ backgroundColor: theme.hover, color: theme.cardTextMuted }}>
               <Sparkles className="h-4 w-4 shrink-0" style={{ color: theme.iconColor }} />
               You can run {ent?.max_workflows} automations at once on Pro. Scale unlocks unlimited automations plus AI-written messages and webhooks.
             </div>
@@ -531,8 +531,8 @@ export default function AutomationsPage() {
 
           {shownTemplates.length === 0 ? (
             <div className="rounded-2xl p-10 text-center" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-              <Zap className="h-8 w-8 mx-auto mb-3" style={{ color: theme.textMuted }} />
-              <p className="text-sm" style={{ color: theme.textMuted }}>No recipes in this category yet. Use Build your own to start from scratch.</p>
+              <Zap className="h-8 w-8 mx-auto mb-3" style={{ color: theme.cardTextMuted }} />
+              <p className="text-sm" style={{ color: theme.cardTextMuted }}>No recipes in this category yet. Use Build your own to start from scratch.</p>
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 gap-4">

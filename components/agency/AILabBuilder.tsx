@@ -166,7 +166,7 @@ export default function AILabBuilder({ agencyId, api, theme, logoUrl }: { agency
       <div className="min-h-[75vh] flex flex-col items-center justify-center px-6 text-center">
         <Loader2 className="h-8 w-8 animate-spin mb-5" style={{ color: theme.iconColor }} />
         <p className="text-[18px] font-semibold" style={{ color: theme.text }}>Creating Your Receptionist</p>
-        <p className="text-[15px] mt-1.5" style={{ color: theme.textMuted }}>Reading your site and building the AI. No number is being bought yet.</p>
+        <p className="text-[15px] mt-1.5" style={{ color: theme.cardTextMuted }}>Reading your site and building the AI. No number is being bought yet.</p>
       </div>
     );
   }
@@ -193,7 +193,7 @@ export default function AILabBuilder({ agencyId, api, theme, logoUrl }: { agency
               {reading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowUp className="h-5 w-5" />}
             </button>
           </form>
-          <p className="text-center text-[13px] mt-4" style={{ color: theme.textMuted }}>Paste a website and we’ll read it to fill in the details.</p>
+          <p className="text-center text-[13px] mt-4" style={{ color: theme.cardTextMuted }}>Paste a website and we’ll read it to fill in the details.</p>
           <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
             {EXAMPLES.map((ex) => (
               <button key={ex} type="button" onClick={() => { setQuery(ex); runIntake(ex); }}
@@ -205,7 +205,7 @@ export default function AILabBuilder({ agencyId, api, theme, logoUrl }: { agency
           </div>
           {error && <div className="mt-6 text-[14px] rounded-xl p-3.5 text-center" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444' }}>{error}</div>}
           <div className="text-center mt-10">
-            <button onClick={() => router.push('/agency/templates')} className="inline-flex items-center gap-1.5 text-[14px] transition-colors hover:opacity-80" style={{ color: theme.textMuted }}>
+            <button onClick={() => router.push('/agency/templates')} className="inline-flex items-center gap-1.5 text-[14px] transition-colors hover:opacity-80" style={{ color: theme.cardTextMuted }}>
               <Package className="h-4 w-4" /> Browse all industry templates
             </button>
           </div>
@@ -222,7 +222,7 @@ export default function AILabBuilder({ agencyId, api, theme, logoUrl }: { agency
           <Check className="h-4 w-4" /> Receptionist created · Final step
         </div>
         <h1 className="font-bold tracking-tight" style={{ color: theme.text, fontSize: 'clamp(26px, 4vw, 36px)', lineHeight: 1.1 }}>Get a Phone Number</h1>
-        <p className="text-[15px] mt-2 mb-6" style={{ color: theme.textMuted }}>
+        <p className="text-[15px] mt-2 mb-6" style={{ color: theme.cardTextMuted }}>
           <span style={{ color: theme.text, fontWeight: 600 }}>{created.business_name}</span> is created and fully configured. A phone number is what makes it live and callable, and it is the only part that counts toward your plan. You can buy one now or add it later.
         </p>
         <div className="rounded-2xl p-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
@@ -230,7 +230,7 @@ export default function AILabBuilder({ agencyId, api, theme, logoUrl }: { agency
             <div className="h-11 w-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><PhoneCall className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
             <div>
               <p className="text-[16px] font-semibold" style={{ color: theme.text }}>Buy a local number</p>
-              <p className="text-[14px] mt-0.5" style={{ color: theme.textMuted }}>We provision a real number and connect it to this receptionist so you can call it right away.</p>
+              <p className="text-[14px] mt-0.5" style={{ color: theme.cardTextMuted }}>We provision a real number and connect it to this receptionist so you can call it right away.</p>
             </div>
           </div>
           {error && <div className="mb-4 text-[14px] rounded-xl p-3.5" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444' }}>{error}</div>}
@@ -239,7 +239,7 @@ export default function AILabBuilder({ agencyId, api, theme, logoUrl }: { agency
             style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
             {buying ? <Loader2 className="h-5 w-5 animate-spin" /> : <Phone className="h-5 w-5" />} {buying ? 'Buying your number' : 'Buy a phone number'}
           </button>
-          <button onClick={finishWithoutNumber} disabled={buying} className="w-full text-center text-[14px] mt-3 py-2 transition-colors hover:opacity-80" style={{ color: theme.textMuted }}>
+          <button onClick={finishWithoutNumber} disabled={buying} className="w-full text-center text-[14px] mt-3 py-2 transition-colors hover:opacity-80" style={{ color: theme.cardTextMuted }}>
             Finish without a number for now
           </button>
         </div>
@@ -258,7 +258,7 @@ export default function AILabBuilder({ agencyId, api, theme, logoUrl }: { agency
           <StepRail step={step} done={done} theme={theme} onJump={goTo} />
           <div className="mt-7">
             <h2 className="font-bold tracking-tight" style={{ color: theme.text, fontSize: 'clamp(24px, 3.4vw, 32px)', lineHeight: 1.12 }}>{meta.title}</h2>
-            <p className="text-[15px] mt-2 mb-5" style={{ color: theme.textMuted }}>{meta.subtitle}</p>
+            <p className="text-[15px] mt-2 mb-5" style={{ color: theme.cardTextMuted }}>{meta.subtitle}</p>
             <StepBody step={step} pkg={pkg} theme={theme} api={api} agencyId={agencyId}
               update={update} onNext={goNext} onBack={() => goTo(step - 1)} onCreate={createReceptionist} error={error} />
           </div>
@@ -300,12 +300,12 @@ function PrimaryBtn({ theme, onClick, children, icon: Icon, disabled }: any) {
   );
 }
 function GhostBtn({ theme, onClick, children }: any) {
-  return <button onClick={onClick} className="text-[15px] font-medium px-4 py-3 rounded-xl transition-colors hover:opacity-80" style={{ color: theme.textMuted }}>{children}</button>;
+  return <button onClick={onClick} className="text-[15px] font-medium px-4 py-3 rounded-xl transition-colors hover:opacity-80" style={{ color: theme.cardTextMuted }}>{children}</button>;
 }
 function Field({ theme, label, value, onChange, placeholder }: any) {
   return (
     <label className="block">
-      <span className="text-[13px] font-medium" style={{ color: theme.textMuted }}>{label}</span>
+      <span className="text-[13px] font-medium" style={{ color: theme.cardTextMuted }}>{label}</span>
       <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
         className="mt-1.5 w-full rounded-xl px-3.5 py-3 text-[15px] focus:outline-none transition-colors" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.text }}
         onFocus={(e) => (e.currentTarget.style.borderColor = theme.primary + '66')} onBlur={(e) => (e.currentTarget.style.borderColor = theme.border)} />
@@ -340,13 +340,13 @@ function BusinessStep({ pkg, theme, update, onNext }: any) {
       </div>
       <div className="mt-4">
         <Field theme={theme} label="Client email (for billing & receipts)" value={pkg.client_email} onChange={(v: string) => update({ client_email: v })} placeholder="owner@acmedental.com" />
-        <p className="text-[12px] mt-1.5" style={{ color: theme.textMuted }}>The client&rsquo;s own email. Used for their receipts and checkout, so your email never shows up in their payment.</p>
+        <p className="text-[12px] mt-1.5" style={{ color: theme.cardTextMuted }}>The client&rsquo;s own email. Used for their receipts and checkout, so your email never shows up in their payment.</p>
       </div>
       <div className="mt-4">
-        <span className="text-[13px] font-medium" style={{ color: theme.textMuted }}>Industry template</span>
+        <span className="text-[13px] font-medium" style={{ color: theme.cardTextMuted }}>Industry template</span>
         <div className="mt-1.5 relative">
           <button onClick={() => setPickOpen((o) => !o)} className="w-full flex items-center justify-between rounded-xl px-3.5 py-3 text-[15px] transition-colors" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.text }}>
-            <span>{industryLabel}</span><ChevronDown className="h-4 w-4" style={{ color: theme.textMuted }} />
+            <span>{industryLabel}</span><ChevronDown className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
           </button>
           {pickOpen && (
             <div className="absolute z-20 mt-1 w-full rounded-xl py-1 max-h-72 overflow-auto shadow-lg" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
@@ -361,8 +361,8 @@ function BusinessStep({ pkg, theme, update, onNext }: any) {
             </div>
           )}
         </div>
-        {pkg.website_url && <p className="text-[13px] mt-2" style={{ color: theme.textMuted }}>Website: {pkg.website_url}</p>}
-        {!pkg.industry && pkg.customGen && <p className="text-[13px] mt-2" style={{ color: theme.textMuted }}>No built-in template fits, so we’ll generate a custom one when you create it.</p>}
+        {pkg.website_url && <p className="text-[13px] mt-2" style={{ color: theme.cardTextMuted }}>Website: {pkg.website_url}</p>}
+        {!pkg.industry && pkg.customGen && <p className="text-[13px] mt-2" style={{ color: theme.cardTextMuted }}>No built-in template fits, so we’ll generate a custom one when you create it.</p>}
       </div>
       <NavRow theme={theme}><PrimaryBtn theme={theme} onClick={onNext}>Continue</PrimaryBtn></NavRow>
     </Card>
@@ -401,7 +401,7 @@ function HoursStep({ pkg, theme, update, onNext, onBack }: any) {
               {open && (
                 <div className="flex items-center gap-1.5">
                   <input value={d.open} onChange={(e) => setDay(key, { open: e.target.value })} className="w-24 rounded-lg px-2.5 py-2 text-[13px] focus:outline-none" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.text }} />
-                  <span className="text-[12px]" style={{ color: theme.textMuted }}>to</span>
+                  <span className="text-[12px]" style={{ color: theme.cardTextMuted }}>to</span>
                   <input value={d.close} onChange={(e) => setDay(key, { close: e.target.value })} className="w-24 rounded-lg px-2.5 py-2 text-[13px] focus:outline-none" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.text }} />
                 </div>
               )}
@@ -426,10 +426,10 @@ function ServicesStep({ pkg, theme, update, onNext, onBack }: any) {
         {pkg.services.map((s: any, i: number) => (
           <div key={i} className="flex items-center gap-2">
             <input value={s.name} onChange={(e) => edit(i, e.target.value)} className="flex-1 rounded-xl px-3.5 py-2.5 text-[15px] focus:outline-none transition-colors" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.text }} onFocus={(e) => (e.currentTarget.style.borderColor = theme.primary + '66')} onBlur={(e) => (e.currentTarget.style.borderColor = theme.border)} />
-            <button onClick={() => remove(i)} aria-label="Remove" className="h-9 w-9 rounded-lg inline-flex items-center justify-center hover:opacity-70 flex-shrink-0" style={{ color: theme.textMuted }}><X className="h-4 w-4" /></button>
+            <button onClick={() => remove(i)} aria-label="Remove" className="h-9 w-9 rounded-lg inline-flex items-center justify-center hover:opacity-70 flex-shrink-0" style={{ color: theme.cardTextMuted }}><X className="h-4 w-4" /></button>
           </div>
         ))}
-        {pkg.services.length === 0 && <p className="text-[14px]" style={{ color: theme.textMuted }}>No services yet, add a few below.</p>}
+        {pkg.services.length === 0 && <p className="text-[14px]" style={{ color: theme.cardTextMuted }}>No services yet, add a few below.</p>}
       </div>
       <div className="mt-3 flex items-center gap-2">
         <input value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } }} placeholder="Add a service" className="flex-1 rounded-xl px-3.5 py-3 text-[15px] focus:outline-none" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.text }} />
@@ -453,14 +453,14 @@ function KnowledgeStep({ pkg, theme, update, onNext, onBack }: any) {
           <div key={i} className="rounded-xl p-3 space-y-2" style={{ backgroundColor: theme.hover }}>
             <div className="flex items-center gap-2">
               <input value={f.q} onChange={(e) => editFaq(i, 'q', e.target.value)} placeholder="What do callers ask?" className="flex-1 rounded-lg px-3 py-2.5 text-[14px] font-medium focus:outline-none" style={{ ...inputStyle, backgroundColor: theme.card }} />
-              <button onClick={() => removeFaq(i)} aria-label="Remove" className="h-8 w-8 rounded-lg inline-flex items-center justify-center hover:opacity-70 flex-shrink-0" style={{ color: theme.textMuted }}><X className="h-4 w-4" /></button>
+              <button onClick={() => removeFaq(i)} aria-label="Remove" className="h-8 w-8 rounded-lg inline-flex items-center justify-center hover:opacity-70 flex-shrink-0" style={{ color: theme.cardTextMuted }}><X className="h-4 w-4" /></button>
             </div>
             <textarea value={f.a} onChange={(e) => editFaq(i, 'a', e.target.value)} rows={2} placeholder="The answer the AI should give" className="w-full rounded-lg px-3 py-2.5 text-[14px] focus:outline-none resize-none" style={{ ...inputStyle, backgroundColor: theme.card }} />
           </div>
         ))}
       </div>
       <button onClick={addFaq} className="inline-flex items-center gap-1.5 text-[14px] font-medium mb-5" style={{ color: theme.primary }}><Plus className="h-4 w-4" /> Add a question</button>
-      <label className="text-[13px] font-medium" style={{ color: theme.textMuted }}>Anything else it should know</label>
+      <label className="text-[13px] font-medium" style={{ color: theme.cardTextMuted }}>Anything else it should know</label>
       <textarea value={pkg.additional_info} onChange={(e) => update({ additional_info: e.target.value })} rows={4} placeholder="e.g. We offer free estimates, we do not service apartments, parking is behind the building." className="mt-1.5 w-full rounded-xl px-3.5 py-3 text-[15px] focus:outline-none resize-none" style={inputStyle} />
       <NavRow theme={theme} onBack={onBack}><PrimaryBtn theme={theme} onClick={onNext}>Continue</PrimaryBtn></NavRow>
     </Card>
@@ -482,7 +482,7 @@ function StaffStep({ pkg, theme, update, onNext, onBack }: any) {
             <div key={i} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
               <input value={s.name} onChange={(e) => edit(i, 'name', e.target.value)} placeholder="Name" className="flex-1 rounded-xl px-3.5 py-2.5 text-[15px] focus:outline-none" style={inputStyle} />
               <input value={s.role || ''} onChange={(e) => edit(i, 'role', e.target.value)} placeholder="Role (optional)" className="flex-1 rounded-xl px-3.5 py-2.5 text-[15px] focus:outline-none" style={inputStyle} />
-              <button onClick={() => remove(i)} aria-label="Remove" className="h-9 w-9 rounded-lg inline-flex items-center justify-center hover:opacity-70 flex-shrink-0 self-end sm:self-auto" style={{ color: theme.textMuted }}><X className="h-4 w-4" /></button>
+              <button onClick={() => remove(i)} aria-label="Remove" className="h-9 w-9 rounded-lg inline-flex items-center justify-center hover:opacity-70 flex-shrink-0 self-end sm:self-auto" style={{ color: theme.cardTextMuted }}><X className="h-4 w-4" /></button>
             </div>
           ))}
         </div>
@@ -492,7 +492,7 @@ function StaffStep({ pkg, theme, update, onNext, onBack }: any) {
         <input value={role} onChange={(e) => setRole(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } }} placeholder="Role (optional)" className="flex-1 rounded-xl px-3.5 py-3 text-[15px] focus:outline-none" style={inputStyle} />
         <button onClick={add} className="h-11 rounded-xl px-4 inline-flex items-center justify-center gap-1.5 text-[14px] font-medium flex-shrink-0" style={{ backgroundColor: theme.primary15, color: theme.primary }}><Plus className="h-4 w-4" /> Add</button>
       </div>
-      <p className="text-[13px] mt-3" style={{ color: theme.textMuted }}>Optional. Skip it if it is just you.</p>
+      <p className="text-[13px] mt-3" style={{ color: theme.cardTextMuted }}>Optional. Skip it if it is just you.</p>
       <NavRow theme={theme} onBack={onBack}><PrimaryBtn theme={theme} onClick={onNext}>Continue</PrimaryBtn></NavRow>
     </Card>
   );
@@ -544,15 +544,15 @@ function VoiceGreetingStep({ pkg, theme, api, agencyId, update, onNext, onBack }
   const shown = showAll ? voices : voices.slice(0, 6);
   return (
     <Card theme={theme}>
-      <label className="text-[13px] font-medium" style={{ color: theme.textMuted }}>Greeting</label>
+      <label className="text-[13px] font-medium" style={{ color: theme.cardTextMuted }}>Greeting</label>
       {draftingGreeting && !pkg.greeting ? (
-        <div className="flex items-center gap-2 text-[14px] py-3" style={{ color: theme.textMuted }}><Loader2 className="h-4 w-4 animate-spin" /> Drafting a greeting</div>
+        <div className="flex items-center gap-2 text-[14px] py-3" style={{ color: theme.cardTextMuted }}><Loader2 className="h-4 w-4 animate-spin" /> Drafting a greeting</div>
       ) : (
         <textarea value={pkg.greeting} onChange={(e) => update({ greeting: e.target.value })} rows={2} placeholder="Thanks for calling, how can I help you today?" className="mt-1.5 w-full rounded-xl px-3.5 py-3 text-[15px] focus:outline-none resize-none" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.text }} />
       )}
-      <p className="text-[13px] mt-4 mb-2 font-medium" style={{ color: theme.textMuted }}>Pick a voice · tap play to hear it say your greeting</p>
+      <p className="text-[13px] mt-4 mb-2 font-medium" style={{ color: theme.cardTextMuted }}>Pick a voice · tap play to hear it say your greeting</p>
       {loading ? (
-        <div className="flex items-center gap-2 text-[14px] py-3" style={{ color: theme.textMuted }}><Loader2 className="h-4 w-4 animate-spin" /> Loading voices</div>
+        <div className="flex items-center gap-2 text-[14px] py-3" style={{ color: theme.cardTextMuted }}><Loader2 className="h-4 w-4 animate-spin" /> Loading voices</div>
       ) : (
         <div className="space-y-2">
           {shown.map((v: any) => {
@@ -560,7 +560,7 @@ function VoiceGreetingStep({ pkg, theme, api, agencyId, update, onNext, onBack }
             return (
               <div key={v.id} className="flex items-center gap-3 rounded-xl px-3.5 py-3 transition-colors cursor-pointer" style={{ backgroundColor: selected ? theme.primary15 : theme.hover, border: `1px solid ${selected ? theme.primary + '55' : theme.border}` }} onClick={() => update({ voice_id: v.id, voice_name: v.name })}>
                 <button onClick={(e) => { e.stopPropagation(); preview(v); }} className="h-9 w-9 rounded-full flex-shrink-0 inline-flex items-center justify-center" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{playing === v.id ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />}</button>
-                <div className="flex-1 min-w-0"><p className="text-[15px] font-medium flex items-center gap-1.5" style={{ color: theme.text }}>{v.name}{v.accent && <span className="text-[12px] font-normal" style={{ color: theme.textMuted }}>· {v.accent}</span>}</p>{v.description && <p className="text-[13px] truncate" style={{ color: theme.textMuted }}>{v.description}</p>}</div>
+                <div className="flex-1 min-w-0"><p className="text-[15px] font-medium flex items-center gap-1.5" style={{ color: theme.text }}>{v.name}{v.accent && <span className="text-[12px] font-normal" style={{ color: theme.cardTextMuted }}>· {v.accent}</span>}</p>{v.description && <p className="text-[13px] truncate" style={{ color: theme.cardTextMuted }}>{v.description}</p>}</div>
                 {selected && <Check className="h-5 w-5 flex-shrink-0" style={{ color: theme.iconColor }} />}
               </div>
             );
@@ -580,7 +580,7 @@ function ReviewStep({ pkg, theme, onCreate, onBack, error }: any) {
       <p className="text-[15px]" style={{ color: theme.text }}>
         A <span style={{ fontWeight: 600 }}>{pkg.industry?.label || (pkg.sub_vertical ? 'custom ' + pkg.sub_vertical : 'custom')}</span> receptionist for <span style={{ fontWeight: 600 }}>{pkg.business_name || 'your business'}</span>{pkg.city ? `, ${pkg.city}` : ''}.
       </p>
-      <p className="text-[14px] mt-2" style={{ color: theme.textMuted }}>
+      <p className="text-[14px] mt-2" style={{ color: theme.cardTextMuted }}>
         {pkg.services.length} service{pkg.services.length === 1 ? '' : 's'}, {pkg.staff.length} team member{pkg.staff.length === 1 ? '' : 's'}, {pkg.faqs.length} FAQ{pkg.faqs.length === 1 ? '' : 's'}, {pkg.voice_name || 'default'} voice.
       </p>
       <p className="text-[14px] mt-3 rounded-xl px-3.5 py-3" style={{ backgroundColor: theme.primary15, color: theme.text }}>
@@ -599,17 +599,17 @@ function PackagePanel({ pkg, theme, onEdit }: any) {
   const hoursSummary = all24 ? 'Open 24/7' : openDays.length === 0 ? 'Closed' : openDays.length === 7 ? 'Every day' : openDays.map((d) => d.label.slice(0, 3)).join(', ');
   const Row = ({ i, icon: Icon, label, value }: any) => (
     <button onClick={() => onEdit(i)} className="w-full text-left flex items-start gap-3 py-3 group">
-      <Icon className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.textMuted }} />
-      <div className="flex-1 min-w-0"><p className="text-[11px] uppercase tracking-wide" style={{ color: theme.textMuted }}>{label}</p><p className="text-[14px] truncate" style={{ color: theme.text }}>{value}</p></div>
-      <Pencil className="h-3.5 w-3.5 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: theme.textMuted }} />
+      <Icon className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.cardTextMuted }} />
+      <div className="flex-1 min-w-0"><p className="text-[11px] uppercase tracking-wide" style={{ color: theme.cardTextMuted }}>{label}</p><p className="text-[14px] truncate" style={{ color: theme.text }}>{value}</p></div>
+      <Pencil className="h-3.5 w-3.5 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: theme.cardTextMuted }} />
     </button>
   );
   return (
     <div className="rounded-2xl p-5 lg:sticky lg:top-6" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-      <p className="text-[12px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: theme.textMuted }}>Your Receptionist</p>
+      <p className="text-[12px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: theme.cardTextMuted }}>Your Receptionist</p>
       <p className="text-[18px] font-semibold" style={{ color: theme.text }}>{pkg.business_name || 'New receptionist'}</p>
       <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[13px]" style={{ backgroundColor: theme.primary15, color: theme.primary }}>{pkg.industry?.label || (pkg.sub_vertical ? `Custom: ${pkg.sub_vertical}` : 'Custom')}</div>
-      <div className="mt-3.5 flex items-center gap-2 rounded-xl px-3.5 py-2.5" style={{ backgroundColor: theme.hover }}><Phone className="h-4 w-4" style={{ color: theme.textMuted }} /><span className="text-[13px]" style={{ color: theme.textMuted }}>Number bought as the last step</span></div>
+      <div className="mt-3.5 flex items-center gap-2 rounded-xl px-3.5 py-2.5" style={{ backgroundColor: theme.hover }}><Phone className="h-4 w-4" style={{ color: theme.cardTextMuted }} /><span className="text-[13px]" style={{ color: theme.cardTextMuted }}>Number bought as the last step</span></div>
       <div className="mt-2 divide-y" style={{ borderColor: theme.border }}>
         <Row i={1} icon={Clock} label="Hours" value={hoursSummary} />
         <Row i={2} icon={Briefcase} label="Services" value={pkg.services.length ? `${pkg.services.length} added` : 'None yet'} />

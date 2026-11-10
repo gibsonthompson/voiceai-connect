@@ -137,7 +137,7 @@ function OfferCard({
           </div>
           <div className="min-w-0">
             <p className="text-[15px] font-semibold truncate" style={{ color: theme.text }}>{fmtPhone(offer.callerNumber)}</p>
-            <p className="text-[13px] truncate flex items-center gap-1.5" style={{ color: theme.textMuted }}>
+            <p className="text-[13px] truncate flex items-center gap-1.5" style={{ color: theme.cardTextMuted }}>
               <Building2 className="h-3.5 w-3.5 flex-shrink-0" /> {offer.businessName || 'Business'}
             </p>
           </div>
@@ -147,7 +147,7 @@ function OfferCard({
         {(offer.reason || offer.summary) && (
           <div className="mt-3 rounded-xl p-3.5" style={{ backgroundColor: theme.hover }}>
             {offer.reason && <p className="text-sm font-semibold" style={{ color: theme.text }}>{offer.reason}</p>}
-            {offer.summary && <p className="text-[13.5px] mt-1 leading-relaxed" style={{ color: theme.textMuted }}>{offer.summary}</p>}
+            {offer.summary && <p className="text-[13.5px] mt-1 leading-relaxed" style={{ color: theme.cardTextMuted }}>{offer.summary}</p>}
           </div>
         )}
         {collected.length > 0 && (
@@ -155,7 +155,7 @@ function OfferCard({
             {collected.slice(0, 8).map(([k, v]) => (
               <div key={k} className="flex items-start gap-2 text-[12.5px]">
                 <User className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" style={{ color: theme.textSubtle }} />
-                <span style={{ color: theme.textMuted }}><span style={{ color: theme.textSubtle }}>{k}:</span> {String(v)}</span>
+                <span style={{ color: theme.cardTextMuted }}><span style={{ color: theme.textSubtle }}>{k}:</span> {String(v)}</span>
               </div>
             ))}
           </div>
@@ -175,14 +175,14 @@ function OfferCard({
               <button
                 onClick={() => { decline(offer.id); onDone(offer.id); }}
                 className="rounded-xl px-4 py-2.5 text-sm font-medium transition"
-                style={{ backgroundColor: theme.hover, color: theme.textMuted }}
+                style={{ backgroundColor: theme.hover, color: theme.cardTextMuted }}
               >
                 Dismiss
               </button>
             </div>
           )}
           {state.kind === 'claiming' && (
-            <div className="inline-flex items-center gap-2 text-sm" style={{ color: theme.textMuted }}>
+            <div className="inline-flex items-center gap-2 text-sm" style={{ color: theme.cardTextMuted }}>
               <Loader2 className="h-4 w-4 animate-spin" /> Taking the call...
             </div>
           )}
@@ -202,7 +202,7 @@ function OfferCard({
             </div>
           )}
           {state.kind === 'lost' && (
-            <div className="inline-flex items-center gap-2 text-sm" style={{ color: theme.textMuted }}>
+            <div className="inline-flex items-center gap-2 text-sm" style={{ color: theme.cardTextMuted }}>
               <CheckCircle2 className="h-4 w-4" /> {state.by ? `Call taken by ${state.by}` : 'A teammate took this one.'}
             </div>
           )}

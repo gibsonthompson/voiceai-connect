@@ -188,7 +188,7 @@ export default function PlatformMessages({
     return (
       <div className="max-w-[1400px]" style={panel}>
         <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: `1px solid ${theme.border}` }}>
-          <button onClick={() => { setComposing(false); setComposeText(''); setComposeError(''); }} className="inline-flex items-center gap-1.5 text-sm" style={{ color: theme.textMuted }}>
+          <button onClick={() => { setComposing(false); setComposeText(''); setComposeError(''); }} className="inline-flex items-center gap-1.5 text-sm" style={{ color: theme.cardTextMuted }}>
             <ArrowLeft className="h-4 w-4" /> All messages
           </button>
           <span className="text-sm font-medium" style={{ color: theme.text }}>Message VoiceAI Connect</span>
@@ -218,7 +218,7 @@ export default function PlatformMessages({
       <div className="max-w-[1400px]" style={panel}>
         <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: `1px solid ${theme.border}` }}>
           <button onClick={() => { setOpenId(null); loadThreads(); }}
-            className="inline-flex items-center gap-1.5 text-sm" style={{ color: theme.textMuted }}>
+            className="inline-flex items-center gap-1.5 text-sm" style={{ color: theme.cardTextMuted }}>
             <ArrowLeft className="h-4 w-4" /> All messages
           </button>
           <div className="ml-auto inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full"
@@ -268,7 +268,7 @@ export default function PlatformMessages({
           </button>
         </div>
         {row && row.status === 'resolved' && (
-          <div className="px-4 pb-3 text-[11px]" style={{ color: theme.textMuted }}>
+          <div className="px-4 pb-3 text-[11px]" style={{ color: theme.cardTextMuted }}>
             This thread was marked resolved. Replying reopens it.
           </div>
         )}
@@ -285,7 +285,7 @@ export default function PlatformMessages({
           <MessageSquare className="h-7 w-7" style={{ color: theme.iconColor }} />
         </div>
         <p className="text-sm" style={{ color: theme.text }}>No messages from VoiceAI Connect yet</p>
-        <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
+        <p className="text-xs mt-1" style={{ color: theme.cardTextMuted }}>
           Replies to your support requests and platform updates will show up here.
         </p>
         <button onClick={() => { setComposing(true); setComposeError(''); }} className="mt-5 inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium" style={{ backgroundColor: theme.primary, color: '#fff' }}>
@@ -320,7 +320,7 @@ export default function PlatformMessages({
                 {t.status === 'resolved' && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ color: theme.textMuted, border: `1px solid ${theme.border}` }}>Resolved</span>
                 )}
-                <span className="ml-auto text-[11px] shrink-0" style={{ color: theme.textMuted }}>{timeAgo(last)}</span>
+                <span className="ml-auto text-[11px] shrink-0" style={{ color: theme.cardTextMuted }}>{timeAgo(last)}</span>
               </div>
               <p className="text-sm mt-0.5 truncate" style={{ color: unread ? theme.text : theme.textMuted, fontWeight: unread ? 500 : 400 }}>
                 {t.last_sender === 'admin' ? 'VoiceAI Connect: ' : ''}{t.message}

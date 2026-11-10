@@ -220,7 +220,7 @@ export default function CcBrandingSection({ agency, refreshAgency, theme, hideHe
 
   const swatch = (label: string, key: 'primary' | 'secondary' | 'accent') => (
     <div>
-      <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>{label}</label>
+      <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.cardTextMuted }}>{label}</label>
       <div className="flex items-center gap-2 rounded-xl px-2.5 py-2" style={input}>
         <div className="relative h-7 w-7 rounded-lg flex-shrink-0 overflow-hidden" style={{ backgroundColor: colors[key], border: `1px solid ${theme.border}` }}>
           <input type="color" value={colors[key]} onChange={(e) => setColors((p) => ({ ...p, [key]: e.target.value }))} className="absolute inset-0 h-full w-full opacity-0 cursor-pointer" />
@@ -237,7 +237,7 @@ export default function CcBrandingSection({ agency, refreshAgency, theme, hideHe
           <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Palette className="h-4 w-4" style={{ color: theme.iconColor }} /></div>
           <div className="min-w-0">
             <h2 className="font-semibold text-sm sm:text-[15px]" style={{ color: theme.text }}>Branding</h2>
-            <p className="text-[12px]" style={{ color: theme.textMuted }}>Your logo and colors across the whole call center. Upload a logo and we pull your colors from it.</p>
+            <p className="text-[12px]" style={{ color: theme.cardTextMuted }}>Your logo and colors across the whole call center. Upload a logo and we pull your colors from it.</p>
           </div>
         </div>
       )}
@@ -248,13 +248,13 @@ export default function CcBrandingSection({ agency, refreshAgency, theme, hideHe
           <label className="block text-xs font-medium mb-2" style={{ color: theme.text }}>Logo</label>
           <div className="flex items-center gap-3 sm:gap-4">
             <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0" style={input}>
-              {logoPreview ? <img src={logoPreview} alt="Logo" className="h-full w-full object-contain" /> : <Building2 className="h-7 w-7" style={{ color: theme.textMuted }} />}
+              {logoPreview ? <img src={logoPreview} alt="Logo" className="h-full w-full object-contain" /> : <Building2 className="h-7 w-7" style={{ color: theme.cardTextMuted }} />}
             </div>
             <div className="min-w-0 flex items-center gap-2 flex-wrap">
               <input ref={logoInput} type="file" accept="image/*" onChange={onLogo} className="hidden" />
               <button onClick={() => logoInput.current?.click()} className="inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium" style={input}><Upload className="h-4 w-4" /> Upload</button>
-              {logoPreview && <button onClick={removeLogo} disabled={removingLogo} className="inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium disabled:opacity-50" style={{ ...input, color: theme.textMuted }}>{removingLogo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />} Remove</button>}
-              <span className="w-full text-[11px]" style={{ color: theme.textMuted }}>PNG or JPG up to 2MB. When a logo is set, it replaces your name in the sidebar.</span>
+              {logoPreview && <button onClick={removeLogo} disabled={removingLogo} className="inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium disabled:opacity-50" style={{ ...input, color: theme.cardTextMuted }}>{removingLogo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />} Remove</button>}
+              <span className="w-full text-[11px]" style={{ color: theme.cardTextMuted }}>PNG or JPG up to 2MB. When a logo is set, it replaces your name in the sidebar.</span>
             </div>
           </div>
           {extracting && <div className="mt-3 flex items-center gap-2 text-sm" style={{ color: theme.primary }}><Loader2 className="h-4 w-4 animate-spin" /> Pulling your brand colors...</div>}
@@ -277,7 +277,7 @@ export default function CcBrandingSection({ agency, refreshAgency, theme, hideHe
               <Sparkles className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.iconColor }} />
               <div>
                 <p className="text-[13px] font-semibold" style={{ color: theme.text }}>Brand kit</p>
-                <p className="text-[11.5px]" style={{ color: theme.textMuted }}>Fonts and nav-icon style matched to your logo. Upload a logo and we analyze it; tweak anything below.</p>
+                <p className="text-[11.5px]" style={{ color: theme.cardTextMuted }}>Fonts and nav-icon style matched to your logo. Upload a logo and we analyze it; tweak anything below.</p>
               </div>
             </div>
             <button onClick={() => logoUrl && analyzeBrand(logoUrl)} disabled={!logoUrl || analyzing} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium flex-shrink-0 disabled:opacity-50" style={input}>
@@ -286,7 +286,7 @@ export default function CcBrandingSection({ agency, refreshAgency, theme, hideHe
           </div>
 
           {analyzing && (
-            <div className="flex items-center gap-2 text-[12.5px] mb-3" style={{ color: theme.textMuted }}>
+            <div className="flex items-center gap-2 text-[12.5px] mb-3" style={{ color: theme.cardTextMuted }}>
               <Loader2 className="h-4 w-4 animate-spin" /> Reading your logo and matching fonts, colors, and icons...
             </div>
           )}
@@ -298,29 +298,29 @@ export default function CcBrandingSection({ agency, refreshAgency, theme, hideHe
                   <span key={w} className="inline-flex items-center rounded-full px-2.5 py-1 text-[11.5px] font-medium capitalize" style={{ backgroundColor: theme.primary15, color: theme.primary }}>{w}</span>
                 ))}
               </div>
-              {brandKit.vibe.description && <p className="text-[12px]" style={{ color: theme.textMuted }}>{brandKit.vibe.description}</p>}
+              {brandKit.vibe.description && <p className="text-[12px]" style={{ color: theme.cardTextMuted }}>{brandKit.vibe.description}</p>}
             </div>
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <div>
-              <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Display font (headlines + nav)</label>
+              <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.cardTextMuted }}>Display font (headlines + nav)</label>
               <FontSelect value={dispVal} onChange={setDisplayFont} slot="display" ui={ddUI} />
             </div>
             <div>
-              <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Body font</label>
+              <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.cardTextMuted }}>Body font</label>
               <FontSelect value={bodyVal} onChange={setBodyFont} slot="body" ui={ddUI} />
             </div>
           </div>
-          {brandKit?.fonts?.rationale && <p className="text-[11px] mt-2 flex items-start gap-1.5" style={{ color: theme.textMuted }}><Type className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" /> {brandKit.fonts.rationale}</p>}
+          {brandKit?.fonts?.rationale && <p className="text-[11px] mt-2 flex items-start gap-1.5" style={{ color: theme.cardTextMuted }}><Type className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" /> {brandKit.fonts.rationale}</p>}
 
           <div className="mt-3 rounded-xl p-4" style={input}>
             <p style={{ fontFamily: fontStack(dispVal, 'display'), fontWeight: 700, fontSize: '1.35rem', color: theme.text, lineHeight: 1.1 }}>{agency?.name || appName || 'Your Brand'}</p>
-            <p className="mt-1" style={{ fontFamily: fontStack(bodyVal, 'body'), fontSize: '0.88rem', color: theme.textMuted }}>Clear headlines and readable body text, matched to your logo across the whole dashboard.</p>
+            <p className="mt-1" style={{ fontFamily: fontStack(bodyVal, 'body'), fontSize: '0.88rem', color: theme.cardTextMuted }}>Clear headlines and readable body text, matched to your logo across the whole dashboard.</p>
           </div>
 
           <div className="mt-3">
-            <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.textMuted }}>Nav icon set</label>
+            <label className="block text-[11px] font-medium mb-1.5" style={{ color: theme.cardTextMuted }}>Nav icon set</label>
             <div className="grid grid-cols-3 gap-2">
               {ICON_SETS.filter((s) => s.key !== 'none').map((s) => {
                 const on = iconStyle === s.key;
@@ -347,21 +347,21 @@ export default function CcBrandingSection({ agency, refreshAgency, theme, hideHe
           <div>
             <label className="block text-xs font-medium mb-1.5" style={{ color: theme.text }}>App name</label>
             <input type="text" value={appName} onChange={(e) => setAppName(e.target.value.slice(0, 30))} placeholder={agency?.name || 'Your call center'} maxLength={30} className="w-full rounded-xl px-3.5 py-2.5 text-sm outline-none" style={input} />
-            <p className="text-[11px] mt-1.5" style={{ color: theme.textMuted }}>Shown under the icon when the dashboard is installed to a home screen.</p>
+            <p className="text-[11px] mt-1.5" style={{ color: theme.cardTextMuted }}>Shown under the icon when the dashboard is installed to a home screen.</p>
           </div>
           <div>
             <label className="block text-xs font-medium mb-1.5" style={{ color: theme.text }}>App icon</label>
             <div className="flex items-center gap-3">
               <div className="h-12 w-12 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0" style={input}>
-                {appIconPreview ? <img src={appIconPreview} alt="App icon" className="h-full w-full object-contain" /> : <Smartphone className="h-5 w-5" style={{ color: theme.textMuted }} />}
+                {appIconPreview ? <img src={appIconPreview} alt="App icon" className="h-full w-full object-contain" /> : <Smartphone className="h-5 w-5" style={{ color: theme.cardTextMuted }} />}
               </div>
               <div className="flex items-center gap-2 flex-wrap">
                 <input ref={iconInput} type="file" accept="image/*" onChange={onIcon} className="hidden" />
                 <button onClick={() => iconInput.current?.click()} className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium" style={input}><Upload className="h-4 w-4" /> Upload</button>
-                {appIconPreview && <button onClick={() => { setAppIconUrl(''); setAppIconPreview(null); }} className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium" style={{ ...input, color: theme.textMuted }}><Trash2 className="h-4 w-4" /> Remove</button>}
+                {appIconPreview && <button onClick={() => { setAppIconUrl(''); setAppIconPreview(null); }} className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium" style={{ ...input, color: theme.cardTextMuted }}><Trash2 className="h-4 w-4" /> Remove</button>}
               </div>
             </div>
-            <p className="text-[11px] mt-1.5" style={{ color: theme.textMuted }}>Square works best. Leave blank to use your logo.</p>
+            <p className="text-[11px] mt-1.5" style={{ color: theme.cardTextMuted }}>Square works best. Leave blank to use your logo.</p>
           </div>
         </div>
 
@@ -375,7 +375,7 @@ export default function CcBrandingSection({ agency, refreshAgency, theme, hideHe
 
         <div className="rounded-xl p-3.5 flex items-start gap-2.5" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.border}` }}>
           <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.iconColor }} />
-          <p className="text-[12px] leading-relaxed" style={{ color: theme.textMuted }}>Your logo and colors apply across the call center dashboard and anything your agents see. When a logo is set, the sidebar shows it in place of your name.</p>
+          <p className="text-[12px] leading-relaxed" style={{ color: theme.cardTextMuted }}>Your logo and colors apply across the call center dashboard and anything your agents see. When a logo is set, the sidebar shows it in place of your name.</p>
         </div>
       </div>
     </div>

@@ -149,16 +149,16 @@ export default function CcVoiceSelection({ clientId, theme, greeting }: { client
         <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Mic className="h-4 w-4" style={{ color: theme.iconColor }} /></div>
         <div className="min-w-0 flex-1">
           <h2 className="font-semibold text-sm sm:text-[15px]" style={{ color: theme.text }}>Voice</h2>
-          <p className="text-[12px]" style={{ color: theme.textMuted }}>The voice callers hear, speaking this business's greeting. Preview one, pick it, and save.</p>
+          <p className="text-[12px]" style={{ color: theme.cardTextMuted }}>The voice callers hear, speaking this business's greeting. Preview one, pick it, and save.</p>
         </div>
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 text-sm py-6 justify-center" style={{ color: theme.textMuted }}><Loader2 className="h-4 w-4 animate-spin" /> Loading voices...</div>
+        <div className="flex items-center gap-2 text-sm py-6 justify-center" style={{ color: theme.cardTextMuted }}><Loader2 className="h-4 w-4 animate-spin" /> Loading voices...</div>
       ) : err && total === 0 ? (
         <div className="py-6 text-center"><p className="text-sm mb-2" style={{ color: theme.error }}>{err}</p><button onClick={loadVoices} className="text-sm underline" style={{ color: theme.primary }}>Try again</button></div>
       ) : total === 0 ? (
-        <p className="text-sm py-6 text-center" style={{ color: theme.textMuted }}>No voices available for this business yet.</p>
+        <p className="text-sm py-6 text-center" style={{ color: theme.cardTextMuted }}>No voices available for this business yet.</p>
       ) : (
         <>
           <div className="flex items-center gap-1.5 mb-3">
@@ -189,7 +189,7 @@ export default function CcVoiceSelection({ clientId, theme, greeting }: { client
                       {v.custom && <span className="text-[8px] font-bold px-1 py-0.5 rounded flex-shrink-0" style={{ backgroundColor: theme.primary15, color: theme.primary }}>CUSTOM</span>}
                       {sel && <Check className="h-3.5 w-3.5 flex-shrink-0" style={{ color: theme.iconColor }} />}
                     </div>
-                    {meta && <p className="text-[10px] truncate" style={{ color: theme.textMuted }}>{meta}</p>}
+                    {meta && <p className="text-[10px] truncate" style={{ color: theme.cardTextMuted }}>{meta}</p>}
                   </div>
                 </div>
               );
@@ -198,7 +198,7 @@ export default function CcVoiceSelection({ clientId, theme, greeting }: { client
 
           <div className="flex items-center justify-between gap-3 mt-4">
             <span className="text-[12px]" style={{ color: err ? theme.error : theme.success }}>
-              {err ? err : saved ? <span className="inline-flex items-center gap-1.5"><Check className="h-4 w-4" /> Saved. Callers hear it on the next call.</span> : hasChange ? <span style={{ color: theme.textMuted }}>Unsaved voice change.</span> : ''}
+              {err ? err : saved ? <span className="inline-flex items-center gap-1.5"><Check className="h-4 w-4" /> Saved. Callers hear it on the next call.</span> : hasChange ? <span style={{ color: theme.cardTextMuted }}>Unsaved voice change.</span> : ''}
             </span>
             <button onClick={save} disabled={saving || !hasChange} className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold disabled:opacity-60" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Voice

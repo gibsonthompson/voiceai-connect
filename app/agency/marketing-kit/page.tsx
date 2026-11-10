@@ -117,7 +117,7 @@ function ColorRow({
   const customActive = !isAuto && !uniq.some((c) => c.toLowerCase() === value.toLowerCase());
   return (
     <div>
-      <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: theme.textMuted }}>{label}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: theme.cardTextMuted }}>{label}</p>
       {/* One scrollable row so swatches never wrap onto a second line in the narrow rail. */}
       <div className="mk-swatches flex items-center gap-1.5 flex-nowrap overflow-x-auto pb-0.5">
         {autoLabel && (
@@ -137,7 +137,7 @@ function ColorRow({
         })}
         <label title="Custom color" className="flex-shrink-0 inline-flex items-center justify-center h-7 w-7 rounded-full cursor-pointer relative"
           style={{ background: customActive ? value : theme.hover, border: `2px solid ${customActive ? theme.text : theme.border}`, boxShadow: customActive ? `0 0 0 2px ${theme.card}` : 'none' }}>
-          {!customActive && <Plus className="h-3.5 w-3.5" style={{ color: theme.textMuted }} />}
+          {!customActive && <Plus className="h-3.5 w-3.5" style={{ color: theme.cardTextMuted }} />}
           <input type="color" value={isValidHex(value) ? value : '#ffffff'} onChange={(e) => onPick(e.target.value)} style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }} />
         </label>
       </div>
@@ -427,7 +427,7 @@ export default function MarketingKitPage() {
         @media print { .no-print { display: none !important; } [data-mk-edit] { box-shadow: none !important; } [data-mk-edit]:empty:before { content: '' !important; } }
       `}</style>
 
-      <Link href="/agency/outreach" className="inline-flex items-center gap-2 text-sm mb-4 transition-colors" style={{ color: theme.textMuted }}>
+      <Link href="/agency/outreach" className="inline-flex items-center gap-2 text-sm mb-4 transition-colors" style={{ color: theme.cardTextMuted }}>
         <ArrowLeft className="h-4 w-4" /> Back to Outreach
       </Link>
 
@@ -437,7 +437,7 @@ export default function MarketingKitPage() {
         </div>
         <div>
           <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Marketing Kit</h1>
-          <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>Branded assets to hand out and land your first clients. Everything below uses your logo, colors, and demo number automatically.</p>
+          <p className="mt-0.5 text-sm" style={{ color: theme.cardTextMuted }}>Branded assets to hand out and land your first clients. Everything below uses your logo, colors, and demo number automatically.</p>
         </div>
       </div>
 
@@ -452,7 +452,7 @@ export default function MarketingKitPage() {
       <div className="grid gap-3 mb-8" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
         {demo && (
           <div className="p-4" style={cardStyle}>
-            <p className="text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>Demo number</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.cardTextMuted }}>Demo number</p>
             <div className="flex items-center justify-between gap-2">
               <span className="text-lg font-bold" style={{ color: theme.text }}>{demoDisplay}</span>
               <button onClick={() => copy('demo-num', demoDisplay)} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: copied === 'demo-num' ? theme.primary : theme.textMuted }}>{copied === 'demo-num' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}{copied === 'demo-num' ? 'Copied' : 'Copy'}</button>
@@ -460,7 +460,7 @@ export default function MarketingKitPage() {
           </div>
         )}
         <div className="p-4" style={cardStyle}>
-          <p className="text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>Signup link</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.cardTextMuted }}>Signup link</p>
           <div className="flex items-center justify-between gap-2">
             <span className="text-sm font-medium truncate" style={{ color: theme.text }}>{signupUrl.replace(/^https?:\/\//, '')}</span>
             <button onClick={() => copy('signup', signupUrl)} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium flex-shrink-0" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: copied === 'signup' ? theme.primary : theme.textMuted }}>{copied === 'signup' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}{copied === 'signup' ? 'Copied' : 'Copy'}</button>
@@ -476,10 +476,10 @@ export default function MarketingKitPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Calculator className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
           <div className="min-w-0">
             <h3 className="text-sm font-semibold" style={{ color: theme.text }}>Missed-Call Revenue Calculator</h3>
-            <p className="text-xs truncate" style={{ color: theme.textMuted }}>Show a prospect what missed calls cost them, then print a branded result sheet.</p>
+            <p className="text-xs truncate" style={{ color: theme.cardTextMuted }}>Show a prospect what missed calls cost them, then print a branded result sheet.</p>
           </div>
         </div>
-        <ChevronRight className="h-5 w-5 flex-shrink-0" style={{ color: theme.textMuted }} />
+        <ChevronRight className="h-5 w-5 flex-shrink-0" style={{ color: theme.cardTextMuted }} />
       </Link>
 
       {/* QR codes */}
@@ -487,7 +487,7 @@ export default function MarketingKitPage() {
         <QrCode className="h-4 w-4" style={{ color: theme.iconColor }} />
         <h2 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>QR codes</h2>
       </div>
-      <p className="text-sm mb-4" style={{ color: theme.textMuted }}>Download and drop these on cards, flyers, or signs. Each one is ready to print.</p>
+      <p className="text-sm mb-4" style={{ color: theme.cardTextMuted }}>Download and drop these on cards, flyers, or signs. Each one is ready to print.</p>
       <div className="grid gap-4 mb-10" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
         {qrCards.map((c) => (
           <div key={c.key} className="p-5 flex flex-col items-center text-center" style={cardStyle}>
@@ -496,8 +496,8 @@ export default function MarketingKitPage() {
               <img src={qrImg(c.data, 300)} alt={`${c.label} QR code`} width={160} height={160} style={{ display: 'block', width: 160, height: 160 }} />
             </div>
             <h3 className="text-sm font-semibold mt-4" style={{ color: theme.text }}>{c.label}</h3>
-            <p className="text-xs mt-1" style={{ color: theme.textMuted }}>{c.sub}</p>
-            <p className="text-[11px] mt-1 font-mono truncate max-w-full" style={{ color: theme.textMuted }}>{c.caption}</p>
+            <p className="text-xs mt-1" style={{ color: theme.cardTextMuted }}>{c.sub}</p>
+            <p className="text-[11px] mt-1 font-mono truncate max-w-full" style={{ color: theme.cardTextMuted }}>{c.caption}</p>
             <button onClick={() => downloadQr(c.key, c.data, `${agency.slug || 'agency'}-${c.key}-qr.png`)} disabled={downloading === c.key}
               className="mt-4 w-full inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
               style={{ backgroundColor: primary }}>
@@ -512,7 +512,7 @@ export default function MarketingKitPage() {
         <Megaphone className="h-4 w-4" style={{ color: theme.iconColor }} />
         <h2 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>Branded print materials</h2>
       </div>
-      <p className="text-sm mb-4" style={{ color: theme.textMuted }}>Edit colors and content on the left; the materials on the right update live. Saved for next time.</p>
+      <p className="text-sm mb-4" style={{ color: theme.cardTextMuted }}>Edit colors and content on the left; the materials on the right update live. Saved for next time.</p>
       <div className="lg:grid lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-6 lg:items-start">
         {/* Customize (sticky control rail) */}
         <div className="mb-6 lg:mb-0 lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto p-4 sm:p-5" style={cardStyle}>
@@ -529,12 +529,12 @@ export default function MarketingKitPage() {
               </button>
               <button type="button" onClick={resetAll} disabled={!hasCustomizations}
                 className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors disabled:opacity-40"
-                style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.textMuted }}>
+                style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}`, color: theme.cardTextMuted }}>
                 <RotateCcw className="h-3.5 w-3.5" /> Reset
               </button>
             </div>
           </div>
-          <p className="text-xs mb-4" style={{ color: theme.textMuted }}>
+          <p className="text-xs mb-4" style={{ color: theme.cardTextMuted }}>
             {editMode
               ? 'Click any text on the materials to edit it. Hover a section and click × to remove it (a Restore chip brings it back). Reset restores brand defaults.'
               : 'These apply to every material here and are saved for next time.'}
@@ -547,7 +547,7 @@ export default function MarketingKitPage() {
           </div>
 
           <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
-            <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: theme.textMuted }}>Show on materials</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: theme.cardTextMuted }}>Show on materials</p>
             {/* Full-width stack: label left, check right. Can't cram or wrap at
                 any width, so it reads the same in the narrow rail and on mobile. */}
             <div className="grid grid-cols-1 gap-2">
@@ -572,7 +572,7 @@ export default function MarketingKitPage() {
           <Printer className="h-4 w-4" /> Download / Print
         </button>
       </div>
-      <p className="text-sm mb-4" style={{ color: theme.textMuted }}>Hand this to a prospect or leave it behind. Click Download / Print and choose &ldquo;Save as PDF.&rdquo;</p>
+      <p className="text-sm mb-4" style={{ color: theme.cardTextMuted }}>Hand this to a prospect or leave it behind. Click Download / Print and choose &ldquo;Save as PDF.&rdquo;</p>
 
       <div id="mk-onepager" style={{ background: sheetBg, color: bodyColor, border: `1px solid ${theme.border}`, borderRadius: 16, overflow: 'hidden', maxWidth: 820 }}>
         <div style={{ background: accent, color: accentText, padding: '28px 36px', display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -640,7 +640,7 @@ export default function MarketingKitPage() {
           <Printer className="h-4 w-4" /> Download / Print
         </button>
       </div>
-      <p className="text-sm mb-4" style={{ color: theme.textMuted }}>Leave this at a business you stopped by or couldn&apos;t reach.</p>
+      <p className="text-sm mb-4" style={{ color: theme.cardTextMuted }}>Leave this at a business you stopped by or couldn&apos;t reach.</p>
       <div id="mk-leavebehind" style={{ background: sheetBg, color: bodyColor, border: `1px solid ${theme.border}`, borderRadius: 16, overflow: 'hidden', maxWidth: 520 }}>
         <div style={{ background: accent, color: accentText, padding: '18px 28px', textAlign: 'center' }}>
           <BandLogo h={34} maxW={200} />
@@ -667,7 +667,7 @@ export default function MarketingKitPage() {
           <Printer className="h-4 w-4" /> Download / Print
         </button>
       </div>
-      <p className="text-sm mb-4" style={{ color: theme.textMuted }}>Front and back, standard 3.5 x 2 in. Print, then cut to size (or send to any printer).</p>
+      <p className="text-sm mb-4" style={{ color: theme.cardTextMuted }}>Front and back, standard 3.5 x 2 in. Print, then cut to size (or send to any printer).</p>
       <div id="mk-card" style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
         {/* Front */}
         <div style={{ width: 336, height: 192, borderRadius: 12, overflow: 'hidden', border: `1px solid ${hairline}`, background: sheetBg, color: headingColor, padding: 20, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>

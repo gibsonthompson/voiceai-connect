@@ -144,7 +144,7 @@ export default function AgencyCallDetailPage() {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <Loader2 className="h-8 w-8 animate-spin" style={{ color: primaryColor }} />
-        <span className="ml-2 text-sm" style={{ color: theme.textMuted }}>Loading call details...</span>
+        <span className="ml-2 text-sm" style={{ color: theme.cardTextMuted }}>Loading call details...</span>
       </div>
     );
   }
@@ -158,7 +158,7 @@ export default function AgencyCallDetailPage() {
         >
           <Phone className="h-7 w-7" style={{ color: '#f87171', opacity: 0.5 }} />
         </div>
-        <p className="mt-4 font-medium" style={{ color: theme.textMuted }}>Call not found</p>
+        <p className="mt-4 font-medium" style={{ color: theme.cardTextMuted }}>Call not found</p>
         <Link 
           href={`/agency/clients/${clientId}/calls`}
           className="text-sm mt-2 inline-flex items-center gap-1"
@@ -177,7 +177,7 @@ export default function AgencyCallDetailPage() {
       <Link 
         href={`/agency/clients/${clientId}/calls`}
         className="inline-flex items-center gap-2 text-sm transition-colors mb-4 sm:mb-6 hover:opacity-80"
-        style={{ color: theme.textMuted }}
+        style={{ color: theme.cardTextMuted }}
       >
         <ArrowLeft className="h-4 w-4" />
         Back to {client?.business_name ? `${client.business_name} Calls` : 'Calls'}
@@ -197,7 +197,7 @@ export default function AgencyCallDetailPage() {
                   {client.business_name}
                 </span>
               )}
-              <span className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
+              <span className="text-xs sm:text-sm" style={{ color: theme.cardTextMuted }}>
                 {client ? '•' : ''} {new Date(call.created_at).toLocaleDateString('en-US', {
                   weekday: 'short',
                   month: 'short',
@@ -240,7 +240,7 @@ export default function AgencyCallDetailPage() {
                 </div>
                 <h2 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>AI Summary</h2>
               </div>
-              <p className="text-sm leading-relaxed" style={{ color: theme.textMuted }}>{call.ai_summary}</p>
+              <p className="text-sm leading-relaxed" style={{ color: theme.cardTextMuted }}>{call.ai_summary}</p>
             </div>
           )}
 
@@ -264,7 +264,7 @@ export default function AgencyCallDetailPage() {
                 className="rounded-lg border p-3 sm:p-4 max-h-64 sm:max-h-96 overflow-y-auto" 
                 style={{ borderColor: theme.border, backgroundColor: theme.bg }}
               >
-                <p className="text-xs sm:text-sm whitespace-pre-wrap leading-relaxed" style={{ color: theme.textMuted }}>{call.transcript}</p>
+                <p className="text-xs sm:text-sm whitespace-pre-wrap leading-relaxed" style={{ color: theme.cardTextMuted }}>{call.transcript}</p>
               </div>
             </div>
           )}
@@ -282,7 +282,7 @@ export default function AgencyCallDetailPage() {
                     className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg" 
                     style={{ backgroundColor: theme.bg }}
                   >
-                    <User className="h-4 w-4" style={{ color: theme.textMuted }} />
+                    <User className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
                   </div>
                   <div className="min-w-0">
                     <p className="text-[10px] sm:text-xs" style={{ color: theme.textSubtle }}>Name</p>
@@ -297,7 +297,7 @@ export default function AgencyCallDetailPage() {
                     className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg" 
                     style={{ backgroundColor: theme.bg }}
                   >
-                    <Phone className="h-4 w-4" style={{ color: theme.textMuted }} />
+                    <Phone className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
                   </div>
                   <div className="min-w-0">
                     <p className="text-[10px] sm:text-xs" style={{ color: theme.textSubtle }}>Phone</p>
@@ -318,7 +318,7 @@ export default function AgencyCallDetailPage() {
                     className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg" 
                     style={{ backgroundColor: theme.bg }}
                   >
-                    <MessageSquare className="h-4 w-4" style={{ color: theme.textMuted }} />
+                    <MessageSquare className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
                   </div>
                   <div className="min-w-0">
                     <p className="text-[10px] sm:text-xs" style={{ color: theme.textSubtle }}>Email</p>
@@ -339,7 +339,7 @@ export default function AgencyCallDetailPage() {
                     className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg" 
                     style={{ backgroundColor: theme.bg }}
                   >
-                    <MapPin className="h-4 w-4" style={{ color: theme.textMuted }} />
+                    <MapPin className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
                   </div>
                   <div className="min-w-0">
                     <p className="text-[10px] sm:text-xs" style={{ color: theme.textSubtle }}>Address</p>
@@ -360,7 +360,7 @@ export default function AgencyCallDetailPage() {
                     className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg" 
                     style={{ backgroundColor: theme.bg }}
                   >
-                    <Settings className="h-4 w-4" style={{ color: theme.textMuted }} />
+                    <Settings className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
                   </div>
                   <div className="min-w-0">
                     <p className="text-[10px] sm:text-xs" style={{ color: theme.textSubtle }}>Service</p>
@@ -375,7 +375,7 @@ export default function AgencyCallDetailPage() {
                     className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg" 
                     style={{ backgroundColor: theme.bg }}
                   >
-                    <AlertCircle className="h-4 w-4" style={{ color: theme.textMuted }} />
+                    <AlertCircle className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
                   </div>
                   <div className="min-w-0">
                     <p className="text-[10px] sm:text-xs" style={{ color: theme.textSubtle }}>Urgency</p>
@@ -390,7 +390,7 @@ export default function AgencyCallDetailPage() {
                     className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg" 
                     style={{ backgroundColor: theme.bg }}
                   >
-                    <Clock className="h-4 w-4" style={{ color: theme.textMuted }} />
+                    <Clock className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
                   </div>
                   <div className="min-w-0">
                     <p className="text-[10px] sm:text-xs" style={{ color: theme.textSubtle }}>Duration</p>

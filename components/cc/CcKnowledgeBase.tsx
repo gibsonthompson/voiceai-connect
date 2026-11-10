@@ -167,12 +167,12 @@ export default function CcKnowledgeBase({ agencyId, clientId, theme }: { agencyI
         <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><BookOpen className="h-4 w-4" style={{ color: theme.iconColor }} /></div>
         <div className="min-w-0 flex-1">
           <h2 className="font-semibold text-sm sm:text-[15px]" style={{ color: theme.text }}>Knowledge Base</h2>
-          <p className="text-[12px]" style={{ color: theme.textMuted }}>What the AI knows about this business: pulled from the website, plus the FAQs and details you add.</p>
+          <p className="text-[12px]" style={{ color: theme.cardTextMuted }}>What the AI knows about this business: pulled from the website, plus the FAQs and details you add.</p>
         </div>
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 text-sm py-8 justify-center" style={{ color: theme.textMuted }}><Loader2 className="h-4 w-4 animate-spin" /> Loading...</div>
+        <div className="flex items-center gap-2 text-sm py-8 justify-center" style={{ color: theme.cardTextMuted }}><Loader2 className="h-4 w-4 animate-spin" /> Loading...</div>
       ) : (
         <div className="space-y-5">
           {/* Website */}
@@ -193,13 +193,13 @@ export default function CcKnowledgeBase({ agencyId, clientId, theme }: { agencyI
                   <p className="text-[13px] font-semibold" style={{ color: theme.text }}>Reading the website</p>
                   <span className="text-[12px] font-semibold tabular-nums" style={{ color: theme.primary }}>{scanPct}%</span>
                 </div>
-                <p key={scanStep} className="text-[11px] mt-0.5" style={{ color: theme.textMuted }}>{SCAN_STEPS[scanStep]}...</p>
+                <p key={scanStep} className="text-[11px] mt-0.5" style={{ color: theme.cardTextMuted }}>{SCAN_STEPS[scanStep]}...</p>
                 <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full" style={{ backgroundColor: theme.border }}>
                   <div className="h-full rounded-full transition-all duration-300 ease-out" style={{ backgroundColor: theme.primary, width: `${scanPct}%` }} />
                 </div>
               </div>
             ) : (
-              <p className="text-[11px] mt-2" style={{ color: theme.textMuted }}>Scanning the site teaches the AI the services, hours, and pages on it. Your FAQs and notes below are kept.</p>
+              <p className="text-[11px] mt-2" style={{ color: theme.cardTextMuted }}>Scanning the site teaches the AI the services, hours, and pages on it. Your FAQs and notes below are kept.</p>
             )}
           </div>
 
@@ -215,7 +215,7 @@ export default function CcKnowledgeBase({ agencyId, clientId, theme }: { agencyI
                     <div key={i} className="flex items-start gap-2 rounded-lg px-2.5 py-2" style={{ backgroundColor: theme.card }}>
                       <div className="min-w-0 flex-1">
                         <p className="text-[13px] font-medium" style={{ color: theme.text }}>{sg.question}</p>
-                        <p className="text-[12px] mt-0.5" style={{ color: theme.textMuted }}>{sg.answer}</p>
+                        <p className="text-[12px] mt-0.5" style={{ color: theme.cardTextMuted }}>{sg.answer}</p>
                       </div>
                       <button onClick={() => addFaqSuggestion(sg)} title="Add this FAQ" className="inline-flex items-center justify-center h-6 w-6 rounded-full flex-shrink-0" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Plus className="h-3.5 w-3.5" /></button>
                     </div>
@@ -230,7 +230,7 @@ export default function CcKnowledgeBase({ agencyId, clientId, theme }: { agencyI
                   <div className="flex items-center gap-2">
                     <input type="text" value={f.question} onChange={(e) => updateFAQ(f.id, 'question', e.target.value)} placeholder="Question a caller might ask..."
                       className="flex-1 min-w-0 rounded-lg px-3 py-2 text-sm outline-none" style={{ ...field, backgroundColor: theme.card }} />
-                    <button onClick={() => removeFAQ(f.id)} disabled={faqs.length === 1} className="p-2 rounded-lg disabled:opacity-30 flex-shrink-0" style={{ color: theme.textMuted }} title="Remove FAQ"><Trash2 className="h-4 w-4" /></button>
+                    <button onClick={() => removeFAQ(f.id)} disabled={faqs.length === 1} className="p-2 rounded-lg disabled:opacity-30 flex-shrink-0" style={{ color: theme.cardTextMuted }} title="Remove FAQ"><Trash2 className="h-4 w-4" /></button>
                   </div>
                   <textarea value={f.answer} onChange={(e) => updateFAQ(f.id, 'answer', e.target.value)} placeholder="How the AI should answer it..." rows={2}
                     className="w-full rounded-lg px-3 py-2 text-sm outline-none resize-y" style={{ ...field, backgroundColor: theme.card }} />
@@ -257,8 +257,8 @@ export default function CcKnowledgeBase({ agencyId, clientId, theme }: { agencyI
               </button>
               {showAi && (
                 <div className="px-3.5 py-3" style={{ backgroundColor: theme.card }}>
-                  <p className="whitespace-pre-wrap text-[12.5px] leading-relaxed" style={{ color: theme.textMuted }}>{aiContent}</p>
-                  {updatedAt && <p className="text-[11px] mt-2.5" style={{ color: theme.textMuted }}>Last updated {new Date(updatedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}.</p>}
+                  <p className="whitespace-pre-wrap text-[12.5px] leading-relaxed" style={{ color: theme.cardTextMuted }}>{aiContent}</p>
+                  {updatedAt && <p className="text-[11px] mt-2.5" style={{ color: theme.cardTextMuted }}>Last updated {new Date(updatedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}.</p>}
                 </div>
               )}
             </div>

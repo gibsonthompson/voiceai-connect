@@ -173,15 +173,15 @@ export default function LeadsManagerModal({
         <div className="flex items-center justify-between px-5 py-4 shrink-0" style={{ borderBottom: `1px solid ${theme.border}` }}>
           <div>
             <h2 className="text-base font-semibold" style={{ color: theme.text }}>Manage leads</h2>
-            <p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>Filter, select, and delete leads in bulk.</p>
+            <p className="text-xs mt-0.5" style={{ color: theme.cardTextMuted }}>Filter, select, and delete leads in bulk.</p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg" style={{ color: theme.textMuted }}><X className="h-5 w-5" /></button>
+          <button onClick={onClose} className="p-2 rounded-lg" style={{ color: theme.cardTextMuted }}><X className="h-5 w-5" /></button>
         </div>
 
         {/* Filters */}
         <div className="px-5 pt-4 pb-3 space-y-2.5 shrink-0" style={{ borderBottom: `1px solid ${theme.border}` }}>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted }} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.cardTextMuted }} />
             <input
               value={search} onChange={(e) => setSearch(e.target.value)}
               placeholder="Search business, contact, or email"
@@ -213,7 +213,7 @@ export default function LeadsManagerModal({
             Select all ({filtered.length})
           </button>
           <div className="flex items-center gap-2 sm:gap-3">
-            {selected.size > 0 && <span className="text-xs hidden sm:inline" style={{ color: theme.textMuted }}>{selected.size} selected</span>}
+            {selected.size > 0 && <span className="text-xs hidden sm:inline" style={{ color: theme.cardTextMuted }}>{selected.size} selected</span>}
             <button
               onClick={exportCsv}
               disabled={!filtered.length}
@@ -236,11 +236,11 @@ export default function LeadsManagerModal({
         {/* List */}
         <div className="flex-1 overflow-y-auto min-h-0">
           {loading ? (
-            <div className="flex items-center justify-center py-20"><Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.textMuted }} /></div>
+            <div className="flex items-center justify-center py-20"><Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.cardTextMuted }} /></div>
           ) : error ? (
             <div className="px-6 py-16 text-center text-sm" style={{ color: errRed }}>{error}</div>
           ) : filtered.length === 0 ? (
-            <div className="px-6 py-16 text-center text-sm" style={{ color: theme.textMuted }}>
+            <div className="px-6 py-16 text-center text-sm" style={{ color: theme.cardTextMuted }}>
               {leads.length === 0 ? 'No leads yet.' : 'No leads match these filters.'}
             </div>
           ) : (
@@ -252,17 +252,17 @@ export default function LeadsManagerModal({
                   <button onClick={() => toggleOne(l.id)} className="flex-1 min-w-0 text-left">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium truncate" style={{ color: theme.text }}>{l.business_name || 'Untitled lead'}</span>
-                      {l.industry && <span className="text-[10px] px-1.5 py-0.5 rounded-full shrink-0" style={{ background: theme.hover, color: theme.textMuted }}>{cap(l.industry)}</span>}
+                      {l.industry && <span className="text-[10px] px-1.5 py-0.5 rounded-full shrink-0" style={{ background: theme.hover, color: theme.cardTextMuted }}>{cap(l.industry)}</span>}
                     </div>
-                    <div className="text-xs truncate mt-0.5" style={{ color: theme.textMuted }}>
+                    <div className="text-xs truncate mt-0.5" style={{ color: theme.cardTextMuted }}>
                       {[l.contact_name, l.email].filter(Boolean).join(' · ') || '—'}
                     </div>
                   </button>
-                  <div className="text-[11px] shrink-0 hidden sm:block text-right" style={{ color: theme.textMuted }}>
+                  <div className="text-[11px] shrink-0 hidden sm:block text-right" style={{ color: theme.cardTextMuted }}>
                     <div>{cap(l.status || '')}</div>
                     <div>{fmtDate(l.created_at)}</div>
                   </div>
-                  <button onClick={() => setPendingDelete([l.id])} className="p-1.5 rounded-lg shrink-0" title="Delete this lead" style={{ color: theme.textMuted }}>
+                  <button onClick={() => setPendingDelete([l.id])} className="p-1.5 rounded-lg shrink-0" title="Delete this lead" style={{ color: theme.cardTextMuted }}>
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
@@ -279,7 +279,7 @@ export default function LeadsManagerModal({
                 <Trash2 className="h-6 w-6" style={{ color: errRed }} />
               </div>
               <h3 className="text-base font-semibold mb-1.5" style={{ color: theme.text }}>Delete {pendingDelete.length} lead{pendingDelete.length === 1 ? '' : 's'}?</h3>
-              <p className="text-sm mb-6 leading-relaxed" style={{ color: theme.textMuted }}>This permanently removes {pendingDelete.length === 1 ? 'this lead' : 'these leads'} from your pipeline. This can&apos;t be undone.</p>
+              <p className="text-sm mb-6 leading-relaxed" style={{ color: theme.cardTextMuted }}>This permanently removes {pendingDelete.length === 1 ? 'this lead' : 'these leads'} from your pipeline. This can&apos;t be undone.</p>
               <div className="flex flex-col-reverse sm:flex-row gap-2">
                 <button onClick={() => setPendingDelete(null)} disabled={deleting} className="flex-1 rounded-xl px-4 py-3 text-sm font-semibold transition-colors disabled:opacity-50" style={{ color: theme.text, border: `1px solid ${theme.border}`, background: 'transparent' }}>Cancel</button>
                 <button onClick={runDelete} disabled={deleting} className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors disabled:opacity-70" style={{ background: errRed, color: '#fff' }}>

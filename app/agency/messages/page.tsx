@@ -98,14 +98,14 @@ export default function AgencyMessagesPage() {
         </div>
         <div>
           <h1 className="text-xl sm:text-2xl font-semibold" style={{ color: theme.text }}>Messages</h1>
-          <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>The automated texts you send to your clients. Edit any of them, or leave them on the default.</p>
+          <p className="mt-0.5 text-sm" style={{ color: theme.cardTextMuted }}>The automated texts you send to your clients. Edit any of them, or leave them on the default.</p>
         </div>
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-20"><Loader2 className="h-6 w-6 animate-spin" style={{ color: theme.iconColor }} /></div>
       ) : clientKeys.length === 0 ? (
-        <p className="text-sm py-10" style={{ color: theme.textMuted }}>No messages available.</p>
+        <p className="text-sm py-10" style={{ color: theme.cardTextMuted }}>No messages available.</p>
       ) : (
         <>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start pb-24">
@@ -124,7 +124,7 @@ export default function AgencyMessagesPage() {
           {error && <p className="text-sm mb-3" style={{ color: theme.error || '#ef4444' }}>{error}</p>}
 
           <div className="fixed bottom-0 right-0 left-0 lg:left-64 px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-end gap-3 z-20" style={{ backgroundColor: theme.bg, borderTop: `1px solid ${theme.border}` }}>
-            {dirty && <span className="text-xs" style={{ color: theme.textMuted }}>Unsaved changes</span>}
+            {dirty && <span className="text-xs" style={{ color: theme.cardTextMuted }}>Unsaved changes</span>}
             <button onClick={save} disabled={saving || !dirty} className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Check className="h-4 w-4" /> : null}
               {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Changes'}

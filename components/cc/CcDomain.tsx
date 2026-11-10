@@ -68,12 +68,12 @@ export default function CcDomain({ agencyId, theme }: { agencyId: string; theme:
         <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Globe className="h-4 w-4" style={{ color: theme.iconColor }} /></div>
         <div className="min-w-0">
           <h2 className="font-semibold text-sm sm:text-[15px]" style={{ color: theme.text }}>Custom domain</h2>
-          <p className="text-[12px]" style={{ color: theme.textMuted }}>Run the dashboard on your own domain. SSL is provisioned automatically once DNS verifies.</p>
+          <p className="text-[12px]" style={{ color: theme.cardTextMuted }}>Run the dashboard on your own domain. SSL is provisioned automatically once DNS verifies.</p>
         </div>
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 text-sm py-2" style={{ color: theme.textMuted }}><Loader2 className="h-4 w-4 animate-spin" /> Checking domain...</div>
+        <div className="flex items-center gap-2 text-sm py-2" style={{ color: theme.cardTextMuted }}><Loader2 className="h-4 w-4 animate-spin" /> Checking domain...</div>
       ) : status?.configured ? (
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3 rounded-xl px-4 py-3" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
@@ -91,7 +91,7 @@ export default function CcDomain({ agencyId, theme }: { agencyId: string; theme:
           </div>
 
           {!status.verified && (status.dns_instructions || status.verification_records?.length) && (
-            <div className="rounded-xl px-4 py-3 text-[12.5px]" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>
+            <div className="rounded-xl px-4 py-3 text-[12.5px]" style={{ backgroundColor: theme.hover, color: theme.cardTextMuted }}>
               <p className="font-medium mb-1.5" style={{ color: theme.text }}>Add these DNS records at your registrar:</p>
               {status.dns_instructions && Object.values(status.dns_instructions).map((line, i) => <p key={i} className="font-mono text-[11.5px] leading-relaxed">{line}</p>)}
               {(status.verification_records || []).map((rec, i) => <p key={`v${i}`} className="font-mono text-[11.5px] leading-relaxed break-all">{rec.type} {rec.name} = {rec.value}</p>)}

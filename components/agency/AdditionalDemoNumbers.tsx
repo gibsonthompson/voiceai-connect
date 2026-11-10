@@ -120,12 +120,12 @@ export default function AdditionalDemoNumbers({ agencyId, theme, country, byotEn
         <Phone className="h-4 w-4" style={{ color: theme.iconColor }} />
         <h3 className="font-semibold text-base sm:text-lg" style={{ color: theme.text }}>Additional Demo Numbers</h3>
       </div>
-      <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>
+      <p className="text-xs sm:text-sm mb-4" style={{ color: theme.cardTextMuted }}>
         Add more demo lines, each with its own greeting, voice, and instructions, so different traffic sources get different experiences. Up to {max} extra.
       </p>
 
       {loading ? (
-        <div className="py-6 flex items-center justify-center"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.textMuted }} /></div>
+        <div className="py-6 flex items-center justify-center"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.cardTextMuted }} /></div>
       ) : (
         <>
           {demos.length > 0 && (
@@ -137,22 +137,22 @@ export default function AdditionalDemoNumbers({ agencyId, theme, country, byotEn
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-semibold truncate" style={{ color: theme.text }}>{d.label || 'Demo line'}</span>
                         {d.status === 'active' && d.phone_number && (
-                          <span className="text-sm font-mono" style={{ color: theme.textMuted }}>{formatPhone(d.phone_number)}</span>
+                          <span className="text-sm font-mono" style={{ color: theme.cardTextMuted }}>{formatPhone(d.phone_number)}</span>
                         )}
                         {d.status === 'provisioning' && (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-medium" style={{ color: theme.textMuted }}><Loader2 className="h-3 w-3 animate-spin" /> Setting up...</span>
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium" style={{ color: theme.cardTextMuted }}><Loader2 className="h-3 w-3 animate-spin" /> Setting up...</span>
                         )}
                         {d.status === 'error' && (
                           <span className="inline-flex items-center gap-1 text-[11px] font-medium" style={{ color: theme.errorText || '#dc2626' }}><AlertCircle className="h-3 w-3" /> Failed</span>
                         )}
                       </div>
                       {d.status === 'active' && (
-                        <p className="text-[11px] mt-0.5" style={{ color: theme.textMuted }}>
+                        <p className="text-[11px] mt-0.5" style={{ color: theme.cardTextMuted }}>
                           {(d.call_count || 0)} call{(d.call_count || 0) === 1 ? '' : 's'} · {(d.text_count || 0)} text{(d.text_count || 0) === 1 ? '' : 's'} on this line
                         </p>
                       )}
                       {d.status === 'error' && d.provisioning_error && (
-                        <p className="text-[11px] mt-0.5" style={{ color: theme.textMuted }}>{d.provisioning_error}</p>
+                        <p className="text-[11px] mt-0.5" style={{ color: theme.cardTextMuted }}>{d.provisioning_error}</p>
                       )}
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
@@ -186,7 +186,7 @@ export default function AdditionalDemoNumbers({ agencyId, theme, country, byotEn
             ) : (
               <div className="rounded-xl p-4" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                 {!isUS && !byotEnabled ? (
-                  <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
+                  <p className="text-xs sm:text-sm" style={{ color: theme.cardTextMuted }}>
                     Demo numbers outside the US are provisioned on your own Twilio account. Connect Twilio in Settings, then add a demo number here.
                   </p>
                 ) : (
@@ -201,9 +201,9 @@ export default function AdditionalDemoNumbers({ agencyId, theme, country, byotEn
                       <button onClick={handleAdd} disabled={adding} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText || '#fff' }}>
                         {adding ? <><Loader2 className="h-4 w-4 animate-spin" /> Setting up...</> : <>Create demo number</>}
                       </button>
-                      <button onClick={() => { setShowAdd(false); setError(''); }} className="text-sm" style={{ color: theme.textMuted }}>Cancel</button>
+                      <button onClick={() => { setShowAdd(false); setError(''); }} className="text-sm" style={{ color: theme.cardTextMuted }}>Cancel</button>
                     </div>
-                    <p className="text-[11px] mt-2" style={{ color: theme.textMuted }}>
+                    <p className="text-[11px] mt-2" style={{ color: theme.cardTextMuted }}>
                       This provisions a new live number (about a minute). After it is set up, open Experience to give it its own greeting and voice.
                     </p>
                   </>
@@ -211,7 +211,7 @@ export default function AdditionalDemoNumbers({ agencyId, theme, country, byotEn
               </div>
             )
           ) : (
-            <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>You have the maximum of {max} additional demo numbers.</p>
+            <p className="text-xs sm:text-sm" style={{ color: theme.cardTextMuted }}>You have the maximum of {max} additional demo numbers.</p>
           )}
         </>
       )}

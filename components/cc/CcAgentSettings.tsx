@@ -186,7 +186,7 @@ export default function CcAgentSettings() {
   const deliveryDirty = me ? (delivery !== (me.callDelivery === 'phone' ? 'phone' : 'browser') || (delivery === 'phone' && agentPhone.replace(/\D/g, '') !== (me.agentPhone || '').replace(/\D/g, ''))) : false;
 
   const Label = ({ children }: { children: React.ReactNode }) => (
-    <label className="block text-[12.5px] font-medium mb-1.5" style={{ color: theme.textMuted }}>{children}</label>
+    <label className="block text-[12.5px] font-medium mb-1.5" style={{ color: theme.cardTextMuted }}>{children}</label>
   );
 
   return (
@@ -198,12 +198,12 @@ export default function CcAgentSettings() {
         </div>
         <div className="min-w-0">
           <h1 className="text-lg sm:text-xl lg:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Settings</h1>
-          <p className="text-xs sm:text-[13px]" style={{ color: theme.textMuted }}>{name} · Agent</p>
+          <p className="text-xs sm:text-[13px]" style={{ color: theme.cardTextMuted }}>{name} · Agent</p>
         </div>
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 text-sm py-10 justify-center" style={{ color: theme.textMuted }}>
+        <div className="flex items-center gap-2 text-sm py-10 justify-center" style={{ color: theme.cardTextMuted }}>
           <Loader2 className="h-4 w-4 animate-spin" /> Loading your settings...
         </div>
       ) : (
@@ -212,7 +212,7 @@ export default function CcAgentSettings() {
           {/* ---- Availability: are you getting calls right now? ---- */}
           <div className="rounded-2xl p-5 sm:p-6" style={card}>
             <div className="flex items-center gap-2 mb-3">
-              <Clock className="h-4 w-4" style={{ color: theme.textMuted }} />
+              <Clock className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
               <p className="text-sm font-semibold" style={{ color: theme.text }}>Availability</p>
               <span className="ml-auto inline-flex items-center gap-1.5 text-[11.5px] font-semibold px-2.5 py-1 rounded-full"
                 style={{ backgroundColor: eligibleNow ? theme.successBg : theme.hover, color: eligibleNow ? theme.success : theme.textMuted }}>
@@ -224,12 +224,12 @@ export default function CcAgentSettings() {
             <div className="flex items-start gap-3 rounded-xl p-3.5" style={{ backgroundColor: theme.hover }}>
               {eligibleNow
                 ? <CheckCircle2 className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: theme.success }} />
-                : <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: theme.textMuted }} />}
+                : <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: theme.cardTextMuted }} />}
               <div className="min-w-0">
                 <p className="text-[13px] font-medium" style={{ color: theme.text }}>
                   {eligibleNow ? 'You can take calls right now' : 'You are not being offered calls'}
                 </p>
-                <p className="text-[12px] mt-0.5 leading-relaxed" style={{ color: theme.textMuted }}>
+                <p className="text-[12px] mt-0.5 leading-relaxed" style={{ color: theme.cardTextMuted }}>
                   {!available
                     ? 'You are paused. Tap the "Taking calls" control in the bottom corner of the console to start.'
                     : scheduleEnabled && !onSchedule && !override
@@ -271,11 +271,11 @@ export default function CcAgentSettings() {
                 override is a manual on/off. */}
             <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.borderSubtle}` }}>
               <div className="flex items-center gap-2 mb-1">
-                <CalendarClock className="h-4 w-4" style={{ color: theme.textMuted }} />
+                <CalendarClock className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
                 <p className="text-[13px] font-medium" style={{ color: theme.text }}>Your working hours</p>
               </div>
               {!scheduleEnabled ? (
-                <p className="text-[12px] leading-relaxed" style={{ color: theme.textMuted }}>
+                <p className="text-[12px] leading-relaxed" style={{ color: theme.cardTextMuted }}>
                   You do not have set working hours, so you take calls whenever you are on.
                   Your manager can set working hours for you from the Agents page.
                 </p>
@@ -308,10 +308,10 @@ export default function CcAgentSettings() {
           {/* ---- How calls reach you ---- */}
           <div className="rounded-2xl p-5 sm:p-6" style={card}>
             <div className="flex items-center gap-2 mb-1">
-              <Smartphone className="h-4 w-4" style={{ color: theme.textMuted }} />
+              <Smartphone className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
               <p className="text-sm font-semibold" style={{ color: theme.text }}>How calls reach you</p>
             </div>
-            <p className="text-[12px] mb-3 leading-relaxed" style={{ color: theme.textMuted }}>
+            <p className="text-[12px] mb-3 leading-relaxed" style={{ color: theme.cardTextMuted }}>
               When you take an escalated caller, do you want them in your browser or on your phone?
             </p>
             <div className="grid grid-cols-2 gap-2.5">
@@ -354,9 +354,9 @@ export default function CcAgentSettings() {
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <p className="text-sm font-semibold flex items-center gap-2" style={{ color: theme.text }}>
-                  <Bell className="h-4 w-4" style={{ color: theme.textMuted }} /> Desktop alerts
+                  <Bell className="h-4 w-4" style={{ color: theme.cardTextMuted }} /> Desktop alerts
                 </p>
-                <p className="text-[12px] mt-1 leading-relaxed" style={{ color: theme.textMuted }}>
+                <p className="text-[12px] mt-1 leading-relaxed" style={{ color: theme.cardTextMuted }}>
                   Get a desktop notification when a caller is offered to you, even if this tab is in the background.
                 </p>
               </div>
@@ -367,7 +367,7 @@ export default function CcAgentSettings() {
                   <CheckCircle2 className="h-4 w-4" /> On
                 </span>
               ) : notifPerm === 'denied' ? (
-                <span className="inline-flex items-center gap-1.5 text-[12px] flex-shrink-0" style={{ color: theme.textMuted }}>
+                <span className="inline-flex items-center gap-1.5 text-[12px] flex-shrink-0" style={{ color: theme.cardTextMuted }}>
                   <BellOff className="h-4 w-4" /> Blocked in browser
                 </span>
               ) : (
@@ -388,18 +388,18 @@ export default function CcAgentSettings() {
           {/* ---- Account & security ---- */}
           <div className="rounded-2xl p-5 sm:p-6" style={card}>
             <div className="flex items-center gap-2 mb-3">
-              <Lock className="h-4 w-4" style={{ color: theme.textMuted }} />
+              <Lock className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
               <p className="text-sm font-semibold" style={{ color: theme.text }}>Account &amp; security</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
               <div>
                 <Label>Name</Label>
-                <div className="rounded-xl px-3 py-2.5 text-sm" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>{name}</div>
+                <div className="rounded-xl px-3 py-2.5 text-sm" style={{ backgroundColor: theme.hover, color: theme.cardTextMuted }}>{name}</div>
               </div>
               <div>
                 <Label>Email</Label>
-                <div className="rounded-xl px-3 py-2.5 text-sm truncate" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>{user?.email || '-'}</div>
+                <div className="rounded-xl px-3 py-2.5 text-sm truncate" style={{ backgroundColor: theme.hover, color: theme.cardTextMuted }}>{user?.email || '-'}</div>
               </div>
             </div>
 
@@ -408,7 +408,7 @@ export default function CcAgentSettings() {
               <div className="relative">
                 <input type={showPw ? 'text' : 'password'} value={curPw} onChange={(e) => setCurPw(e.target.value)}
                   placeholder="Current password" className="w-full rounded-xl px-3 py-2.5 pr-10 text-sm outline-none" style={field} />
-                <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: theme.textMuted }} aria-label={showPw ? 'Hide passwords' : 'Show passwords'}>
+                <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: theme.cardTextMuted }} aria-label={showPw ? 'Hide passwords' : 'Show passwords'}>
                   {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>

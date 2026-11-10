@@ -171,7 +171,7 @@ function CountrySelect({ value, onChange, theme }: { value: string; onChange: (c
         >
           <div className="p-2" style={{ borderBottom: `1px solid ${theme.border}` }}>
             <div className="flex items-center gap-2 rounded-lg px-2.5 py-2" style={{ backgroundColor: theme.input }}>
-              <Search className="h-3.5 w-3.5 flex-shrink-0" style={{ color: theme.textMuted }} />
+              <Search className="h-3.5 w-3.5 flex-shrink-0" style={{ color: theme.cardTextMuted }} />
               <input
                 autoFocus
                 value={query}
@@ -184,7 +184,7 @@ function CountrySelect({ value, onChange, theme }: { value: string; onChange: (c
           </div>
           <div className="max-h-56 overflow-y-auto py-1">
             {filtered.length === 0 ? (
-              <p className="px-3 py-3 text-xs" style={{ color: theme.textMuted }}>No matches</p>
+              <p className="px-3 py-3 text-xs" style={{ color: theme.cardTextMuted }}>No matches</p>
             ) : (
               filtered.map((c) => {
                 const active = c.code === value;
@@ -1154,10 +1154,10 @@ function AgencySettingsContent() {
         />
       )}
 
-      <div className="flex items-center gap-3 mb-6 sm:mb-8"><div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Settings className="h-5 w-5" style={{ color: theme.iconColor }} /></div><div><h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Settings</h1><p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>Manage your agency settings</p></div></div>
+      <div className="flex items-center gap-3 mb-6 sm:mb-8"><div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Settings className="h-5 w-5" style={{ color: theme.iconColor }} /></div><div><h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Settings</h1><p className="mt-0.5 text-sm" style={{ color: theme.cardTextMuted }}>Manage your agency settings</p></div></div>
 
       <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
-        <div className="lg:w-48 flex-shrink-0"><nav className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0">{settingsTabs.map((tab) => (<button key={tab.id} onClick={() => handleTabChange(tab.id)} className={`flex items-center gap-2 sm:gap-3 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${activeTab !== tab.id ? (theme.isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]') : ''}`} style={activeTab === tab.id ? { backgroundColor: theme.primary15, color: theme.primary } : { color: theme.textMuted }}><tab.icon className="h-4 w-4" />{tab.label}{tab.id === 'demo' && demoMode && (<div className="w-2 h-2 rounded-full ml-auto flex-shrink-0" style={{ backgroundColor: theme.primary }} />)}</button>))}</nav></div>
+        <div className="lg:w-48 flex-shrink-0"><nav className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0">{settingsTabs.map((tab) => (<button key={tab.id} onClick={() => handleTabChange(tab.id)} className={`flex items-center gap-2 sm:gap-3 rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${activeTab !== tab.id ? (theme.isDark ? 'hover:bg-white/[0.04]' : 'hover:bg-black/[0.02]') : ''}`} style={activeTab === tab.id ? { backgroundColor: theme.primary15, color: theme.primary } : { color: theme.cardTextMuted }}><tab.icon className="h-4 w-4" />{tab.label}{tab.id === 'demo' && demoMode && (<div className="w-2 h-2 rounded-full ml-auto flex-shrink-0" style={{ backgroundColor: theme.primary }} />)}</button>))}</nav></div>
 
         <div className={`flex-1 ${activeTab === 'pricing' ? 'max-w-5xl' : 'max-w-2xl'}`}>
           {error && (<div className="mb-4 sm:mb-6 rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" style={{ color: theme.errorText }} /><p className="text-sm" style={{ color: theme.errorText }}>{error}</p></div>)}
@@ -1177,7 +1177,7 @@ function AgencySettingsContent() {
                   <Lock className="h-4 w-4" style={{ color: theme.iconColor }} />
                   <h3 className="text-base sm:text-lg font-medium">Change Password</h3>
                 </div>
-                <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>Update the password you use to sign in to your agency dashboard.</p>
+                <p className="text-xs sm:text-sm mb-4" style={{ color: theme.cardTextMuted }}>Update the password you use to sign in to your agency dashboard.</p>
 
                 {passwordError && (
                   <div className="mb-4 rounded-xl p-3 flex items-center gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}>
@@ -1208,7 +1208,7 @@ function AgencySettingsContent() {
                         type="button"
                         onClick={() => setShowPasswords(!showPasswords)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
-                        style={{ color: theme.textMuted }}
+                        style={{ color: theme.cardTextMuted }}
                         aria-label={showPasswords ? 'Hide passwords' : 'Show passwords'}
                       >
                         {showPasswords ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -1226,7 +1226,7 @@ function AgencySettingsContent() {
                       className="w-full rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-sm transition-colors"
                       style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
                     />
-                    <p className="mt-1.5 text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>At least 6 characters.</p>
+                    <p className="mt-1.5 text-[10px] sm:text-xs" style={{ color: theme.cardTextMuted }}>At least 6 characters.</p>
                   </div>
 
                   <div>
@@ -1257,14 +1257,14 @@ function AgencySettingsContent() {
               <div className="space-y-4 sm:space-y-6">
                 <div>
                   <h3 className="text-base sm:text-lg font-medium mb-1">Client Plans</h3>
-                  <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Set pricing, call limits, and features for each plan your clients can choose.</p>
+                  <p className="text-xs sm:text-sm" style={{ color: theme.cardTextMuted }}>Set pricing, call limits, and features for each plan your clients can choose.</p>
                 </div>
                 {paystackConnected && paystackCurrency && (
                   <div className="rounded-xl p-3 sm:p-4 flex items-start gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
                     <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
                     <div>
                       <p className="text-xs sm:text-sm font-medium" style={{ color: theme.infoText }}>Prices are charged in {paystackCurrency} ({paystackSymbol(paystackCurrency)}), not US dollars</p>
-                      <p className="text-[11px] sm:text-xs mt-0.5 leading-relaxed" style={{ color: theme.textMuted }}>You bill through Paystack, so the number you enter is what your clients pay in {paystackCurrency}. A price of 50000 means {paystackSymbol(paystackCurrency)}50,000, not $50,000.</p>
+                      <p className="text-[11px] sm:text-xs mt-0.5 leading-relaxed" style={{ color: theme.cardTextMuted }}>You bill through Paystack, so the number you enter is what your clients pay in {paystackCurrency}. A price of 50000 means {paystackSymbol(paystackCurrency)}50,000, not $50,000.</p>
                     </div>
                   </div>
                 )}
@@ -1273,7 +1273,7 @@ function AgencySettingsContent() {
                     <Receipt className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.iconColor }} />
                     <div>
                       <p className="text-xs sm:text-sm font-semibold" style={{ color: theme.primary }}>You Bill Clients Yourself</p>
-                      <p className="text-[11px] sm:text-xs mt-0.5 leading-relaxed" style={{ color: theme.textMuted }}>These prices are for your own reference. The platform won&apos;t collect them, you invoice clients directly. Change this in <a href="/agency/settings?tab=payments" className="underline" style={{ color: theme.primary }}>Payment Settings</a>.</p>
+                      <p className="text-[11px] sm:text-xs mt-0.5 leading-relaxed" style={{ color: theme.cardTextMuted }}>These prices are for your own reference. The platform won&apos;t collect them, you invoice clients directly. Change this in <a href="/agency/settings?tab=payments" className="underline" style={{ color: theme.primary }}>Payment Settings</a>.</p>
                     </div>
                   </div>
                 )}
@@ -1281,8 +1281,8 @@ function AgencySettingsContent() {
                   <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
                   <div>
                     <p className="text-xs sm:text-sm font-medium" style={{ color: theme.infoText }}>Every plan includes the core, regardless of price:</p>
-                    <div className="flex flex-wrap gap-x-2 gap-y-1 mt-1.5">{CORE_CLIENT_FEATURES.map((feat, i) => (<span key={i} className="text-[11px] sm:text-xs whitespace-nowrap" style={{ color: theme.textMuted }}>{feat}{i < CORE_CLIENT_FEATURES.length - 1 ? ' \u00b7' : ''}</span>))}</div>
-                    <p className="text-[11px] sm:text-xs mt-1.5 leading-relaxed" style={{ color: theme.textMuted }}>The toggles in the grid below are the extras you include or exclude per plan.</p>
+                    <div className="flex flex-wrap gap-x-2 gap-y-1 mt-1.5">{CORE_CLIENT_FEATURES.map((feat, i) => (<span key={i} className="text-[11px] sm:text-xs whitespace-nowrap" style={{ color: theme.cardTextMuted }}>{feat}{i < CORE_CLIENT_FEATURES.length - 1 ? ' \u00b7' : ''}</span>))}</div>
+                    <p className="text-[11px] sm:text-xs mt-1.5 leading-relaxed" style={{ color: theme.cardTextMuted }}>The toggles in the grid below are the extras you include or exclude per plan.</p>
                   </div>
                 </div>
 
@@ -1300,7 +1300,7 @@ function AgencySettingsContent() {
                     <Lock className="h-4 w-4" style={{ color: theme.iconColor }} />
                     <h4 className="font-medium text-sm sm:text-base">Client Trial Setup</h4>
                   </div>
-                  <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>
+                  <p className="text-xs sm:text-sm mb-4" style={{ color: theme.cardTextMuted }}>
                     Control how long new clients trial for, and whether they need to enter a credit card to start.
                     <br />
                     <strong style={{ color: theme.text }}>Affects only signups from your embed widget or marketing site</strong>, not clients you add manually from the dashboard.
@@ -1344,10 +1344,10 @@ function AgencySettingsContent() {
                           className="w-24 rounded-xl px-3 py-2 text-sm"
                           style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }}
                         />
-                        <span className="text-sm" style={{ color: theme.textMuted }}>days (0 to 365)</span>
+                        <span className="text-sm" style={{ color: theme.cardTextMuted }}>days (0 to 365)</span>
                       </div>
                     )}
-                    <p className="mt-2 text-[11px] sm:text-xs leading-relaxed" style={{ color: theme.textMuted }}>
+                    <p className="mt-2 text-[11px] sm:text-xs leading-relaxed" style={{ color: theme.cardTextMuted }}>
                       {clientBillingMode === 'manual'
                         ? (clientTrialDays === 0
                             ? 'While you bill clients yourself, new clients go live immediately with no free-access window.'
@@ -1367,7 +1367,7 @@ function AgencySettingsContent() {
                       <p className="text-sm font-medium" style={{ color: requireCardForTrial && canEnableCardRequired ? theme.primary : theme.text }}>
                         Require credit card to start trial
                       </p>
-                      <p className="text-[11px] sm:text-xs mt-1 leading-relaxed" style={{ color: theme.textMuted }}>
+                      <p className="text-[11px] sm:text-xs mt-1 leading-relaxed" style={{ color: theme.cardTextMuted }}>
                         {requireCardForTrial
                           ? (clientTrialDays === 0
                               ? 'Clients enter a card during signup and are charged immediately. Best for filtering serious leads.'
@@ -1398,7 +1398,7 @@ function AgencySettingsContent() {
                     clientBillingMode === 'manual' ? (
                       <div className="rounded-xl p-3 flex items-start gap-2.5" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
                         <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
-                        <div className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
+                        <div className="text-xs sm:text-sm" style={{ color: theme.cardTextMuted }}>
                           <p className="font-medium mb-0.5" style={{ color: theme.infoText }}>You bill your clients yourself</p>
                           <p>Card-on-trial and Stripe checkout don&apos;t apply, new clients are set up with no card and you invoice them directly. Any trial length you set above becomes their free access window. Switch this off in the <a href="/agency/settings?tab=payments" className="underline" style={{ color: theme.primary }}>Payments tab</a> if you want the platform to charge them.</p>
                         </div>
@@ -1408,7 +1408,7 @@ function AgencySettingsContent() {
                         <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.warningText }} />
                         <div className="text-xs sm:text-sm" style={{ color: theme.warningText }}>
                           <p className="font-medium mb-0.5">Stripe Connect required</p>
-                          <p style={{ color: theme.textMuted }}>
+                          <p style={{ color: theme.cardTextMuted }}>
                             You need to connect Stripe before clients can be charged.{' '}
                             <a href="/agency/settings?tab=payments" className="underline" style={{ color: theme.primary }}>Set up Stripe Connect</a>
                           </p>
@@ -1422,7 +1422,7 @@ function AgencySettingsContent() {
                       <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
                       <div className="text-xs sm:text-sm" style={{ color: theme.infoText }}>
                         <p className="font-medium mb-0.5">How it works</p>
-                        <ol className="space-y-0.5 list-decimal list-inside" style={{ color: theme.textMuted }}>
+                        <ol className="space-y-0.5 list-decimal list-inside" style={{ color: theme.cardTextMuted }}>
                           <li>Client fills out signup form on your site</li>
                           <li>Redirected to Stripe to enter card details</li>
                           {clientTrialDays === 0 ? (
@@ -1453,9 +1453,9 @@ function AgencySettingsContent() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 mb-1"><Sparkles className="h-4 w-4" style={{ color: theme.iconColor }} /><h4 className="font-medium text-sm sm:text-base">Offer annual billing to clients</h4></div>
-                      <p className="text-[11px] sm:text-xs leading-relaxed" style={{ color: theme.textMuted }}>When on, clients can choose yearly billing on your signup and marketing pages, charged at each plan&apos;s annual price above (blank = 3 months free). Off by default.</p>
+                      <p className="text-[11px] sm:text-xs leading-relaxed" style={{ color: theme.cardTextMuted }}>When on, clients can choose yearly billing on your signup and marketing pages, charged at each plan&apos;s annual price above (blank = 3 months free). Off by default.</p>
                       {minutePassThrough && (
-                        <p className="text-[11px] mt-2" style={{ color: theme.textMuted }}>Annual billing isn&apos;t available while per-minute pass-through billing is on (coming soon for usage-billed plans).</p>
+                        <p className="text-[11px] mt-2" style={{ color: theme.cardTextMuted }}>Annual billing isn&apos;t available while per-minute pass-through billing is on (coming soon for usage-billed plans).</p>
                       )}
                     </div>
                     <button type="button" role="switch" aria-checked={showAnnualPlans && !minutePassThrough}
@@ -1472,7 +1472,7 @@ function AgencySettingsContent() {
 
                 <div className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                   <div className="flex items-center gap-2 mb-1"><Sparkles className="h-4 w-4" style={{ color: theme.iconColor }} /><h4 className="font-medium text-sm sm:text-base">Features</h4></div>
-                  <p className="text-[11px] sm:text-xs mb-3" style={{ color: theme.textMuted }}>Rename or remove any feature, or add your own. They show up as toggle rows in the grid above, so you include or exclude them per plan.</p>
+                  <p className="text-[11px] sm:text-xs mb-3" style={{ color: theme.cardTextMuted }}>Rename or remove any feature, or add your own. They show up as toggle rows in the grid above, so you include or exclude them per plan.</p>
                   <div className="space-y-2 mb-3">
                     {FEATURE_ORDER.filter((k) => !featureOverrides[k]?.hidden).map((k) => (
                       <div key={k} className="flex items-center gap-2"><input value={builtinLabel(k)} onChange={(e) => renameBuiltin(k, e.target.value)} maxLength={60} className="flex-1 min-w-0 rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} /><button type="button" onClick={() => hideBuiltin(k)} title="Remove feature" className="p-2 rounded-lg flex-shrink-0" style={{ color: theme.textMuted }}><Trash2 className="h-4 w-4" /></button></div>
@@ -1483,18 +1483,18 @@ function AgencySettingsContent() {
                   </div>
                   {FEATURE_ORDER.some((k) => featureOverrides[k]?.hidden) && (
                     <div className="flex flex-wrap items-center gap-1.5 mb-3">
-                      <span className="text-[11px]" style={{ color: theme.textMuted }}>Removed:</span>
+                      <span className="text-[11px]" style={{ color: theme.cardTextMuted }}>Removed:</span>
                       {FEATURE_ORDER.filter((k) => featureOverrides[k]?.hidden).map((k) => (
-                        <button key={k} type="button" onClick={() => restoreBuiltin(k)} title="Restore this feature" className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)', color: theme.textMuted }}><Plus className="h-3 w-3" />{FEATURE_LABELS[k]?.label || k}</button>
+                        <button key={k} type="button" onClick={() => restoreBuiltin(k)} title="Restore this feature" className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)', color: theme.cardTextMuted }}><Plus className="h-3 w-3" />{FEATURE_LABELS[k]?.label || k}</button>
                       ))}
                     </div>
                   )}
                   <div className="flex items-center gap-2"><input value={newFeatureLabel} onChange={(e) => setNewFeatureLabel(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustomFeature(); } }} placeholder="Add a feature, e.g. Dedicated account manager" maxLength={60} className="flex-1 min-w-0 rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }} /><button type="button" onClick={addCustomFeature} disabled={!newFeatureLabel.trim() || customFeatures.length >= 15} className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium flex-shrink-0 disabled:opacity-40" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Plus className="h-4 w-4" /> Add</button></div>
-                  {customFeatures.length >= 15 && (<p className="text-[10px] mt-2" style={{ color: theme.textMuted }}>Maximum of 15 custom features.</p>)}
+                  {customFeatures.length >= 15 && (<p className="text-[10px] mt-2" style={{ color: theme.cardTextMuted }}>Maximum of 15 custom features.</p>)}
                 </div>
 
                 <div className="flex items-center justify-between pt-2">
-                  <button onClick={resetPlanFeatures} className="text-xs transition-colors" style={{ color: theme.textMuted }}>Reset features to defaults</button>
+                  <button onClick={resetPlanFeatures} className="text-xs transition-colors" style={{ color: theme.cardTextMuted }}>Reset features to defaults</button>
                 </div>
 
                 <div className={`rounded-xl p-4 sm:p-5 mb-4 ${(plans.some((p) => p.setupOn) || setupOnStarter || setupOnPro || setupOnGrowth) ? '' : 'opacity-50 pointer-events-none select-none'}`} style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
@@ -1502,7 +1502,7 @@ function AgencySettingsContent() {
                     <Lock className="h-4 w-4" style={{ color: theme.iconColor }} />
                     <h4 className="font-medium text-sm sm:text-base">Setup fee timing</h4>
                   </div>
-                  <p className="text-xs sm:text-sm mb-3" style={{ color: theme.textMuted }}>When a plan has a one-time setup fee, choose when the client is charged for it.</p>
+                  <p className="text-xs sm:text-sm mb-3" style={{ color: theme.cardTextMuted }}>When a plan has a one-time setup fee, choose when the client is charged for it.</p>
                   <div className="flex flex-col sm:flex-row gap-2">
                     {([['upfront', 'Charge at signup', 'Collected upfront, before the free trial starts.'], ['after_trial', 'After the trial', 'Billed with the first invoice when the trial ends.']] as const).map(([val, label, desc]) => (
                       <button key={val} type="button" onClick={() => setSetupFeeTiming(val)} className="flex-1 text-left rounded-lg p-3 transition-colors" style={{ border: `1px solid ${setupFeeTiming === val ? theme.primary : theme.inputBorder}`, backgroundColor: 'transparent' }}>
@@ -1519,7 +1519,7 @@ function AgencySettingsContent() {
                       <ChevronDown className="h-3.5 w-3.5 shrink-0 transition-transform group-open:rotate-180" />
                       How does each option work, and what does the client see?
                     </summary>
-                    <div className="mt-2 space-y-2.5 text-[11px] sm:text-xs pl-1.5" style={{ color: theme.textMuted }}>
+                    <div className="mt-2 space-y-2.5 text-[11px] sm:text-xs pl-1.5" style={{ color: theme.cardTextMuted }}>
                       <p>
                         <span className="font-medium" style={{ color: theme.text }}>Charge at signup:</span> the setup fee shows as a line on the client&apos;s checkout page and is charged the day they sign up, before the free trial begins. They see it in the order summary and pay it that day. Their plan then starts its free trial, and the monthly charge begins when the trial ends.
                       </p>
@@ -1540,7 +1540,7 @@ function AgencySettingsContent() {
                 {clientBillingMode === 'manual' && (
                   <div className="mb-3 rounded-xl p-3 flex items-start gap-2.5" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
                     <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
-                    <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Not needed while you&apos;re billing clients yourself. Per-minute charges run through Stripe Connect, which is off in manual mode.</p>
+                    <p className="text-xs sm:text-sm" style={{ color: theme.cardTextMuted }}>Not needed while you&apos;re billing clients yourself. Per-minute charges run through Stripe Connect, which is off in manual mode.</p>
                   </div>
                 )}
                 <div className={`rounded-xl p-4 sm:p-5 ${clientBillingMode === 'manual' ? 'opacity-50 pointer-events-none select-none' : ''}`} style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
@@ -1548,7 +1548,7 @@ function AgencySettingsContent() {
                     <DollarSign className="h-4 w-4" style={{ color: theme.iconColor }} />
                     <h4 className="font-medium text-sm sm:text-base">Client Per-Minute Billing</h4>
                   </div>
-                  <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>
+                  <p className="text-xs sm:text-sm mb-4" style={{ color: theme.cardTextMuted }}>
                     Charge your clients per voice minute on top of their monthly plan. Charges run on your connected Stripe account, so you keep 100 percent of what you bill. Leave this off to absorb minutes yourself and bill only the flat plan.
                   </p>
 
@@ -1576,7 +1576,7 @@ function AgencySettingsContent() {
                       className="w-full sm:w-40 rounded-xl px-3 py-2 text-sm"
                       style={{ backgroundColor: theme.isDark ? '#050505' : '#f9fafb', border: `1px solid ${theme.inputBorder}`, color: theme.text }}
                     />
-                    <p className="mt-1 text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>What each client pays per voice minute beyond the included minutes set per plan above.</p>
+                    <p className="mt-1 text-[10px] sm:text-xs" style={{ color: theme.cardTextMuted }}>What each client pays per voice minute beyond the included minutes set per plan above.</p>
                   </div>
 
                   <button
@@ -1592,7 +1592,7 @@ function AgencySettingsContent() {
                   <div className="flex items-start justify-between rounded-xl px-4 py-3" style={{ backgroundColor: minutePassThrough ? theme.primary15 : (theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)'), border: `1px solid ${minutePassThrough ? theme.primary30 : theme.border}`, opacity: (!minutePassThrough && !canEnableMinutePassThrough) ? 0.6 : 1 }}>
                     <div className="flex-1 min-w-0 mr-3">
                       <p className="text-sm font-medium" style={{ color: minutePassThrough ? theme.primary : theme.text }}>Charge clients per minute</p>
-                      <p className="text-[11px] sm:text-xs mt-1 leading-relaxed" style={{ color: theme.textMuted }}>
+                      <p className="text-[11px] sm:text-xs mt-1 leading-relaxed" style={{ color: theme.cardTextMuted }}>
                         {minutePassThrough
                           ? 'On. New and existing clients are billed per minute above their included minutes.'
                           : 'Off. You absorb minutes and bill clients only their flat plan.'}
@@ -1614,7 +1614,7 @@ function AgencySettingsContent() {
                     <div className="mt-3 flex items-start justify-between rounded-xl px-4 py-3" style={{ backgroundColor: billMinutesDuringTrial ? theme.primary15 : (theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)'), border: `1px solid ${billMinutesDuringTrial ? theme.primary30 : theme.border}` }}>
                       <div className="flex-1 min-w-0 mr-3">
                         <p className="text-sm font-medium" style={{ color: billMinutesDuringTrial ? theme.primary : theme.text }}>Bill clients for minutes during their trial</p>
-                        <p className="text-[11px] sm:text-xs mt-1 leading-relaxed" style={{ color: theme.textMuted }}>
+                        <p className="text-[11px] sm:text-xs mt-1 leading-relaxed" style={{ color: theme.cardTextMuted }}>
                           {billMinutesDuringTrial
                             ? "On. New card-required trial clients get a true free trial: their subscription is free while they pay only for the minutes they use, so you never absorb trial minutes."
                             : 'Off. Trial minutes are free and you absorb their cost during the trial.'}
@@ -1624,12 +1624,12 @@ function AgencySettingsContent() {
                         <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out" style={{ transform: billMinutesDuringTrial ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
                       </button>
                     </div>
-                    <p className="text-[11px] mt-2 px-1 leading-relaxed" style={{ color: theme.textMuted }}>These two work together: the toggle above turns per-minute billing on at all, and this one decides whether those minute charges also run during a client&apos;s free trial. With both on, a trial client&apos;s plan is free but their minutes bill from day one.</p>
+                    <p className="text-[11px] mt-2 px-1 leading-relaxed" style={{ color: theme.cardTextMuted }}>These two work together: the toggle above turns per-minute billing on at all, and this one decides whether those minute charges also run during a client&apos;s free trial. With both on, a trial client&apos;s plan is free but their minutes bill from day one.</p>
                     </>
                   )}
 
                   {minuteToggleLoading && (
-                    <div className="mt-2 flex items-center gap-2 text-xs" style={{ color: theme.textMuted }}><Loader2 className="h-3.5 w-3.5 animate-spin" />Updating...</div>
+                    <div className="mt-2 flex items-center gap-2 text-xs" style={{ color: theme.cardTextMuted }}><Loader2 className="h-3.5 w-3.5 animate-spin" />Updating...</div>
                   )}
                   {minuteSweepMsg && !minuteToggleLoading && (
                     <div className="mt-3 rounded-xl p-3 flex items-start gap-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}>
@@ -1643,7 +1643,7 @@ function AgencySettingsContent() {
                       <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.warningText }} />
                       <div className="text-xs sm:text-sm" style={{ color: theme.warningText }}>
                         <p className="font-medium mb-0.5">Connect a payment provider first</p>
-                        <p style={{ color: theme.textMuted }}>Connect Stripe, Paystack, or Flutterwave above before you can charge clients per minute.</p>
+                        <p style={{ color: theme.cardTextMuted }}>Connect Stripe, Paystack, or Flutterwave above before you can charge clients per minute.</p>
                       </div>
                     </div>
                   )}
@@ -1657,7 +1657,7 @@ function AgencySettingsContent() {
                   {minutePassThrough && (
                   <div className="mt-3 rounded-xl p-3 flex items-start gap-2.5" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
                     <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
-                    <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
+                    <p className="text-xs sm:text-sm" style={{ color: theme.cardTextMuted }}>
                       Turning this off stops new per-minute charges right away. Minutes already used this cycle still bill, and the per-minute line item drops off at each client's next renewal.
                     </p>
                   </div>
@@ -1667,7 +1667,7 @@ function AgencySettingsContent() {
                 {/* Agency-configurable reassurance badges under the plan tiles (client upgrade + signup pages). */}
                 <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                   <h4 className="font-medium text-sm sm:text-base mb-1">Plan page badges</h4>
-                  <p className="text-xs sm:text-sm leading-relaxed mb-3" style={{ color: theme.textMuted }}>The short reassurance lines shown under your plans on the client upgrade and signup pages (they replace the old &quot;Cancel anytime / No setup fees&quot;). Leave one blank to hide it; leave all three blank to use the defaults. Keep each short, e.g. &quot;Instant activation&quot;, &quot;Secure checkout&quot;.</p>
+                  <p className="text-xs sm:text-sm leading-relaxed mb-3" style={{ color: theme.cardTextMuted }}>The short reassurance lines shown under your plans on the client upgrade and signup pages (they replace the old &quot;Cancel anytime / No setup fees&quot;). Leave one blank to hide it; leave all three blank to use the defaults. Keep each short, e.g. &quot;Instant activation&quot;, &quot;Secure checkout&quot;.</p>
                   <div className="space-y-2">
                     <input type="text" maxLength={40} value={planBadge1} onChange={e => setPlanBadge1(e.target.value)} placeholder="Instant activation" className="w-full rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
                     <input type="text" maxLength={40} value={planBadge2} onChange={e => setPlanBadge2(e.target.value)} placeholder="Secure checkout" className="w-full rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
@@ -1686,7 +1686,7 @@ function AgencySettingsContent() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-sm sm:text-base mb-1">Let clients change their own plan</h4>
-                      <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>When on, Stripe-billed clients can upgrade or downgrade their own plan from their dashboard (Stripe prorates the difference). When off, only you can change a client&apos;s plan. Manually-billed clients are never affected.</p>
+                      <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.cardTextMuted }}>When on, Stripe-billed clients can upgrade or downgrade their own plan from their dashboard (Stripe prorates the difference). When off, only you can change a client&apos;s plan. Manually-billed clients are never affected.</p>
                     </div>
                     <button type="button" onClick={handleTogglePlanChanges} disabled={planChangesToggleSaving} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50" style={{ backgroundColor: allowClientPlanChanges ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
                       <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out" style={{ transform: allowClientPlanChanges ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
@@ -1696,7 +1696,7 @@ function AgencySettingsContent() {
                     <div className="mt-4 pt-4 flex items-start justify-between gap-3" style={{ borderTop: `1px solid ${theme.inputBorder}` }}>
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium text-sm sm:text-base mb-1">Show lower plans on the upgrade page</h4>
-                        <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>When on, a client on a paid plan can see and switch to plans priced below their current one. When off (default), the upgrade page shows only their current plan and higher, so clients upgrade rather than quietly downgrade.</p>
+                        <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.cardTextMuted }}>When on, a client on a paid plan can see and switch to plans priced below their current one. When off (default), the upgrade page shows only their current plan and higher, so clients upgrade rather than quietly downgrade.</p>
                       </div>
                       <button type="button" onClick={handleToggleShowLowerPlans} disabled={lowerPlansToggleSaving} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50" style={{ backgroundColor: showLowerPlans ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
                         <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out" style={{ transform: showLowerPlans ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
@@ -1709,7 +1709,7 @@ function AgencySettingsContent() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-sm sm:text-base mb-1">Hide billing from client dashboard</h4>
-                      <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>For white-glove clients you bill manually. When on, the client never sees plan, pricing, usage/minutes, upgrade, cancel, or trial/payment prompts anywhere in their dashboard. They just use the software. Turn off to show the normal billing UI.</p>
+                      <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.cardTextMuted }}>For white-glove clients you bill manually. When on, the client never sees plan, pricing, usage/minutes, upgrade, cancel, or trial/payment prompts anywhere in their dashboard. They just use the software. Turn off to show the normal billing UI.</p>
                     </div>
                     <button type="button" onClick={handleToggleHideBilling} disabled={hideBillingSaving} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50" style={{ backgroundColor: hideClientBilling ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
                       <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out" style={{ transform: hideClientBilling ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
@@ -1721,7 +1721,7 @@ function AgencySettingsContent() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-sm sm:text-base mb-1">Show plan &amp; subscription to clients</h4>
-                      <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>When on, clients see their plan and subscription section, and (if the toggle above is on) can change it. When off, the plan and subscription area is hidden from their dashboard. Ignored when billing is fully hidden above.</p>
+                      <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.cardTextMuted }}>When on, clients see their plan and subscription section, and (if the toggle above is on) can change it. When off, the plan and subscription area is hidden from their dashboard. Ignored when billing is fully hidden above.</p>
                     </div>
                     <button type="button" onClick={handleToggleShowSubscription} disabled={subscriptionToggleSaving} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50" style={{ backgroundColor: showClientSubscription ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
                       <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out" style={{ transform: showClientSubscription ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
@@ -1733,7 +1733,7 @@ function AgencySettingsContent() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-sm sm:text-base mb-1">Show call usage to clients</h4>
-                      <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>When on, clients see their monthly call usage and limit on their dashboard. When off, the usage meter is hidden (useful when you set unlimited calls or do not want clients watching a limit). Ignored when billing is fully hidden above.</p>
+                      <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.cardTextMuted }}>When on, clients see their monthly call usage and limit on their dashboard. When off, the usage meter is hidden (useful when you set unlimited calls or do not want clients watching a limit). Ignored when billing is fully hidden above.</p>
                     </div>
                     <button type="button" onClick={handleToggleShowCallUsage} disabled={callUsageToggleSaving} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50" style={{ backgroundColor: showClientCallUsage ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
                       <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out" style={{ transform: showClientCallUsage ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
@@ -1746,7 +1746,7 @@ function AgencySettingsContent() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-sm sm:text-base mb-1">Let clients cancel from their dashboard</h4>
-                      <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>When on, clients can cancel their subscription from their own dashboard. When off, the cancel option is hidden and they are pointed to you instead (the cancel is also blocked on the server, not just hidden).</p>
+                      <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.cardTextMuted }}>When on, clients can cancel their subscription from their own dashboard. When off, the cancel option is hidden and they are pointed to you instead (the cancel is also blocked on the server, not just hidden).</p>
                     </div>
                     <button type="button" onClick={handleToggleAllowClientCancel} disabled={cancelToggleSaving} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50" style={{ backgroundColor: allowClientCancel ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
                       <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out" style={{ transform: allowClientCancel ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
@@ -1757,20 +1757,20 @@ function AgencySettingsContent() {
                 {/* When a client cancels, when does their service actually end. */}
                 <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                   <h4 className="font-medium text-sm sm:text-base mb-1">When a client cancels</h4>
-                  <p className="text-xs sm:text-sm leading-relaxed mb-3" style={{ color: theme.textMuted }}>Choose when a client&apos;s service ends after they cancel. This policy applies to your clients&apos; cancellations.</p>
+                  <p className="text-xs sm:text-sm leading-relaxed mb-3" style={{ color: theme.cardTextMuted }}>Choose when a client&apos;s service ends after they cancel. This policy applies to your clients&apos; cancellations.</p>
                   <div className="inline-flex rounded-xl overflow-hidden w-full sm:w-auto" style={{ border: `1px solid ${theme.inputBorder}` }}>
                     {([['period_end', 'At period end'], ['immediate', 'Immediately']] as const).map(([mode, label]) => {
                       const active = clientCancelMode === mode;
                       return (
                         <button key={mode} type="button" onClick={() => handleSetClientCancelMode(mode)} disabled={cancelModeSaving}
                           className="flex-1 sm:flex-none px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-60"
-                          style={active ? { backgroundColor: theme.primary, color: theme.primaryText } : { backgroundColor: 'transparent', color: theme.textMuted }}>
+                          style={active ? { backgroundColor: theme.primary, color: theme.primaryText } : { backgroundColor: 'transparent', color: theme.cardTextMuted }}>
                           {label}
                         </button>
                       );
                     })}
                   </div>
-                  <p className="text-[11px] sm:text-xs mt-2.5 leading-relaxed" style={{ color: theme.textMuted }}>
+                  <p className="text-[11px] sm:text-xs mt-2.5 leading-relaxed" style={{ color: theme.cardTextMuted }}>
                     {clientCancelMode === 'immediate'
                       ? 'Service ends right away when a client cancels, and their number is released then.'
                       : 'Clients keep service through the period they already paid for, then it ends. (Recommended.)'}
@@ -1783,7 +1783,7 @@ function AgencySettingsContent() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-sm sm:text-base mb-1">Let clients enter a discount code</h4>
-                      <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>When on, your client signup page shows a &quot;Discount code&quot; field so clients can apply one of the codes below. Turn it off to hide that field on the signup page.</p>
+                      <p className="text-xs sm:text-sm leading-relaxed" style={{ color: theme.cardTextMuted }}>When on, your client signup page shows a &quot;Discount code&quot; field so clients can apply one of the codes below. Turn it off to hide that field on the signup page.</p>
                     </div>
                     <button type="button" onClick={handleToggleShowDiscountCode} disabled={discountCodeToggleSaving} className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50" style={{ backgroundColor: showClientDiscountCode ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
                       <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out" style={{ transform: showClientDiscountCode ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
@@ -1802,7 +1802,7 @@ function AgencySettingsContent() {
 
             {activeTab === 'payments' && (
               <div className="space-y-4 sm:space-y-6">
-                <div><h3 className="text-base sm:text-lg font-medium mb-1">Payment Settings</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Connect Stripe to receive payments from your clients.</p></div>
+                <div><h3 className="text-base sm:text-lg font-medium mb-1">Payment Settings</h3><p className="text-xs sm:text-sm" style={{ color: theme.cardTextMuted }}>Connect Stripe to receive payments from your clients.</p></div>
 
                 {/* Client-billing-mode summary. The "change this" line sits on its
                     own row so it doesn't crowd the status sentence. */}
@@ -1810,8 +1810,8 @@ function AgencySettingsContent() {
                   <Receipt className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: theme.iconColor }} />
                   <div className="min-w-0">
                     <p className="text-sm font-semibold" style={{ color: theme.primary }}>{clientBillingMode === 'manual' ? 'Client Billing: You Bill Them Yourself' : 'Client Billing: Handled By The Platform'}</p>
-                    <p className="text-[11px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>{clientBillingMode === 'manual' ? 'You invoice your clients directly and the platform never charges them.' : 'The platform charges your clients through Stripe Connect and you keep the margin.'}</p>
-                    <p className="text-[11px] sm:text-xs mt-1" style={{ color: theme.textMuted }}>Change this under &ldquo;Bill My Clients Myself&rdquo; below.</p>
+                    <p className="text-[11px] sm:text-xs mt-0.5" style={{ color: theme.cardTextMuted }}>{clientBillingMode === 'manual' ? 'You invoice your clients directly and the platform never charges them.' : 'The platform charges your clients through Stripe Connect and you keep the margin.'}</p>
+                    <p className="text-[11px] sm:text-xs mt-1" style={{ color: theme.cardTextMuted }}>Change this under &ldquo;Bill My Clients Myself&rdquo; below.</p>
                   </div>
                 </div>
 
@@ -1840,12 +1840,12 @@ function AgencySettingsContent() {
                       </div>
                       {stripeDisplay.status === 'active' && (
                         <div className="mt-4 pt-4 grid grid-cols-2 gap-3" style={{ borderTop: `1px solid ${theme.border}` }}>
-                          <div className="flex items-center justify-between rounded-lg px-3 py-2 text-xs sm:text-sm" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}><span style={{ color: theme.textMuted }}>Charges</span><span className="flex items-center gap-1" style={{ color: '#01f5d1' }}><Check className="h-3 w-3" />Enabled</span></div>
-                          <div className="flex items-center justify-between rounded-lg px-3 py-2 text-xs sm:text-sm" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}><span style={{ color: theme.textMuted }}>Payouts</span><span className="flex items-center gap-1" style={{ color: '#01f5d1' }}><Check className="h-3 w-3" />Enabled</span></div>
+                          <div className="flex items-center justify-between rounded-lg px-3 py-2 text-xs sm:text-sm" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}><span style={{ color: theme.cardTextMuted }}>Charges</span><span className="flex items-center gap-1" style={{ color: '#01f5d1' }}><Check className="h-3 w-3" />Enabled</span></div>
+                          <div className="flex items-center justify-between rounded-lg px-3 py-2 text-xs sm:text-sm" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}><span style={{ color: theme.cardTextMuted }}>Payouts</span><span className="flex items-center gap-1" style={{ color: '#01f5d1' }}><Check className="h-3 w-3" />Enabled</span></div>
                         </div>
                       )}
                       <div className="mt-3 pt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2" style={{ borderTop: `1px solid ${theme.border}` }}>
-                        <p className="text-[11px] sm:text-xs" style={{ color: theme.textMuted }}>Client payments go straight to your Stripe account. We never hold your funds.</p>
+                        <p className="text-[11px] sm:text-xs" style={{ color: theme.cardTextMuted }}>Client payments go straight to your Stripe account. We never hold your funds.</p>
                         <CardBrands />
                       </div>
                     </div>
@@ -1860,7 +1860,7 @@ function AgencySettingsContent() {
                       <Phone className="h-4 w-4" style={{ color: theme.iconColor }} />
                       <h4 className="font-medium text-sm sm:text-base">Customer Support Phone</h4>
                     </div>
-                    <p className="text-xs sm:text-sm mb-3" style={{ color: theme.textMuted }}>
+                    <p className="text-xs sm:text-sm mb-3" style={{ color: theme.cardTextMuted }}>
                       The number shown on the receipts and invoices your clients get from Stripe, so they can reach you about billing. Leave blank to use your agency phone number.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
@@ -1893,17 +1893,17 @@ function AgencySettingsContent() {
                         <Globe className="h-4 w-4" style={{ color: theme.iconColor }} />
                         <label className="text-sm font-medium" style={{ color: theme.text }}>Your country</label>
                       </div>
-                      <p className="text-xs sm:text-sm mb-3" style={{ color: theme.textMuted }}>
+                      <p className="text-xs sm:text-sm mb-3" style={{ color: theme.cardTextMuted }}>
                         Where your business or bank account is based. This sets up your Stripe account for the right country and currency.
                       </p>
                       <CountrySelect value={connectCountry} onChange={setConnectCountry} theme={theme} />
-                      <p className="mt-2 text-[11px] sm:text-xs flex items-start gap-1.5" style={{ color: theme.textMuted }}>
+                      <p className="mt-2 text-[11px] sm:text-xs flex items-start gap-1.5" style={{ color: theme.cardTextMuted }}>
                         <Info className="h-3.5 w-3.5 mt-px flex-shrink-0" />
                         This can't be changed after you connect. To switch countries later you would disconnect and set up Stripe again.
                       </p>
                       <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-3">
                         <StripeConnectButton onClick={handleStripeConnect} loading={connectingStripe} label="Connect with Stripe" className="w-full sm:w-auto" />
-                        <p className="text-[11px] sm:text-xs" style={{ color: theme.textMuted }}>Takes about 2 minutes. Stripe handles the secure onboarding.</p>
+                        <p className="text-[11px] sm:text-xs" style={{ color: theme.cardTextMuted }}>Takes about 2 minutes. Stripe handles the secure onboarding.</p>
                       </div>
                     </div>
                   )}
@@ -1915,14 +1915,14 @@ function AgencySettingsContent() {
                         <Building className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
                         <div className="min-w-0">
                           <p className="text-xs sm:text-sm font-medium mb-2" style={{ color: theme.infoText }}>What Stripe will ask you (about 2 minutes)</p>
-                          <ol className="space-y-2 text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>
+                          <ol className="space-y-2 text-xs sm:text-sm leading-relaxed" style={{ color: theme.cardTextMuted }}>
                             <li><span className="font-medium" style={{ color: theme.text }}>1. Business type.</span> If you haven&apos;t filed paperwork to register a business (an LLC or corporation), choose <span className="font-medium" style={{ color: theme.text }}>Individual</span>. Most solo agencies are Individual. You can update this in Stripe later if you form a company.</li>
                             <li><span className="font-medium" style={{ color: theme.text }}>2. Industry.</span> Choose <span className="font-medium" style={{ color: theme.text }}>Software</span> (or <span className="font-medium" style={{ color: theme.text }}>Business / professional services</span> if that isn&apos;t listed). You&apos;re reselling AI phone software to local businesses.</li>
                             <li><span className="font-medium" style={{ color: theme.text }}>3. Business website.</span> If you don&apos;t have one, pick <span className="font-medium" style={{ color: theme.text }}>&quot;I don&apos;t have a website&quot;</span> and use the <span className="font-medium" style={{ color: theme.text }}>product description</span> field instead, something like &quot;AI phone answering for local businesses.&quot;</li>
                             <li><span className="font-medium" style={{ color: theme.text }}>4. Your details.</span> {connectCountry === 'US' ? (<>Your legal name, address, date of birth, and SSN (or your EIN if you already have one). Stripe is required by law to collect this before it can pay you out.</>) : (<>Your legal name, address, and your country&apos;s standard identity details (not US details like an SSN). Stripe needs this before it can pay you out.</>)}</li>
                             <li><span className="font-medium" style={{ color: theme.text }}>5. Bank account.</span> Where your client payments get deposited. A personal checking account in your own name is fine.</li>
                           </ol>
-                          <p className="mt-2.5 text-xs sm:text-sm leading-relaxed" style={{ color: theme.textMuted }}>Stripe handles all of it securely, we never see your bank or tax details. Opens in a new tab, finish there and come back to this page.</p>
+                          <p className="mt-2.5 text-xs sm:text-sm leading-relaxed" style={{ color: theme.cardTextMuted }}>Stripe handles all of it securely, we never see your bank or tax details. Opens in a new tab, finish there and come back to this page.</p>
                         </div>
                       </div>
                     </div>
@@ -1938,7 +1938,7 @@ function AgencySettingsContent() {
                     <Receipt className="h-4 w-4" style={{ color: theme.iconColor }} />
                     <h4 className="font-medium text-sm sm:text-base">How You Bill Your Clients</h4>
                   </div>
-                  <p className="text-xs sm:text-sm mb-4" style={{ color: theme.textMuted }}>
+                  <p className="text-xs sm:text-sm mb-4" style={{ color: theme.cardTextMuted }}>
                     By default, your clients pay through Stripe Connect. If you would rather bill them yourself with your own invoices or payment links, turn this on and new clients are set up with no card and no checkout.
                   </p>
 
@@ -1961,7 +1961,7 @@ function AgencySettingsContent() {
                         <Receipt className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" style={{ color: theme.iconColor }} />
                         <p className="text-base sm:text-lg font-semibold tracking-tight" style={{ color: theme.primary }}>Bill My Clients Myself</p>
                       </div>
-                      <p className="text-[11px] sm:text-xs mt-1.5 leading-relaxed" style={{ color: theme.textMuted }}>
+                      <p className="text-[11px] sm:text-xs mt-1.5 leading-relaxed" style={{ color: theme.cardTextMuted }}>
                         {clientBillingMode === 'manual'
                           ? <><span className="font-semibold" style={{ color: theme.primary }}>On.</span> You handle client billing outside the platform (your own invoices, payment links, or Stripe). New clients go live immediately with no card and no checkout, and the platform never charges them. Stripe Connect, per-minute client billing, and card-on-trial don&apos;t apply and are disabled above.</>
                           : <><span className="font-semibold" style={{ color: theme.text }}>Off.</span> The platform charges your clients for you through Stripe Connect checkout, and you keep the margin. This requires a connected Stripe account (above).</>}
@@ -1979,7 +1979,7 @@ function AgencySettingsContent() {
                   </div>
 
                   {billingModeLoading && (
-                    <div className="mt-2 flex items-center gap-2 text-xs" style={{ color: theme.textMuted }}><Loader2 className="h-3.5 w-3.5 animate-spin" />Updating...</div>
+                    <div className="mt-2 flex items-center gap-2 text-xs" style={{ color: theme.cardTextMuted }}><Loader2 className="h-3.5 w-3.5 animate-spin" />Updating...</div>
                   )}
 
                   {clientBillingMode === 'manual' && (
@@ -1999,13 +1999,13 @@ function AgencySettingsContent() {
                           { value: 'other', label: 'Other' },
                         ]}
                       />
-                      <p className="text-[10px] sm:text-xs mt-1.5 leading-relaxed" style={{ color: theme.textMuted }}>For our records only, this doesn&apos;t change anything today. We may use it to offer a direct integration with your billing tool down the line.</p>
+                      <p className="text-[10px] sm:text-xs mt-1.5 leading-relaxed" style={{ color: theme.cardTextMuted }}>For our records only, this doesn&apos;t change anything today. We may use it to offer a direct integration with your billing tool down the line.</p>
                     </div>
                   )}
 
                   <div className="mt-3 rounded-xl p-3 flex items-start gap-2.5" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
                     <Info className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
-                    <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
+                    <p className="text-xs sm:text-sm" style={{ color: theme.cardTextMuted }}>
                       This only changes clients you add from now on. Clients you already have keep their current billing. You are still billed by the platform the same either way.
                     </p>
                   </div>
@@ -2025,10 +2025,10 @@ function AgencySettingsContent() {
                     </span>
                     {paystackConnected && <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(1, 245, 209,0.15)', color: '#01f5d1' }}>Connected</span>}
                   </div>
-                  <p className="text-xs sm:text-sm mb-2" style={{ color: theme.textMuted }}>An alternative to Stripe for collecting from your clients. Bill them in your local currency.</p>
+                  <p className="text-xs sm:text-sm mb-2" style={{ color: theme.cardTextMuted }}>An alternative to Stripe for collecting from your clients. Bill them in your local currency.</p>
                   {paystackConnected ? (
                     <div className="flex items-center justify-between gap-3 mt-2">
-                      <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Connected{paystackCurrency ? ` (${paystackCurrency})` : ''}. Clients are billed through your Paystack account.</p>
+                      <p className="text-xs sm:text-sm" style={{ color: theme.cardTextMuted }}>Connected{paystackCurrency ? ` (${paystackCurrency})` : ''}. Clients are billed through your Paystack account.</p>
                       <button onClick={() => handleDisconnectPaystack()} disabled={paystackBusy} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition disabled:opacity-50 flex-shrink-0" style={{ backgroundColor: 'transparent', color: '#ef4444', border: '1px solid #ef4444' }}>Disconnect</button>
                     </div>
                   ) : (
@@ -2041,7 +2041,7 @@ function AgencySettingsContent() {
                         <button onClick={handleConnectPaystack} disabled={paystackBusy || !paystackKey.trim()} className="flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold transition disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{paystackBusy ? 'Connecting...' : 'Connect Paystack'}</button>
                       </div>
                       {paystackError && <p className="text-xs" style={{ color: '#ef4444' }}>{paystackError}</p>}
-                      <p className="text-[11px] sm:text-xs" style={{ color: theme.textMuted }}>From your Paystack dashboard: Settings, then API Keys &amp; Webhooks. Your key is stored encrypted and never shown again.</p>
+                      <p className="text-[11px] sm:text-xs" style={{ color: theme.cardTextMuted }}>From your Paystack dashboard: Settings, then API Keys &amp; Webhooks. Your key is stored encrypted and never shown again.</p>
                     </div>
                   )}
                 </div>
@@ -2058,10 +2058,10 @@ function AgencySettingsContent() {
                     </span>
                     {flutterwaveConnected && <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(1, 245, 209,0.15)', color: '#01f5d1' }}>Connected</span>}
                   </div>
-                  <p className="text-xs sm:text-sm mb-2" style={{ color: theme.textMuted }}>Another alternative to Stripe, with wider African coverage (30+ countries, plus mobile money). Bill clients in your local currency.</p>
+                  <p className="text-xs sm:text-sm mb-2" style={{ color: theme.cardTextMuted }}>Another alternative to Stripe, with wider African coverage (30+ countries, plus mobile money). Bill clients in your local currency.</p>
                   {flutterwaveConnected ? (
                     <div className="flex items-center justify-between gap-3 mt-2">
-                      <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Connected{flutterwaveCurrency ? ` (${flutterwaveCurrency})` : ''}. Clients are billed through your Flutterwave account.</p>
+                      <p className="text-xs sm:text-sm" style={{ color: theme.cardTextMuted }}>Connected{flutterwaveCurrency ? ` (${flutterwaveCurrency})` : ''}. Clients are billed through your Flutterwave account.</p>
                       <button onClick={() => handleDisconnectFlutterwave()} disabled={flutterwaveBusy} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition disabled:opacity-50 flex-shrink-0" style={{ backgroundColor: 'transparent', color: '#ef4444', border: '1px solid #ef4444' }}>Disconnect</button>
                     </div>
                   ) : (
@@ -2075,7 +2075,7 @@ function AgencySettingsContent() {
                         <button onClick={handleConnectFlutterwave} disabled={flutterwaveBusy || !flutterwaveKey.trim()} className="flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold transition disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{flutterwaveBusy ? 'Connecting...' : 'Connect Flutterwave'}</button>
                       </div>
                       {flutterwaveError && <p className="text-xs" style={{ color: '#ef4444' }}>{flutterwaveError}</p>}
-                      <p className="text-[11px] sm:text-xs" style={{ color: theme.textMuted }}>From your Flutterwave dashboard: Settings, then API Keys. Set a webhook secret hash under Settings, then Webhooks, and paste it above. For hands-off monthly billing, ask Flutterwave support to enable NOAUTH subsequent charges on your account. Your key is stored encrypted and never shown again.</p>
+                      <p className="text-[11px] sm:text-xs" style={{ color: theme.cardTextMuted }}>From your Flutterwave dashboard: Settings, then API Keys. Set a webhook secret hash under Settings, then Webhooks, and paste it above. For hands-off monthly billing, ask Flutterwave support to enable NOAUTH subsequent charges on your account. Your key is stored encrypted and never shown again.</p>
                     </div>
                   )}
                 </div>
@@ -2085,18 +2085,18 @@ function AgencySettingsContent() {
 
             {activeTab === 'billing' && (
               <div className="space-y-4 sm:space-y-6">
-                <div><h3 className="text-base sm:text-lg font-medium mb-1">Subscription & Billing</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Manage your VoiceAI Connect subscription.</p></div>
+                <div><h3 className="text-base sm:text-lg font-medium mb-1">Subscription & Billing</h3><p className="text-xs sm:text-sm" style={{ color: theme.cardTextMuted }}>Manage your VoiceAI Connect subscription.</p></div>
                 <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                   <div className="flex items-start justify-between gap-4">
-                    <div><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Current Plan</p><p className="text-xl sm:text-2xl font-semibold mt-1 capitalize">{PLAN_NAMES[(agency?.plan_type || '') as keyof typeof PLAN_NAMES] || agency?.plan_type || 'Free'}</p></div>
+                    <div><p className="text-xs sm:text-sm" style={{ color: theme.cardTextMuted }}>Current Plan</p><p className="text-xl sm:text-2xl font-semibold mt-1 capitalize">{PLAN_NAMES[(agency?.plan_type || '') as keyof typeof PLAN_NAMES] || agency?.plan_type || 'Free'}</p></div>
                     <span className="px-2.5 py-1 rounded-full text-xs font-medium" style={{ backgroundColor: subscriptionDisplay.bgColor, color: subscriptionDisplay.color }}>{subscriptionDisplay.label}</span>
                   </div>
                   {isOnTrial && trialDaysLeft !== null && (
                     <div className="mt-4 rounded-lg px-3 py-2" style={{ backgroundColor: 'rgba(59,130,246,0.1)' }}><p className="text-xs sm:text-sm" style={{ color: '#3b82f6' }}>{trialDaysLeft} {trialDaysLeft === 1 ? 'day' : 'days'} left in your trial</p></div>
                   )}
                   <div className="mt-4 pt-4 grid grid-cols-2 gap-3" style={{ borderTop: `1px solid ${theme.border}` }}>
-                    <div className="rounded-lg px-3 py-2" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}><p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Price</p><p className="font-medium text-sm sm:text-base">${planPrice}/mo</p></div>
-                    <div className="rounded-lg px-3 py-2" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}><p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Status</p><p className="font-medium text-sm sm:text-base" style={{ color: subscriptionDisplay.color }}>{subscriptionDisplay.label}</p></div>
+                    <div className="rounded-lg px-3 py-2" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}><p className="text-[10px] sm:text-xs" style={{ color: theme.cardTextMuted }}>Price</p><p className="font-medium text-sm sm:text-base">${planPrice}/mo</p></div>
+                    <div className="rounded-lg px-3 py-2" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}><p className="text-[10px] sm:text-xs" style={{ color: theme.cardTextMuted }}>Status</p><p className="font-medium text-sm sm:text-base" style={{ color: subscriptionDisplay.color }}>{subscriptionDisplay.label}</p></div>
                   </div>
                 </div>
 
@@ -2108,12 +2108,12 @@ function AgencySettingsContent() {
                         {cardAdded ? (
                           <>
                             <p className="text-sm font-semibold" style={{ color: theme.text }}>Payment method added</p>
-                            <p className="text-xs mt-1" style={{ color: theme.textMuted }}>You&apos;re all set. You can now sign up your first client. If the signup page still says it isn&apos;t accepting signups, give it a few seconds and refresh.</p>
+                            <p className="text-xs mt-1" style={{ color: theme.cardTextMuted }}>You&apos;re all set. You can now sign up your first client. If the signup page still says it isn&apos;t accepting signups, give it a few seconds and refresh.</p>
                           </>
                         ) : (
                           <>
                             <p className="text-sm font-semibold" style={{ color: theme.text }}>Add a payment method to start signing up clients</p>
-                            <p className="text-xs mt-1 mb-3" style={{ color: theme.textMuted }}>On the Free plan you pay per client. Add a card and you can sign up your first client, no plan upgrade required.</p>
+                            <p className="text-xs mt-1 mb-3" style={{ color: theme.cardTextMuted }}>On the Free plan you pay per client. Add a card and you can sign up your first client, no plan upgrade required.</p>
                             <button onClick={handleAddPaymentMethod} disabled={addCardLoading} className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
                               {addCardLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}Add payment method
                             </button>
@@ -2131,7 +2131,7 @@ function AgencySettingsContent() {
                     <p className="text-sm font-medium mb-3">Current Usage</p>
                     <div className="space-y-3">
                       <div>
-                        <div className="flex items-center justify-between text-xs sm:text-sm mb-1"><span style={{ color: theme.textMuted }}>Clients</span><span>{usageData.clients?.current ?? 0}{usageData.clients?.limit === -1 ? '' : ` / ${usageData.clients?.limit ?? 0}`}</span></div>
+                        <div className="flex items-center justify-between text-xs sm:text-sm mb-1"><span style={{ color: theme.cardTextMuted }}>Clients</span><span>{usageData.clients?.current ?? 0}{usageData.clients?.limit === -1 ? '' : ` / ${usageData.clients?.limit ?? 0}`}</span></div>
                         {usageData.clients?.limit !== -1 && (<div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }}><div className="h-full rounded-full" style={{ width: `${Math.min(100, ((usageData.clients?.current ?? 0) / (usageData.clients?.limit || 1)) * 100)}%`, backgroundColor: theme.primary }} /></div>)}
                       </div>
                     </div>
@@ -2150,7 +2150,7 @@ function AgencySettingsContent() {
                 {agency?.stripe_subscription_id && (
                   <div className="pt-4 mt-2" style={{ borderTop: `1px solid ${theme.border}` }}>
                     <button onClick={handleManageSubscription} disabled={portalLoading} className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors w-full sm:w-auto disabled:opacity-50" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>{portalLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}Update payment method</button>
-                    <p className="text-[11px] mt-1.5" style={{ color: theme.textMuted }}>Add or change the card on file and manage billing in Stripe.</p>
+                    <p className="text-[11px] mt-1.5" style={{ color: theme.cardTextMuted }}>Add or change the card on file and manage billing in Stripe.</p>
                   </div>
                 )}
 
@@ -2181,7 +2181,7 @@ function AgencySettingsContent() {
 
             {activeTab === 'embed' && (
               <div className="space-y-4 sm:space-y-6">
-                <div><h3 className="text-base sm:text-lg font-medium mb-1">Embed Widget</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>Add a signup widget to your existing website. Clients sign up without leaving your site.</p></div>
+                <div><h3 className="text-base sm:text-lg font-medium mb-1">Embed Widget</h3><p className="text-xs sm:text-sm" style={{ color: theme.cardTextMuted }}>Add a signup widget to your existing website. Clients sign up without leaving your site.</p></div>
                 <div>
                   <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2">Embed Code</label>
                   <div className="relative">
@@ -2202,14 +2202,14 @@ function AgencySettingsContent() {
             {activeTab === 'demo' && (
               <div className="space-y-4 sm:space-y-6">
                 <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-3"><div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Eye className="h-5 w-5" style={{ color: theme.iconColor }} /></div><div><h3 className="text-base sm:text-lg font-medium">Demo Mode</h3><p className="text-xs sm:text-sm mt-0.5" style={{ color: theme.textMuted }}>Preview your dashboard with realistic sample data.</p></div></div>
+                  <div className="flex items-start gap-3"><div className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Eye className="h-5 w-5" style={{ color: theme.iconColor }} /></div><div><h3 className="text-base sm:text-lg font-medium">Demo Mode</h3><p className="text-xs sm:text-sm mt-0.5" style={{ color: theme.cardTextMuted }}>Preview your dashboard with realistic sample data.</p></div></div>
                   <button type="button" onClick={toggleDemoMode} className="relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none" style={{ backgroundColor: demoMode ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}><span className="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out" style={{ transform: demoMode ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} /></button>
                 </div>
                 {demoMode && (<div className="rounded-xl px-4 py-3 flex items-center gap-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: theme.primary }} /><span className="text-sm font-medium" style={{ color: theme.primary }}>Demo mode is active, all pages show sample data</span></div>)}
                 <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                   <p className="text-sm font-medium mb-3">What demo mode shows:</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {demoFeatures.map((f) => (<div key={f.label} className="flex items-start gap-2"><Check className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.iconColor }} /><div><p className="text-xs sm:text-sm font-medium">{f.label}</p><p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>{f.desc}</p></div></div>))}
+                    {demoFeatures.map((f) => (<div key={f.label} className="flex items-start gap-2"><Check className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.iconColor }} /><div><p className="text-xs sm:text-sm font-medium">{f.label}</p><p className="text-[10px] sm:text-xs" style={{ color: theme.cardTextMuted }}>{f.desc}</p></div></div>))}
                   </div>
                 </div>
               </div>

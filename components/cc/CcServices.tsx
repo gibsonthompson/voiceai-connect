@@ -94,7 +94,7 @@ export default function CcServices({ clientId, theme }: { clientId: string; them
   };
 
   const card = { backgroundColor: theme.card, border: `1px solid ${theme.border}` } as React.CSSProperties;
-  const Label = ({ children }: { children: React.ReactNode }) => (<label className="block text-[12px] font-medium mb-1.5" style={{ color: theme.textMuted }}>{children}</label>);
+  const Label = ({ children }: { children: React.ReactNode }) => (<label className="block text-[12px] font-medium mb-1.5" style={{ color: theme.cardTextMuted }}>{children}</label>);
 
   const form = (
     <div className="rounded-xl p-4 mt-3" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
@@ -107,7 +107,7 @@ export default function CcServices({ clientId, theme }: { clientId: string; them
       </div>
       {err && <p className="text-[12px] mt-2" style={{ color: theme.error }}>{err}</p>}
       <div className="flex justify-end gap-2 mt-3">
-        <button onClick={() => { setEditing(null); setErr(null); }} className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium" style={{ backgroundColor: theme.hover, color: theme.textMuted }}><X className="h-4 w-4" /> Cancel</button>
+        <button onClick={() => { setEditing(null); setErr(null); }} className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium" style={{ backgroundColor: theme.hover, color: theme.cardTextMuted }}><X className="h-4 w-4" /> Cancel</button>
         <button onClick={save} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold disabled:opacity-60" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Save service</button>
       </div>
     </div>
@@ -119,13 +119,13 @@ export default function CcServices({ clientId, theme }: { clientId: string; them
         <div className="flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Briefcase className="h-4 w-4" style={{ color: theme.iconColor }} /></div>
         <div className="min-w-0 flex-1">
           <h2 className="font-semibold text-sm sm:text-[15px]" style={{ color: theme.text }}>Services</h2>
-          <p className="text-[12px]" style={{ color: theme.textMuted }}>What this business offers, so the AI can quote and book correctly.</p>
+          <p className="text-[12px]" style={{ color: theme.cardTextMuted }}>What this business offers, so the AI can quote and book correctly.</p>
         </div>
         {editing !== 'new' && <button onClick={startNew} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold flex-shrink-0" style={{ backgroundColor: theme.primary15, color: theme.primary }}><Plus className="h-3.5 w-3.5" /> Add</button>}
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 text-sm py-4" style={{ color: theme.textMuted }}><Loader2 className="h-4 w-4 animate-spin" /> Loading...</div>
+        <div className="flex items-center gap-2 text-sm py-4" style={{ color: theme.cardTextMuted }}><Loader2 className="h-4 w-4 animate-spin" /> Loading...</div>
       ) : (
         <>
           {rows.length === 0 && editing !== 'new' && <p className="text-[13px] py-2" style={{ color: theme.textSubtle }}>No services yet. Add one so the AI can quote and book.</p>}
@@ -134,11 +134,11 @@ export default function CcServices({ clientId, theme }: { clientId: string; them
               editing === s.id ? <div key={s.id}>{form}</div> : (
                 <div key={s.id} className="flex items-center gap-3 rounded-xl px-3 py-2.5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, opacity: s.is_active ? 1 : 0.6 }}>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate" style={{ color: theme.text }}>{s.name}{s.price ? <span style={{ color: theme.textMuted }}> · {s.price}</span> : ''}</p>
+                    <p className="text-sm font-medium truncate" style={{ color: theme.text }}>{s.name}{s.price ? <span style={{ color: theme.cardTextMuted }}> · {s.price}</span> : ''}</p>
                     <p className="text-[11.5px] truncate" style={{ color: theme.textSubtle }}>{s.duration_minutes ? `${s.duration_minutes} min · ` : ''}{bmLabel(s.booking_mode)}{s.description ? ` · ${s.description}` : ''}</p>
                   </div>
-                  <button onClick={() => toggleActive(s)} className="text-[11px] font-semibold px-2 py-1 rounded-md flex-shrink-0" style={s.is_active ? { backgroundColor: `${theme.primary}1a`, color: theme.primary } : { backgroundColor: theme.hover, color: theme.textMuted }}>{s.is_active ? 'Active' : 'Off'}</button>
-                  <button onClick={() => startEdit(s)} className="flex-shrink-0" style={{ color: theme.textMuted }}><Pencil className="h-4 w-4" /></button>
+                  <button onClick={() => toggleActive(s)} className="text-[11px] font-semibold px-2 py-1 rounded-md flex-shrink-0" style={s.is_active ? { backgroundColor: `${theme.primary}1a`, color: theme.primary } : { backgroundColor: theme.hover, color: theme.cardTextMuted }}>{s.is_active ? 'Active' : 'Off'}</button>
+                  <button onClick={() => startEdit(s)} className="flex-shrink-0" style={{ color: theme.cardTextMuted }}><Pencil className="h-4 w-4" /></button>
                   <button onClick={() => remove(s)} className="flex-shrink-0" style={{ color: theme.error }}><Trash2 className="h-4 w-4" /></button>
                 </div>
               )

@@ -178,7 +178,7 @@ export default function OutreachPage() {
             <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Mail className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
             <div>
               <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Outreach</h1>
-              <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>13 conversion-tested templates</p>
+              <p className="mt-0.5 text-sm" style={{ color: theme.cardTextMuted }}>13 conversion-tested templates</p>
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -187,13 +187,13 @@ export default function OutreachPage() {
               <div className="flex items-center gap-2 mb-3">
                 <Mail className="h-4 w-4 text-purple-400" />
                 <h3 className="text-sm font-medium" style={{ color: theme.text }}>Email Templates</h3>
-                <span className="text-xs" style={{ color: theme.textMuted }}>({previewEmails.length})</span>
+                <span className="text-xs" style={{ color: theme.cardTextMuted }}>({previewEmails.length})</span>
               </div>
               <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
                 {previewEmails.map((t, i) => (
                   <div key={t.name} className="px-3 py-2.5" style={{ borderBottom: i < previewEmails.length - 1 ? `1px solid ${theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6'}` : 'none' }}>
                     <p className="text-sm font-medium truncate" style={{ color: theme.text }}>{t.name}</p>
-                    <p className="text-xs truncate" style={{ color: theme.textMuted }}>{t.desc}</p>
+                    <p className="text-xs truncate" style={{ color: theme.cardTextMuted }}>{t.desc}</p>
                   </div>
                 ))}
               </div>
@@ -203,13 +203,13 @@ export default function OutreachPage() {
               <div className="flex items-center gap-2 mb-3">
                 <MessageSquare className="h-4 w-4 text-cyan-400" />
                 <h3 className="text-sm font-medium" style={{ color: theme.text }}>SMS Templates</h3>
-                <span className="text-xs" style={{ color: theme.textMuted }}>({previewSms.length})</span>
+                <span className="text-xs" style={{ color: theme.cardTextMuted }}>({previewSms.length})</span>
               </div>
               <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
                 {previewSms.map((t, i) => (
                   <div key={t.name} className="px-3 py-2.5" style={{ borderBottom: i < previewSms.length - 1 ? `1px solid ${theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6'}` : 'none' }}>
                     <p className="text-sm font-medium truncate" style={{ color: theme.text }}>{t.name}</p>
-                    <p className="text-xs truncate" style={{ color: theme.textMuted }}>{t.desc}</p>
+                    <p className="text-xs truncate" style={{ color: theme.cardTextMuted }}>{t.desc}</p>
                   </div>
                 ))}
               </div>
@@ -219,13 +219,13 @@ export default function OutreachPage() {
               <div className="flex items-center gap-2 mb-3">
                 <PhoneCall className="h-4 w-4 text-green-400" />
                 <h3 className="text-sm font-medium" style={{ color: theme.text }}>Call Scripts</h3>
-                <span className="text-xs" style={{ color: theme.textMuted }}>({previewCalls.length})</span>
+                <span className="text-xs" style={{ color: theme.cardTextMuted }}>({previewCalls.length})</span>
               </div>
               <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
                 {previewCalls.map((t, i) => (
                   <div key={t.name} className="px-3 py-2.5" style={{ borderBottom: i < previewCalls.length - 1 ? `1px solid ${theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6'}` : 'none' }}>
                     <p className="text-sm font-medium truncate" style={{ color: theme.text }}>{t.name}</p>
-                    <p className="text-xs truncate" style={{ color: theme.textMuted }}>{t.desc}</p>
+                    <p className="text-xs truncate" style={{ color: theme.cardTextMuted }}>{t.desc}</p>
                   </div>
                 ))}
               </div>
@@ -315,7 +315,7 @@ export default function OutreachPage() {
                 </span>
               )}
             </div>
-            <p className="text-[11px] sm:text-sm truncate" style={{ color: theme.textMuted }}>
+            <p className="text-[11px] sm:text-sm truncate" style={{ color: theme.cardTextMuted }}>
               {getTemplatePreview(template)}
             </p>
           </div>
@@ -323,14 +323,14 @@ export default function OutreachPage() {
       </Link>
       
       <div className="flex items-center gap-1 ml-2">
-        <span className="text-[10px] hidden sm:inline mr-1" style={{ color: theme.textMuted }}>
+        <span className="text-[10px] hidden sm:inline mr-1" style={{ color: theme.cardTextMuted }}>
           {template.use_count || 0}x
         </span>
         <div className="relative">
           <button
             onClick={() => setActiveDropdown(activeDropdown === template.id ? null : template.id)}
             className="rounded-lg p-1.5 sm:p-2 transition-colors"
-            style={{ color: theme.textMuted }}
+            style={{ color: theme.cardTextMuted }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hover}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
@@ -393,10 +393,10 @@ export default function OutreachPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Outreach</h1>
-            <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>
+            <p className="mt-1 text-sm" style={{ color: theme.cardTextMuted }}>
               Manage email, SMS, and call script templates
             </p>
-            <p className="mt-1 text-xs" style={{ color: theme.textMuted }}>
+            <p className="mt-1 text-xs" style={{ color: theme.cardTextMuted }}>
               VoiceAI Connect writes and tracks your outreach. You send each message from your own email or phone, then log it here so your follow-ups stay on schedule. Nothing is sent from the platform.
             </p>
           </div>
@@ -423,10 +423,10 @@ export default function OutreachPage() {
           <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0 overflow-hidden" style={{ backgroundColor: theme.primary15 }}>{(agency as any)?.logo_url ? <img src={(agency as any).logo_url} alt="" className="h-6 w-6 object-contain" /> : <Megaphone className="h-4 w-4" style={{ color: theme.iconColor }} />}</div>
           <div className="min-w-0">
             <p className="text-sm font-semibold" style={{ color: theme.text }}>Marketing Kit</p>
-            <p className="text-xs truncate" style={{ color: theme.textMuted }}>Branded QR codes, a print-ready one-pager, and scripts to land clients.</p>
+            <p className="text-xs truncate" style={{ color: theme.cardTextMuted }}>Branded QR codes, a print-ready one-pager, and scripts to land clients.</p>
           </div>
         </div>
-        <ChevronRight className="h-5 w-5 flex-shrink-0" style={{ color: theme.textMuted }} />
+        <ChevronRight className="h-5 w-5 flex-shrink-0" style={{ color: theme.cardTextMuted }} />
       </Link>
 
       {/* Quick Links */}
@@ -447,7 +447,7 @@ export default function OutreachPage() {
             </div>
             <div className="min-w-0">
               <p className="font-medium text-sm sm:text-base" style={{ color: theme.text }}>Email Template</p>
-              <p className="text-xs sm:text-sm truncate" style={{ color: theme.textMuted }}>Create new email</p>
+              <p className="text-xs sm:text-sm truncate" style={{ color: theme.cardTextMuted }}>Create new email</p>
             </div>
           </div>
         </Link>
@@ -468,7 +468,7 @@ export default function OutreachPage() {
             </div>
             <div className="min-w-0">
               <p className="font-medium text-sm sm:text-base" style={{ color: theme.text }}>SMS Template</p>
-              <p className="text-xs sm:text-sm truncate" style={{ color: theme.textMuted }}>Create new SMS</p>
+              <p className="text-xs sm:text-sm truncate" style={{ color: theme.cardTextMuted }}>Create new SMS</p>
             </div>
           </div>
         </Link>
@@ -489,7 +489,7 @@ export default function OutreachPage() {
             </div>
             <div className="min-w-0">
               <p className="font-medium text-sm sm:text-base" style={{ color: theme.text }}>Call Script</p>
-              <p className="text-xs sm:text-sm truncate" style={{ color: theme.textMuted }}>Create cold call script</p>
+              <p className="text-xs sm:text-sm truncate" style={{ color: theme.cardTextMuted }}>Create cold call script</p>
             </div>
           </div>
         </Link>
@@ -498,7 +498,7 @@ export default function OutreachPage() {
       {/* Search & Filters */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4 sm:mb-6">
         <div className="relative flex-1 sm:max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted }} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.cardTextMuted }} />
           <input
             type="text"
             placeholder="Search templates..."
@@ -548,7 +548,7 @@ export default function OutreachPage() {
           <p className="mt-4 font-medium text-sm sm:text-base" style={{ color: theme.text, opacity: 0.7 }}>
             {searchQuery || typeFilter ? 'No templates match your search' : 'No templates yet'}
           </p>
-          <p className="text-xs sm:text-sm mt-1 mb-4" style={{ color: theme.textMuted }}>
+          <p className="text-xs sm:text-sm mt-1 mb-4" style={{ color: theme.cardTextMuted }}>
             Create your first outreach template
           </p>
           <Link
@@ -565,9 +565,9 @@ export default function OutreachPage() {
           {emailTemplates.length > 0 && (!typeFilter || typeFilter === 'email') && (
             <div>
               <div className="flex items-center gap-2 mb-2 sm:mb-3">
-                <Mail className="h-4 w-4" style={{ color: theme.textMuted }} />
+                <Mail className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
                 <h3 className="text-xs sm:text-sm font-medium" style={{ color: theme.text, opacity: 0.7 }}>Email Templates</h3>
-                <span className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>({emailTemplates.length})</span>
+                <span className="text-[10px] sm:text-xs" style={{ color: theme.cardTextMuted }}>({emailTemplates.length})</span>
               </div>
               <div 
                 className="rounded-xl overflow-hidden"
@@ -581,9 +581,9 @@ export default function OutreachPage() {
           {smsTemplates.length > 0 && (!typeFilter || typeFilter === 'sms') && (
             <div>
               <div className="flex items-center gap-2 mb-2 sm:mb-3">
-                <MessageSquare className="h-4 w-4" style={{ color: theme.textMuted }} />
+                <MessageSquare className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
                 <h3 className="text-xs sm:text-sm font-medium" style={{ color: theme.text, opacity: 0.7 }}>SMS Templates</h3>
-                <span className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>({smsTemplates.length})</span>
+                <span className="text-[10px] sm:text-xs" style={{ color: theme.cardTextMuted }}>({smsTemplates.length})</span>
               </div>
               <div 
                 className="rounded-xl overflow-hidden"
@@ -597,9 +597,9 @@ export default function OutreachPage() {
           {callScriptTemplates.length > 0 && (!typeFilter || typeFilter === 'call_script') && (
             <div>
               <div className="flex items-center gap-2 mb-2 sm:mb-3">
-                <PhoneCall className="h-4 w-4" style={{ color: theme.textMuted }} />
+                <PhoneCall className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
                 <h3 className="text-xs sm:text-sm font-medium" style={{ color: theme.text, opacity: 0.7 }}>Call Scripts</h3>
-                <span className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>({callScriptTemplates.length})</span>
+                <span className="text-[10px] sm:text-xs" style={{ color: theme.cardTextMuted }}>({callScriptTemplates.length})</span>
               </div>
               <div 
                 className="rounded-xl overflow-hidden"

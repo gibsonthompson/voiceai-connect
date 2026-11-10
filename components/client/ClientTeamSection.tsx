@@ -96,7 +96,7 @@ const ClientTeamSection = forwardRef<ClientTeamSectionHandle, Props>(function Cl
   const removeMember = async (memberId: string, name: string) => { if (!confirm(`Remove ${name}? This will delete their account.`)) return; try { const res = await fetch(`${backendUrl}/api/client/${clientId}/team/${memberId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); if (!res.ok) throw new Error('Failed to remove'); setMembers(prev => prev.filter(m => m.id !== memberId)); setLimits(prev => ({ ...prev, current: Math.max(0, prev.current - 1) })); setSuccess(`${name} removed`); setTimeout(() => setSuccess(null), 3000); } catch (err: any) { setError(err.message); } };
   const copyText = async (text: string) => { try { await navigator.clipboard.writeText(text); setSuccess('Copied!'); setTimeout(() => setSuccess(null), 1500); } catch {} };
 
-  if (loading) return <div className="flex items-center justify-center py-8"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.textMuted }} /></div>;
+  if (loading) return <div className="flex items-center justify-center py-8"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.cardTextMuted }} /></div>;
 
   // Plan doesn't include users - show upgrade prompt instead of hiding
   if (limits.max === 0) {
@@ -109,12 +109,12 @@ const ClientTeamSection = forwardRef<ClientTeamSectionHandle, Props>(function Cl
         </div>
         )}
         <div className="rounded-xl border-2 border-dashed p-5 text-center" style={{ borderColor: theme.isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)', backgroundColor: theme.isDark ? 'rgba(255,255,255,0.02)' : '#f9fafb' }}>
-          <Lock className="w-5 h-5 mx-auto mb-2" style={{ color: theme.textMuted }} />
+          <Lock className="w-5 h-5 mx-auto mb-2" style={{ color: theme.cardTextMuted }} />
           <p className="text-sm font-medium mb-1" style={{ color: theme.text }}>Dashboard Users</p>
-          <p className="text-xs mb-3" style={{ color: theme.textMuted }}>Add users who can log into this dashboard with their own credentials. Available on Pro and Growth plans.</p>
+          <p className="text-xs mb-3" style={{ color: theme.cardTextMuted }}>Add users who can log into this dashboard with their own credentials. Available on Pro and Growth plans.</p>
           <div className="rounded-lg p-2.5 inline-flex items-start gap-2 text-left" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)' }}>
-            <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: theme.textMuted }} />
-            <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Different from Staff Directory - users get login access to this dashboard. Staff members are people your AI knows about for call routing and scheduling.</p>
+            <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: theme.cardTextMuted }} />
+            <p className="text-[10px] sm:text-xs" style={{ color: theme.cardTextMuted }}>Different from Staff Directory - users get login access to this dashboard. Staff members are people your AI knows about for call routing and scheduling.</p>
           </div>
         </div>
       </div>
@@ -131,7 +131,7 @@ const ClientTeamSection = forwardRef<ClientTeamSectionHandle, Props>(function Cl
           <h2 className="text-sm sm:text-base font-semibold flex items-center gap-2" style={{ color: theme.text }}>
             <Users className="w-4 h-4" style={{ color: theme.iconColor }} />Users
           </h2>
-          <p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>Dashboard login accounts, {limits.max === -1 ? `${limits.current} (Unlimited)` : `${limits.current} of ${limits.max}`}</p>
+          <p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.cardTextMuted }}>Dashboard login accounts, {limits.max === -1 ? `${limits.current} (Unlimited)` : `${limits.current} of ${limits.max}`}</p>
         </div>
         <button onClick={() => setShowAddForm(!showAddForm)} disabled={!limits.allowed} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs sm:text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Plus className="h-3.5 w-3.5" />Add</button>
       </div>
@@ -139,17 +139,17 @@ const ClientTeamSection = forwardRef<ClientTeamSectionHandle, Props>(function Cl
 
       {/* Distinction info */}
       <div className="rounded-lg p-2.5 flex items-start gap-2" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}>
-        <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: theme.textMuted }} />
-        <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Users can log into this dashboard with their own email and password. To add people your AI references on calls (for routing, scheduling, and referrals), use the <a href="/client/my-business" style={{fontWeight:600,textDecoration:'underline'}}>Staff Directory</a> in My Business.</p>
+        <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: theme.cardTextMuted }} />
+        <p className="text-[10px] sm:text-xs" style={{ color: theme.cardTextMuted }}>Users can log into this dashboard with their own email and password. To add people your AI references on calls (for routing, scheduling, and referrals), use the <a href="/client/my-business" style={{fontWeight:600,textDecoration:'underline'}}>Staff Directory</a> in My Business.</p>
       </div>
 
       {/* Login page link */}
       <div className="rounded-lg p-2.5 flex items-center justify-between gap-2" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', border: `1px solid ${theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}>
         <div className="min-w-0">
-          <p className="text-[10px]" style={{ color: theme.textMuted }}>Login page</p>
+          <p className="text-[10px]" style={{ color: theme.cardTextMuted }}>Login page</p>
           <p className="text-[10px] sm:text-xs font-mono truncate" style={{ color: theme.text }}>{loginUrl}</p>
         </div>
-        <button onClick={() => copyText(loginUrl)} className="flex-shrink-0 p-1.5 rounded-lg transition-colors" style={{ color: theme.textMuted }}><Copy className="h-3.5 w-3.5" /></button>
+        <button onClick={() => copyText(loginUrl)} className="flex-shrink-0 p-1.5 rounded-lg transition-colors" style={{ color: theme.cardTextMuted }}><Copy className="h-3.5 w-3.5" /></button>
       </div>
 
       {error && (<div className="rounded-lg p-2.5 flex items-center gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-3.5 w-3.5 flex-shrink-0" style={{ color: theme.errorText }} /><p className="text-xs" style={{ color: theme.errorText }}>{error}</p><button onClick={() => setError(null)} className="ml-auto text-xs" style={{ color: theme.errorText }}>×</button></div>)}
@@ -165,7 +165,7 @@ const ClientTeamSection = forwardRef<ClientTeamSectionHandle, Props>(function Cl
           </div>
           <div className="flex items-center gap-2 mt-3">
             <button onClick={handleAdd} disabled={adding} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{adding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}{adding ? 'Adding...' : 'Add'}</button>
-            <button onClick={() => { setShowAddForm(false); setAddName(''); setAddEmail(''); setAddPhone(''); }} className="rounded-lg px-3 py-2 text-xs sm:text-sm" style={{ color: theme.textMuted }}>Cancel</button>
+            <button onClick={() => { setShowAddForm(false); setAddName(''); setAddEmail(''); setAddPhone(''); }} className="rounded-lg px-3 py-2 text-xs sm:text-sm" style={{ color: theme.cardTextMuted }}>Cancel</button>
           </div>
         </div>
       )}
@@ -193,12 +193,12 @@ const ClientTeamSection = forwardRef<ClientTeamSectionHandle, Props>(function Cl
                       <div className="mt-1.5 flex items-center gap-1.5">
                         <input type="text" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password" autoFocus className="flex-1 rounded-lg px-2 py-1 text-[10px] sm:text-xs font-mono" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}`, color: theme.text, minWidth: 0 }} />
                         <button onClick={() => { if (newPassword.trim().length >= 6) resetPassword(member.id, newPassword.trim()); else setError('Password must be at least 6 characters'); }} className="rounded-lg px-2 py-1 text-[10px] sm:text-xs font-medium" style={{ backgroundColor: theme.primary, color: theme.primaryText || '#fff' }}>Save</button>
-                        <button onClick={() => { setEditingPasswordId(null); setNewPassword(''); }} className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Cancel</button>
+                        <button onClick={() => { setEditingPasswordId(null); setNewPassword(''); }} className="text-[10px] sm:text-xs" style={{ color: theme.cardTextMuted }}>Cancel</button>
                       </div>
                     ) : (
                       <div className="mt-1.5 flex items-center gap-3">
                         <button onClick={() => { setEditingPasswordId(member.id); setNewPassword(''); }} className="inline-flex items-center gap-1 text-[10px] sm:text-xs font-medium" style={{ color: theme.primary }}><Lock className="h-3 w-3" /> Edit Password</button>
-                        <button onClick={() => resetPassword(member.id)} className="inline-flex items-center gap-1 text-[10px] sm:text-xs font-medium" style={{ color: theme.textMuted }}><RefreshCw className="h-3 w-3" /> Generate Random</button>
+                        <button onClick={() => resetPassword(member.id)} className="inline-flex items-center gap-1 text-[10px] sm:text-xs font-medium" style={{ color: theme.cardTextMuted }}><RefreshCw className="h-3 w-3" /> Generate Random</button>
                       </div>
                     )}
                   </div>
@@ -208,7 +208,7 @@ const ClientTeamSection = forwardRef<ClientTeamSectionHandle, Props>(function Cl
                       <div className="flex items-center gap-1.5">
                         <input type="tel" value={phoneDraft} onChange={(e) => setPhoneDraft(e.target.value)} placeholder="+1 (555) 123-4567" autoFocus className="flex-1 rounded-lg px-2.5 py-1.5 text-[10px] sm:text-xs" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}`, color: theme.text, minWidth: 0 }} />
                         <button onClick={() => savePhone(member.id)} disabled={savingPhone} className="rounded-lg px-2.5 py-1.5 text-[10px] sm:text-xs font-medium disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText || '#fff' }}>{savingPhone ? 'Saving...' : 'Save'}</button>
-                        <button onClick={() => { setEditingPhoneId(null); setPhoneDraft(''); }} className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Cancel</button>
+                        <button onClick={() => { setEditingPhoneId(null); setPhoneDraft(''); }} className="text-[10px] sm:text-xs" style={{ color: theme.cardTextMuted }}>Cancel</button>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2 rounded-lg px-2.5 py-1.5" style={{ backgroundColor: theme.bg }}>

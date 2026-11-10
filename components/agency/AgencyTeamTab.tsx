@@ -399,7 +399,7 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-base sm:text-lg font-medium mb-1">{isCallCenter ? 'Agents' : 'Team Members'}</h3>
-          <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
+          <p className="text-xs sm:text-sm" style={{ color: theme.cardTextMuted }}>
             {limits.max === 0
               ? `Upgrade your plan to add ${isCallCenter ? 'agents' : 'team members'}.`
               : isCallCenter
@@ -441,7 +441,7 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
           <h4 className="text-sm font-medium mb-3">{isCallCenter ? 'Add Agent' : 'Add Team Member'}</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
             <div>
-              <label className="block text-xs mb-1" style={{ color: theme.textMuted }}>Full Name *</label>
+              <label className="block text-xs mb-1" style={{ color: theme.cardTextMuted }}>Full Name *</label>
               <input
                 type="text" value={addName} onChange={(e) => setAddName(e.target.value)}
                 placeholder="John Smith"
@@ -450,7 +450,7 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
               />
             </div>
             <div>
-              <label className="block text-xs mb-1" style={{ color: theme.textMuted }}>Email *</label>
+              <label className="block text-xs mb-1" style={{ color: theme.cardTextMuted }}>Email *</label>
               <input
                 type="email" value={addEmail} onChange={(e) => setAddEmail(e.target.value)}
                 placeholder="john@company.com"
@@ -460,24 +460,24 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
             </div>
           </div>
           <div className="mb-4">
-            <label className="block text-xs mb-1" style={{ color: theme.textMuted }}>Phone (for SMS credentials)</label>
+            <label className="block text-xs mb-1" style={{ color: theme.cardTextMuted }}>Phone (for SMS credentials)</label>
             <input
               type="tel" value={addPhone} onChange={(e) => setAddPhone(e.target.value)}
               placeholder="+1 (555) 123-4567"
               className="w-full sm:w-1/2 rounded-lg px-3 py-2 text-sm"
               style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
             />
-            <p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>Login credentials will be sent here via SMS</p>
+            <p className="text-[10px] mt-1" style={{ color: theme.cardTextMuted }}>Login credentials will be sent here via SMS</p>
           </div>
 
           {/* Agent business assignment (call center) */}
           {isCallCenter && (
             <div className="mb-4">
               <div className="flex items-center gap-1.5 mb-1.5">
-                <Building2 className="h-3.5 w-3.5" style={{ color: theme.textMuted }} />
+                <Building2 className="h-3.5 w-3.5" style={{ color: theme.cardTextMuted }} />
                 <label className="block text-xs font-medium" style={{ color: theme.text }}>Assigned businesses</label>
               </div>
-              <p className="text-[10px] mb-2" style={{ color: theme.textMuted }}>
+              <p className="text-[10px] mb-2" style={{ color: theme.cardTextMuted }}>
                 This agent will only see and handle the businesses you check here. You can change this anytime.
               </p>
               {clients.length === 0 ? (
@@ -488,8 +488,8 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
                 <>
                   <div className="flex items-center gap-3 mb-2">
                     <button type="button" onClick={() => setAddAssigned(clients.map(c => c.id))} className="text-[11px] font-medium" style={{ color: theme.primary }}>Select all</button>
-                    <button type="button" onClick={() => setAddAssigned([])} className="text-[11px] font-medium" style={{ color: theme.textMuted }}>Clear</button>
-                    <span className="text-[11px] ml-auto" style={{ color: theme.textMuted }}>{addAssigned.length} of {clients.length} selected</span>
+                    <button type="button" onClick={() => setAddAssigned([])} className="text-[11px] font-medium" style={{ color: theme.cardTextMuted }}>Clear</button>
+                    <span className="text-[11px] ml-auto" style={{ color: theme.cardTextMuted }}>{addAssigned.length} of {clients.length} selected</span>
                   </div>
                   <div className="max-h-44 overflow-y-auto rounded-lg divide-y" style={{ border: `1px solid ${theme.inputBorder}`, borderColor: theme.inputBorder }}>
                     {clients.map(c => {
@@ -503,7 +503,7 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
                         >
                           {sel
                             ? <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: theme.iconColor }} />
-                            : <Circle className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted }} />}
+                            : <Circle className="h-4 w-4 flex-shrink-0" style={{ color: theme.cardTextMuted }} />}
                           <span className="text-xs truncate" style={{ color: sel ? theme.text : theme.textMuted }}>{c.business_name}</span>
                         </button>
                       );
@@ -518,7 +518,7 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
           {isCallCenter && (
             <div className="mb-4">
               <div className="flex items-center gap-1.5 mb-1.5">
-                <Headset className="h-3.5 w-3.5" style={{ color: theme.textMuted }} />
+                <Headset className="h-3.5 w-3.5" style={{ color: theme.cardTextMuted }} />
                 <label className="block text-xs font-medium" style={{ color: theme.text }}>How this agent takes calls</label>
               </div>
               <div className="inline-flex rounded-lg p-0.5 mb-2" style={{ backgroundColor: theme.hover }}>
@@ -531,7 +531,7 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
               {addCallDelivery === 'phone' ? (
                 <input type="tel" value={addAgentPhone} onChange={(e) => setAddAgentPhone(e.target.value)} placeholder="+1 (555) 123-4567" className="w-full sm:w-1/2 rounded-lg px-3 py-2 text-sm block" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
               ) : (
-                <p className="text-[10px]" style={{ color: theme.textMuted }}>Escalated calls ring this agent inside the dashboard. They click to take over.</p>
+                <p className="text-[10px]" style={{ color: theme.cardTextMuted }}>Escalated calls ring this agent inside the dashboard. They click to take over.</p>
               )}
             </div>
           )}
@@ -548,7 +548,7 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
             <button
               onClick={() => { setShowAddForm(false); setAddName(''); setAddEmail(''); setAddPhone(''); setAddAssigned([]); setAddCallDelivery('browser'); setAddAgentPhone(''); }}
               className="rounded-lg px-4 py-2 text-sm font-medium"
-              style={{ color: theme.textMuted }}
+              style={{ color: theme.cardTextMuted }}
             >
               Cancel
             </button>
@@ -592,16 +592,16 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
                           <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: theme.errorBg, color: theme.errorText }}>Disabled</span>
                         )}
                       </div>
-                      <p className="text-xs truncate" style={{ color: theme.textMuted }}>{member.email}</p>
+                      <p className="text-xs truncate" style={{ color: theme.cardTextMuted }}>{member.email}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {member.last_login && (
-                      <span className="text-[10px] hidden sm:inline" style={{ color: theme.textMuted }}>
+                      <span className="text-[10px] hidden sm:inline" style={{ color: theme.cardTextMuted }}>
                         Last login: {new Date(member.last_login).toLocaleDateString()}
                       </span>
                     )}
-                    {isExpanded ? <ChevronUp className="h-4 w-4" style={{ color: theme.textMuted }} /> : <ChevronDown className="h-4 w-4" style={{ color: theme.textMuted }} />}
+                    {isExpanded ? <ChevronUp className="h-4 w-4" style={{ color: theme.cardTextMuted }} /> : <ChevronDown className="h-4 w-4" style={{ color: theme.cardTextMuted }} />}
                   </div>
                 </button>
 
@@ -611,17 +611,17 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
 
                     {/* Credentials */}
                     <div className="pt-3">
-                      <p className="text-xs font-medium mb-2" style={{ color: theme.textMuted }}>Login Credentials</p>
+                      <p className="text-xs font-medium mb-2" style={{ color: theme.cardTextMuted }}>Login Credentials</p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ backgroundColor: theme.hover }}>
-                          <Mail className="h-3.5 w-3.5 flex-shrink-0" style={{ color: theme.textMuted }} />
+                          <Mail className="h-3.5 w-3.5 flex-shrink-0" style={{ color: theme.cardTextMuted }} />
                           <span className="text-xs truncate" style={{ color: theme.text }}>{member.email}</span>
                           <button onClick={() => copyText(member.email || '')} className="ml-auto flex-shrink-0">
-                            <Copy className="h-3 w-3" style={{ color: theme.textMuted }} />
+                            <Copy className="h-3 w-3" style={{ color: theme.cardTextMuted }} />
                           </button>
                         </div>
                         <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ backgroundColor: theme.hover }}>
-                          <Lock className="h-3.5 w-3.5 flex-shrink-0" style={{ color: theme.textMuted }} />
+                          <Lock className="h-3.5 w-3.5 flex-shrink-0" style={{ color: theme.cardTextMuted }} />
                           {member.visible_password ? (
                             <>
                               <span className="text-xs font-mono" style={{ color: theme.text }}>
@@ -631,14 +631,14 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
                                 onClick={() => setVisiblePasswords(prev => ({ ...prev, [member.id]: !showPw }))}
                                 className="ml-auto flex-shrink-0"
                               >
-                                {showPw ? <EyeOff className="h-3 w-3" style={{ color: theme.textMuted }} /> : <Eye className="h-3 w-3" style={{ color: theme.textMuted }} />}
+                                {showPw ? <EyeOff className="h-3 w-3" style={{ color: theme.cardTextMuted }} /> : <Eye className="h-3 w-3" style={{ color: theme.cardTextMuted }} />}
                               </button>
                               <button onClick={() => copyText(member.visible_password || '')} className="flex-shrink-0">
-                                <Copy className="h-3 w-3" style={{ color: theme.textMuted }} />
+                                <Copy className="h-3 w-3" style={{ color: theme.cardTextMuted }} />
                               </button>
                             </>
                           ) : (
-                            <span className="text-xs italic" style={{ color: theme.textMuted }}>Changed by user</span>
+                            <span className="text-xs italic" style={{ color: theme.cardTextMuted }}>Changed by user</span>
                           )}
                         </div>
                       </div>
@@ -655,9 +655,9 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
                     {isCallCenter ? (
                       <div>
                         <div className="flex items-center gap-1.5 mb-2">
-                          <Building2 className="h-3.5 w-3.5" style={{ color: theme.textMuted }} />
-                          <p className="text-xs font-medium" style={{ color: theme.textMuted }}>Assigned businesses</p>
-                          <span className="text-[11px] ml-auto" style={{ color: theme.textMuted }}>
+                          <Building2 className="h-3.5 w-3.5" style={{ color: theme.cardTextMuted }} />
+                          <p className="text-xs font-medium" style={{ color: theme.cardTextMuted }}>Assigned businesses</p>
+                          <span className="text-[11px] ml-auto" style={{ color: theme.cardTextMuted }}>
                             {(member.assigned_client_ids?.length ?? 0)} of {clients.length}
                           </span>
                         </div>
@@ -685,7 +685,7 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
                                   >
                                     {sel
                                       ? <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: theme.iconColor }} />
-                                      : <Circle className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted }} />}
+                                      : <Circle className="h-4 w-4 flex-shrink-0" style={{ color: theme.cardTextMuted }} />}
                                     <span className="text-xs truncate" style={{ color: sel ? theme.text : theme.textMuted }}>{c.business_name}</span>
                                   </button>
                                 );
@@ -697,14 +697,14 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
                         {/* Call delivery */}
                         <div className="mt-4 pt-3" style={{ borderTop: `1px solid ${theme.border}` }}>
                           <div className="flex items-center gap-1.5 mb-2">
-                            <Headset className="h-3.5 w-3.5" style={{ color: theme.textMuted }} />
-                            <p className="text-xs font-medium" style={{ color: theme.textMuted }}>How this agent takes calls</p>
+                            <Headset className="h-3.5 w-3.5" style={{ color: theme.cardTextMuted }} />
+                            <p className="text-xs font-medium" style={{ color: theme.cardTextMuted }}>How this agent takes calls</p>
                           </div>
                           <div className="inline-flex rounded-lg p-0.5 mb-2" style={{ backgroundColor: theme.hover }}>
                             {(['browser', 'phone'] as const).map(opt => {
                               const active = (member.call_delivery || 'browser') === opt;
                               return (
-                                <button key={opt} type="button" onClick={() => updateDelivery(member.id, { call_delivery: opt, ...(opt === 'browser' ? { agent_phone: null } : {}) })} className="px-3 py-1.5 text-xs font-semibold rounded-md transition-colors" style={active ? { backgroundColor: theme.card, color: theme.text } : { color: theme.textMuted }}>
+                                <button key={opt} type="button" onClick={() => updateDelivery(member.id, { call_delivery: opt, ...(opt === 'browser' ? { agent_phone: null } : {}) })} className="px-3 py-1.5 text-xs font-semibold rounded-md transition-colors" style={active ? { backgroundColor: theme.card, color: theme.text } : { color: theme.cardTextMuted }}>
                                   {opt === 'browser' ? 'In the dashboard' : 'On their phone'}
                                 </button>
                               );
@@ -713,13 +713,13 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
                           {(member.call_delivery || 'browser') === 'phone' ? (
                             <input type="tel" defaultValue={member.agent_phone || ''} onBlur={(e) => { const v = e.target.value.trim(); if (v !== (member.agent_phone || '')) updateDelivery(member.id, { agent_phone: v || null }); }} placeholder="+1 (555) 123-4567" className="w-full sm:w-2/3 rounded-lg px-3 py-2 text-sm block" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
                           ) : (
-                            <p className="text-[11px]" style={{ color: theme.textMuted }}>Escalated calls ring this agent in the dashboard. They click to take over.</p>
+                            <p className="text-[11px]" style={{ color: theme.cardTextMuted }}>Escalated calls ring this agent in the dashboard. They click to take over.</p>
                           )}
                         </div>
                       </div>
                     ) : (
                     <div>
-                      <p className="text-xs font-medium mb-2" style={{ color: theme.textMuted }}>Page Access</p>
+                      <p className="text-xs font-medium mb-2" style={{ color: theme.cardTextMuted }}>Page Access</p>
                       <div className="grid grid-cols-2 gap-1.5">
                         {Object.entries(AGENCY_PERMISSIONS).map(([key, info]) => {
                           const enabled = member.permissions[key] ?? false;
@@ -735,7 +735,7 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
                             >
                               {enabled
                                 ? <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: theme.iconColor }} />
-                                : <Circle className="h-4 w-4 flex-shrink-0" style={{ color: theme.textMuted }} />
+                                : <Circle className="h-4 w-4 flex-shrink-0" style={{ color: theme.cardTextMuted }} />
                               }
                               <div className="min-w-0">
                                 <span className="text-xs font-medium block truncate" style={{ color: enabled ? theme.text : theme.textMuted }}>
@@ -751,7 +751,7 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
 
                     {/* Notifications */}
                     <div>
-                      <p className="text-xs font-medium mb-2" style={{ color: theme.textMuted }}>Notifications</p>
+                      <p className="text-xs font-medium mb-2" style={{ color: theme.cardTextMuted }}>Notifications</p>
                       <div className="space-y-1.5">
                         {Object.entries(NOTIFICATION_LABELS).map(([key, label]) => {
                           const enabled = member.notification_prefs[key] ?? false;
@@ -760,7 +760,7 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
                               <div className="flex items-center gap-2">
                                 {enabled
                                   ? <Bell className="h-3.5 w-3.5" style={{ color: theme.iconColor }} />
-                                  : <BellOff className="h-3.5 w-3.5" style={{ color: theme.textMuted }} />
+                                  : <BellOff className="h-3.5 w-3.5" style={{ color: theme.cardTextMuted }} />
                                 }
                                 <span className="text-xs" style={{ color: enabled ? theme.text : theme.textMuted }}>{label}</span>
                               </div>
@@ -810,9 +810,9 @@ export default function AgencyTeamTab({ agencyId, theme }: Props) {
       {/* Empty state — shows when the agency can add members but has none */}
       {members.length === 0 && (canAddMembers || locked) && !showAddForm && (
         <div className="rounded-xl p-6 text-center" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
-          {isCallCenter ? <Headphones className="h-8 w-8 mx-auto mb-2" style={{ color: theme.textMuted }} /> : <Users className="h-8 w-8 mx-auto mb-2" style={{ color: theme.textMuted }} />}
+          {isCallCenter ? <Headphones className="h-8 w-8 mx-auto mb-2" style={{ color: theme.cardTextMuted }} /> : <Users className="h-8 w-8 mx-auto mb-2" style={{ color: theme.cardTextMuted }} />}
           <p className="text-sm font-medium mb-1" style={{ color: theme.text }}>{isCallCenter ? 'No agents yet' : 'No team members yet'}</p>
-          <p className="text-xs mb-3" style={{ color: theme.textMuted }}>{isCallCenter ? 'Add agents and assign each one the businesses they should monitor.' : 'Add team members to give them access to your agency dashboard.'}</p>
+          <p className="text-xs mb-3" style={{ color: theme.cardTextMuted }}>{isCallCenter ? 'Add agents and assign each one the businesses they should monitor.' : 'Add team members to give them access to your agency dashboard.'}</p>
           <button
             onClick={() => setShowAddForm(true)}
             className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-medium"

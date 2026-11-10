@@ -122,7 +122,7 @@ export default function AgencyLiveWallboard() {
           </div>
           <div className="min-w-0">
             <h1 className="text-lg sm:text-xl lg:text-2xl font-semibold tracking-tight truncate" style={{ color: theme.text }}>Live Calls</h1>
-            <p className="text-xs sm:text-[13px]" style={{ color: theme.textMuted }}>Every call happening right now across {isAgent ? 'the businesses assigned to you' : 'your businesses'}</p>
+            <p className="text-xs sm:text-[13px]" style={{ color: theme.cardTextMuted }}>Every call happening right now across {isAgent ? 'the businesses assigned to you' : 'your businesses'}</p>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -132,7 +132,7 @@ export default function AgencyLiveWallboard() {
             const pct = limit && limit > 0 ? Math.min(100, Math.round((active / limit) * 100)) : 0;
             const barColor = !limit ? accent : pct >= 90 ? '#ef4444' : pct >= 70 ? HUMAN_AMBER : LIVE_GREEN;
             return (
-              <span className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full" style={{ backgroundColor: theme.hover, color: theme.textMuted }} title={limit ? `${active} of ${limit} concurrent lines in use` : `${active} concurrent lines in use (no account cap)`}>
+              <span className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full" style={{ backgroundColor: theme.hover, color: theme.cardTextMuted }} title={limit ? `${active} of ${limit} concurrent lines in use` : `${active} concurrent lines in use (no account cap)`}>
                 {limit ? (
                   <>
                     <span className="h-1.5 w-12 rounded-full overflow-hidden" style={{ backgroundColor: theme.border }}>
@@ -153,7 +153,7 @@ export default function AgencyLiveWallboard() {
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 text-sm" style={{ color: theme.textMuted }}><Loader2 className="h-4 w-4 animate-spin" /> Loading the board...</div>
+        <div className="flex items-center gap-2 text-sm" style={{ color: theme.cardTextMuted }}><Loader2 className="h-4 w-4 animate-spin" /> Loading the board...</div>
       ) : (
         <>
           {/* Live now */}
@@ -161,7 +161,7 @@ export default function AgencyLiveWallboard() {
             <div className="rounded-2xl py-12 flex flex-col items-center justify-center text-center" style={{ border: `1px dashed ${theme.border}` }}>
               <CircleDot className="h-8 w-8 mb-2.5" style={{ color: theme.textSubtle }} />
               <p className="text-sm font-medium" style={{ color: theme.text }}>No live calls right now</p>
-              <p className="text-[13px] mt-1" style={{ color: theme.textMuted }}>When a caller reaches one of {isAgent ? 'your assigned businesses' : 'your businesses'}, it appears here instantly.</p>
+              <p className="text-[13px] mt-1" style={{ color: theme.cardTextMuted }}>When a caller reaches one of {isAgent ? 'your assigned businesses' : 'your businesses'}, it appears here instantly.</p>
             </div>
           ) : (
             <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
@@ -179,7 +179,7 @@ export default function AgencyLiveWallboard() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="font-semibold text-sm sm:text-[15px] truncate" style={{ color: theme.text }}>{c.businessName}</p>
-                      <p className="text-[13px] truncate" style={{ color: theme.textMuted }}>{fmtPhone(c.callerNumber)}</p>
+                      <p className="text-[13px] truncate" style={{ color: theme.cardTextMuted }}>{fmtPhone(c.callerNumber)}</p>
                     </div>
                     <span className="text-[11px] font-semibold tabular-nums px-2 py-1 rounded-lg flex-shrink-0" style={{ color: theme.textMuted, backgroundColor: theme.hover }}>
                       {fmtElapsed(c.startedAt, now)}
@@ -204,11 +204,11 @@ export default function AgencyLiveWallboard() {
           {businesses.length > 0 && (
             <div className="mt-7 sm:mt-9">
               <div className="flex items-center gap-2 mb-3">
-                <Building2 className="h-4 w-4" style={{ color: theme.textMuted }} />
+                <Building2 className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
                 <h2 className="text-[13px] sm:text-sm font-semibold" style={{ color: theme.text }}>
                   {isAgent ? 'Your businesses' : 'All businesses'}
                 </h2>
-                <span className="text-[12px]" style={{ color: theme.textMuted }}>{businesses.length}</span>
+                <span className="text-[12px]" style={{ color: theme.cardTextMuted }}>{businesses.length}</span>
               </div>
               <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${theme.border}`, backgroundColor: theme.card }}>
                 {businesses.map((b, i) => (

@@ -295,7 +295,7 @@ export default function AgencyInboxPage() {
     <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
       style={type === 'platform'
         ? { background: theme.primary15, color: theme.primary }
-        : { background: theme.isDark ? 'rgba(255,255,255,0.06)' : '#f1f5f9', color: theme.textMuted }}>
+        : { background: theme.isDark ? 'rgba(255,255,255,0.06)' : '#f1f5f9', color: theme.cardTextMuted }}>
       {TYPE_META[type].short}
     </span>
   );
@@ -319,7 +319,7 @@ export default function AgencyInboxPage() {
             <button onClick={openCompose} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold" style={{ background: theme.primary, color: theme.primaryText }} aria-label="New message">
               <PenSquare className="h-3.5 w-3.5" /> New
             </button>
-            <button onClick={load} className="p-1.5 rounded-lg" style={{ color: theme.textMuted }} aria-label="Refresh"
+            <button onClick={load} className="p-1.5 rounded-lg" style={{ color: theme.cardTextMuted }} aria-label="Refresh"
               onMouseEnter={(e) => (e.currentTarget.style.background = theme.hover)} onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
               <RefreshCw className="h-3.5 w-3.5" />
             </button>
@@ -328,9 +328,9 @@ export default function AgencyInboxPage() {
 
         <div className="flex-1 overflow-y-auto">
           {loadingList ? (
-            <div className="flex items-center justify-center py-16"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.textMuted }} /></div>
+            <div className="flex items-center justify-center py-16"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.cardTextMuted }} /></div>
           ) : conversations.length === 0 ? (
-            <div className="px-6 py-16 text-center text-sm" style={{ color: theme.textMuted }}>
+            <div className="px-6 py-16 text-center text-sm" style={{ color: theme.cardTextMuted }}>
               No conversations yet. Messages with your clients, prospects, and the VoiceAI Connect team all land here.
             </div>
           ) : (
@@ -346,7 +346,7 @@ export default function AgencyInboxPage() {
                     </span>
                     <TypeTag type={c.type} />
                   </div>
-                  <span className="text-[10px] shrink-0" style={{ color: theme.textMuted }}>{fmtTime(c.lastAt)}</span>
+                  <span className="text-[10px] shrink-0" style={{ color: theme.cardTextMuted }}>{fmtTime(c.lastAt)}</span>
                 </div>
                 <div className="flex items-center justify-between gap-2 mt-0.5">
                   <span className="text-xs truncate" style={{ color: (c.unread > 0 || c.needsReply) ? theme.text : theme.textMuted }}>
@@ -367,7 +367,7 @@ export default function AgencyInboxPage() {
       {/* Thread */}
       <main className={`${selected ? 'flex' : 'hidden sm:flex'} flex-1 flex-col min-w-0`} style={{ background: theme.bg }}>
         {!selected ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center px-6" style={{ color: theme.textMuted }}>
+          <div className="flex-1 flex flex-col items-center justify-center text-center px-6" style={{ color: theme.cardTextMuted }}>
             <MessageSquare className="h-8 w-8 mb-3 opacity-40" />
             <p className="text-sm">Select a conversation to read and reply.</p>
             <button onClick={openCompose} className="mt-4 inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-semibold" style={{ background: theme.primary, color: theme.primaryText }}>
@@ -378,7 +378,7 @@ export default function AgencyInboxPage() {
           <>
             {/* Header */}
             <div className="flex items-center gap-3 px-4 py-2.5 border-b shrink-0" style={{ borderColor: theme.border, background: theme.card }}>
-              <button onClick={() => setSelectedKey(null)} className="sm:hidden p-1.5 -ml-1.5 rounded-lg" style={{ color: theme.textMuted }} aria-label="Back"><ArrowLeft className="h-4 w-4" /></button>
+              <button onClick={() => setSelectedKey(null)} className="sm:hidden p-1.5 -ml-1.5 rounded-lg" style={{ color: theme.cardTextMuted }} aria-label="Back"><ArrowLeft className="h-4 w-4" /></button>
               <div className="h-8 w-8 rounded-full flex items-center justify-center shrink-0" style={{ background: theme.primary15, color: theme.primary }}>
                 <ConvIcon type={selected.type} />
               </div>
@@ -386,7 +386,7 @@ export default function AgencyInboxPage() {
                 <div className="text-sm font-semibold truncate flex items-center gap-1.5" style={{ color: theme.text }}>
                   {selected.name || fmtPhone(selected.phone) || TYPE_META[selected.type].label}<TypeTag type={selected.type} />
                 </div>
-                <div className="text-[11px] flex items-center gap-x-3 gap-y-0.5 flex-wrap" style={{ color: theme.textMuted }}>
+                <div className="text-[11px] flex items-center gap-x-3 gap-y-0.5 flex-wrap" style={{ color: theme.cardTextMuted }}>
                   {selected.type === 'platform' && <span>VoiceAI Connect support</span>}
                   {selected.phone && (<span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" />{fmtPhone(selected.phone)}</span>)}
                   {facts?.aiPhone && selected.type === 'client' && (<span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" />AI {fmtPhone(facts.aiPhone)}</span>)}
@@ -404,7 +404,7 @@ export default function AgencyInboxPage() {
                   { label: 'Monthly', value: facts.priceCents != null ? money(facts.priceCents) : '--' },
                 ].map((f) => (
                   <div key={f.label} className="min-w-0">
-                    <div className="text-[9px] uppercase tracking-wide truncate" style={{ color: theme.textMuted }}>{f.label}</div>
+                    <div className="text-[9px] uppercase tracking-wide truncate" style={{ color: theme.cardTextMuted }}>{f.label}</div>
                     <div className="text-xs font-medium truncate capitalize" style={{ color: theme.text }}>{f.value}</div>
                   </div>
                 ))}
@@ -414,7 +414,7 @@ export default function AgencyInboxPage() {
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
               {selected.messages.length === 0 ? (
-                <div className="flex items-center justify-center py-16 text-sm" style={{ color: theme.textMuted }}>No messages yet. Say hello below.</div>
+                <div className="flex items-center justify-center py-16 text-sm" style={{ color: theme.cardTextMuted }}>No messages yet. Say hello below.</div>
               ) : (
                 selected.messages.map((m) => {
                   const isIn = m.sender === 'in';
@@ -427,7 +427,7 @@ export default function AgencyInboxPage() {
                             : { background: theme.primary, color: theme.primaryText, borderBottomRightRadius: 4 }}>
                           {m.body}
                         </div>
-                        <div className={`mt-1 text-[10px] ${isIn ? 'text-left' : 'text-right'}`} style={{ color: theme.textMuted }}>{fmtTime(m.at)}</div>
+                        <div className={`mt-1 text-[10px] ${isIn ? 'text-left' : 'text-right'}`} style={{ color: theme.cardTextMuted }}>{fmtTime(m.at)}</div>
                       </div>
                     </div>
                   );
@@ -448,7 +448,7 @@ export default function AgencyInboxPage() {
                   {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 </button>
               </div>
-              <p className="mt-1.5 text-[10px]" style={{ color: theme.textMuted }}>
+              <p className="mt-1.5 text-[10px]" style={{ color: theme.cardTextMuted }}>
                 {selected.type === 'platform' ? 'Goes to the VoiceAI Connect team. Replies land right here.'
                   : selected.type === 'sms' ? 'Sends as a text from your demo number.'
                   : selected.type === 'client' ? 'Lands in your client\'s dashboard inbox, and texts them a heads-up.'
@@ -465,28 +465,28 @@ export default function AgencyInboxPage() {
           <div className="w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl overflow-hidden" style={{ background: theme.card, border: `1px solid ${theme.border}` }} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-4 h-12 border-b" style={{ borderColor: theme.border }}>
               <span className="text-sm font-semibold" style={{ color: theme.text }}>New message</span>
-              <button onClick={() => setComposeOpen(false)} className="p-1.5 rounded-lg" style={{ color: theme.textMuted }} aria-label="Close"><X className="h-4 w-4" /></button>
+              <button onClick={() => setComposeOpen(false)} className="p-1.5 rounded-lg" style={{ color: theme.cardTextMuted }} aria-label="Close"><X className="h-4 w-4" /></button>
             </div>
             <div className="p-4 space-y-3">
               <div>
-                <label className="block text-[11px] font-medium mb-1" style={{ color: theme.textMuted }}>Send to</label>
+                <label className="block text-[11px] font-medium mb-1" style={{ color: theme.cardTextMuted }}>Send to</label>
                 <CustomSelect value={composeChannel} onChange={(v) => setComposeChannel(v as any)} options={channelOptions} ui={selectUi} />
               </div>
 
               {composeChannel === 'client' && (
                 <div>
-                  <label className="block text-[11px] font-medium mb-1" style={{ color: theme.textMuted }}>Client</label>
+                  <label className="block text-[11px] font-medium mb-1" style={{ color: theme.cardTextMuted }}>Client</label>
                   {clientOptions.length ? (
                     <CustomSelect value={composeClientId} onChange={setComposeClientId} options={clientOptions} placeholder="Choose a client" ui={selectUi} />
                   ) : (
-                    <p className="text-xs" style={{ color: theme.textMuted }}>No clients yet. Add a client first, or text a number instead.</p>
+                    <p className="text-xs" style={{ color: theme.cardTextMuted }}>No clients yet. Add a client first, or text a number instead.</p>
                   )}
                 </div>
               )}
 
               {composeChannel === 'sms' && (
                 <div>
-                  <label className="block text-[11px] font-medium mb-1" style={{ color: theme.textMuted }}>Phone number</label>
+                  <label className="block text-[11px] font-medium mb-1" style={{ color: theme.cardTextMuted }}>Phone number</label>
                   <input value={composePhone} onChange={(e) => setComposePhone(e.target.value)} inputMode="tel" placeholder="(404) 555-0100"
                     className="w-full rounded-xl px-3.5 py-2.5 text-sm focus:outline-none" style={{ background: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
                 </div>
@@ -499,7 +499,7 @@ export default function AgencyInboxPage() {
               )}
 
               <div>
-                <label className="block text-[11px] font-medium mb-1" style={{ color: theme.textMuted }}>Message</label>
+                <label className="block text-[11px] font-medium mb-1" style={{ color: theme.cardTextMuted }}>Message</label>
                 <textarea value={composeBody} onChange={(e) => setComposeBody(e.target.value)} rows={4} placeholder="Type your message..."
                   className="w-full resize-none rounded-xl px-3.5 py-2.5 text-sm focus:outline-none" style={{ background: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
               </div>

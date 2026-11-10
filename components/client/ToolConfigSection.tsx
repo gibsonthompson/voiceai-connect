@@ -386,14 +386,14 @@ export default function ToolConfigSection({ clientId, theme, compact, industry }
                         className="mt-1.5 p-2.5 sm:p-3 rounded-lg text-[10px] sm:text-xs space-y-1.5"
                         style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}
                       >
-                        <p style={{ color: theme.textMuted }}>
+                        <p style={{ color: theme.cardTextMuted }}>
                           Make sure your phone allows calls from unknown numbers. Transferred calls come from your AI number, which your phone may silently block.
                         </p>
                         <p style={{ color: theme.textMuted4 }}>
-                          <span className="font-medium" style={{ color: theme.textMuted }}>iPhone:</span> Settings → Phone → Silence Unknown Callers → Off
+                          <span className="font-medium" style={{ color: theme.cardTextMuted }}>iPhone:</span> Settings → Phone → Silence Unknown Callers → Off
                         </p>
                         <p style={{ color: theme.textMuted4 }}>
-                          <span className="font-medium" style={{ color: theme.textMuted }}>Android:</span> Phone → Settings → Caller ID &amp; spam → turn off spam filtering
+                          <span className="font-medium" style={{ color: theme.cardTextMuted }}>Android:</span> Phone → Settings → Caller ID &amp; spam → turn off spam filtering
                         </p>
                       </div>
                     )}
@@ -419,7 +419,7 @@ export default function ToolConfigSection({ clientId, theme, compact, industry }
                         className="mt-1.5 p-2.5 sm:p-3 rounded-lg text-[10px] sm:text-xs"
                         style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}
                       >
-                        <p style={{ color: theme.textMuted }}>{tool.details}</p>
+                        <p style={{ color: theme.cardTextMuted }}>{tool.details}</p>
                       </div>
                     )}
                   </div>
@@ -429,7 +429,7 @@ export default function ToolConfigSection({ clientId, theme, compact, industry }
                 {tool.key === 'smsToCaller' && config.smsToCaller && (
                   <div className="mt-2">
                     <div className="p-2.5 sm:p-3 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
-                      <p className="text-[10px] mb-2.5" style={{ color: theme.textMuted }}>Turn on what your AI can text callers during a call, then add the link or info. It only ever texts the person on the call.</p>
+                      <p className="text-[10px] mb-2.5" style={{ color: theme.cardTextMuted }}>Turn on what your AI can text callers during a call, then add the link or info. It only ever texts the person on the call.</p>
 
                       {/* Preset texts */}
                       {SMS_PRESETS.map((preset) => {
@@ -501,12 +501,12 @@ export default function ToolConfigSection({ clientId, theme, compact, industry }
                       <button type="button" onClick={() => setConfig({ ...config, smsSnippets: [...(config.smsSnippets || []), { label: '', value: '' }] })} className="text-[10px] font-medium" style={{ color: theme.primary }}>+ Add a custom text</button>
                       <p className="text-[9px] mt-1" style={{ color: theme.textMuted4 }}>Custom texts cover anything the options above don&apos;t. The exact text or link is sent word-for-word.</p>
 
-                      <button type="button" onClick={() => setSmsAdvancedOpen(o => !o)} className="flex items-center gap-1 text-[10px] font-medium mt-3" style={{ color: theme.textMuted }}>
+                      <button type="button" onClick={() => setSmsAdvancedOpen(o => !o)} className="flex items-center gap-1 text-[10px] font-medium mt-3" style={{ color: theme.cardTextMuted }}>
                         <ChevronDown className={`h-3 w-3 transition-transform ${smsAdvancedOpen ? 'rotate-180' : ''}`} /> Advanced
                       </button>
                       {smsAdvancedOpen && (
                         <div className="mt-2 pt-2" style={{ borderTop: `1px solid ${theme.border}` }}>
-                          <label className="block text-[10px] font-medium mb-1" style={{ color: theme.textMuted }}>Extra instructions (optional)</label>
+                          <label className="block text-[10px] font-medium mb-1" style={{ color: theme.cardTextMuted }}>Extra instructions (optional)</label>
                           <textarea value={config.smsInstructions} onChange={(e) => setConfig({ ...config, smsInstructions: e.target.value })} rows={2} className="w-full rounded-lg px-2.5 py-2 text-xs resize-none focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} placeholder="Fine-tune when or how the AI texts, e.g. always send a confirmation after booking." />
                         </div>
                       )}
@@ -536,7 +536,7 @@ export default function ToolConfigSection({ clientId, theme, compact, industry }
 
           {/* Appointment booking SMS: owner alert (free) + customer confirmation (upgrade) */}
           <div className="pt-3 mt-1" style={{ borderTop: `1px solid ${theme.border}` }}>
-            <p className="text-[10px] sm:text-xs font-semibold mb-2 px-1 tracking-wide" style={{ color: theme.textMuted }}>APPOINTMENT BOOKING</p>
+            <p className="text-[10px] sm:text-xs font-semibold mb-2 px-1 tracking-wide" style={{ color: theme.cardTextMuted }}>APPOINTMENT BOOKING</p>
 
             {/* Owner alert (always available) */}
             <div
@@ -589,7 +589,7 @@ export default function ToolConfigSection({ clientId, theme, compact, industry }
                 </div>
                 {config.apptCustomerSmsEnabled && (
                   <div className="mt-1 p-2.5 sm:p-3 rounded-lg" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
-                    <label className="block text-[10px] font-medium mb-1" style={{ color: theme.textMuted }}>Confirmation message</label>
+                    <label className="block text-[10px] font-medium mb-1" style={{ color: theme.cardTextMuted }}>Confirmation message</label>
                     <textarea
                       value={config.apptCustomerSmsTemplate}
                       onChange={(e) => setConfig({ ...config, apptCustomerSmsTemplate: e.target.value.slice(0, 320) })}

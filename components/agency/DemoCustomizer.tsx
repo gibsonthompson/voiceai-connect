@@ -225,16 +225,16 @@ export default function DemoCustomizer({ agencyId, theme, demoNumberId }: Props)
         <ChevronDown className="h-4 w-4 flex-shrink-0 transition-transform" style={{ color: theme.textMuted, transform: expanded ? 'rotate(180deg)' : 'none' }} />
       </button>
       {!expanded && (
-        <p className="text-xs sm:text-sm mt-1.5" style={{ color: theme.textMuted }}>Voice, greeting, and instructions. The demo works great as-is, tap to customize.</p>
+        <p className="text-xs sm:text-sm mt-1.5" style={{ color: theme.cardTextMuted }}>Voice, greeting, and instructions. The demo works great as-is, tap to customize.</p>
       )}
 
       {expanded && (<>
-      <p className="text-xs sm:text-sm mb-4 mt-1.5" style={{ color: theme.textMuted }}>
+      <p className="text-xs sm:text-sm mb-4 mt-1.5" style={{ color: theme.cardTextMuted }}>
         Pick the voice callers hear and, if you want, tweak the greeting and add a few instructions. Optional, the demo works great as-is.
       </p>
 
       {loading ? (
-        <div className="py-8 flex items-center justify-center"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.textMuted }} /></div>
+        <div className="py-8 flex items-center justify-center"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.cardTextMuted }} /></div>
       ) : (
         <>
           <div className="mb-3">
@@ -249,7 +249,7 @@ export default function DemoCustomizer({ agencyId, theme, demoNumberId }: Props)
               onPlay={(v: Voice) => playVoice(v)}
               onDeleteCustom={handleDeleteVoice}
             />
-            <p className="text-[11px] mt-2" style={{ color: theme.textMuted }}>
+            <p className="text-[11px] mt-2" style={{ color: theme.cardTextMuted }}>
               Previews play your greeting in that voice, not a generic sample.
             </p>
           </div>
@@ -267,7 +267,7 @@ export default function DemoCustomizer({ agencyId, theme, demoNumberId }: Props)
               <div className="rounded-xl p-3.5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                 <div className="flex items-center justify-between mb-2.5">
                   <span className="text-xs sm:text-sm font-medium" style={{ color: theme.text }}>Add a custom ElevenLabs voice</span>
-                  <button onClick={() => { setShowAddVoice(false); setVoiceError(''); }} style={{ color: theme.textMuted }}><X className="h-4 w-4" /></button>
+                  <button onClick={() => { setShowAddVoice(false); setVoiceError(''); }} style={{ color: theme.cardTextMuted }}><X className="h-4 w-4" /></button>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <input
@@ -303,7 +303,7 @@ export default function DemoCustomizer({ agencyId, theme, demoNumberId }: Props)
                     {addingVoice ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Checking...</> : <><Plus className="h-3.5 w-3.5" /> Add voice</>}
                   </button>
                 </div>
-                <p className="text-[11px] mt-2" style={{ color: theme.textMuted }}>
+                <p className="text-[11px] mt-2" style={{ color: theme.cardTextMuted }}>
                   Find the voice ID in your ElevenLabs dashboard (Voices &rarr; the voice &rarr; ID). Voices you add here are shared with the AI Lab.
                 </p>
                 {voiceError && <p className="text-[11px] mt-1.5" style={{ color: theme.errorText || '#dc2626' }}>{voiceError}</p>}
@@ -312,7 +312,7 @@ export default function DemoCustomizer({ agencyId, theme, demoNumberId }: Props)
           </div>
 
           <div className="mb-5">
-            <label className={labelCls} style={{ color: theme.text }}>Greeting <span style={{ color: theme.textMuted }}>(optional)</span></label>
+            <label className={labelCls} style={{ color: theme.text }}>Greeting <span style={{ color: theme.cardTextMuted }}>(optional)</span></label>
             <input
               value={greeting}
               onChange={(e) => setGreeting(e.target.value)}
@@ -324,7 +324,7 @@ export default function DemoCustomizer({ agencyId, theme, demoNumberId }: Props)
           </div>
 
           <div className="mb-5">
-            <label className={labelCls} style={{ color: theme.text }}>Extra instructions <span style={{ color: theme.textMuted }}>(optional)</span></label>
+            <label className={labelCls} style={{ color: theme.text }}>Extra instructions <span style={{ color: theme.cardTextMuted }}>(optional)</span></label>
             <textarea
               value={promptAdditions}
               onChange={(e) => setPromptAdditions(e.target.value)}
@@ -334,7 +334,7 @@ export default function DemoCustomizer({ agencyId, theme, demoNumberId }: Props)
               className="w-full rounded-xl px-3 py-2.5 text-sm resize-none"
               style={inputStyle}
             />
-            <p className="text-[11px] mt-1.5" style={{ color: theme.textMuted }}>
+            <p className="text-[11px] mt-1.5" style={{ color: theme.cardTextMuted }}>
               Added on top of the demo&apos;s built-in behavior, not a replacement. Small nudges only, the core script stays the same.
             </p>
           </div>

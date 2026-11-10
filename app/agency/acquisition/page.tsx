@@ -121,7 +121,7 @@ export default function AcquisitionPage() {
 
   const sectionLabel = (text: string) => (
     <div className="flex items-center gap-3 mt-6 mb-3">
-      <span className={`${LABEL} flex-shrink-0`} style={{ color: theme.textMuted }}>{text}</span>
+      <span className={`${LABEL} flex-shrink-0`} style={{ color: theme.cardTextMuted }}>{text}</span>
       <span className="flex-1 h-px" style={{ backgroundColor: theme.border }} />
     </div>
   );
@@ -153,9 +153,9 @@ export default function AcquisitionPage() {
       <div className="flex items-start gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0 mt-0.5" style={{ backgroundColor: theme.primary15 }}><TrendingUp className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
         <div>
-          <p className={LABEL} style={{ color: theme.textMuted }}>Acquisition</p>
+          <p className={LABEL} style={{ color: theme.cardTextMuted }}>Acquisition</p>
           <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight mt-0.5" style={{ color: theme.text }}>{d.hasFirstClient ? 'Keep landing clients' : 'Get your first client'}</h1>
-          <p className="mt-1 text-sm max-w-[60ch]" style={{ color: theme.textMuted }}>Your pipeline from first message to paying client. The whole game is getting a prospect to hear your AI answer, then closing them on a trial.</p>
+          <p className="mt-1 text-sm max-w-[60ch]" style={{ color: theme.cardTextMuted }}>Your pipeline from first message to paying client. The whole game is getting a prospect to hear your AI answer, then closing them on a trial.</p>
         </div>
       </div>
 
@@ -165,16 +165,16 @@ export default function AcquisitionPage() {
           {stages.map((s, i) => (
             <div key={s.k} className="relative p-4 sm:p-[18px]" style={{ borderRight: i < 3 ? `1px solid ${theme.borderSubtle}` : 'none', borderBottom: i < 2 ? `1px solid ${theme.borderSubtle}` : 'none' }}>
               <div className="absolute top-3.5 right-3.5 h-6 w-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: s.accent ? theme.primary15 : theme.hover }}><s.icon className="h-3.5 w-3.5" style={{ color: s.accent ? theme.primary : theme.textMuted }} /></div>
-              <p className={LABEL} style={{ color: theme.textMuted }}>{s.k}</p>
+              <p className={LABEL} style={{ color: theme.cardTextMuted }}>{s.k}</p>
               <p className="mt-1.5 text-[30px] font-extrabold leading-none tabular-nums" style={{ color: (s.accent || (s.highlight && s.v > 0)) ? theme.primary : (s.v === 0 ? theme.textMuted : theme.text) }}>{s.v}</p>
-              <p className="mt-1.5 text-[11.5px]" style={{ color: theme.textMuted }}>{s.sub}</p>
+              <p className="mt-1.5 text-[11.5px]" style={{ color: theme.cardTextMuted }}>{s.sub}</p>
             </div>
           ))}
         </div>
         <div className="flex items-start gap-3 p-4 sm:px-[18px]" style={{ borderTop: `1px solid ${theme.border}`, backgroundColor: theme.isDark ? theme.hover : theme.bg }}>
           <span className="mt-1.5 h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: diag.good ? theme.success : theme.warning, boxShadow: `0 0 0 4px ${diag.good ? theme.successBg : theme.warningBg}` }} />
           <div className="flex-1 min-w-0">
-            <p className="text-[13.5px]" style={{ color: theme.text }}><span className="font-bold" style={{ color: diag.good ? theme.success : theme.warning }}>{diag.title}</span> <span style={{ color: theme.textMuted }}>{diag.how}</span></p>
+            <p className="text-[13.5px]" style={{ color: theme.text }}><span className="font-bold" style={{ color: diag.good ? theme.success : theme.warning }}>{diag.title}</span> <span style={{ color: theme.cardTextMuted }}>{diag.how}</span></p>
             {diag.href && diag.cta && (
               <a href={diag.href} className="inline-flex items-center gap-1 mt-2 text-[12.5px] font-semibold" style={{ color: theme.primary }}>{diag.cta} <ChevronRight className="h-3.5 w-3.5" /></a>
             )}
@@ -195,7 +195,7 @@ export default function AcquisitionPage() {
             <div className="px-5 py-10 text-center">
               <PhoneIncoming className="h-7 w-7 mx-auto mb-2" style={{ color: theme.textMuted, opacity: 0.4 }} />
               <p className="text-[13px] font-medium" style={{ color: theme.text }}>No demo calls yet</p>
-              <p className="text-[12px] mt-1" style={{ color: theme.textMuted }}>Get a prospect to call your demo line, every call shows up here as a warm lead.</p>
+              <p className="text-[12px] mt-1" style={{ color: theme.cardTextMuted }}>Get a prospect to call your demo line, every call shows up here as a warm lead.</p>
             </div>
           ) : (
             <div>
@@ -207,11 +207,11 @@ export default function AcquisitionPage() {
                     <span className="h-9 w-9 rounded-[10px] flex items-center justify-center flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><PhoneIncoming className="h-4 w-4" style={{ color: theme.iconColor }} /></span>
                     <div className="min-w-0">
                       <p className="text-[13.5px] font-semibold truncate" style={{ color: theme.text }}>{who}</p>
-                      <p className="text-[11.5px] truncate" style={{ color: theme.textMuted }}>{formatPhone(c.caller_phone) || 'No number'} · {timeAgo(c.created_at)}</p>
+                      <p className="text-[11.5px] truncate" style={{ color: theme.cardTextMuted }}>{formatPhone(c.caller_phone) || 'No number'} · {timeAgo(c.created_at)}</p>
                     </div>
                     <div className="ml-auto flex items-center gap-3 flex-shrink-0">
                       <span className="text-[10px] font-bold uppercase tracking-[0.04em] px-2 py-0.5 rounded-full hidden sm:inline" style={{ color: ints.c, backgroundColor: ints.bg }}>{ints.label}</span>
-                      <span className="text-[11.5px] font-semibold" style={{ color: theme.textMuted }}>Follow up ›</span>
+                      <span className="text-[11.5px] font-semibold" style={{ color: theme.cardTextMuted }}>Follow up ›</span>
                     </div>
                   </a>
                 );
@@ -223,17 +223,17 @@ export default function AcquisitionPage() {
         {/* Right rail: reps + setup */}
         <div className="flex flex-col gap-4">
           <div className="p-5 text-center" style={card}>
-            <p className={LABEL} style={{ color: theme.textMuted }}>Today's outreach</p>
+            <p className={LABEL} style={{ color: theme.cardTextMuted }}>Today's outreach</p>
             <div className="my-2.5 mx-auto h-[112px] w-[112px] rounded-full flex items-center justify-center" style={{ background: `conic-gradient(${theme.primary} ${repsPct}%, ${theme.borderSubtle} 0)` }}>
               <div className="h-[86px] w-[86px] rounded-full flex flex-col items-center justify-center" style={{ backgroundColor: theme.card }}>
                 <span className="text-2xl font-extrabold leading-none tabular-nums" style={{ color: theme.text }}>{d.reps.outreachToday}</span>
-                <span className="text-[11px] tabular-nums mt-0.5" style={{ color: theme.textMuted }}>of {d.reps.goal}</span>
+                <span className="text-[11px] tabular-nums mt-0.5" style={{ color: theme.cardTextMuted }}>of {d.reps.goal}</span>
               </div>
             </div>
             {d.reps.streak > 0
               ? <span className="text-[12.5px] font-semibold inline-flex items-center gap-1.5" style={{ color: theme.primary }}><Flame className="h-3.5 w-3.5" />{d.reps.streak}-day streak</span>
-              : <span className="text-[12.5px]" style={{ color: theme.textMuted }}>Start a streak today</span>}
-            <p className="text-[12px] mt-1" style={{ color: theme.textMuted }}>Consistency fills the funnel.</p>
+              : <span className="text-[12.5px]" style={{ color: theme.cardTextMuted }}>Start a streak today</span>}
+            <p className="text-[12px] mt-1" style={{ color: theme.cardTextMuted }}>Consistency fills the funnel.</p>
           </div>
 
           <div className="p-4 sm:p-5" style={card}>
@@ -242,7 +242,7 @@ export default function AcquisitionPage() {
               <span className="text-[10px] font-bold uppercase tracking-[0.04em] px-2 py-0.5 rounded-full" style={setupComplete ? { color: theme.success, backgroundColor: theme.successBg } : { color: theme.primary, backgroundColor: theme.primary15 }}>{setupComplete ? 'Complete' : `${doneCount} / ${checklistItems.length}`}</span>
             </div>
             {setupComplete ? (
-              <p className="text-[12.5px] mt-1.5" style={{ color: theme.textMuted }}>Everything's ready to sell.</p>
+              <p className="text-[12.5px] mt-1.5" style={{ color: theme.cardTextMuted }}>Everything's ready to sell.</p>
             ) : (
               <div className="mt-2">
                 {checklistItems.map((item, i) => (
@@ -272,7 +272,7 @@ export default function AcquisitionPage() {
                 <span className="h-[26px] w-[26px] rounded-lg flex items-center justify-center flex-shrink-0 text-[13px] font-bold tabular-nums" style={{ backgroundColor: theme.primary15, color: theme.primary }}>{i + 1}</span>
                 <div className="min-w-0 flex-1">
                   <h4 className="text-sm font-bold mb-0.5" style={{ color: theme.text }}>{step.h}</h4>
-                  <p className="text-[13px]" style={{ color: theme.textMuted }}>{step.p}</p>
+                  <p className="text-[13px]" style={{ color: theme.cardTextMuted }}>{step.p}</p>
                   {(step.links.length > 0 || step.vid) && (
                     <div className="flex flex-wrap gap-2 mt-2.5">
                       {step.links.map((l) => (
@@ -294,7 +294,7 @@ export default function AcquisitionPage() {
           <CalendarCheck className="h-5 w-5 flex-shrink-0" style={{ color: theme.iconColor }} />
           <div className="min-w-0">
             <p className="text-sm font-bold" style={{ color: theme.text }}>Stuck, or want a second set of eyes?</p>
-            <p className="text-[12.5px]" style={{ color: theme.textMuted }}>Get on a live walkthrough and we'll find exactly where you're losing deals.</p>
+            <p className="text-[12.5px]" style={{ color: theme.cardTextMuted }}>Get on a live walkthrough and we'll find exactly where you're losing deals.</p>
           </div>
         </div>
         <a href="/agency/support" className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold flex-shrink-0 transition-opacity hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>Book a walkthrough</a>

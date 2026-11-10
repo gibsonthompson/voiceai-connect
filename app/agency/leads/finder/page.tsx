@@ -102,7 +102,7 @@ function ProgressBar({ progress, theme }: { progress: any; theme: any }) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-sm font-semibold truncate" style={{ color: theme.primary }}>{progress.message || "Working..."}</div>
-          <div className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{sub}</div>
+          <div className="text-xs mt-0.5" style={{ color: theme.cardTextMuted }}>{sub}</div>
         </div>
         <div className="text-lg font-bold tabular-nums shrink-0" style={{ color: theme.primary }}>{pct}%</div>
       </div>
@@ -132,14 +132,14 @@ function StatsRow({ stats, theme }: { stats: any; theme: any }) {
           <div key={item.label} title={item.hint} className="rounded-xl p-3 text-center cursor-help"
             style={{ background: theme.card, border: `1px solid ${theme.border}` }}>
             <div className="text-lg font-bold" style={{ color: theme.text }}>{item.value}</div>
-            <div className="text-[10px] mt-0.5 inline-flex items-center gap-1" style={{ color: theme.textMuted }}>
+            <div className="text-[10px] mt-0.5 inline-flex items-center gap-1" style={{ color: theme.cardTextMuted }}>
               {item.label}
               <Info className="h-2.5 w-2.5 opacity-60" />
             </div>
           </div>
         ))}
       </div>
-      <p className="text-[11px] mt-2 px-1" style={{ color: theme.textMuted }}>
+      <p className="text-[11px] mt-2 px-1" style={{ color: theme.cardTextMuted }}>
         <span className="font-medium">Found</span> is every business the search discovered. <span className="font-medium">Enriched</span> is how many of those we pulled extra contact detail for (phone, email, website, socials) beyond the basic listing.
       </p>
     </div>
@@ -169,7 +169,7 @@ function LeadCard({ lead, expanded, onToggle, theme, onSave, saving, saved, sele
                 <span className="text-sm font-semibold truncate" style={{ color: theme.text }}>{lead.companyName}</span>
                 <SourceBadge source={lead.leadSource} theme={theme} />
               </div>
-              <div className="text-xs flex items-center gap-2 flex-wrap" style={{ color: theme.textMuted }}>
+              <div className="text-xs flex items-center gap-2 flex-wrap" style={{ color: theme.cardTextMuted }}>
                 {lead.jobTitle && <span>Hiring: {lead.jobTitle}</span>}
                 {lead.jobTitle && lead.jobLocation && <span style={{ color: theme.border }}>•</span>}
                 {lead.jobLocation && <span>{lead.jobLocation}</span>}
@@ -186,8 +186,8 @@ function LeadCard({ lead, expanded, onToggle, theme, onSave, saving, saved, sele
                   <Phone className="h-3 w-3" /> {lead.phone}
                 </a>
               )}
-              {expanded ? <ChevronUp className="h-4 w-4" style={{ color: theme.textMuted }} />
-                : <ChevronDown className="h-4 w-4" style={{ color: theme.textMuted }} />}
+              {expanded ? <ChevronUp className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
+                : <ChevronDown className="h-4 w-4" style={{ color: theme.cardTextMuted }} />}
             </div>
           </div>
         </div>
@@ -208,7 +208,7 @@ function LeadCard({ lead, expanded, onToggle, theme, onSave, saving, saved, sele
 
           {/* Contact */}
           <div>
-            <div className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: theme.textMuted }}>Contact</div>
+            <div className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: theme.cardTextMuted }}>Contact</div>
             {lead.phone && (
               <div className="mb-1 flex items-center gap-2">
                 <Phone className="h-3.5 w-3.5 flex-shrink-0" style={{ color: theme.iconColor }} />
@@ -230,13 +230,13 @@ function LeadCard({ lead, expanded, onToggle, theme, onSave, saving, saved, sele
               </div>
             )}
             {lead.address && (
-              <div className="mb-1 flex items-center gap-2 text-xs" style={{ color: theme.textMuted }}>
+              <div className="mb-1 flex items-center gap-2 text-xs" style={{ color: theme.cardTextMuted }}>
                 <MapPin className="h-3.5 w-3.5 flex-shrink-0" /> {lead.address}
               </div>
             )}
             {lead.googleMapsUrl && (
               <a href={lead.googleMapsUrl} target="_blank" rel="noopener" onClick={(e) => e.stopPropagation()}
-                className="text-[11px] underline mt-1 inline-flex items-center gap-1" style={{ color: theme.textMuted }}>
+                className="text-[11px] underline mt-1 inline-flex items-center gap-1" style={{ color: theme.cardTextMuted }}>
                 Google Maps <ExternalLink className="h-3 w-3" />
               </a>
             )}
@@ -244,7 +244,7 @@ function LeadCard({ lead, expanded, onToggle, theme, onSave, saving, saved, sele
 
           {/* Business Intel */}
           <div>
-            <div className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: theme.textMuted }}>Business</div>
+            <div className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: theme.cardTextMuted }}>Business</div>
             {lead.rating && (
               <div className="mb-1 flex items-center gap-2 text-xs" style={{ color: theme.text }}>
                 <Star className="h-3.5 w-3.5 flex-shrink-0 fill-yellow-500 text-yellow-500" />
@@ -257,11 +257,11 @@ function LeadCard({ lead, expanded, onToggle, theme, onSave, saving, saved, sele
               </div>
             )}
             {lead.techStack?.length > 0 && (
-              <div className="mb-1 text-xs" style={{ color: theme.textMuted }}>Tech: {lead.techStack.join(", ")}</div>
+              <div className="mb-1 text-xs" style={{ color: theme.cardTextMuted }}>Tech: {lead.techStack.join(", ")}</div>
             )}
-            {lead.jobSalary && <div className="mb-1 text-xs" style={{ color: theme.textMuted }}>Salary: {lead.jobSalary}</div>}
+            {lead.jobSalary && <div className="mb-1 text-xs" style={{ color: theme.cardTextMuted }}>Salary: {lead.jobSalary}</div>}
             {lead.jobSnippet && (
-              <div className="text-xs mt-2 leading-relaxed italic" style={{ color: theme.textMuted }}>
+              <div className="text-xs mt-2 leading-relaxed italic" style={{ color: theme.cardTextMuted }}>
                 &ldquo;{lead.jobSnippet}&rdquo;
               </div>
             )}
@@ -284,7 +284,7 @@ function LeadCard({ lead, expanded, onToggle, theme, onSave, saving, saved, sele
               const entries = Object.entries(lead.socialLinks || {}).filter(([, u]) => u);
               return (
                 <>
-                  <div className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: theme.textMuted }}>Social</div>
+                  <div className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: theme.cardTextMuted }}>Social</div>
                   <div className="flex flex-wrap gap-2 mb-1">
                     {entries.map(([platform, url]) => {
                       const meta = SOCIAL_META[String(platform).toLowerCase()];
@@ -295,7 +295,7 @@ function LeadCard({ lead, expanded, onToggle, theme, onSave, saving, saved, sele
                           style={{ background: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                           {meta
                             ? <img src={`https://cdn.simpleicons.org/${meta.slug}/${meta.color}`} alt={meta.label} className="h-4 w-4" />
-                            : <Globe className="h-4 w-4" style={{ color: theme.textMuted }} />}
+                            : <Globe className="h-4 w-4" style={{ color: theme.cardTextMuted }} />}
                         </a>
                       );
                     })}
@@ -857,7 +857,7 @@ export default function LeadFinderPage() {
     <div className="dash-zoom min-h-screen p-4 sm:p-6 lg:p-8 max-w-[1200px] mx-auto" style={{ color: theme.text, zoom: 1.1 }}>
       {/* Header */}
       <div className="mb-6">
-        <Link href="/agency/leads" className="inline-flex items-center gap-1.5 text-xs font-medium mb-4 no-underline transition-colors" style={{ color: theme.textMuted }}>
+        <Link href="/agency/leads" className="inline-flex items-center gap-1.5 text-xs font-medium mb-4 no-underline transition-colors" style={{ color: theme.cardTextMuted }}>
           <ArrowLeft className="h-3.5 w-3.5" /> Back to Leads
         </Link>
         <div className="flex items-center gap-3">
@@ -866,7 +866,7 @@ export default function LeadFinderPage() {
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Lead Finder</h1>
-            <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>
+            <p className="mt-0.5 text-sm" style={{ color: theme.cardTextMuted }}>
               Find local businesses in a vertical and enrich each with phone, email, website, and hours.
             </p>
           </div>
@@ -876,7 +876,7 @@ export default function LeadFinderPage() {
       {/* What it does */}
       <div className="rounded-xl p-4 mb-6 flex items-start gap-3" style={{ background: `${theme.primary}08`, border: `1px solid ${theme.primary}20` }}>
         <Info className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: theme.iconColor }} />
-        <div className="text-sm" style={{ color: theme.textMuted }}>
+        <div className="text-sm" style={{ color: theme.cardTextMuted }}>
           <p className="font-medium mb-1" style={{ color: theme.text }}>What the Lead Finder does</p>
           <p>Pick an industry (or type a custom search) and a location. It pulls matching local businesses from Google Maps and enriches each one with phone, email, website and hours. Google returns up to 60 businesses per search. Add the ones you want straight to your leads, then work them from the Leads page.</p>
         </div>
@@ -904,13 +904,13 @@ export default function LeadFinderPage() {
             style={{ color: theme.textMuted, opacity: 0.55, borderBottom: "2px solid transparent", background: "transparent" }}>
             <span style={{ filter: "grayscale(1)", display: "inline-flex" }}><IndeedLogo size={18} /></span>
             Indeed
-            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-wide" style={{ background: `${theme.textMuted}22`, color: theme.textMuted }}>Coming soon</span>
+            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-wide" style={{ background: `${theme.textMuted}22`, color: theme.cardTextMuted }}>Coming soon</span>
           </button>
         </div>
 
         <div className="p-5">
           {/* Source description */}
-          <p className="text-xs mb-4" style={{ color: theme.textMuted }}>
+          <p className="text-xs mb-4" style={{ color: theme.cardTextMuted }}>
             {activeTab === "google_maps"
               ? "Search by industry to find local businesses in verticals that need AI receptionists."
               : "Search by job title to find businesses actively hiring for roles an AI receptionist can fill."}
@@ -940,24 +940,24 @@ export default function LeadFinderPage() {
                     style={{ transform: findAll ? "translateX(18px)" : "translateX(2px)" }} />
                 </button>
                 <span className="text-xs font-medium" style={{ color: findAll ? theme.primary : theme.textMuted }}>Find every business in this area</span>
-                <span className="text-xs hidden sm:inline" style={{ color: theme.textMuted }}>sweeps the whole market, not just the top 60</span>
+                <span className="text-xs hidden sm:inline" style={{ color: theme.cardTextMuted }}>sweeps the whole market, not just the top 60</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto_auto] gap-3 items-end">
                 <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: theme.textMuted }}>Custom search (optional)</label>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: theme.cardTextMuted }}>Custom search (optional)</label>
                   <input type="text" value={mapsQuery} onChange={(e) => setMapsQuery(e.target.value)}
                     placeholder="e.g. med spa, franchise, urgent care..." className={inputClass} style={inputStyle}
                     onKeyDown={(e) => e.key === "Enter" && !loading && handleSearch()} />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: theme.textMuted }}>Location</label>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: theme.cardTextMuted }}>Location</label>
                   <div className="relative">
                     <input type="text" value={location} onChange={(e) => setLocation(e.target.value)}
                       placeholder='"Atlanta, GA"' className={inputClass} style={{ ...inputStyle, paddingRight: "2rem" }}
                       onKeyDown={(e) => e.key === "Enter" && !loading && handleSearch()} />
                     {location && (
                       <button type="button" onClick={() => setLocation("")} aria-label="Clear location"
-                        className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer" style={{ color: theme.textMuted }}>
+                        className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer" style={{ color: theme.cardTextMuted }}>
                         <X className="h-4 w-4" />
                       </button>
                     )}
@@ -970,7 +970,7 @@ export default function LeadFinderPage() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: theme.textMuted }}>Max</label>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: theme.cardTextMuted }}>Max</label>
                   {findAll ? (
                     <div className={inputClass} style={{ ...inputStyle, opacity: 0.55, textAlign: "center" }}>All</div>
                   ) : (
@@ -1015,7 +1015,7 @@ export default function LeadFinderPage() {
           <div className="w-full max-w-sm rounded-xl p-5" style={{ background: theme.card || theme.input, border: `1px solid ${theme.inputBorder}` }}
             onClick={(e) => e.stopPropagation()}>
             <div className="text-sm font-semibold mb-1" style={{ color: theme.text }}>Save your current leads first?</div>
-            <div className="text-xs mb-4" style={{ color: theme.textMuted }}>
+            <div className="text-xs mb-4" style={{ color: theme.cardTextMuted }}>
               You have {leads.filter((l: any) => !savedLeads.has(l.companyName)).length} unsaved lead{leads.filter((l: any) => !savedLeads.has(l.companyName)).length === 1 ? "" : "s"}. Starting a new search clears the current results.
             </div>
             <div className="flex flex-col gap-2">
@@ -1071,7 +1071,7 @@ export default function LeadFinderPage() {
       {stats && <StatsRow stats={stats} theme={theme} />}
 
       {stats && stats.findAll && typeof stats.tilesSearched === "number" && (
-        <div className="text-xs mt-2 mb-1" style={{ color: theme.textMuted }}>
+        <div className="text-xs mt-2 mb-1" style={{ color: theme.cardTextMuted }}>
           Swept {stats.tilesSearched} zone{stats.tilesSearched === 1 ? "" : "s"}{stats.areaLabel ? ` across ${stats.areaLabel}` : ""}, found {stats.businessesFound} matching {stats.businessesFound === 1 ? "business" : "businesses"}.
         </div>
       )}
@@ -1083,7 +1083,7 @@ export default function LeadFinderPage() {
           <div className="flex flex-wrap justify-between items-center gap-3 my-4">
             <div className="flex items-center gap-3 flex-wrap">
               <button onClick={toggleSelectAll} className="inline-flex items-center gap-1.5 text-xs font-medium cursor-pointer"
-                style={{ color: theme.textMuted }}>
+                style={{ color: theme.cardTextMuted }}>
                 {selectedLeads.size === filteredLeads.length
                   ? <CheckSquare className="h-3.5 w-3.5" style={{ color: theme.iconColor }} />
                   : <Square className="h-3.5 w-3.5" />}
@@ -1106,7 +1106,7 @@ export default function LeadFinderPage() {
                 buttonClassName="rounded-lg px-2.5 py-1.5 text-xs cursor-pointer min-w-[120px]" buttonStyle={inputStyle}
                 options={[{ value: "any", label: "Rating: Any" }, { value: "4", label: "4.0+ stars" }, { value: "4.5", label: "4.5+ stars" }, { value: "5", label: "5.0 stars" }]} />
 
-              <span className="text-xs" style={{ color: theme.textMuted }}>
+              <span className="text-xs" style={{ color: theme.cardTextMuted }}>
                 {filteredLeads.length} of {leads.length} leads
               </span>
             </div>
@@ -1156,7 +1156,7 @@ export default function LeadFinderPage() {
 
       {/* Empty State */}
       {!loading && leads.length === 0 && !error && (
-        <div className="text-center py-20" style={{ color: theme.textMuted }}>
+        <div className="text-center py-20" style={{ color: theme.cardTextMuted }}>
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full mb-4"
             style={{ background: `${theme.primary}15` }}>
             <Target className="h-8 w-8" style={{ color: theme.primary, opacity: 0.7 }} />

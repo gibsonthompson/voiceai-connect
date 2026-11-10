@@ -162,14 +162,14 @@ export default function NewLeadPage() {
         <Link 
           href="/agency/leads"
           className="inline-flex items-center gap-2 text-sm transition-colors mb-4"
-          style={{ color: theme.textMuted }}
+          style={{ color: theme.cardTextMuted }}
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Leads
         </Link>
         
         <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Add New Lead</h1>
-        <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>Track a potential client in your pipeline</p>
+        <p className="mt-1 text-sm" style={{ color: theme.cardTextMuted }}>Track a potential client in your pipeline</p>
       </div>
 
       {/* Error Message */}
@@ -196,12 +196,12 @@ export default function NewLeadPage() {
               style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
             >
               <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base" style={{ color: theme.text }}>
-                <Building2 className="h-4 w-4" style={{ color: theme.textMuted }} />
+                <Building2 className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
                 Business Information
               </h3>
               <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>
+                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.cardTextMuted }}>
                     Business Name <span style={{ color: theme.error }}>*</span>
                   </label>
                   <input
@@ -214,7 +214,7 @@ export default function NewLeadPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Industry</label>
+                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.cardTextMuted }}>Industry</label>
                   <input
                     type="text"
                     value={formData.industry}
@@ -225,9 +225,9 @@ export default function NewLeadPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Phone</label>
+                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.cardTextMuted }}>Phone</label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted }} />
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.cardTextMuted }} />
                     <input
                       type="tel"
                       value={formData.phone}
@@ -238,9 +238,9 @@ export default function NewLeadPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Website</label>
+                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.cardTextMuted }}>Website</label>
                   <div className="relative">
-                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted }} />
+                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.cardTextMuted }} />
                     <input
                       type="text"
                       value={formData.website}
@@ -261,12 +261,12 @@ export default function NewLeadPage() {
               style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
             >
               <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base" style={{ color: theme.text }}>
-                <User className="h-4 w-4" style={{ color: theme.textMuted }} />
+                <User className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
                 Contact Information
               </h3>
               <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Contact Name</label>
+                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.cardTextMuted }}>Contact Name</label>
                   <input
                     type="text"
                     value={formData.contact_name}
@@ -276,9 +276,9 @@ export default function NewLeadPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Email</label>
+                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.cardTextMuted }}>Email</label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted }} />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.cardTextMuted }} />
                     <input
                       type="email"
                       value={formData.email}
@@ -297,7 +297,7 @@ export default function NewLeadPage() {
               style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
             >
               <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base" style={{ color: theme.text }}>
-                <FileText className="h-4 w-4" style={{ color: theme.textMuted }} />
+                <FileText className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
                 Initial Notes
               </h3>
               <textarea
@@ -319,12 +319,12 @@ export default function NewLeadPage() {
               style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}
             >
               <h3 className="font-medium mb-4 sm:mb-5 flex items-center gap-2 text-sm sm:text-base" style={{ color: theme.text }}>
-                <Tag className="h-4 w-4" style={{ color: theme.textMuted }} />
+                <Tag className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
                 Lead Details
               </h3>
               <div className="space-y-3 sm:space-y-4">
                 <div>
-                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Status</label>
+                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.cardTextMuted }}>Status</label>
                   <CustomSelect
                     value={formData.status}
                     onChange={(v) => setFormData(prev => ({ ...prev, status: v }))}
@@ -333,7 +333,7 @@ export default function NewLeadPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Source</label>
+                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.cardTextMuted }}>Source</label>
                   <CustomSelect
                     value={formData.source}
                     onChange={(v) => setFormData(prev => ({ ...prev, source: v }))}
@@ -355,9 +355,9 @@ export default function NewLeadPage() {
               </h3>
               <div className="space-y-3 sm:space-y-4">
                 <div>
-                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.textMuted }}>Next Follow-up</label>
+                  <label className="block text-xs sm:text-sm mb-1.5" style={{ color: theme.cardTextMuted }}>Next Follow-up</label>
                   <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.textMuted }} />
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: theme.cardTextMuted }} />
                     <input
                       type="date"
                       value={formData.next_follow_up}

@@ -534,13 +534,13 @@ export default function AddToHomeScreenModal({ clientId, theme, isOpen: controll
                 <h2 className="font-semibold text-sm truncate" style={{ color: theme.text }}>
                   {alreadyInstalled ? 'App installed' : (brand ? `Get the ${brand} app` : 'Get the app')}
                 </h2>
-                <p className="text-[10px] truncate" style={{ color: theme.textMuted }}>
+                <p className="text-[10px] truncate" style={{ color: theme.cardTextMuted }}>
                   {alreadyInstalled ? 'Running from your home screen' : 'Add it to your home screen for quick access'}
                 </p>
               </div>
             </div>
             <button onClick={handleClose} className="w-7 h-7 flex items-center justify-center rounded-lg transition hover:opacity-70 flex-shrink-0" style={{ backgroundColor: theme.bg }}>
-              <X className="w-3.5 h-3.5" style={{ color: theme.textMuted }} />
+              <X className="w-3.5 h-3.5" style={{ color: theme.cardTextMuted }} />
             </button>
           </div>
 
@@ -551,7 +551,7 @@ export default function AddToHomeScreenModal({ clientId, theme, isOpen: controll
                 <Smartphone className="w-7 h-7" style={{ color: theme.iconColor }} />
               </div>
               <p className="text-sm font-medium mb-1" style={{ color: theme.text }}>You&apos;re all set!</p>
-              <p className="text-xs" style={{ color: theme.textMuted }}>This app is already installed on your device.</p>
+              <p className="text-xs" style={{ color: theme.cardTextMuted }}>This app is already installed on your device.</p>
               <button onClick={handleClose} className="mt-4 w-full py-2.5 rounded-xl text-sm font-semibold transition hover:opacity-90" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
                 Got it
               </button>
@@ -565,7 +565,7 @@ export default function AddToHomeScreenModal({ clientId, theme, isOpen: controll
 
               <div className="mt-5 text-center">
                 <p className="text-sm font-semibold mb-1" style={{ color: theme.text }}>Add it to your home screen</p>
-                <p className="text-xs leading-relaxed" style={{ color: theme.textMuted }}>
+                <p className="text-xs leading-relaxed" style={{ color: theme.cardTextMuted }}>
                   Open this link on your phone (iPhone or Android), then tap Share, then Add to Home Screen. No app store needed.
                 </p>
               </div>
@@ -621,7 +621,7 @@ export default function AddToHomeScreenModal({ clientId, theme, isOpen: controll
                 <p className="text-sm font-semibold mb-0.5" style={{ color: theme.text }}>
                   Step {step + 1}: {steps[step].title}
                 </p>
-                <p className="text-xs" style={{ color: theme.textMuted }}>
+                <p className="text-xs" style={{ color: theme.cardTextMuted }}>
                   {steps[step].description}
                 </p>
               </div>
