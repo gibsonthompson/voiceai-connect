@@ -166,7 +166,10 @@ function LeadPhotoGallery({ leadId, placeId }: { leadId: string; placeId?: strin
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
   useEffect(() => {
     setPhotos(null); // reset to loading whenever the lead changes
-    if (!placeId || !agency?.id) { setPhotos([]); return; }
+    // Always ask the backend, even with no stored place_id: it resolves the
+    // Google place from the business name + address and backfills place_id, so
+    // photos work for every lead, not just ones captured via the map finder.
+    if (!agency?.id) { setPhotos([]); return; }
     let cancelled = false;
     (async () => {
       try {
@@ -180,7 +183,6 @@ function LeadPhotoGallery({ leadId, placeId }: { leadId: string; placeId?: strin
     return () => { cancelled = true; };
   }, [leadId, placeId, agency?.id, backendUrl]);
 
-  if (!placeId) return null;
   if (photos === null) return <div className="mt-4 h-44 sm:h-52 rounded-xl animate-pulse bg-[var(--lp-hover)]" />;
   if (photos.length === 0) return null;
   return (
