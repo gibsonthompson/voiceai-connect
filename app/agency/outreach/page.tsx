@@ -28,7 +28,7 @@ interface Template {
 }
 
 export default function OutreachPage() {
-  const { agency, loading: contextLoading } = useAgency();
+  const { agency, loading: contextLoading, refreshAgency } = useAgency();
   const theme = useTheme();
   const { canUseLeadFinder } = usePlanFeatures();
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -36,6 +36,88 @@ export default function OutreachPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+
+  // AI Personalized Opener settings (the {personalized_line} merge field).
+  const [plEnabled, setPlEnabled] = useState(true);
+  const [plInstructions, setPlInstructions] = useState('');
+  const [plSaving, setPlSaving] = useState(false);
+  const [plSaved, setPlSaved] = useState(false);
+  const [plTestUrl, setPlTestUrl] = useState('');
+  const [plTesting, setPlTesting] = useState(false);
+  const [plPreview, setPlPreview] = useState<string | null>(null);
+  const [plPreviewEmpty, setPlPreviewEmpty] = useState(false);
+  const [plError, setPlError] = useState('');
+
+  // Hydrate the opener settings from the agency record once it loads.
+  useEffect(() => {
+    if (!agency) return;
+    setPlEnabled((agency as any).personalized_line_enabled !== false);
+    setPlInstructions((agency as any).personalized_line_instructions || '');
+  }, [agency]);
+
+  const savePersonalizedLine = async (next?: { enabled?: boolean; instructions?: string }) => {
+    if (!agency) return;
+    const enabled = next?.enabled ?? plEnabled;
+    const instructions = next?.instructions ?? plInstructions;
+    setPlSaving(true);
+    setPlSaved(false);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const res = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          personalized_line_enabled: enabled,
+          personalized_line_instructions: instructions,
+        }),
+      });
+      if (res.ok) {
+        await refreshAgency();
+        setPlSaved(true);
+        setTimeout(() => setPlSaved(false), 2500);
+      }
+    } catch (err) {
+      console.error('Failed to save personalized opener settings:', err);
+    } finally {
+      setPlSaving(false);
+    }
+  };
+
+  const togglePersonalizedLine = () => {
+    const next = !plEnabled;
+    setPlEnabled(next);
+    savePersonalizedLine({ enabled: next });
+  };
+
+  const testPersonalizedLine = async () => {
+    if (!agency || !plTestUrl.trim()) return;
+    setPlTesting(true);
+    setPlPreview(null);
+    setPlPreviewEmpty(false);
+    setPlError('');
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const res = await fetch(`${backendUrl}/api/agency/${agency.id}/outreach/personalized-line/test`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ website: plTestUrl.trim(), instructions: plInstructions }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok && data.line) {
+        setPlPreview(data.line);
+      } else if (res.ok) {
+        setPlPreviewEmpty(true);
+      } else {
+        setPlError(data.error || 'Could not generate a preview right now.');
+      }
+    } catch (err) {
+      setPlError('Could not reach the server. Try again in a moment.');
+    } finally {
+      setPlTesting(false);
+    }
+  };
 
   useEffect(() => {
     if (agency) {
@@ -428,6 +510,113 @@ export default function OutreachPage() {
         </div>
         <ChevronRight className="h-5 w-5 flex-shrink-0" style={{ color: theme.cardTextMuted }} />
       </Link>
+
+      {/* AI Personalized Opener */}
+      <div className="rounded-xl p-5 sm:p-6 mb-6 sm:mb-8" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="flex items-start gap-3 min-w-0">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>
+              <Sparkles className="h-4 w-4" style={{ color: theme.primary }} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold" style={{ color: theme.text }}>AI Personalized Opener</p>
+              <p className="mt-1 text-xs leading-relaxed" style={{ color: theme.cardTextMuted }}>
+                The <code className="px-1 py-0.5 rounded" style={{ backgroundColor: theme.primary15, color: theme.primary }}>{'{personalized_line}'}</code> merge field. When a lead has a website, the AI reads it and writes one specific opening sentence so the email does not feel like a blast. It runs only when you compose a message to that lead, then caches the line so follow-ups reuse it. No website, nothing specific to say, or turned off below, the line quietly drops out.
+              </p>
+            </div>
+          </div>
+          {/* Enable toggle */}
+          <button
+            type="button"
+            onClick={togglePersonalizedLine}
+            disabled={plSaving}
+            role="switch"
+            aria-checked={plEnabled}
+            aria-label="Enable AI personalized opener"
+            className="relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors self-start"
+            style={{ backgroundColor: plEnabled ? theme.primary : theme.inputBorder, opacity: plSaving ? 0.6 : 1 }}
+          >
+            <span
+              className="inline-block h-5 w-5 transform rounded-full bg-white transition-transform"
+              style={{ transform: plEnabled ? 'translateX(22px)' : 'translateX(2px)' }}
+            />
+          </button>
+        </div>
+
+        {plEnabled && (
+          <div className="mt-5 pt-5 space-y-5" style={{ borderTop: `1px solid ${theme.border}` }}>
+            {/* Custom guidance */}
+            <div>
+              <label className="block text-xs font-medium mb-2" style={{ color: theme.text }}>
+                Custom Guidance <span style={{ color: theme.cardTextMuted }}>(optional)</span>
+              </label>
+              <textarea
+                value={plInstructions}
+                onChange={(e) => setPlInstructions(e.target.value)}
+                onBlur={() => savePersonalizedLine()}
+                rows={3}
+                placeholder="Steer the voice or angle. For example: keep it casual, mention their city when you can, or never reference pricing. Leave blank for the proven default."
+                className="w-full rounded-xl px-3 py-2.5 text-sm transition-colors focus:outline-none resize-y"
+                style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
+              />
+              <div className="mt-2 flex items-center gap-3 min-h-[20px]">
+                <button
+                  type="button"
+                  onClick={() => savePersonalizedLine()}
+                  disabled={plSaving}
+                  className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
+                  style={{ backgroundColor: theme.primary15, color: theme.primary, opacity: plSaving ? 0.6 : 1 }}
+                >
+                  {plSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                  {plSaving ? 'Saving' : 'Save Guidance'}
+                </button>
+                {plSaved && <span className="text-xs" style={{ color: theme.primary }}>Saved</span>}
+              </div>
+            </div>
+
+            {/* Test / preview */}
+            <div>
+              <label className="block text-xs font-medium mb-2" style={{ color: theme.text }}>
+                Preview An Opener
+              </label>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="url"
+                  value={plTestUrl}
+                  onChange={(e) => setPlTestUrl(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') testPersonalizedLine(); }}
+                  placeholder="Paste a business website, e.g. joesplumbing.com"
+                  className="flex-1 rounded-xl px-3 py-2.5 text-sm transition-colors focus:outline-none"
+                  style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}
+                />
+                <button
+                  type="button"
+                  onClick={testPersonalizedLine}
+                  disabled={plTesting || !plTestUrl.trim()}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors"
+                  style={{ backgroundColor: theme.primary, color: theme.primaryText, opacity: (plTesting || !plTestUrl.trim()) ? 0.55 : 1 }}
+                >
+                  {plTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                  {plTesting ? 'Reading Site' : 'Generate'}
+                </button>
+              </div>
+              {plPreview && (
+                <div className="mt-3 rounded-xl p-3" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.border}` }}>
+                  <p className="text-sm leading-relaxed" style={{ color: theme.text }}>{plPreview}</p>
+                </div>
+              )}
+              {plPreviewEmpty && (
+                <p className="mt-3 text-xs leading-relaxed" style={{ color: theme.cardTextMuted }}>
+                  Nothing specific enough to say from that site, so the opener would drop out and the email would start on its next line. That is the safe fallback.
+                </p>
+              )}
+              {plError && (
+                <p className="mt-3 text-xs" style={{ color: '#ef4444' }}>{plError}</p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Quick Links */}
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-3 mb-6 sm:mb-8">

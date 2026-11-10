@@ -165,6 +165,7 @@ function LeadPhotoGallery({ leadId, placeId }: { leadId: string; placeId?: strin
   const [photos, setPhotos] = useState<{ ref: string }[] | null>(null);
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
   useEffect(() => {
+    setPhotos(null); // reset to loading whenever the lead changes
     if (!placeId || !agency?.id) { setPhotos([]); return; }
     let cancelled = false;
     (async () => {
@@ -253,8 +254,9 @@ function FocusCard({
           </div>
         </div>
 
-        {/* Business photos (Google), shown large */}
-        <LeadPhotoGallery leadId={lead.id} placeId={lead.place_id} />
+        {/* Business photos (Google), shown large. Keyed by lead so it remounts
+            and refetches every time you skip/navigate to a different lead. */}
+        <LeadPhotoGallery key={lead.id} leadId={lead.id} placeId={lead.place_id} />
 
         {/* Contact rows */}
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
