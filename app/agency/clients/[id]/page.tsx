@@ -71,16 +71,16 @@ function SetupProgressCard({ status, theme, aiLabHref, locked }: { status?: Onbo
                 <div className="flex items-center gap-2.5 min-w-0">
                   <Icon className="h-4 w-4 flex-shrink-0" style={{ color: s.done ? theme.iconColor : theme.textMuted }} />
                   <span className="text-sm truncate" style={{ color: theme.text }}>{s.label}</span>
-                  {typeof s.count === 'number' && s.count > 0 && (<span className="text-xs flex-shrink-0" style={{ color: theme.textMuted }}>({s.count})</span>)}
-                  {s.optional && (<span className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>optional</span>)}
+                  {typeof s.count === 'number' && s.count > 0 && (<span className="text-xs flex-shrink-0" style={{ color: theme.cardTextMuted }}>({s.count})</span>)}
+                  {s.optional && (<span className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: theme.hover, color: theme.cardTextMuted }}>optional</span>)}
                 </div>
                 <div className="flex items-center gap-1.5 flex-shrink-0">
                   {s.done ? (
                     <span className="inline-flex items-center gap-1 text-xs font-medium" style={{ color: theme.primary }}><CheckCircle2 className="h-4 w-4" />Done</span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 text-xs" style={{ color: theme.textMuted }}><Circle className="h-4 w-4" />{s.optional ? 'None' : 'Not set'}</span>
+                    <span className="inline-flex items-center gap-1 text-xs" style={{ color: theme.cardTextMuted }}><Circle className="h-4 w-4" />{s.optional ? 'None' : 'Not set'}</span>
                   )}
-                  {rowClickable && <ChevronRight className="h-4 w-4" style={{ color: theme.textMuted }} />}
+                  {rowClickable && <ChevronRight className="h-4 w-4" style={{ color: theme.cardTextMuted }} />}
                 </div>
               </>
             );
@@ -103,7 +103,7 @@ function SetupProgressCard({ status, theme, aiLabHref, locked }: { status?: Onbo
         {locked ? (
           <div className="mt-4 rounded-lg px-3 py-2.5 flex items-start gap-2" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
             <Lock className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.infoText }} />
-            <p className="text-xs leading-relaxed" style={{ color: theme.textMuted }}><span className="font-medium" style={{ color: theme.infoText }}>Upgrade to Pro</span> to set up a client&apos;s AI yourself in the AI Lab. On Free, the client fills in their own setup from their dashboard.</p>
+            <p className="text-xs leading-relaxed" style={{ color: theme.cardTextMuted }}><span className="font-medium" style={{ color: theme.infoText }}>Upgrade to Pro</span> to set up a client&apos;s AI yourself in the AI Lab. On Free, the client fills in their own setup from their dashboard.</p>
           </div>
         ) : !status.onboarding_completed && (
           <div className="mt-4 rounded-lg px-3 py-2.5 flex items-start gap-2" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
@@ -138,17 +138,17 @@ function ClientBrandingCard({ client, agencyId, theme, backendUrl, onUpdate }: {
     <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
       <div className="p-4 sm:p-6">
         <div className="flex items-center justify-between mb-1"><div className="flex items-center gap-2"><Paintbrush className="h-4 w-4" style={{ color: theme.iconColor }} /><h2 className="font-semibold text-sm sm:text-base">Client Branding</h2></div>{hasCustomBranding && (<span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.primary15, color: theme.primary }}>Custom</span>)}</div>
-        <p className="text-xs mb-3" style={{ color: theme.textMuted }}>Override your agency branding for this client&apos;s dashboard</p>
+        <p className="text-xs mb-3" style={{ color: theme.cardTextMuted }}>Override your agency branding for this client&apos;s dashboard</p>
         <button onClick={() => setBrandingOpen(!brandingOpen)} className="w-full flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.hover, color: theme.text, border: `1px solid ${theme.border}` }}><Paintbrush className="h-4 w-4" />{brandingOpen ? 'Hide' : 'Configure'} Branding</button>
         {brandingOpen && (
           <div className="mt-4 space-y-4">
             {brandingError && (<div className="rounded-lg p-3 flex items-center gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.error }} /><p className="text-xs" style={{ color: theme.errorText }}>{brandingError}</p></div>)}
             {brandingSaved && (<div className="rounded-lg p-3 flex items-center gap-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><Check className="h-4 w-4" style={{ color: theme.iconColor }} /><p className="text-xs" style={{ color: theme.primary }}>Branding saved!</p></div>)}
             <div><label className="text-xs font-medium mb-1 block" style={{ color: theme.textMuted }}>Business Name</label><input type="text" value={clientName} onChange={e => setClientName(e.target.value)} className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} /></div>
-            <div><label className="text-xs font-medium mb-1 block" style={{ color: theme.textMuted }}>Logo</label><div className="flex items-center gap-3">{clientLogo ? (<img src={clientLogo} alt="Logo" className="h-10 w-10 rounded-lg object-contain" style={{ backgroundColor: theme.hover }} />) : (<div className="h-10 w-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: theme.hover }}><Building2 className="h-5 w-5" style={{ color: theme.textMuted }} /></div>)}<label className="flex-1 flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium cursor-pointer transition" style={{ backgroundColor: theme.hover, color: theme.textMuted, border: `1px solid ${theme.border}` }}>Upload Logo<input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" /></label>{clientLogo && (<button onClick={() => { setClientLogo(null); setBrandingSaved(false); }} className="p-2 rounded-lg" style={{ color: theme.textMuted }}><X className="h-4 w-4" /></button>)}</div></div>
-            {extractingColors && (<div className="flex items-center gap-2 -mt-1"><Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: theme.iconColor }} /><p className="text-[10px]" style={{ color: theme.textMuted }}>Extracting colors from logo...</p></div>)}
+            <div><label className="text-xs font-medium mb-1 block" style={{ color: theme.cardTextMuted }}>Logo</label><div className="flex items-center gap-3">{clientLogo ? (<img src={clientLogo} alt="Logo" className="h-10 w-10 rounded-lg object-contain" style={{ backgroundColor: theme.hover }} />) : (<div className="h-10 w-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: theme.hover }}><Building2 className="h-5 w-5" style={{ color: theme.cardTextMuted }} /></div>)}<label className="flex-1 flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium cursor-pointer transition" style={{ backgroundColor: theme.hover, color: theme.textMuted, border: `1px solid ${theme.border}` }}>Upload Logo<input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" /></label>{clientLogo && (<button onClick={() => { setClientLogo(null); setBrandingSaved(false); }} className="p-2 rounded-lg" style={{ color: theme.cardTextMuted }}><X className="h-4 w-4" /></button>)}</div></div>
+            {extractingColors && (<div className="flex items-center gap-2 -mt-1"><Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: theme.iconColor }} /><p className="text-[10px]" style={{ color: theme.cardTextMuted }}>Extracting colors from logo...</p></div>)}
             <div className="grid grid-cols-3 gap-2">{[{ label: 'Primary', value: clientPrimary, set: setClientPrimary }, { label: 'Secondary', value: clientSecondary, set: setClientSecondary }, { label: 'Accent', value: clientAccent, set: setClientAccent }].map(({ label, value, set }) => (<div key={label}><label className="text-[10px] font-medium mb-1 block" style={{ color: theme.textMuted }}>{label}</label><div className="flex items-center gap-1.5"><div className="relative"><div className="w-8 h-8 rounded-lg border cursor-pointer" style={{ backgroundColor: value || theme.primary, borderColor: theme.border }} /><input type="color" value={value || theme.primary} onChange={e => { set(e.target.value); setBrandingSaved(false); }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" /></div><input type="text" value={value} onChange={e => { set(e.target.value); setBrandingSaved(false); }} placeholder="#hex" className="flex-1 px-2 py-1.5 text-[10px] font-mono rounded-lg focus:outline-none min-w-0" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} maxLength={7} /></div></div>))}</div>
-            <div><label className="text-xs font-medium mb-1 block" style={{ color: theme.textMuted }}>Portal theme</label><div className="flex items-center gap-2 flex-wrap"><div className="flex rounded-lg overflow-hidden" style={{ border: `1px solid ${theme.border}` }}>{(['light', 'dark'] as const).map(m => (<button key={m} type="button" onClick={() => { setClientThemeMode(m); setBrandingSaved(false); }} className="px-3 py-1.5 text-xs font-medium capitalize transition" style={{ backgroundColor: clientThemeMode === m ? theme.primary : 'transparent', color: clientThemeMode === m ? theme.primaryText : theme.textMuted }}>{m}</button>))}</div>{!clientThemeMode && (<span className="text-[10px]" style={{ color: theme.textMuted }}>Inherits your theme until set</span>)}</div><p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>Auto-detected from the logo background. This client&apos;s dashboard uses this regardless of your own light/dark setting.</p></div>
+            <div><label className="text-xs font-medium mb-1 block" style={{ color: theme.cardTextMuted }}>Portal theme</label><div className="flex items-center gap-2 flex-wrap"><div className="flex rounded-lg overflow-hidden" style={{ border: `1px solid ${theme.border}` }}>{(['light', 'dark'] as const).map(m => (<button key={m} type="button" onClick={() => { setClientThemeMode(m); setBrandingSaved(false); }} className="px-3 py-1.5 text-xs font-medium capitalize transition" style={{ backgroundColor: clientThemeMode === m ? theme.primary : 'transparent', color: clientThemeMode === m ? theme.primaryText : theme.textMuted }}>{m}</button>))}</div>{!clientThemeMode && (<span className="text-[10px]" style={{ color: theme.cardTextMuted }}>Inherits your theme until set</span>)}</div><p className="text-[10px] mt-1" style={{ color: theme.cardTextMuted }}>Auto-detected from the logo background. This client&apos;s dashboard uses this regardless of your own light/dark setting.</p></div>
             <div className="flex gap-2">{hasCustomBranding && (<button onClick={handleClearBranding} disabled={savingBranding} className="flex-1 flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-medium transition disabled:opacity-50" style={{ backgroundColor: theme.hover, color: theme.textMuted, border: `1px solid ${theme.border}` }}><RotateCcw className="h-3.5 w-3.5" /> Clear</button>)}<button onClick={handleSaveBranding} disabled={savingBranding} className="flex-1 flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-medium transition disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{savingBranding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}{savingBranding ? 'Saving...' : 'Save Branding'}</button></div>
           </div>
         )}
@@ -210,14 +210,14 @@ function ClientUsersCard({ clientId, theme, backendUrl }: { clientId: string; th
           <div className="flex items-center gap-2"><Users className="h-4 w-4" style={{ color: theme.iconColor }} /><h2 className="font-semibold text-sm sm:text-base">Client Users</h2></div>
           <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.primary15, color: theme.primary }}>{countText}</span>
         </div>
-        <p className="text-xs mb-4" style={{ color: theme.textMuted }}>Additional dashboard logins this client created, beyond the owner above. View-only.</p>
+        <p className="text-xs mb-4" style={{ color: theme.cardTextMuted }}>Additional dashboard logins this client created, beyond the owner above. View-only.</p>
 
         {loading ? (
           <div className="flex items-center justify-center py-6"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.iconColor }} /></div>
         ) : err ? (
           <div className="rounded-lg p-3 flex items-center gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.errorText }} /><p className="text-xs" style={{ color: theme.errorText }}>{err}</p></div>
         ) : members.length === 0 ? (
-          <div className="rounded-lg px-3 py-4 text-center text-xs" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>No additional users. Only the account owner can sign in.</div>
+          <div className="rounded-lg px-3 py-4 text-center text-xs" style={{ backgroundColor: theme.hover, color: theme.cardTextMuted }}>No additional users. Only the account owner can sign in.</div>
         ) : (
           <div className="space-y-2.5">
             {members.map((m) => {
@@ -230,13 +230,13 @@ function ClientUsersCard({ clientId, theme, backendUrl }: { clientId: string; th
                         <p className="text-sm font-medium truncate" style={{ color: theme.text }}>{m.display_name}</p>
                         {m.status === 'disabled' && <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: theme.errorBg, color: theme.errorText }}>Disabled</span>}
                       </div>
-                      <p className="text-xs truncate" style={{ color: theme.textMuted }}>{m.email}</p>
+                      <p className="text-xs truncate" style={{ color: theme.cardTextMuted }}>{m.email}</p>
                     </div>
-                    {m.last_login && <span className="text-[10px] flex-shrink-0 whitespace-nowrap" style={{ color: theme.textMuted }}>Last login {new Date(m.last_login).toLocaleDateString()}</span>}
+                    {m.last_login && <span className="text-[10px] flex-shrink-0 whitespace-nowrap" style={{ color: theme.cardTextMuted }}>Last login {new Date(m.last_login).toLocaleDateString()}</span>}
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1">
                     {enabled.length === 0 ? (
-                      <span className="text-[10px] italic" style={{ color: theme.textMuted }}>No page access</span>
+                      <span className="text-[10px] italic" style={{ color: theme.cardTextMuted }}>No page access</span>
                     ) : enabled.map(k => (
                       <span key={k} className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ backgroundColor: theme.primary15, color: theme.primary }}>
                         <Shield className="h-2.5 w-2.5" />{CLIENT_USER_PERMS[k]}
@@ -505,6 +505,18 @@ export default function AgencyClientDetailPage() {
     finally { setSavingCustom(false); }
   };
 
+  // Plan & pricing merge: applying a plan both reverts any custom pricing (the
+  // backend change-plan does NOT clear it) and changes the plan when it differs.
+  // Reverting first leaves a sane state even if the plan-change confirm is
+  // cancelled. pricingMode is already 'plan' here, so saveCustomPricing reverts.
+  const applyPlanSelection = async () => {
+    if (!client) return;
+    const wasCustom = (client as any).pricing_mode === 'custom';
+    const planChanged = (targetPlan || client.plan_type) !== client.plan_type;
+    if (wasCustom) { await saveCustomPricing(); }
+    if (planChanged) { await handleChangePlan(); }
+  };
+
   // ── Collect payment (Connect clients): generate a hosted checkout link the
   // client opens on their phone to enter a card. In person (scan the QR) or sent.
   const [collectBusy, setCollectBusy] = useState(false);
@@ -513,7 +525,7 @@ export default function AgencyClientDetailPage() {
   const [collectCopied, setCollectCopied] = useState(false);
   const [collectEmail, setCollectEmail] = useState('');
   // Pre-fill the billing email with the client's own, but NOT if it is just the
-  // agency's email (the AI Lab default) — that is the thing we want to replace.
+  // agency's email (the AI Lab default), that is the thing we want to replace.
   useEffect(() => {
     if (!client) return;
     const ce = (client as any).email || '';
@@ -711,7 +723,7 @@ export default function AgencyClientDetailPage() {
   const industryEntry = client?.industry ? getIndustry(client.industry) : null;
 
   if (contextLoading || loading) { return <div className="flex items-center justify-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.iconColor }} /></div>; }
-  if (error || !client) { return (<div className="p-4 sm:p-6 lg:p-8"><Link href="/agency/clients" className="inline-flex items-center gap-2 text-sm transition-colors mb-6 hover:opacity-80" style={{ color: theme.textMuted }}><ArrowLeft className="h-4 w-4" /> Back to Clients</Link><div className="text-center py-20"><div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full" style={{ backgroundColor: theme.errorBg }}><Building2 className="h-8 w-8" style={{ color: theme.errorText, opacity: 0.5 }} /></div><p className="mt-4 font-medium" style={{ color: theme.textMuted }}>{error || 'Client not found'}</p><Link href="/agency/clients" className="mt-4 inline-flex items-center gap-2 text-sm hover:opacity-80" style={{ color: theme.primary }}><ArrowLeft className="h-4 w-4" /> Return to clients</Link></div></div>); }
+  if (error || !client) { return (<div className="p-4 sm:p-6 lg:p-8"><Link href="/agency/clients" className="inline-flex items-center gap-2 text-sm transition-colors mb-6 hover:opacity-80" style={{ color: theme.cardTextMuted }}><ArrowLeft className="h-4 w-4" /> Back to Clients</Link><div className="text-center py-20"><div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full" style={{ backgroundColor: theme.errorBg }}><Building2 className="h-8 w-8" style={{ color: theme.errorText, opacity: 0.5 }} /></div><p className="mt-4 font-medium" style={{ color: theme.cardTextMuted }}>{error || 'Client not found'}</p><Link href="/agency/clients" className="mt-4 inline-flex items-center gap-2 text-sm hover:opacity-80" style={{ color: theme.primary }}><ArrowLeft className="h-4 w-4" /> Return to clients</Link></div></div>); }
 
   // Agency-specific client login URL (verified custom domain, else
   // {slug}.myvoiceaiconnect.com), matching the backend's agencyUrl logic.
@@ -800,9 +812,9 @@ export default function AgencyClientDetailPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
-      <Link href="/agency/clients" className="inline-flex items-center gap-2 text-sm transition-colors mb-4 sm:mb-6 hover:opacity-80" style={{ color: theme.textMuted }}><ArrowLeft className="h-4 w-4" /> Back to Clients</Link>
+      <Link href="/agency/clients" className="inline-flex items-center gap-2 text-sm transition-colors mb-4 sm:mb-6 hover:opacity-80" style={{ color: theme.cardTextMuted }}><ArrowLeft className="h-4 w-4" /> Back to Clients</Link>
 
-      <div className="mb-6 sm:mb-8"><div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"><div className="flex items-center gap-4"><div className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>{client.logo_url ? (<img src={client.logo_url} alt={client.business_name} className="h-10 w-10 sm:h-12 sm:w-12 object-contain rounded-lg" />) : (<span className="text-xl sm:text-2xl font-medium" style={{ color: theme.primary }}>{client.business_name?.charAt(0) || '?'}</span>)}</div><div className="min-w-0"><h1 className="text-xl sm:text-2xl font-semibold tracking-tight truncate">{client.business_name}</h1><div className="flex items-center gap-2 mt-1 flex-wrap"><span className="inline-flex rounded-full px-3 py-1 text-xs font-medium capitalize" style={{ backgroundColor: statusStyle.bg, color: statusStyle.text }}>{formatStatus(client.subscription_status || client.status)}</span><span className="text-sm" style={{ color: theme.textMuted }}>{getPlanLabel(client.plan_type)} - ${((_effCents || 0) / 100).toFixed(0)}/mo</span></div></div></div><div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto"><Link href={`/agency/clients/${clientId}/calls`} className="flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><PhoneCall className="h-4 w-4" /> View Call History</Link><button onClick={handlePreviewAsClient} disabled={previewLoading} className="flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.hover, color: theme.text, border: `1px solid ${theme.border}` }}>{previewLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}{previewLoading ? 'Opening...' : 'Login as Client'}</button></div></div></div>
+      <div className="mb-6 sm:mb-8"><div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"><div className="flex items-center gap-4"><div className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>{client.logo_url ? (<img src={client.logo_url} alt={client.business_name} className="h-10 w-10 sm:h-12 sm:w-12 object-contain rounded-lg" />) : (<span className="text-xl sm:text-2xl font-medium" style={{ color: theme.primary }}>{client.business_name?.charAt(0) || '?'}</span>)}</div><div className="min-w-0"><h1 className="text-xl sm:text-2xl font-semibold tracking-tight truncate">{client.business_name}</h1><div className="flex items-center gap-2 mt-1 flex-wrap"><span className="inline-flex rounded-full px-3 py-1 text-xs font-medium capitalize" style={{ backgroundColor: statusStyle.bg, color: statusStyle.text }}>{formatStatus(client.subscription_status || client.status)}</span><span className="text-sm" style={{ color: theme.cardTextMuted }}>{getPlanLabel(client.plan_type)} - ${((_effCents || 0) / 100).toFixed(0)}/mo</span></div></div></div><div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto"><Link href={`/agency/clients/${clientId}/calls`} className="flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><PhoneCall className="h-4 w-4" /> View Call History</Link><button onClick={handlePreviewAsClient} disabled={previewLoading} className="flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.hover, color: theme.text, border: `1px solid ${theme.border}` }}>{previewLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}{previewLoading ? 'Opening...' : 'Login as Client'}</button></div></div></div>
 
       <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
@@ -815,7 +827,7 @@ export default function AgencyClientDetailPage() {
                   </div>
                   <div className="min-w-0">
                     <h3 className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>This is a test client</h3>
-                    <p className="text-xs sm:text-sm mt-1" style={{ color: theme.textMuted }}>A free, full receptionist you can hand to a prospect. When they are ready to sign on, convert it to a real client. It keeps the same number and setup, so nothing has to be rebuilt.</p>
+                    <p className="text-xs sm:text-sm mt-1" style={{ color: theme.cardTextMuted }}>A free, full receptionist you can hand to a prospect. When they are ready to sign on, convert it to a real client. It keeps the same number and setup, so nothing has to be rebuilt.</p>
                   </div>
                 </div>
                 <button onClick={() => { setConvertError(null); setShowConvertModal(true); }} className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition hover:opacity-90 flex-shrink-0" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><UserCheck className="h-4 w-4" /> Convert to a Real Client</button>
@@ -823,7 +835,7 @@ export default function AgencyClientDetailPage() {
             </div>
           )}
           {/* AI Phone Number */}
-          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-4"><Phone className="h-4 w-4" style={{ color: theme.iconColor }} /><h2 className="font-semibold text-sm sm:text-base">AI Phone Number</h2></div><div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><div><p className="text-xl sm:text-2xl font-bold" style={{ color: client.vapi_phone_number ? theme.primary : theme.textMuted }}>{client.vapi_phone_number ? formatPhone(client.vapi_phone_number) : 'Not provisioned'}</p>{!client.vapi_phone_number && (<p className="text-xs sm:text-sm mt-1.5 max-w-md" style={{ color: theme.textMuted }}>{noNumberNote}</p>)}{canProvisionHere && provisionError && (<p className="text-xs mt-2 leading-relaxed" style={{ color: theme.error || '#dc2626' }}>{provisionError}</p>)}</div>{client.vapi_phone_number ? (<div className="flex flex-wrap items-center gap-2 flex-shrink-0"><button onClick={() => setWebCallOpen(true)} className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.98]" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Radio className="h-4 w-4" /> Web Call</button><Link href={`/agency/templates?client=${client.id}`} className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors hover:opacity-90" style={{ backgroundColor: theme.hover, color: theme.text, border: `1px solid ${theme.border}` }}><Bot className="h-4 w-4" style={{ color: theme.iconColor }} /> AI Lab</Link><button onClick={copyPhoneNumber} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>{copied ? <Check className="h-4 w-4" style={{ color: theme.iconColor }} /> : <Copy className="h-4 w-4" />}{copied ? 'Copied!' : 'Copy'}</button></div>) : canProvisionHere ? (<button onClick={handleProvisionClient} disabled={provisioning} className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed flex-shrink-0" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{provisioning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Phone className="h-4 w-4" />}{provisioning ? 'Setting up...' : 'Provision Number'}</button>) : null}</div></div></div>
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-4"><Phone className="h-4 w-4" style={{ color: theme.iconColor }} /><h2 className="font-semibold text-sm sm:text-base">AI Phone Number</h2></div><div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><div><p className="text-xl sm:text-2xl font-bold" style={{ color: client.vapi_phone_number ? theme.primary : theme.textMuted }}>{client.vapi_phone_number ? formatPhone(client.vapi_phone_number) : 'Not provisioned'}</p>{!client.vapi_phone_number && (<p className="text-xs sm:text-sm mt-1.5 max-w-md" style={{ color: theme.cardTextMuted }}>{noNumberNote}</p>)}{canProvisionHere && provisionError && (<p className="text-xs mt-2 leading-relaxed" style={{ color: theme.error || '#dc2626' }}>{provisionError}</p>)}</div>{client.vapi_phone_number ? (<div className="flex flex-wrap items-center gap-2 flex-shrink-0"><button onClick={() => setWebCallOpen(true)} className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.98]" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Radio className="h-4 w-4" /> Web Call</button><Link href={`/agency/templates?client=${client.id}`} className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors hover:opacity-90" style={{ backgroundColor: theme.hover, color: theme.text, border: `1px solid ${theme.border}` }}><Bot className="h-4 w-4" style={{ color: theme.iconColor }} /> AI Lab</Link><button onClick={copyPhoneNumber} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors" style={{ backgroundColor: theme.hover, color: theme.cardTextMuted }}>{copied ? <Check className="h-4 w-4" style={{ color: theme.iconColor }} /> : <Copy className="h-4 w-4" />}{copied ? 'Copied!' : 'Copy'}</button></div>) : canProvisionHere ? (<button onClick={handleProvisionClient} disabled={provisioning} className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed flex-shrink-0" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{provisioning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Phone className="h-4 w-4" />}{provisioning ? 'Setting up...' : 'Provision Number'}</button>) : null}</div></div></div>
 
           {/* Business Details - Name & Phone inline-editable, matches Industry pattern */}
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
@@ -837,10 +849,10 @@ export default function AgencyClientDetailPage() {
                 {/* Business Name - editable */}
                 <div className="flex items-start gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0 mt-5" style={{ backgroundColor: theme.hover }}>
-                    <Building2 className="h-4 w-4" style={{ color: theme.textMuted }} />
+                    <Building2 className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs mb-1.5" style={{ color: theme.textMuted }}>Business Name</p>
+                    <p className="text-xs mb-1.5" style={{ color: theme.cardTextMuted }}>Business Name</p>
                     <div className="flex items-center gap-2">
                       <input
                         type="text"
@@ -861,10 +873,10 @@ export default function AgencyClientDetailPage() {
                 {/* Owner Phone - editable */}
                 <div className="flex items-start gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0 mt-5" style={{ backgroundColor: theme.hover }}>
-                    <Phone className="h-4 w-4" style={{ color: theme.textMuted }} />
+                    <Phone className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs mb-1.5" style={{ color: theme.textMuted }}>Phone</p>
+                    <p className="text-xs mb-1.5" style={{ color: theme.cardTextMuted }}>Phone</p>
                     <div className="flex items-center gap-2">
                       <input
                         type="tel"
@@ -885,12 +897,12 @@ export default function AgencyClientDetailPage() {
                 {/* Post-call recap SMS - per-client toggle */}
                 <div className="flex items-start gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0 mt-0.5" style={{ backgroundColor: theme.hover }}>
-                    <Bell className="h-4 w-4" style={{ color: theme.textMuted }} />
+                    <Bell className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs" style={{ color: theme.textMuted }}>Post-call text</p>
+                        <p className="text-xs" style={{ color: theme.cardTextMuted }}>Post-call text</p>
                         <p className="text-sm" style={{ color: theme.text }}>{postCallSms ? 'Owner gets a recap after each call' : 'No recap text for this business'}</p>
                       </div>
                       <button type="button" onClick={handleTogglePostCallSms} disabled={postCallSmsSaving}
@@ -915,19 +927,19 @@ export default function AgencyClientDetailPage() {
                         <FieldStatus field="notification_phone" />
                       </div>
                     )}
-                    <p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>Where the recap goes. Leave blank to use the owner phone. The text always goes to the business owner.</p>
+                    <p className="text-[10px] mt-1" style={{ color: theme.cardTextMuted }}>Where the recap goes. Leave blank to use the owner phone. The text always goes to the business owner.</p>
                   </div>
                 </div>
 
                 {/* Calendar tab visibility - per-client toggle */}
                 <div className="flex items-start gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0 mt-0.5" style={{ backgroundColor: theme.hover }}>
-                    <CalendarCheck className="h-4 w-4" style={{ color: theme.textMuted }} />
+                    <CalendarCheck className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs" style={{ color: theme.textMuted }}>Calendar tab</p>
+                        <p className="text-xs" style={{ color: theme.cardTextMuted }}>Calendar tab</p>
                         <p className="text-sm" style={{ color: theme.text }}>{calVisible ? 'Shown on this business’s dashboard' : 'Hidden from this business’s dashboard'}</p>
                       </div>
                       <button type="button" onClick={handleToggleCalendarVisibility} disabled={calVisibleSaving}
@@ -936,7 +948,7 @@ export default function AgencyClientDetailPage() {
                         <span className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition duration-200" style={{ transform: calVisible ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
                       </button>
                     </div>
-                    <p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>Shows or completely hides the Calendar tab for this business. Their AI keeps booking either way.</p>
+                    <p className="text-[10px] mt-1" style={{ color: theme.cardTextMuted }}>Shows or completely hides the Calendar tab for this business. Their AI keeps booking either way.</p>
                   </div>
                 </div>
 
@@ -944,19 +956,19 @@ export default function AgencyClientDetailPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.hover }}>
-                      <Mail className="h-4 w-4" style={{ color: theme.textMuted }} />
+                      <Mail className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs" style={{ color: theme.textMuted }}>Email</p>
+                      <p className="text-xs" style={{ color: theme.cardTextMuted }}>Email</p>
                       <p className="text-sm truncate">{client.email}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.hover }}>
-                      <MapPin className="h-4 w-4" style={{ color: theme.textMuted }} />
+                      <MapPin className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs" style={{ color: theme.textMuted }}>Location</p>
+                      <p className="text-xs" style={{ color: theme.cardTextMuted }}>Location</p>
                       <p className="text-sm truncate">{client.business_city && client.business_state ? `${client.business_city}, ${client.business_state}` : '-'}</p>
                     </div>
                   </div>
@@ -965,10 +977,10 @@ export default function AgencyClientDetailPage() {
                 {/* Time zone */}
                 <div className="flex items-start gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0 mt-5" style={{ backgroundColor: theme.hover }}>
-                    <Clock className="h-4 w-4" style={{ color: theme.textMuted }} />
+                    <Clock className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs mb-1.5" style={{ color: theme.textMuted }}>Time zone</p>
+                    <p className="text-xs mb-1.5" style={{ color: theme.cardTextMuted }}>Time zone</p>
                     <div className="flex items-center gap-2">
                       <div className="relative flex-1">
                         <TimezoneSelect
@@ -981,17 +993,17 @@ export default function AgencyClientDetailPage() {
                       {tzSaving && <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" style={{ color: theme.iconColor }} />}
                       {tzSaved && <Check className="h-4 w-4 flex-shrink-0" style={{ color: theme.iconColor }} />}
                     </div>
-                    <p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>The client's business hours are evaluated in this time zone.</p>
+                    <p className="text-[10px] mt-1" style={{ color: theme.cardTextMuted }}>The client's business hours are evaluated in this time zone.</p>
                   </div>
                 </div>
 
                 {/* Industry - existing dropdown */}
                 <div className="flex items-start gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0 mt-5" style={{ backgroundColor: theme.hover }}>
-                    <Building2 className="h-4 w-4" style={{ color: theme.textMuted }} />
+                    <Building2 className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs mb-1.5" style={{ color: theme.textMuted }}>Industry</p>
+                    <p className="text-xs mb-1.5" style={{ color: theme.cardTextMuted }}>Industry</p>
                     <div className="flex items-center gap-2">
                       {client.is_test_client ? (
                         <div className="relative flex-1">
@@ -1007,7 +1019,7 @@ export default function AgencyClientDetailPage() {
                       ) : (
                         <div className="flex-1 min-w-0">
                           <p className="text-sm truncate" style={{ color: theme.text }}>{industryEntry?.label || client.industry || '-'}</p>
-                          <p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>Locked after creation</p>
+                          <p className="text-[10px] sm:text-xs mt-0.5" style={{ color: theme.cardTextMuted }}>Locked after creation</p>
                         </div>
                       )}
                       {industrySaving && <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" style={{ color: theme.iconColor }} />}
@@ -1021,10 +1033,10 @@ export default function AgencyClientDetailPage() {
                 {client.business_website && (
                   <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.hover }}>
-                      <Globe className="h-4 w-4" style={{ color: theme.textMuted }} />
+                      <Globe className="h-4 w-4" style={{ color: theme.cardTextMuted }} />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs" style={{ color: theme.textMuted }}>Website</p>
+                      <p className="text-xs" style={{ color: theme.cardTextMuted }}>Website</p>
                       <a href={client.business_website} target="_blank" rel="noopener noreferrer" className="text-sm truncate block hover:underline" style={{ color: theme.primary }}>{client.business_website.replace(/^https?:\/\//, '')}</a>
                     </div>
                   </div>
@@ -1041,17 +1053,17 @@ export default function AgencyClientDetailPage() {
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
             <div className="p-4 sm:p-6">
               <div className="flex items-center gap-2 mb-1"><Bot className="h-4 w-4" style={{ color: theme.iconColor }} /><h2 className="font-semibold text-sm sm:text-base">AI Receptionist</h2></div>
-              <p className="text-xs mb-4" style={{ color: theme.textMuted }}>This client&apos;s prompt, voice, knowledge base, and call behavior are configured in the AI Lab.</p>
+              <p className="text-xs mb-4" style={{ color: theme.cardTextMuted }}>This client&apos;s prompt, voice, knowledge base, and call behavior are configured in the AI Lab.</p>
               {canUseAiLab ? (
                 <Link href={`/agency/templates?client=${client.id}`} className="w-full flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Bot className="h-4 w-4" /> Open in AI Lab <ChevronRight className="h-4 w-4" /></Link>
               ) : (
-                <div className="rounded-xl p-4 flex items-center gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><Lock className="h-4 w-4 flex-shrink-0" style={{ color: theme.infoText }} /><div><p className="text-sm font-medium" style={{ color: theme.infoText }}>Upgrade to Pro</p><p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>Editing the AI prompt and knowledge base is available on Pro and Scale, in the AI Lab.</p></div></div>
+                <div className="rounded-xl p-4 flex items-center gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><Lock className="h-4 w-4 flex-shrink-0" style={{ color: theme.infoText }} /><div><p className="text-sm font-medium" style={{ color: theme.infoText }}>Upgrade to Pro</p><p className="text-xs mt-0.5" style={{ color: theme.cardTextMuted }}>Editing the AI prompt and knowledge base is available on Pro and Scale, in the AI Lab.</p></div></div>
               )}
             </div>
           </div>
 
           {/* Recent Calls */}
-          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6 flex items-center justify-between"><div className="flex items-center gap-2"><PhoneCall className="h-4 w-4" style={{ color: theme.iconColor }} /><h2 className="font-semibold text-sm sm:text-base">Recent Calls</h2></div><Link href={`/agency/clients/${clientId}/calls`} className="inline-flex items-center gap-1 text-sm font-medium hover:opacity-80 transition-colors" style={{ color: theme.primary }}>View All<ChevronRight className="h-4 w-4" /></Link></div>{recentCalls.length === 0 ? (<div className="px-4 sm:px-6 pb-6 text-center py-8"><PhoneCall className="h-8 w-8 mx-auto mb-2" style={{ color: theme.textMuted, opacity: 0.4 }} /><p className="text-sm" style={{ color: theme.textMuted }}>No calls yet</p></div>) : (<div>{recentCalls.map((call) => { const statusBadges = getCallBadges(call, theme); const Lead = statusBadges[0]?.Icon || PhoneCall; const leadColor = statusBadges[0]?.color || theme.textMuted; return (<Link key={call.id} href={`/agency/clients/${clientId}/calls/${call.id}`} className="flex items-center justify-between px-4 sm:px-6 py-3 transition-colors" style={{ borderTop: `1px solid ${theme.borderSubtle}` }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hover} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}><div className="flex items-center gap-3 min-w-0"><Lead className="h-4 w-4 flex-shrink-0" style={{ color: leadColor }} /><div className="min-w-0"><p className="text-sm font-medium truncate">{call.customer_name || 'Unknown Caller'}</p><p className="text-xs" style={{ color: theme.textMuted }}>{call.service_requested || 'General inquiry'}</p></div></div><div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">{statusBadges.map((b) => (<span key={b.key} className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] sm:text-xs font-semibold whitespace-nowrap" style={{ backgroundColor: b.bg, color: b.color }}><b.Icon className="h-3 w-3 flex-shrink-0" /><span className="hidden sm:inline">{b.label}</span></span>))}<span className="text-xs" style={{ color: theme.textMuted }}>{new Date(call.created_at).toLocaleDateString()}</span><ChevronRight className="h-4 w-4" style={{ color: theme.textMuted }} /></div></Link>); })}</div>)}</div>
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6 flex items-center justify-between"><div className="flex items-center gap-2"><PhoneCall className="h-4 w-4" style={{ color: theme.iconColor }} /><h2 className="font-semibold text-sm sm:text-base">Recent Calls</h2></div><Link href={`/agency/clients/${clientId}/calls`} className="inline-flex items-center gap-1 text-sm font-medium hover:opacity-80 transition-colors" style={{ color: theme.primary }}>View All<ChevronRight className="h-4 w-4" /></Link></div>{recentCalls.length === 0 ? (<div className="px-4 sm:px-6 pb-6 text-center py-8"><PhoneCall className="h-8 w-8 mx-auto mb-2" style={{ color: theme.textMuted, opacity: 0.4 }} /><p className="text-sm" style={{ color: theme.cardTextMuted }}>No calls yet</p></div>) : (<div>{recentCalls.map((call) => { const statusBadges = getCallBadges(call, theme); const Lead = statusBadges[0]?.Icon || PhoneCall; const leadColor = statusBadges[0]?.color || theme.textMuted; return (<Link key={call.id} href={`/agency/clients/${clientId}/calls/${call.id}`} className="flex items-center justify-between px-4 sm:px-6 py-3 transition-colors" style={{ borderTop: `1px solid ${theme.borderSubtle}` }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hover} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}><div className="flex items-center gap-3 min-w-0"><Lead className="h-4 w-4 flex-shrink-0" style={{ color: leadColor }} /><div className="min-w-0"><p className="text-sm font-medium truncate">{call.customer_name || 'Unknown Caller'}</p><p className="text-xs" style={{ color: theme.cardTextMuted }}>{call.service_requested || 'General inquiry'}</p></div></div><div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">{statusBadges.map((b) => (<span key={b.key} className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] sm:text-xs font-semibold whitespace-nowrap" style={{ backgroundColor: b.bg, color: b.color }}><b.Icon className="h-3 w-3 flex-shrink-0" /><span className="hidden sm:inline">{b.label}</span></span>))}<span className="text-xs" style={{ color: theme.cardTextMuted }}>{new Date(call.created_at).toLocaleDateString()}</span><ChevronRight className="h-4 w-4" style={{ color: theme.cardTextMuted }} /></div></Link>); })}</div>)}</div>
         </div>
 
         {/* Right Column */}
@@ -1061,36 +1073,36 @@ export default function AgencyClientDetailPage() {
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
             <div className="p-4 sm:p-6">
               <div className="flex items-center gap-2 mb-1"><Lock className="h-4 w-4" style={{ color: theme.iconColor }} /><h2 className="font-semibold text-sm sm:text-base">Client Login</h2></div>
-              <p className="text-xs mb-4" style={{ color: theme.textMuted }}>The credentials this client uses to sign in to their dashboard.</p>
+              <p className="text-xs mb-4" style={{ color: theme.cardTextMuted }}>The credentials this client uses to sign in to their dashboard.</p>
 
               {credError && (<div className="rounded-lg p-3 mb-3 flex items-center gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.errorText }} /><p className="text-xs" style={{ color: theme.errorText }}>{credError}</p></div>)}
 
               {clientLoginUrl && (
                 <div className="mb-3">
-                  <p className="text-xs mb-1" style={{ color: theme.textMuted }}>Login page</p>
+                  <p className="text-xs mb-1" style={{ color: theme.cardTextMuted }}>Login page</p>
                   <div className="flex items-center gap-2">
                     <div className="flex-1 rounded-lg px-3 py-2 text-sm font-mono truncate" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>{clientLoginUrl}</div>
-                    <a href={clientLoginUrl} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg" style={{ backgroundColor: theme.hover, color: theme.textMuted }}><ExternalLink className="h-4 w-4" /></a>
-                    <button onClick={() => copyCred(clientLoginUrl, 'url')} className="p-2 rounded-lg" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>{credCopied === 'url' ? <Check className="h-4 w-4" style={{ color: theme.iconColor }} /> : <Copy className="h-4 w-4" />}</button>
+                    <a href={clientLoginUrl} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg" style={{ backgroundColor: theme.hover, color: theme.cardTextMuted }}><ExternalLink className="h-4 w-4" /></a>
+                    <button onClick={() => copyCred(clientLoginUrl, 'url')} className="p-2 rounded-lg" style={{ backgroundColor: theme.hover, color: theme.cardTextMuted }}>{credCopied === 'url' ? <Check className="h-4 w-4" style={{ color: theme.iconColor }} /> : <Copy className="h-4 w-4" />}</button>
                   </div>
                 </div>
               )}
 
               <div className="mb-3">
-                <p className="text-xs mb-1" style={{ color: theme.textMuted }}>Username</p>
+                <p className="text-xs mb-1" style={{ color: theme.cardTextMuted }}>Username</p>
                 <div className="flex items-center gap-2">
                   <div className="flex-1 rounded-lg px-3 py-2 text-sm font-mono truncate" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>{client.login_email || client.email || '-'}</div>
-                  <button onClick={() => copyCred(client.login_email || client.email || '', 'user')} className="p-2 rounded-lg" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>{credCopied === 'user' ? <Check className="h-4 w-4" style={{ color: theme.iconColor }} /> : <Copy className="h-4 w-4" />}</button>
+                  <button onClick={() => copyCred(client.login_email || client.email || '', 'user')} className="p-2 rounded-lg" style={{ backgroundColor: theme.hover, color: theme.cardTextMuted }}>{credCopied === 'user' ? <Check className="h-4 w-4" style={{ color: theme.iconColor }} /> : <Copy className="h-4 w-4" />}</button>
                 </div>
               </div>
 
               <div className="mb-4">
-                <p className="text-xs mb-1" style={{ color: theme.textMuted }}>Password</p>
+                <p className="text-xs mb-1" style={{ color: theme.cardTextMuted }}>Password</p>
                 {client.login_password ? (
                   <div className="flex items-center gap-2">
                     <div className="flex-1 rounded-lg px-3 py-2 text-sm font-mono truncate" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>{credPwVisible ? client.login_password : '\u2022'.repeat(Math.min(12, (client.login_password || '').length))}</div>
-                    <button onClick={() => setCredPwVisible(v => !v)} className="px-2.5 py-2 rounded-lg text-xs font-medium" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>{credPwVisible ? 'Hide' : 'Show'}</button>
-                    <button onClick={() => copyCred(client.login_password || '', 'pass')} className="p-2 rounded-lg" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>{credCopied === 'pass' ? <Check className="h-4 w-4" style={{ color: theme.iconColor }} /> : <Copy className="h-4 w-4" />}</button>
+                    <button onClick={() => setCredPwVisible(v => !v)} className="px-2.5 py-2 rounded-lg text-xs font-medium" style={{ backgroundColor: theme.hover, color: theme.cardTextMuted }}>{credPwVisible ? 'Hide' : 'Show'}</button>
+                    <button onClick={() => copyCred(client.login_password || '', 'pass')} className="p-2 rounded-lg" style={{ backgroundColor: theme.hover, color: theme.cardTextMuted }}>{credCopied === 'pass' ? <Check className="h-4 w-4" style={{ color: theme.iconColor }} /> : <Copy className="h-4 w-4" />}</button>
                   </div>
                 ) : (
                   <div className="rounded-lg px-3 py-2 text-xs" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.textMuted }}>The client set their own password, so it can&apos;t be shown. Reset it below to generate a new one you can share.</div>
@@ -1106,15 +1118,15 @@ export default function AgencyClientDetailPage() {
 
           {/* Client Branding */}
           <div>
-            {isFreePlan && (<div className="rounded-xl p-4 mb-4 flex items-center gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><Lock className="h-4 w-4 flex-shrink-0" style={{ color: theme.infoText }} /><div><p className="text-sm font-medium" style={{ color: theme.infoText }}>Upgrade to Pro</p><p className="text-xs mt-0.5" style={{ color: theme.textMuted }}>Client branding requires Pro or Scale.</p></div></div>)}
+            {isFreePlan && (<div className="rounded-xl p-4 mb-4 flex items-center gap-3" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}><Lock className="h-4 w-4 flex-shrink-0" style={{ color: theme.infoText }} /><div><p className="text-sm font-medium" style={{ color: theme.infoText }}>Upgrade to Pro</p><p className="text-xs mt-0.5" style={{ color: theme.cardTextMuted }}>Client branding requires Pro or Scale.</p></div></div>)}
             <div style={isFreePlan ? { opacity: 0.4, pointerEvents: 'none' as const } : {}}><ClientBrandingCard client={client} agencyId={agency?.id} theme={theme} backendUrl={backendUrl} onUpdate={fetchClientData} /></div>
           </div>
 
           {/* Subscription */}
-          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-4"><CreditCard className="h-4 w-4" style={{ color: theme.iconColor }} /><h2 className="font-semibold text-sm sm:text-base">Subscription</h2></div><div className="space-y-3">{billingSummary && <div className="rounded-lg px-3 py-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><p className="text-sm font-medium leading-snug" style={{ color: theme.text }}>{billingSummary}</p></div>}<div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Plan</span><span className="text-sm font-medium">{getPlanLabel(client.plan_type)}</span></div><div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Price</span><span className="text-sm font-medium">${((((client as any).effective_price_cents ?? getPlanPrice(client.plan_type, client))) / 100).toFixed(0)}/mo{(client as any).price_discount ? <span className="font-normal" style={{ color: theme.textMuted }}> (was ${(((client as any).base_price_cents || 0) / 100).toFixed(0)}, {(client as any).price_discount.percent_off}% off{(client as any).price_discount.duration === 'once' ? ' first month' : ''})</span> : null}</span></div><div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Status</span><span className="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium capitalize" style={{ backgroundColor: statusStyle.bg, color: statusStyle.text }}>{formatStatus(client.subscription_status || client.status)}</span></div>{_showBillingDay && <div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Billing day</span><span className="text-sm font-medium">{_ordinal(_billingDay as number)} of each month</span></div>}{(client as any).current_period_end && !['canceled','cancelled','agency_canceled','expired','trial_expired'].includes(_subSt) && <div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Next billing</span><span className="text-sm font-medium">{new Date((client as any).current_period_end * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span></div>}{client.signup_discount_code && <div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Discount Code</span><span className="text-sm font-medium" style={{ fontFamily: 'ui-monospace, monospace' }}>{client.signup_discount_code}</span></div>}<div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Client Since</span><span className="text-sm font-medium">{new Date(client.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span></div></div></div></div>
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-4"><CreditCard className="h-4 w-4" style={{ color: theme.iconColor }} /><h2 className="font-semibold text-sm sm:text-base">Subscription</h2></div><div className="space-y-3">{billingSummary && <div className="rounded-lg px-3 py-2" style={{ backgroundColor: theme.primary15, border: `1px solid ${theme.primary30}` }}><p className="text-sm font-medium leading-snug" style={{ color: theme.text }}>{billingSummary}</p></div>}<div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.cardTextMuted }}>Plan</span><span className="text-sm font-medium">{getPlanLabel(client.plan_type)}</span></div><div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.cardTextMuted }}>Price</span><span className="text-sm font-medium">${((((client as any).effective_price_cents ?? getPlanPrice(client.plan_type, client))) / 100).toFixed(0)}/mo{(client as any).price_discount ? <span className="font-normal" style={{ color: theme.cardTextMuted }}> (was ${(((client as any).base_price_cents || 0) / 100).toFixed(0)}, {(client as any).price_discount.percent_off}% off{(client as any).price_discount.duration === 'once' ? ' first month' : ''})</span> : null}</span></div><div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.cardTextMuted }}>Status</span><span className="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium capitalize" style={{ backgroundColor: statusStyle.bg, color: statusStyle.text }}>{formatStatus(client.subscription_status || client.status)}</span></div>{_showBillingDay && <div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.cardTextMuted }}>Billing day</span><span className="text-sm font-medium">{_ordinal(_billingDay as number)} of each month</span></div>}{(client as any).current_period_end && !['canceled','cancelled','agency_canceled','expired','trial_expired'].includes(_subSt) && <div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.cardTextMuted }}>Next billing</span><span className="text-sm font-medium">{new Date((client as any).current_period_end * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span></div>}{client.signup_discount_code && <div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.cardTextMuted }}>Discount Code</span><span className="text-sm font-medium" style={{ fontFamily: 'ui-monospace, monospace' }}>{client.signup_discount_code}</span></div>}<div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.cardTextMuted }}>Client Since</span><span className="text-sm font-medium">{new Date(client.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span></div></div></div></div>
 
           {/* Call Usage */}
-          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-4"><PhoneCall className="h-4 w-4" style={{ color: theme.iconColor }} /><h2 className="font-semibold text-sm sm:text-base">Call Usage</h2></div><div className="text-center mb-4"><p className="text-3xl font-bold" style={{ color: theme.primary }}>{callsUsed}</p><p className="text-sm" style={{ color: theme.textMuted }}>calls this month{callLimit ? ` of ${callLimit}` : ''}</p></div>{callLimit && (<div><div className="w-full h-2 rounded-full overflow-hidden" style={{ backgroundColor: theme.hover }}><div className="h-full rounded-full transition-all" style={{ width: `${callPercent}%`, backgroundColor: callPercent > 90 ? '#ef4444' : callPercent > 70 ? '#f59e0b' : theme.primary }} /></div><p className="text-xs mt-2 text-right" style={{ color: theme.textMuted }}>{Math.max(0, callLimit - callsUsed)} remaining</p></div>)}<div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.borderSubtle}` }}><div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.textMuted }}>Minutes this month</span><span className="text-sm font-semibold">{minutesUsed}{includedMin ? ` of ${includedMin}` : ''}</span></div>{includedMin && includedMin > 0 ? (<div className="mt-2 w-full h-2 rounded-full overflow-hidden" style={{ backgroundColor: theme.hover }}><div className="h-full rounded-full transition-all" style={{ width: `${minutesPercent}%`, backgroundColor: minutesPercent > 90 ? '#ef4444' : minutesPercent > 70 ? '#f59e0b' : theme.primary }} /></div>) : null}</div></div></div>
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6"><div className="flex items-center gap-2 mb-4"><PhoneCall className="h-4 w-4" style={{ color: theme.iconColor }} /><h2 className="font-semibold text-sm sm:text-base">Call Usage</h2></div><div className="text-center mb-4"><p className="text-3xl font-bold" style={{ color: theme.primary }}>{callsUsed}</p><p className="text-sm" style={{ color: theme.cardTextMuted }}>calls this month{callLimit ? ` of ${callLimit}` : ''}</p></div>{callLimit && (<div><div className="w-full h-2 rounded-full overflow-hidden" style={{ backgroundColor: theme.hover }}><div className="h-full rounded-full transition-all" style={{ width: `${callPercent}%`, backgroundColor: callPercent > 90 ? '#ef4444' : callPercent > 70 ? '#f59e0b' : theme.primary }} /></div><p className="text-xs mt-2 text-right" style={{ color: theme.cardTextMuted }}>{Math.max(0, callLimit - callsUsed)} remaining</p></div>)}<div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.borderSubtle}` }}><div className="flex items-center justify-between"><span className="text-sm" style={{ color: theme.cardTextMuted }}>Minutes this month</span><span className="text-sm font-semibold">{minutesUsed}{includedMin ? ` of ${includedMin}` : ''}</span></div>{includedMin && includedMin > 0 ? (<div className="mt-2 w-full h-2 rounded-full overflow-hidden" style={{ backgroundColor: theme.hover }}><div className="h-full rounded-full transition-all" style={{ width: `${minutesPercent}%`, backgroundColor: minutesPercent > 90 ? '#ef4444' : minutesPercent > 70 ? '#f59e0b' : theme.primary }} /></div>) : null}</div></div></div>
         </div>
       </div>
 
@@ -1136,10 +1148,10 @@ export default function AgencyClientDetailPage() {
                   <CreditCard className="h-4 w-4" style={{ color: theme.iconColor }} />
                   <h2 className="font-semibold text-sm sm:text-base">Collect payment</h2>
                 </div>
-                <p className="text-xs mb-3" style={{ color: theme.textMuted }}>
+                <p className="text-xs mb-3" style={{ color: theme.cardTextMuted }}>
                   Put {client.business_name} on a paying plan. Generate a secure checkout link they open on their phone to enter a card, sitting with you in person (scan the code) or sent to them. They&apos;re billed ${(((client as any).effective_price_cents ?? getPlanPrice(client.plan_type, client)) / 100).toFixed(0)}/mo. Change the amount in Custom pricing below first if needed.
                 </p>
-                <label className="block text-xs font-medium mb-1" style={{ color: theme.textMuted }}>Client&apos;s email (their receipt and checkout)</label>
+                <label className="block text-xs font-medium mb-1" style={{ color: theme.cardTextMuted }}>Client&apos;s email (their receipt and checkout)</label>
                 <input value={collectEmail} onChange={(e) => { setCollectEmail(e.target.value); setCollectErr(null); }} placeholder="owner@theirbusiness.com" inputMode="email"
                   className="w-full sm:max-w-sm rounded-lg px-3 py-2 text-sm mb-3" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
                 <div>
@@ -1156,7 +1168,7 @@ export default function AgencyClientDetailPage() {
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => setCollectUrl(null)}>
               <div className="rounded-2xl p-5 sm:p-6 w-full max-w-sm" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center gap-2 mb-1"><CreditCard className="h-5 w-5" style={{ color: theme.iconColor }} /><h3 className="font-semibold text-base" style={{ color: theme.text }}>Collect payment</h3></div>
-                <p className="text-sm mb-4" style={{ color: theme.textMuted }}>Have the client scan this with their phone camera, or send them the link. They enter their card on Stripe&apos;s secure page.</p>
+                <p className="text-sm mb-4" style={{ color: theme.cardTextMuted }}>Have the client scan this with their phone camera, or send them the link. They enter their card on Stripe&apos;s secure page.</p>
                 <div className="flex justify-center mb-4">
                   <img alt="Payment link QR code" width={200} height={200} className="rounded-lg" style={{ backgroundColor: '#fff', padding: 8 }} src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data=${encodeURIComponent(collectUrl)}`} onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
                 </div>
@@ -1165,7 +1177,7 @@ export default function AgencyClientDetailPage() {
                   <button onClick={copyCollectLink} className="px-3 py-2 rounded-lg text-sm font-medium flex-shrink-0" style={{ backgroundColor: theme.primary15, color: theme.primary }}>{collectCopied ? 'Copied' : 'Copy'}</button>
                 </div>
                 <a href={collectUrl} target="_blank" rel="noopener noreferrer" className="block text-center rounded-lg px-4 py-2.5 text-sm font-semibold mb-2" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>Open checkout</a>
-                <button onClick={() => { setCollectUrl(null); fetchClientData(); }} className="w-full text-center text-sm py-2" style={{ color: theme.textMuted }}>Done</button>
+                <button onClick={() => { setCollectUrl(null); fetchClientData(); }} className="w-full text-center text-sm py-2" style={{ color: theme.cardTextMuted }}>Done</button>
               </div>
             </div>
           )}
@@ -1178,7 +1190,7 @@ export default function AgencyClientDetailPage() {
                   <CreditCard className="h-4 w-4" style={{ color: theme.iconColor }} />
                   <h2 className="font-semibold text-sm sm:text-base">Manual billing</h2>
                 </div>
-                <p className="text-xs mb-3" style={{ color: theme.textMuted }}>You bill this client directly (invoice or payment link), not through the platform. Cut off or restore their access below. Their phone number is always kept, releasing it is only done by canceling.</p>
+                <p className="text-xs mb-3" style={{ color: theme.cardTextMuted }}>You bill this client directly (invoice or payment link), not through the platform. Cut off or restore their access below. Their phone number is always kept, releasing it is only done by canceling.</p>
 
                 {isManualSuspended ? (
                   <div className="rounded-lg px-3 py-2 mb-3 flex items-start gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}>
@@ -1208,27 +1220,59 @@ export default function AgencyClientDetailPage() {
                       {manualBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />} Suspend
                     </button>
                   )}
-                  {manualMsg && <span className="text-xs" style={{ color: theme.textMuted }}>{manualMsg}</span>}
+                  {manualMsg && <span className="text-xs" style={{ color: theme.cardTextMuted }}>{manualMsg}</span>}
                 </div>
               </div>
             </div>
           )}
 
-          {/* Custom pricing (white-glove, per-client override) */}
+          {/* Plan & pricing: one control. Pick a plan, or choose Custom for a
+              bespoke per-client price. Replaces the old separate "Plan" and
+              "Custom pricing" cards. */}
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
             <div className="p-4 sm:p-6">
               <div className="flex items-center gap-2 mb-1">
                 <CreditCard className="h-4 w-4" style={{ color: theme.iconColor }} />
-                <h2 className="font-semibold text-sm sm:text-base">Custom pricing</h2>
+                <h2 className="font-semibold text-sm sm:text-base" style={{ color: theme.cardText }}>Plan &amp; pricing</h2>
               </div>
-              <p className="text-xs mb-3" style={{ color: theme.textMuted }}>Set a bespoke price for this client only, for white-glove deals. This is the amount they&apos;re charged when you collect payment above (or at their next checkout), instead of your standard plan price. Save it before generating the payment link.</p>
-              <div className="inline-flex rounded-lg p-0.5 mb-3" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                {(['plan', 'custom'] as const).map((m) => (
-                  <button key={m} onClick={() => setPricingMode(m)} className="px-3 py-1.5 rounded-md text-xs font-medium transition-colors" style={pricingMode === m ? { backgroundColor: theme.primary, color: theme.primaryText } : { color: theme.textMuted }}>{m === 'plan' ? 'Use a plan' : 'Custom'}</button>
-                ))}
+              <p className="text-xs mb-3" style={{ color: theme.cardTextMuted }}>Currently on {pricingMode === 'custom' ? 'custom pricing' : getPlanLabel(client.plan_type)}. Pick one of your plans, or choose Custom to set a bespoke price for this client only (white-glove deals). If they are on paid billing, a plan change is prorated on their next invoice.</p>
+
+              <div className="flex items-center gap-2 flex-wrap mb-3">
+                <div className="min-w-[180px]">
+                  <CustomSelect
+                    value={pricingMode === 'custom' ? 'custom' : (targetPlan || client.plan_type)}
+                    onChange={(v) => { if (v === 'custom') { setPricingMode('custom'); } else { setPricingMode('plan'); setTargetPlan(v); } }}
+                    options={[...availablePlans.map((p) => ({ value: p.key, label: p.name })), { value: 'custom', label: 'Custom' }]}
+                    disabled={changingPlan || savingCustom}
+                    ui={{ inputStyle: { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text, colorScheme: isDark ? 'dark' : 'light' }, text: theme.text, muted: theme.textMuted, panelBg: theme.card, panelBorder: theme.inputBorder, hover: theme.hover, accent: theme.primary, isDark }}
+                  />
+                </div>
+                {pricingMode !== 'custom' && (() => {
+                  const wasCustom = (client as any).pricing_mode === 'custom';
+                  const planChanged = (targetPlan || client.plan_type) !== client.plan_type;
+                  return (
+                  <button
+                    onClick={applyPlanSelection}
+                    disabled={changingPlan || savingCustom || (!wasCustom && !planChanged)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                    style={{ backgroundColor: theme.primary, color: theme.primaryText }}
+                  >
+                    {(changingPlan || savingCustom) ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} {planChanged ? 'Change plan' : 'Use plan pricing'}
+                  </button>
+                  );
+                })()}
+                {planMsg && (
+                  /Stripe Connect/i.test(planMsg) ? (
+                    <span className="text-xs" style={{ color: theme.cardTextMuted }}>You haven&apos;t finished setting up Stripe Connect. <a href="/agency/settings?tab=payments" className="font-medium underline" style={{ color: theme.primary }}>Connect your Stripe account</a> to change a billed client&apos;s plan.</span>
+                  ) : (
+                    <span className="text-xs" style={{ color: theme.cardTextMuted }}>{planMsg}</span>
+                  )
+                )}
               </div>
+
               {pricingMode === 'custom' && (
                 <div className="space-y-2.5">
+                  <p className="text-xs" style={{ color: theme.cardTextMuted }}>Set a bespoke price for this client only. This is the amount they&apos;re charged when you collect payment (or at their next checkout), instead of your standard plan price. Save it before generating the payment link.</p>
                   {isManualClient && (
                     <div className="rounded-lg px-3 py-2 flex items-start gap-2" style={{ backgroundColor: theme.infoBg, border: `1px solid ${theme.infoBorder}` }}>
                       <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" style={{ color: theme.infoText }} />
@@ -1244,7 +1288,7 @@ export default function AgencyClientDetailPage() {
                       { label: 'Call limit/mo', val: cLimit, set: setCLimit, ph: '-1 = unlimited' },
                     ].map((f) => (
                       <div key={f.label}>
-                        <label className="text-[11px]" style={{ color: theme.textMuted }}>{f.label}</label>
+                        <label className="text-[11px]" style={{ color: theme.cardTextMuted }}>{f.label}</label>
                         <input value={f.val} onChange={(e) => f.set(e.target.value)} placeholder={f.ph} inputMode="decimal" className="w-full mt-0.5 rounded-lg px-2.5 py-1.5 text-sm" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }} />
                       </div>
                     ))}
@@ -1253,51 +1297,14 @@ export default function AgencyClientDetailPage() {
                     <span className="font-medium" style={{ color: theme.text }}>{isManualClient ? 'You invoice this client: ' : 'This client pays: '}</span>
                     {cSetup && parseFloat(cSetup) > 0 ? `$${cSetup} setup once, then ` : ''}${cMonthly || '0'}/mo{cIncluded ? `, includes ${cIncluded} min` : ''}{cRate ? `, $${cRate}/min after` : ''}{cLimit && cLimit !== '-1' ? `, ${cLimit} calls/mo` : ''}.
                   </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={saveCustomPricing} disabled={savingCustom} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
+                      {savingCustom ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Save custom pricing
+                    </button>
+                    {customMsg && <span className="text-xs" style={{ color: theme.cardTextMuted }}>{customMsg}</span>}
+                  </div>
                 </div>
               )}
-              <div className="flex items-center gap-2 mt-3">
-                <button onClick={saveCustomPricing} disabled={savingCustom} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
-                  {savingCustom ? <Loader2 className="h-4 w-4 animate-spin" /> : null} {pricingMode === 'custom' ? 'Save custom pricing' : 'Use plan pricing'}
-                </button>
-                {customMsg && <span className="text-xs" style={{ color: theme.textMuted }}>{customMsg}</span>}
-              </div>
-            </div>
-          </div>
-
-          {/* Change plan: move this client to a different plan (prorates if billed) */}
-          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-            <div className="p-4 sm:p-6">
-              <div className="flex items-center gap-2 mb-1">
-                <CreditCard className="h-4 w-4" style={{ color: theme.iconColor }} />
-                <h2 className="font-semibold text-sm sm:text-base">Plan</h2>
-              </div>
-              <p className="text-xs mb-3" style={{ color: theme.textMuted }}>Currently on {getPlanLabel(client.plan_type)}. Move this client to a different plan below. If they are on paid billing the difference is prorated on their next invoice.</p>
-              <div className="flex items-center gap-2 flex-wrap">
-                <div className="min-w-[180px]">
-                  <CustomSelect
-                    value={targetPlan || client.plan_type}
-                    onChange={(v) => setTargetPlan(v)}
-                    options={availablePlans.map((p) => ({ value: p.key, label: p.name }))}
-                    disabled={changingPlan}
-                    ui={{ inputStyle: { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text, colorScheme: isDark ? 'dark' : 'light' }, text: theme.text, muted: theme.textMuted, panelBg: theme.card, panelBorder: theme.inputBorder, hover: theme.hover, accent: theme.primary, isDark }}
-                  />
-                </div>
-                <button
-                  onClick={handleChangePlan}
-                  disabled={changingPlan || (targetPlan || client.plan_type) === client.plan_type}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-                  style={{ backgroundColor: theme.primary, color: theme.primaryText }}
-                >
-                  {changingPlan ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Change plan
-                </button>
-                {planMsg && (
-                  /Stripe Connect/i.test(planMsg) ? (
-                    <span className="text-xs" style={{ color: theme.textMuted }}>You haven&apos;t finished setting up Stripe Connect. <a href="/agency/settings?tab=payments" className="font-medium underline" style={{ color: theme.primary }}>Connect your Stripe account</a> to change a billed client&apos;s plan.</span>
-                  ) : (
-                    <span className="text-xs" style={{ color: theme.textMuted }}>{planMsg}</span>
-                  )
-                )}
-              </div>
             </div>
           </div>
 
@@ -1308,7 +1315,7 @@ export default function AgencyClientDetailPage() {
                 <Ban className="h-4 w-4" style={{ color: '#ef4444' }} />
                 <h2 className="font-semibold text-sm sm:text-base">{isManualClient ? 'Cancel & release number' : 'Cancel subscription'}</h2>
               </div>
-              <p className="text-xs mb-3" style={{ color: theme.textMuted }}>{isManualClient
+              <p className="text-xs mb-3" style={{ color: theme.cardTextMuted }}>{isManualClient
                 ? 'Ends this client’s service and releases their phone number immediately. To just pause them (keeping their number), use Suspend above.'
                 : 'Cancels at the end of the current billing period, so the client keeps service until then. Use "Cancel now" only to end service and release their number immediately.'}</p>
               <div className="flex items-center gap-2 flex-wrap">
@@ -1325,12 +1332,12 @@ export default function AgencyClientDetailPage() {
                     <button onClick={handleCancel} disabled={canceling} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: 'transparent', color: '#ef4444', border: '1px solid #ef4444' }}>
                       {canceling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />} Cancel at period end
                     </button>
-                    <button onClick={handleCancelNow} disabled={canceling} className="inline-flex items-center px-3 py-2 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 hover:underline" style={{ color: theme.textMuted }}>
+                    <button onClick={handleCancelNow} disabled={canceling} className="inline-flex items-center px-3 py-2 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 hover:underline" style={{ color: theme.cardTextMuted }}>
                       Cancel now
                     </button>
                   </>
                 )}
-                {cancelMsg && <span className="text-xs" style={{ color: theme.textMuted }}>{cancelMsg}</span>}
+                {cancelMsg && <span className="text-xs" style={{ color: theme.cardTextMuted }}>{cancelMsg}</span>}
               </div>
             </div>
           </div>
@@ -1345,7 +1352,7 @@ export default function AgencyClientDetailPage() {
           disabled={deleting}
           title={`Delete ${client.business_name} (releases their number, cannot be undone)`}
           className="inline-flex items-center gap-1.5 text-xs font-medium transition-colors disabled:opacity-50"
-          style={{ color: theme.textMuted }}
+          style={{ color: theme.cardTextMuted }}
           onMouseEnter={(e) => { if (!deleting) e.currentTarget.style.color = '#ef4444'; }}
           onMouseLeave={(e) => { e.currentTarget.style.color = theme.textMuted; }}
         >
@@ -1375,8 +1382,8 @@ export default function AgencyClientDetailPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => { if (!convertingTestClient) setShowConvertModal(false); }}>
           <div className="rounded-2xl p-5 sm:p-6 w-full max-w-md" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-2 mb-2"><UserCheck className="h-5 w-5" style={{ color: theme.iconColor }} /><h3 className="font-semibold text-base" style={{ color: theme.text }}>Convert to a Real Client</h3></div>
-            <p className="text-sm mb-3" style={{ color: theme.textMuted }}>This turns <span className="font-medium" style={{ color: theme.text }}>{client.business_name}</span> into a regular client. It keeps the same phone number, receptionist, and knowledge base, so nothing has to be rebuilt and the business keeps the line it has been calling.</p>
-            <ul className="text-sm mb-4 space-y-1.5" style={{ color: theme.textMuted }}>
+            <p className="text-sm mb-3" style={{ color: theme.cardTextMuted }}>This turns <span className="font-medium" style={{ color: theme.text }}>{client.business_name}</span> into a regular client. It keeps the same phone number, receptionist, and knowledge base, so nothing has to be rebuilt and the business keeps the line it has been calling.</p>
+            <ul className="text-sm mb-4 space-y-1.5" style={{ color: theme.cardTextMuted }}>
               <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.iconColor }} /> Moves off the 30-minute test cap onto your plan&apos;s call limit.</li>
               <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.iconColor }} /> No card is charged. Set their price and collect payment from the client&apos;s billing page.</li>
               <li className="flex items-start gap-2"><CheckCircle2 className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.iconColor }} /> Frees your test slot so you can set up a fresh test client for the next prospect.</li>
