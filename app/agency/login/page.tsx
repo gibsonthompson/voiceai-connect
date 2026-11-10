@@ -364,14 +364,14 @@ export default function AgencyLoginPage() {
               <label htmlFor="email">Email</label>
               <div className="al-field">
                 <Mail />
-                <input id="email" name="email" type="email" placeholder="you@company.com" value={formData.email} onChange={handleChange} required autoComplete="email" />
+                <input id="email" name="email" type="email" placeholder="you@company.com" value={formData.email} onChange={handleChange} onFocus={(e) => { const el = e.currentTarget; setTimeout(() => { try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch { /* ignore */ } }, 300); }} required autoComplete="email" />
               </div>
             </div>
             <div>
               <label htmlFor="password">Password</label>
               <div className="al-field">
                 <Lock />
-                <input id="password" name="password" type={showPassword ? 'text' : 'password'} placeholder="Enter your password" value={formData.password} onChange={handleChange} required autoComplete="current-password" />
+                <input id="password" name="password" type={showPassword ? 'text' : 'password'} placeholder="Enter your password" value={formData.password} onChange={handleChange} onFocus={(e) => { const el = e.currentTarget; setTimeout(() => { try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch { /* ignore */ } }, 300); }} required autoComplete="current-password" />
                 <button type="button" className="al-eye" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Hide password' : 'Show password'}>
                   {showPassword ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
                 </button>

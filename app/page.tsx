@@ -383,6 +383,66 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ════════ PLATFORM DEMO ════════ */}
+      <section className="bg-ink py-28 lg:py-40 border-t border-white/[0.04]">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
+          <div className="max-w-2xl mb-14">
+            <p className="t-eyebrow text-em mb-4">Try it yourself</p>
+            <span className="racing-line" />
+            <h2 className="t-h2 text-white">Two ways to see exactly what you would sell.</h2>
+            <p className="t-body mt-6 max-w-xl">
+              No signup, no sales call. Call the live line to hear the AI answer like a real receptionist, or click through the actual dashboards your clients would use.
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-5">
+            {/* Call the demo line */}
+            <div className="calc-shell p-8 lg:p-10 flex flex-col">
+              <p className="t-eyebrow text-em mb-5">Call the demo line</p>
+              <h3 className="font-display text-[24px] sm:text-[28px] font-medium text-white leading-tight tracking-tight">Hear the AI answer, live.</h3>
+              <p className="text-[14px] text-white/60 mt-4 leading-relaxed max-w-md">
+                Call and talk to it, it&apos;s the same voice AI your clients get. Ask it anything, and it will connect you to a live receptionist demo so you hear exactly what a caller experiences. Sixty seconds, from your own phone.
+              </p>
+              <a href={`tel:${PLATFORM_DEMO_TEL}`} className="mt-8 group inline-flex items-center gap-3 sm:gap-4 rounded-2xl border border-white/[0.09] bg-white/[0.015] px-4 sm:px-6 py-4 sm:py-5 hover:border-white/25 transition-colors self-start">
+                <span className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(1, 245, 209,0.1)', border: '1px solid rgba(1, 245, 209,0.25)' }}><Phone className="w-5 h-5 text-em" /></span>
+                <span>
+                  <span className="block font-mono text-[10px] tracking-[0.14em] uppercase text-white/40">Tap to call, no signup</span>
+                  <span className="block font-display text-[22px] sm:text-[26px] font-medium text-white t-numeric tracking-tight whitespace-nowrap">{PLATFORM_DEMO_NUMBER}</span>
+                </span>
+                <span className="ml-2 waveform max-sm:hidden">{Array.from({ length: 10 }).map((_, j) => (<span key={j} className="waveform-bar" style={{ animationDelay: `${j * 80}ms` }} />))}</span>
+              </a>
+              <div className="mt-6 pt-6 border-t border-white/[0.06]">
+                <p className="text-[12.5px] text-white/50 mb-1">On a computer? Talk to it right here, no dialing.</p>
+                <MarketingWebCall agencyId={DEMO_AGENCY_ID} mode="demo" variant="inline" />
+              </div>
+              <div className="mt-auto pt-8 flex flex-wrap gap-x-6 gap-y-2">
+                {['Answers 24/7', 'Natural, human-sounding voice', 'Connects you to a live demo'].map(x => (
+                  <span key={x} className="flex items-center gap-2 text-[12.5px] text-white/55"><Check className="w-3.5 h-3.5 text-em flex-shrink-0" strokeWidth={2.5} />{x}</span>
+                ))}
+              </div>
+            </div>
+
+            {/* Explore the dashboard */}
+            <Link href="/interactive-demo" className="calc-shell p-8 lg:p-10 flex flex-col">
+              <p className="t-eyebrow text-em mb-5">Explore the dashboard</p>
+              <h3 className="font-display text-[24px] sm:text-[28px] font-medium text-white leading-tight tracking-tight">Click through the real product.</h3>
+              <p className="text-[14px] text-white/60 mt-4 leading-relaxed max-w-md">
+                Walk the agency and client dashboards with live sample data. Add a client, watch the AI book an appointment, then toggle into the white-labeled client view to see what you are selling.
+              </p>
+              <div className="mt-7 rounded-xl overflow-hidden border" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+                <div className="flex items-center gap-1.5 px-3 py-2.5 bg-white/[0.025]"><span className="w-2 h-2 rounded-full bg-red-400/60" /><span className="w-2 h-2 rounded-full bg-yellow-400/60" /><span className="w-2 h-2 rounded-full bg-emerald-400/60" /><span className="ml-3 font-mono text-[10px] text-white/40">app.your-brand.com</span></div>
+                <div className="p-4 grid grid-cols-3 gap-2.5">
+                  {[['MRR', '$12,480'], ['Clients', '34'], ['Calls', '2,911']].map(([k, v]) => (
+                    <div key={k} className="rounded-lg border border-white/[0.07] bg-white/[0.012] p-2.5"><p className="font-mono text-[8px] tracking-[0.12em] text-white/40 uppercase">{k}</p><p className="font-display text-[15px] font-medium text-white mt-0.5 t-numeric">{v}</p></div>
+                  ))}
+                </div>
+              </div>
+              <span className="mt-auto pt-8 inline-flex items-center gap-1.5 font-mono text-[11px] tracking-[0.12em] uppercase text-em">Open the interactive demo <ArrowRight className="w-3 h-3" /></span>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* ════════ INFRASTRUCTURE ════════ */}
       <section className="bg-ink py-28 lg:py-40 border-t border-white/[0.04]">
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
@@ -548,66 +608,6 @@ export default function HomePage() {
               One platform to run. <span className="text-em">Your brand on it, your price, your recurring revenue.</span>
             </p>
             <Link href="/signup" className="btn btn-em mt-7">Get started <ArrowUpRight className="w-3.5 h-3.5" /></Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ════════ PLATFORM DEMO ════════ */}
-      <section className="bg-ink py-28 lg:py-40 border-t border-white/[0.04]">
-        <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
-          <div className="max-w-2xl mb-14">
-            <p className="t-eyebrow text-em mb-4">Try it yourself</p>
-            <span className="racing-line" />
-            <h2 className="t-h2 text-white">Two ways to see exactly what you would sell.</h2>
-            <p className="t-body mt-6 max-w-xl">
-              No signup, no sales call. Call the live line to hear the AI answer like a real receptionist, or click through the actual dashboards your clients would use.
-            </p>
-          </div>
-
-          <div className="grid lg:grid-cols-2 gap-5">
-            {/* Call the demo line */}
-            <div className="calc-shell p-8 lg:p-10 flex flex-col">
-              <p className="t-eyebrow text-em mb-5">Call the demo line</p>
-              <h3 className="font-display text-[24px] sm:text-[28px] font-medium text-white leading-tight tracking-tight">Hear the AI answer, live.</h3>
-              <p className="text-[14px] text-white/60 mt-4 leading-relaxed max-w-md">
-                Call and talk to it, it&apos;s the same voice AI your clients get. Ask it anything, and it will connect you to a live receptionist demo so you hear exactly what a caller experiences. Sixty seconds, from your own phone.
-              </p>
-              <a href={`tel:${PLATFORM_DEMO_TEL}`} className="mt-8 group inline-flex items-center gap-3 sm:gap-4 rounded-2xl border border-white/[0.09] bg-white/[0.015] px-4 sm:px-6 py-4 sm:py-5 hover:border-white/25 transition-colors self-start">
-                <span className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(1, 245, 209,0.1)', border: '1px solid rgba(1, 245, 209,0.25)' }}><Phone className="w-5 h-5 text-em" /></span>
-                <span>
-                  <span className="block font-mono text-[10px] tracking-[0.14em] uppercase text-white/40">Tap to call, no signup</span>
-                  <span className="block font-display text-[22px] sm:text-[26px] font-medium text-white t-numeric tracking-tight whitespace-nowrap">{PLATFORM_DEMO_NUMBER}</span>
-                </span>
-                <span className="ml-2 waveform max-sm:hidden">{Array.from({ length: 10 }).map((_, j) => (<span key={j} className="waveform-bar" style={{ animationDelay: `${j * 80}ms` }} />))}</span>
-              </a>
-              <div className="mt-6 pt-6 border-t border-white/[0.06]">
-                <p className="text-[12.5px] text-white/50 mb-1">On a computer? Talk to it right here, no dialing.</p>
-                <MarketingWebCall agencyId={DEMO_AGENCY_ID} mode="demo" variant="inline" />
-              </div>
-              <div className="mt-auto pt-8 flex flex-wrap gap-x-6 gap-y-2">
-                {['Answers 24/7', 'Natural, human-sounding voice', 'Connects you to a live demo'].map(x => (
-                  <span key={x} className="flex items-center gap-2 text-[12.5px] text-white/55"><Check className="w-3.5 h-3.5 text-em flex-shrink-0" strokeWidth={2.5} />{x}</span>
-                ))}
-              </div>
-            </div>
-
-            {/* Explore the dashboard */}
-            <Link href="/interactive-demo" className="calc-shell p-8 lg:p-10 flex flex-col">
-              <p className="t-eyebrow text-em mb-5">Explore the dashboard</p>
-              <h3 className="font-display text-[24px] sm:text-[28px] font-medium text-white leading-tight tracking-tight">Click through the real product.</h3>
-              <p className="text-[14px] text-white/60 mt-4 leading-relaxed max-w-md">
-                Walk the agency and client dashboards with live sample data. Add a client, watch the AI book an appointment, then toggle into the white-labeled client view to see what you are selling.
-              </p>
-              <div className="mt-7 rounded-xl overflow-hidden border" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
-                <div className="flex items-center gap-1.5 px-3 py-2.5 bg-white/[0.025]"><span className="w-2 h-2 rounded-full bg-red-400/60" /><span className="w-2 h-2 rounded-full bg-yellow-400/60" /><span className="w-2 h-2 rounded-full bg-emerald-400/60" /><span className="ml-3 font-mono text-[10px] text-white/40">app.your-brand.com</span></div>
-                <div className="p-4 grid grid-cols-3 gap-2.5">
-                  {[['MRR', '$12,480'], ['Clients', '34'], ['Calls', '2,911']].map(([k, v]) => (
-                    <div key={k} className="rounded-lg border border-white/[0.07] bg-white/[0.012] p-2.5"><p className="font-mono text-[8px] tracking-[0.12em] text-white/40 uppercase">{k}</p><p className="font-display text-[15px] font-medium text-white mt-0.5 t-numeric">{v}</p></div>
-                  ))}
-                </div>
-              </div>
-              <span className="mt-auto pt-8 inline-flex items-center gap-1.5 font-mono text-[11px] tracking-[0.12em] uppercase text-em">Open the interactive demo <ArrowRight className="w-3 h-3" /></span>
-            </Link>
           </div>
         </div>
       </section>

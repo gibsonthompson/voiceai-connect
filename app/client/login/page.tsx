@@ -295,7 +295,7 @@ function ClientLoginContent() {
                 <label className="block text-sm font-medium mb-2" style={{ color: t.label }}>Email Address</label>
                 <div className="relative">
                   <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5" style={{ color: t.textSubtle }} />
-                  <input name="email" type="email" placeholder="you@business.com" value={formData.email} onChange={handleChange} required autoComplete="email"
+                  <input name="email" type="email" placeholder="you@business.com" value={formData.email} onChange={handleChange} onFocus={(e) => { const el = e.currentTarget; setTimeout(() => { try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch { /* ignore */ } }, 300); }} required autoComplete="email"
                     className="w-full rounded-xl pl-11 pr-4 py-3 transition-colors text-sm" style={{ backgroundColor: t.input, border: `1px solid ${t.inputBorder}`, color: t.text }} />
                 </div>
               </div>
@@ -303,7 +303,7 @@ function ClientLoginContent() {
                 <label className="block text-sm font-medium mb-2" style={{ color: t.label }}>Password</label>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5" style={{ color: t.textSubtle }} />
-                  <input ref={passwordRef} name="password" type={showPassword ? 'text' : 'password'} placeholder="••••••••" value={formData.password} onChange={handleChange} required autoComplete="current-password"
+                  <input ref={passwordRef} name="password" type={showPassword ? 'text' : 'password'} placeholder="••••••••" value={formData.password} onChange={handleChange} onFocus={(e) => { const el = e.currentTarget; setTimeout(() => { try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch { /* ignore */ } }, 300); }} required autoComplete="current-password"
                     className="w-full rounded-xl pl-11 pr-12 py-3 transition-colors text-sm" style={{ backgroundColor: t.input, border: `1px solid ${t.inputBorder}`, color: t.text }} />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2" style={{ color: t.helpText }}>
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
