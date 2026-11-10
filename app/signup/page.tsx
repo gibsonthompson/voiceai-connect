@@ -422,6 +422,21 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
     return () => window.removeEventListener('message', onMsg);
   }, [isEmbed]);
 
+  // Editor mode: the dashboard preview loads this form with ?editor=true so the
+  // headline and subtitle become click-to-type. Edits post back to the dashboard
+  // (which saves them). Never active on real embeds or the live signup page.
+  const [editor] = useState(() => isEmbed && typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('editor') === 'true');
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const subRef = useRef<HTMLParagraphElement>(null);
+  const postParent = (msg: any) => { try { window.parent?.postMessage(msg, '*'); } catch { /* ignore */ } };
+  const editorHeadline = (liveText?.headline ?? (agency as any).signup_headline) || 'Get Your AI Receptionist';
+  const editorSubtitle = (liveText?.subtitle ?? (agency as any).signup_subtitle) || `Start your free trial with ${agency.name}`;
+  // Push text into the contentEditable nodes only when the agency is NOT typing
+  // in them (so side-panel edits flow in live, but inline typing never has its
+  // cursor reset by the parent echoing the same value back).
+  useEffect(() => { if (!editor) return; const el = headingRef.current; if (el && document.activeElement !== el && el.textContent !== editorHeadline) el.textContent = editorHeadline; }, [editor, editorHeadline]);
+  useEffect(() => { if (!editor) return; const el = subRef.current; if (el && document.activeElement !== el && el.textContent !== editorSubtitle) el.textContent = editorSubtitle; }, [editor, editorSubtitle]);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -649,11 +664,29 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
                 <Sparkles className="h-4 w-4" style={{ color: primaryColor }} />
                 <span style={{ color: primaryColor }}>{trialDays > 0 ? `${trialDays}-day free trial` : 'Free trial'}</span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight" style={{ fontFamily: fontStack(dispFont, 'display'), color: headingColor }}>{(liveText?.headline ?? (agency as any).signup_headline) || 'Get Your AI Receptionist'}</h1>
-              <p className="mt-2" style={{ color: mutedTextColor }}>{(liveText?.subtitle ?? (agency as any).signup_subtitle) || `Start your free trial with ${agency.name}`}</p>
+              {editor ? (
+                <h1 ref={headingRef} contentEditable suppressContentEditableWarning spellCheck={false} data-vai-edit
+                  onFocus={() => postParent({ type: 'voiceai:select', region: 'headline' })}
+                  onInput={() => postParent({ type: 'voiceai:edit_text', field: 'headline', value: headingRef.current?.textContent || '' })}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur(); } }}
+                  className="text-2xl sm:text-3xl font-semibold tracking-tight outline-none"
+                  style={{ fontFamily: fontStack(dispFont, 'display'), color: headingColor, cursor: 'text', borderRadius: 6, padding: '2px 8px' }} title="Click to edit" />
+              ) : (
+                <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight" style={{ fontFamily: fontStack(dispFont, 'display'), color: headingColor }}>{editorHeadline}</h1>
+              )}
+              {editor ? (
+                <p ref={subRef} contentEditable suppressContentEditableWarning spellCheck={false} data-vai-edit
+                  onFocus={() => postParent({ type: 'voiceai:select', region: 'subtitle' })}
+                  onInput={() => postParent({ type: 'voiceai:edit_text', field: 'subtitle', value: subRef.current?.textContent || '' })}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur(); } }}
+                  className="mt-2 outline-none" style={{ color: mutedTextColor, cursor: 'text', borderRadius: 6, padding: '2px 8px' }} title="Click to edit" />
+              ) : (
+                <p className="mt-2" style={{ color: mutedTextColor }}>{editorSubtitle}</p>
+              )}
             </div>
 
-            <form onSubmit={handleSubmit} noValidate autoComplete="off" className="space-y-5">
+            {editor && <style>{`[data-vai-edit]{transition:box-shadow .12s ease,background-color .12s ease} [data-vai-edit]:hover{box-shadow:0 0 0 1px ${primaryColor}66;background-color:${primaryColor}0f} [data-vai-edit]:focus{box-shadow:0 0 0 2px ${primaryColor};background-color:${primaryColor}0f}`}</style>}
+            <form onSubmit={editor ? (e) => { e.preventDefault(); postParent({ type: 'voiceai:select', region: 'button' }); } : handleSubmit} noValidate autoComplete="off" className="space-y-5">
               <ThemedFormInput label="Business Name" name="businessName" placeholder="Acme Plumbing Services" value={formData.businessName} onChange={handleChange} required icon={Building} isDark={isDark} primaryColor={primaryColor} />
               <ThemedFormInput label="Your Name" name="ownerName" placeholder="John Smith" value={formData.ownerName} onChange={handleChange} required icon={User} isDark={isDark} primaryColor={primaryColor} />
               

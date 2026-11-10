@@ -177,7 +177,6 @@ export default function MarketingWebsitePage() {
   const [signupHeadline, setSignupHeadline] = useState('');
   const [signupLogoAlign, setSignupLogoAlign] = useState<'left' | 'center' | 'right'>('left');
   const [signupSubtitle, setSignupSubtitle] = useState('');
-  const [savingSignupText, setSavingSignupText] = useState(false);
   const [signupTextSaved, setSignupTextSaved] = useState(false);
   // AI web-call widget text (agency-editable header/tagline/prompt).
   const [webcallTitle, setWebcallTitle] = useState('');
@@ -309,7 +308,7 @@ export default function MarketingWebsitePage() {
   // buildIframeSrc), so the on-page preview shows the real signup form, not a
   // mockup. embed=true renders the bare form (no marketing chrome); agency=<id>
   // makes it adopt this agency's brand, theme, and pricing.
-  const widgetPreviewSrc = `https://${platformDomain}/signup?embed=true&agency=${agency?.id || ''}`;
+  const widgetPreviewSrc = `https://${platformDomain}/signup?embed=true&editor=true&agency=${agency?.id || ''}`;
 
   // Button-link snippet, separate const so the JSX stays readable and we
   // don't recompute it twice (once for the <pre>, once for the copy button).
@@ -366,6 +365,8 @@ export default function MarketingWebsitePage() {
       if (!d || typeof d !== 'object') return;
       if (d.type === 'voiceai:resize' && typeof d.height === 'number') setSignupPreviewHeight(Math.max(320, Math.min(2200, Math.ceil(d.height))));
       if (d.type === 'voiceai:ready') pushSignupPreview();
+      if (d.type === 'voiceai:edit_text' && (d.field === 'headline' || d.field === 'subtitle')) commitSignupTextRef.current({ [d.field]: typeof d.value === 'string' ? d.value : '' });
+      if (d.type === 'voiceai:select' && (d.region === 'headline' || d.region === 'subtitle' || d.region === 'button')) setSelectedSignupRegion(d.region);
     };
     window.addEventListener('message', onMsg);
     return () => window.removeEventListener('message', onMsg);
@@ -392,6 +393,36 @@ export default function MarketingWebsitePage() {
 
   const signupEditorTheme: EditorTheme = { text: textColor, muted: mutedTextColor, border: borderColor, inputBg, inputBorder, inputText, cardBg, primary: agencyPrimaryColor, isDark };
   const signupPalette = resolveSignupPalette(signupStyle, { primaryColor: agencyPrimaryColor, websiteTheme: (agency as any)?.website_theme || 'light' });
+
+  // ── Inline signup-text editing + autosave ──
+  // Headline/subtitle/logo save automatically (like the style does), whether the
+  // edit comes from the side panel or from clicking-to-type on the live preview.
+  // pendingSignupText holds the latest values so the debounced writer never saves
+  // a stale closure. selectedSignupRegion highlights the control for whatever
+  // part of the preview was last clicked.
+  const signupTextTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingSignupText = useRef({ headline: signupHeadline, subtitle: signupSubtitle, align: signupLogoAlign });
+  useEffect(() => { pendingSignupText.current = { headline: signupHeadline, subtitle: signupSubtitle, align: signupLogoAlign }; }, [signupHeadline, signupSubtitle, signupLogoAlign]);
+  const [selectedSignupRegion, setSelectedSignupRegion] = useState<'headline' | 'subtitle' | 'button' | null>(null);
+
+  const commitSignupText = (patch: { headline?: string; subtitle?: string; align?: 'left' | 'center' | 'right' }) => {
+    if (patch.headline !== undefined) setSignupHeadline(patch.headline);
+    if (patch.subtitle !== undefined) setSignupSubtitle(patch.subtitle);
+    if (patch.align !== undefined) setSignupLogoAlign(patch.align);
+    pendingSignupText.current = { ...pendingSignupText.current, ...patch };
+    if (demoMode || !agency) return;
+    if (signupTextTimer.current) clearTimeout(signupTextTimer.current);
+    signupTextTimer.current = setTimeout(async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        const p = pendingSignupText.current;
+        const res = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ signup_headline: (p.headline || '').trim() || null, signup_subtitle: (p.subtitle || '').trim() || null, signup_logo_align: p.align }) });
+        if (res.ok) { await refreshAgency(); setSignupTextSaved(true); setTimeout(() => setSignupTextSaved(false), 1800); }
+      } catch (e) { console.error('Failed to save signup text:', e); }
+    }, 700);
+  };
+  const commitSignupTextRef = useRef(commitSignupText);
+  commitSignupTextRef.current = commitSignupText;
 
   // Load this agency's clients for the web-call "test client" option.
   useEffect(() => {
@@ -500,7 +531,6 @@ export default function MarketingWebsitePage() {
     } catch (err: any) { setOgUploadError(err?.message || 'Upload failed. Please try again.'); }
     finally { setOgUploading(false); }
   };
-  const handleSaveSignupText = async () => { if (demoMode) { setSignupTextSaved(true); setTimeout(() => setSignupTextSaved(false), 3000); return; } if (!agency) return; setSavingSignupText(true); setSignupTextSaved(false); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ signup_headline: signupHeadline.trim() || null, signup_subtitle: signupSubtitle.trim() || null, signup_logo_align: signupLogoAlign }) }); if (response.ok) { await refreshAgency(); setSignupTextSaved(true); setTimeout(() => setSignupTextSaved(false), 3000); } else { const data = await response.json(); alert(data.error || 'Failed to save signup text'); } } catch (error) { console.error('Failed to save signup text:', error); } finally { setSavingSignupText(false); } };
 
   const handleSaveWebcallText = async () => { if (demoMode) { setWebcallTextSaved(true); setTimeout(() => setWebcallTextSaved(false), 3000); return; } if (!agency) return; setSavingWebcallText(true); setWebcallTextSaved(false); try { const token = localStorage.getItem('auth_token'); const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ webcall_title: webcallTitle.trim() || null, webcall_subtitle: webcallSubtitle.trim() || null, webcall_cta: webcallCta.trim() || null }) }); if (response.ok) { await refreshAgency(); setWebcallTextSaved(true); setTimeout(() => setWebcallTextSaved(false), 3000); } else { const data = await response.json(); alert(data.error || 'Failed to save web call text'); } } catch (error) { console.error('Failed to save web call text:', error); } finally { setSavingWebcallText(false); } };
 
@@ -674,149 +704,29 @@ export default function MarketingWebsitePage() {
       </div>)}
 
       {/* ══════════════ EMBED ══════════════ */}
-      {activeTab === 'embed' && (<div className="space-y-4 sm:space-y-6">
-          {/* AI web-call widget embed */}
-          <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
-            <div className="flex items-center gap-2 mb-1.5"><Phone className="h-4 w-4" style={{ color: agencyPrimaryColor }} /><h3 className="font-medium text-sm sm:text-base" style={{ color: textColor }}>AI Web Call on Your Site</h3></div>
-            <p className="text-xs sm:text-sm mb-4" style={{ color: mutedTextColor }}>Let visitors talk to your AI right in the browser. Paste this wherever you want it. It uses your brand colors and fonts.</p>
-
-            {/* Inline WYSIWYG editor: click any part of the widget to edit its
-                text in place or restyle it from the side panel. This preview is
-                the exact widget that ships (same shared shell as the live page). */}
-            <div className="mb-5">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>Click any part of the widget to edit its text or style. Changes save automatically.</p>
-                {(webcallTextSaved || webcallStyleSaved) && <span className="flex items-center gap-1.5 text-xs flex-shrink-0" style={{ color: agencyPrimaryColor }}><Check className="h-4 w-4" />Saved</span>}
-              </div>
-              <WebCallWidgetEditor
-                title={webcallTitle}
-                subtitle={webcallSubtitle}
-                cta={webcallCta}
-                onCommitText={handleCommitWebcallText}
-                style={webcallStyle}
-                onChangeStyle={handleChangeWebcallStyle}
-                primaryColor={agencyPrimaryColor}
-                websiteTheme={(agency as any)?.website_theme || 'dark'}
-                phoneNumber={(agency as any)?.demo_phone_number || ''}
-                agencyName={agency?.name || ''}
-                editorTheme={webcallEditorTheme}
-                brand={{ primary: agencyPrimaryColor, secondary: secondaryColor, accent: accentColor }}
-                disabled={demoMode}
-              />
-            </div>
-
-            <div className="inline-flex rounded-lg p-0.5 mb-4" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
-              {(['demo', 'client'] as const).map((m) => (
-                <button key={m} onClick={() => setWebcallMode(m)} className="px-3 py-1.5 rounded-md text-xs font-semibold transition-colors" style={webcallMode === m ? { backgroundColor: agencyPrimaryColor, color: isLightColor(agencyPrimaryColor) ? '#050505' : '#ffffff' } : { color: inputMuted }}>{m === 'demo' ? 'Demo assistant' : 'A test client'}</button>
-              ))}
-            </div>
-
-            {webcallMode === 'client' && (
-              <div className="mb-4 max-w-sm relative">
-                <label className="block text-xs font-medium mb-1.5" style={{ color: mutedTextColor }}>Which client should visitors hear?</label>
-                <button type="button" onClick={() => setWebcallClientOpen((o) => !o)} className="w-full flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: inputText }}>
-                  <span className="truncate">{webcallSelectedClientName}</span><ChevronDown className="h-4 w-4 flex-shrink-0" style={{ color: mutedTextColor }} />
-                </button>
-                {webcallClientOpen && (
-                  <div className="absolute z-30 left-0 right-0 mt-1 rounded-lg overflow-hidden py-1 max-h-60 overflow-y-auto" style={{ backgroundColor: cardBg, border: `1px solid ${inputBorder}` }}>
-                    {webcallClients.length === 0 ? (
-                      <div className="px-3 py-2 text-xs" style={{ color: mutedTextColor }}>No clients yet</div>
-                    ) : webcallClients.map((c) => (
-                      <button key={c.id} onClick={() => { setWebcallClientId(c.id); setWebcallClientOpen(false); }} className="w-full text-left px-3 py-2 text-sm" style={{ color: textColor, backgroundColor: c.id === webcallClientId ? agencyPrimaryColor + '18' : 'transparent' }}>{c.business_name}</button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div>
-              <div className="flex items-center justify-between mb-1.5"><label className="text-xs font-medium" style={{ color: mutedTextColor }}>Embed code</label><button onClick={() => copyToClipboard(webcallSnippet, 'webcall-code')} className="text-xs font-medium inline-flex items-center gap-1" style={{ color: agencyPrimaryColor }}>{copied === 'webcall-code' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} Copy</button></div>
-              <pre className="rounded-lg p-3 text-[10px] sm:text-xs font-mono overflow-x-auto leading-relaxed" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${inputBorder}`, color: textColor, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{webcallSnippet}</pre>
-              <p className="text-[10px] sm:text-xs mt-2" style={{ color: mutedTextColor }}>Visitors allow their mic, then talk to {webcallMode === 'demo' ? 'your demo assistant' : 'the selected client’s AI'}.</p>
-            </div>
-          </div>
-
-
-        {/* ── Embed on Your Own Website ─────────────────────────────────────
-            Two ways to bring signups onto the agency's existing site.
-            (A) Inline widget (recommended): the iframe-based embed.js form,
-                shown here with a LIVE preview (a real /signup?embed=true iframe,
-                the same URL embed.js injects) so the agency sees the actual
-                form, with the paste-in snippet below it.
-            (B) Embed button: a simple styled anchor that opens the signup page
-                in a new tab. No JS, useful if a prospect's page CSP blocks
-                iframes. Keeps its own live button preview.
-            Both target the same signup destination (this agency).
-        ─────────────────────────────────────────────────────────────────── */}
-        <div className="rounded-2xl p-5 sm:p-7" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
+      {activeTab === 'embed' && (<div className="space-y-5 sm:space-y-6">
+        {/* Intro */}
+        <div>
           <div className="flex items-center gap-2 mb-1.5"><LinkIcon className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: agencyPrimaryColor }} /><h3 className="font-semibold text-base sm:text-lg" style={{ color: textColor }}>Embed on Your Own Website</h3></div>
-          <p className="text-xs sm:text-sm mb-5 sm:mb-6" style={{ color: mutedTextColor }}>Add your branded <strong style={{ color: textColor, fontWeight: 600 }}>signup form</strong> or a live <strong style={{ color: textColor, fontWeight: 600 }}>AI web call</strong> to your existing website, so new clients can sign up and visitors can hear your AI without leaving the page.</p>
+          <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>Edit your signup form and AI web call right on the preview. Click a headline to type a new one. Everything saves automatically.</p>
+        </div>
 
-          {/* Signup URL row, handy reference even if they pick the widget */}
-          <div className="mb-6"><label className="block text-xs font-medium mb-1.5" style={{ color: inputMuted }}>Your client signup URL</label><div className="flex items-center gap-2 p-3 rounded-lg" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}><Globe className="h-4 w-4 flex-shrink-0" style={{ color: inputMuted }} /><span className="flex-1 text-xs sm:text-sm font-mono truncate" style={{ color: inputText }}>{signupUrl}</span><button onClick={() => copyToClipboard(signupUrl, 'signup-url')} className="flex-shrink-0" style={{ color: inputMuted }}>{copied === 'signup-url' ? <Check className="h-4 w-4" style={{ color: agencyPrimaryColor }} /> : <Copy className="h-4 w-4" />}</button></div><p className="text-[10px] sm:text-xs mt-1.5" style={{ color: inputMuted }}>{agency?.marketing_domain && agency?.domain_verified ? `Using your custom domain: ${agency.marketing_domain}` : 'Connect a custom domain in the Domain tab for a branded URL'}</p></div>
-
-          <div className="mb-6">
-            <label className="text-xs font-medium" style={{ color: mutedTextColor }}>Signup form text</label>
-            <p className="text-[10px] sm:text-xs mt-0.5 mb-2" style={{ color: mutedTextColor }}>The headline and line shown at the top of your embedded signup form. Leave blank to use the defaults.</p>
-            <div className="space-y-2">
-              <input type="text" value={signupHeadline} onChange={e => setSignupHeadline(e.target.value)} placeholder="Get Your AI Receptionist" maxLength={70} className="w-full rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: inputText }} />
-              <input type="text" value={signupSubtitle} onChange={e => setSignupSubtitle(e.target.value)} placeholder={`Start your free trial with ${agency?.name || 'your business'}`} maxLength={120} className="w-full rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: inputText }} />
-            </div>
-            <div className="mt-3">
-              <label className="text-xs font-medium" style={{ color: mutedTextColor }}>Logo alignment</label>
-              <p className="text-[10px] sm:text-xs mt-0.5 mb-1.5" style={{ color: mutedTextColor }}>Where your logo sits in the header of your signup, plan, and password pages, for when you link to signup from your own website.</p>
-              <div className="inline-flex rounded-lg p-0.5 gap-0.5" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
-                {(['left', 'center', 'right'] as const).map((opt) => (
-                  <button key={opt} type="button" onClick={() => setSignupLogoAlign(opt)} className="px-3 py-1 rounded-md text-xs font-medium capitalize transition-colors" style={{ backgroundColor: signupLogoAlign === opt ? agencyPrimaryColor : 'transparent', color: signupLogoAlign === opt ? '#fff' : mutedTextColor }}>{opt}</button>
-                ))}
-              </div>
-            </div>
-            <div className="flex items-center gap-3 mt-2">
-              <button onClick={handleSaveSignupText} disabled={savingSignupText} className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50 transition-colors" style={{ backgroundColor: agencyPrimaryColor }}>{savingSignupText ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save</button>
-              {signupTextSaved && <span className="flex items-center gap-1.5 text-xs" style={{ color: agencyPrimaryColor }}><Check className="h-4 w-4" />Saved!</span>}
-            </div>
-
-            {/* Form style: colors + theme + corners. Saves to marketing_config.signup
-                and pushes live into the preview below. Same pickers as Branding. */}
-            <div className="mt-5 pt-5" style={{ borderTop: `1px solid ${borderColor}` }}>
-              <div className="flex items-center justify-between mb-3">
-                <label className="text-xs font-medium" style={{ color: mutedTextColor }}>Form style</label>
-                {signupStyleSaved && <span className="flex items-center gap-1.5 text-xs" style={{ color: agencyPrimaryColor }}><Check className="h-4 w-4" />Saved</span>}
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
-                <SegmentField label="Theme" value={signupStyle.theme || 'auto'} options={[{ value: 'auto', label: 'Auto' }, { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }]} onChange={(v) => handleChangeSignupStyle({ ...signupStyle, theme: v })} theme={signupEditorTheme} />
-                <SegmentField label="Corners" value={signupStyle.radius || 'md'} options={[{ value: 'sm', label: 'Sharp' }, { value: 'md', label: 'Round' }, { value: 'lg', label: 'Soft' }]} onChange={(v) => handleChangeSignupStyle({ ...signupStyle, radius: v })} theme={signupEditorTheme} />
-                <ColorField label="Brand / accent" value={signupStyle.brandColor} fallback={signupPalette.brand} onChange={(v) => handleChangeSignupStyle({ ...signupStyle, brandColor: v })} theme={signupEditorTheme} brand={{ primary: agencyPrimaryColor, secondary: secondaryColor, accent: accentColor }} />
-                <ColorField label="Headline color" value={signupStyle.headingColor} fallback={signupPalette.heading} onChange={(v) => handleChangeSignupStyle({ ...signupStyle, headingColor: v })} theme={signupEditorTheme} brand={{ primary: agencyPrimaryColor, secondary: secondaryColor, accent: accentColor }} />
-                <ColorField label="Button color" value={signupStyle.buttonColor} fallback={signupPalette.button} onChange={(v) => handleChangeSignupStyle({ ...signupStyle, buttonColor: v })} theme={signupEditorTheme} brand={{ primary: agencyPrimaryColor, secondary: secondaryColor, accent: accentColor }} />
-                <ColorField label="Button text" value={signupStyle.buttonTextColor} fallback={signupPalette.buttonText} onChange={(v) => handleChangeSignupStyle({ ...signupStyle, buttonTextColor: v })} theme={signupEditorTheme} brand={{ primary: agencyPrimaryColor, secondary: secondaryColor, accent: accentColor }} />
-                <div className="sm:col-span-2">
-                  <ColorField label="Form background" value={signupStyle.cardBg} fallback={signupPalette.cardBg} onChange={(v) => handleChangeSignupStyle({ ...signupStyle, cardBg: v })} theme={signupEditorTheme} brand={{ primary: agencyPrimaryColor, secondary: secondaryColor, accent: accentColor }} />
-                </div>
-              </div>
-              <p className="mt-3 text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>Changes save automatically and update the live preview below.</p>
-            </div>
+        {/* SIGNUP FORM, click-to-edit with controls beside the preview */}
+        <div className="rounded-2xl p-4 sm:p-5" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <h4 className="text-sm sm:text-base font-semibold" style={{ color: textColor }}>Signup Form</h4>
+            <span className="text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded" style={{ backgroundColor: `${agencyPrimaryColor}15`, color: agencyPrimaryColor }}>Recommended</span>
+            <span className="ml-auto inline-flex items-center gap-1.5 text-[11px]" style={{ color: mutedTextColor }}><Wand2 className="h-3.5 w-3.5" style={{ color: agencyPrimaryColor }} />Click the headline in the preview to edit it</span>
+            {(signupTextSaved || signupStyleSaved) && <span className="inline-flex items-center gap-1.5 text-[11px] font-medium" style={{ color: agencyPrimaryColor }}><Check className="h-3.5 w-3.5" />Saved</span>}
           </div>
 
-          {/* ── Section A: Inline Signup Widget (recommended) ── */}
-          <div className="mb-6">
-            <div className="flex flex-wrap items-center gap-2 mb-1.5">
-              <h4 className="text-sm sm:text-base font-semibold" style={{ color: textColor }}>Signup Widget</h4>
-              <span className="text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded" style={{ backgroundColor: `${agencyPrimaryColor}15`, color: agencyPrimaryColor }}>Recommended</span>
-              <span className="text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6', color: mutedTextColor }}>Inline form</span>
-              <a href={signupUrl} target="_blank" rel="noopener noreferrer" className="ml-auto inline-flex items-center gap-1 text-xs font-medium" style={{ color: agencyPrimaryColor }}><ExternalLink className="h-3.5 w-3.5" />Open full page</a>
-            </div>
-            <p className="text-xs sm:text-sm mb-3" style={{ color: mutedTextColor }}>The full signup form, right on your page. It adopts your brand colors, theme, and pricing automatically, and resizes to fit its content.</p>
-
-            {/* Live preview, the real embedded form (same iframe embed.js injects) */}
-            <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${inputBorder}` }}>
+          <div className="grid lg:grid-cols-[minmax(0,1fr)_330px] gap-5 items-start">
+            {/* Live preview, the real form; click text to edit */}
+            <div className="rounded-xl overflow-hidden lg:sticky lg:top-4" style={{ border: `1px solid ${inputBorder}` }}>
               <div className="flex items-center gap-2 px-3 py-2" style={{ backgroundColor: inputBg, borderBottom: `1px solid ${inputBorder}` }}>
-                <span className="flex gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#f87171' }} />
-                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#fbbf24' }} />
-                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#01f5d1' }} />
-                </span>
-                <span className="flex items-center gap-1.5 ml-1.5 text-[10px] sm:text-xs font-medium" style={{ color: mutedTextColor }}><Eye className="h-3.5 w-3.5" />Live preview, the real form your visitors see</span>
+                <span className="flex gap-1.5"><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#f87171' }} /><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#fbbf24' }} /><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#01f5d1' }} /></span>
+                <span className="flex items-center gap-1.5 ml-1.5 text-[10px] sm:text-xs font-medium" style={{ color: mutedTextColor }}><Eye className="h-3.5 w-3.5" />Live preview</span>
+                <a href={signupUrl} target="_blank" rel="noopener noreferrer" className="ml-auto inline-flex items-center gap-1 text-[10px] sm:text-xs font-medium" style={{ color: agencyPrimaryColor }}><ExternalLink className="h-3.5 w-3.5" />Full page</a>
               </div>
               {agency?.id && !demoMode && hasAccess ? (
                 <iframe ref={signupPreviewRef} title="Signup widget preview" src={widgetPreviewSrc} loading="lazy" onLoad={pushSignupPreview} className="block w-full transition-[height] duration-200" style={{ height: signupPreviewHeight, border: 0, backgroundColor: signupPalette.pageBg }} />
@@ -827,35 +737,117 @@ export default function MarketingWebsitePage() {
               )}
             </div>
 
-            {/* Paste-in snippet */}
-            <div className="mt-4">
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-medium" style={{ color: mutedTextColor }}>Add it to your site</label>
-                <button onClick={() => copyToClipboard(iframeWidgetSnippet, 'widget-code')} className="text-xs font-medium inline-flex items-center gap-1" style={{ color: agencyPrimaryColor }}>{copied === 'widget-code' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} Copy</button>
+            {/* Controls, beside the preview */}
+            <div className="space-y-5">
+              <div>
+                <p className="text-xs font-semibold mb-2.5" style={{ color: textColor }}>Text</p>
+                <div className="space-y-2.5">
+                  <div className="rounded-lg p-0.5" style={selectedSignupRegion === 'headline' ? { boxShadow: `0 0 0 2px ${agencyPrimaryColor}` } : undefined}>
+                    <label className="block text-[11px] mb-1" style={{ color: mutedTextColor }}>Headline</label>
+                    <input type="text" value={signupHeadline} onChange={(e) => commitSignupText({ headline: e.target.value })} placeholder="Get Your AI Receptionist" maxLength={70} className="w-full rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: inputText }} />
+                  </div>
+                  <div className="rounded-lg p-0.5" style={selectedSignupRegion === 'subtitle' ? { boxShadow: `0 0 0 2px ${agencyPrimaryColor}` } : undefined}>
+                    <label className="block text-[11px] mb-1" style={{ color: mutedTextColor }}>Subtitle</label>
+                    <input type="text" value={signupSubtitle} onChange={(e) => commitSignupText({ subtitle: e.target.value })} placeholder={`Start your free trial with ${agency?.name || 'your business'}`} maxLength={120} className="w-full rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: inputText }} />
+                  </div>
+                </div>
               </div>
-              <pre className="rounded-lg p-3 text-[10px] sm:text-xs font-mono overflow-x-auto leading-relaxed" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${inputBorder}`, color: textColor, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{iframeWidgetSnippet}</pre>
-              <p className="mt-2 text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>Paste it where you want the form to appear. It keeps working even if you change your subdomain.</p>
-            </div>
 
-            <details className="mt-3 group"><summary className="text-[10px] sm:text-xs cursor-pointer transition-colors" style={{ color: mutedTextColor }}>Optional attributes</summary><div className="mt-2 space-y-1.5 text-[10px] sm:text-xs pl-2 border-l-2" style={{ borderColor: inputBorder }}><div><code className="font-mono" style={{ color: textColor }}>data-theme</code> <span style={{ color: mutedTextColor }}>sets "light" or "dark" to override your default</span></div><div><code className="font-mono" style={{ color: textColor }}>data-default-plan</code> <span style={{ color: mutedTextColor }}>pre-selects "starter", "pro", or "growth"</span></div><div><code className="font-mono" style={{ color: textColor }}>data-redirect-on-success</code> <span style={{ color: mutedTextColor }}>is a URL to send the parent page to after signup</span></div></div></details>
+              <div className="pt-4" style={{ borderTop: `1px solid ${borderColor}` }}>
+                <p className="text-xs font-semibold mb-3" style={{ color: textColor }}>Style</p>
+                <div className="space-y-4">
+                  <SegmentField label="Theme" value={signupStyle.theme || 'auto'} options={[{ value: 'auto', label: 'Auto' }, { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }]} onChange={(v) => handleChangeSignupStyle({ ...signupStyle, theme: v })} theme={signupEditorTheme} />
+                  <SegmentField label="Corners" value={signupStyle.radius || 'md'} options={[{ value: 'sm', label: 'Sharp' }, { value: 'md', label: 'Round' }, { value: 'lg', label: 'Soft' }]} onChange={(v) => handleChangeSignupStyle({ ...signupStyle, radius: v })} theme={signupEditorTheme} />
+                  <ColorField label="Brand / accent" value={signupStyle.brandColor} fallback={signupPalette.brand} onChange={(v) => handleChangeSignupStyle({ ...signupStyle, brandColor: v })} theme={signupEditorTheme} brand={{ primary: agencyPrimaryColor, secondary: secondaryColor, accent: accentColor }} />
+                  <div className="rounded-lg" style={selectedSignupRegion === 'headline' ? { boxShadow: `0 0 0 2px ${agencyPrimaryColor}` } : undefined}><ColorField label="Headline color" value={signupStyle.headingColor} fallback={signupPalette.heading} onChange={(v) => handleChangeSignupStyle({ ...signupStyle, headingColor: v })} theme={signupEditorTheme} brand={{ primary: agencyPrimaryColor, secondary: secondaryColor, accent: accentColor }} /></div>
+                  <div className="rounded-lg" style={selectedSignupRegion === 'button' ? { boxShadow: `0 0 0 2px ${agencyPrimaryColor}` } : undefined}><ColorField label="Button color" value={signupStyle.buttonColor} fallback={signupPalette.button} onChange={(v) => handleChangeSignupStyle({ ...signupStyle, buttonColor: v })} theme={signupEditorTheme} brand={{ primary: agencyPrimaryColor, secondary: secondaryColor, accent: accentColor }} /></div>
+                  <div className="rounded-lg" style={selectedSignupRegion === 'button' ? { boxShadow: `0 0 0 2px ${agencyPrimaryColor}` } : undefined}><ColorField label="Button text" value={signupStyle.buttonTextColor} fallback={signupPalette.buttonText} onChange={(v) => handleChangeSignupStyle({ ...signupStyle, buttonTextColor: v })} theme={signupEditorTheme} brand={{ primary: agencyPrimaryColor, secondary: secondaryColor, accent: accentColor }} /></div>
+                  <ColorField label="Form background" value={signupStyle.cardBg} fallback={signupPalette.cardBg} onChange={(v) => handleChangeSignupStyle({ ...signupStyle, cardBg: v })} theme={signupEditorTheme} brand={{ primary: agencyPrimaryColor, secondary: secondaryColor, accent: accentColor }} />
+                </div>
+              </div>
+
+              <div className="pt-4" style={{ borderTop: `1px solid ${borderColor}` }}>
+                <p className="text-xs font-semibold mb-1" style={{ color: textColor }}>Logo alignment</p>
+                <p className="text-[10px] mb-2" style={{ color: mutedTextColor }}>Where your logo sits on the signup, plan, and password pages.</p>
+                <div className="inline-flex rounded-lg p-0.5 gap-0.5" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
+                  {(['left', 'center', 'right'] as const).map((opt) => (
+                    <button key={opt} type="button" onClick={() => commitSignupText({ align: opt })} className="px-3 py-1 rounded-md text-xs font-medium capitalize transition-colors" style={{ backgroundColor: signupLogoAlign === opt ? agencyPrimaryColor : 'transparent', color: signupLogoAlign === opt ? (isLightColor(agencyPrimaryColor) ? '#050505' : '#fff') : mutedTextColor }}>{opt}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* ── Divider ── */}
-          <div className="my-6" style={{ borderTop: `1px solid ${borderColor}` }} />
+          {/* Code */}
+          <details className="mt-5 pt-4 group" style={{ borderTop: `1px solid ${borderColor}` }}>
+            <summary className="text-xs font-medium cursor-pointer inline-flex items-center gap-1.5" style={{ color: agencyPrimaryColor }}><Code className="h-3.5 w-3.5" />Get the embed code</summary>
+            <div className="mt-4 space-y-4">
+              <div><label className="block text-[11px] font-medium mb-1.5" style={{ color: inputMuted }}>Your client signup URL</label><div className="flex items-center gap-2 p-3 rounded-lg" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}><Globe className="h-4 w-4 flex-shrink-0" style={{ color: inputMuted }} /><span className="flex-1 text-xs sm:text-sm font-mono truncate" style={{ color: inputText }}>{signupUrl}</span><button onClick={() => copyToClipboard(signupUrl, 'signup-url')} className="flex-shrink-0" style={{ color: inputMuted }}>{copied === 'signup-url' ? <Check className="h-4 w-4" style={{ color: agencyPrimaryColor }} /> : <Copy className="h-4 w-4" />}</button></div></div>
+              <div>
+                <div className="flex items-center justify-between mb-1.5"><label className="text-xs font-medium" style={{ color: mutedTextColor }}>Inline widget (recommended)</label><button onClick={() => copyToClipboard(iframeWidgetSnippet, 'widget-code')} className="text-xs font-medium inline-flex items-center gap-1" style={{ color: agencyPrimaryColor }}>{copied === 'widget-code' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} Copy</button></div>
+                <pre className="rounded-lg p-3 text-[10px] sm:text-xs font-mono overflow-x-auto leading-relaxed" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${inputBorder}`, color: textColor, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{iframeWidgetSnippet}</pre>
+                <details className="mt-2"><summary className="text-[10px] sm:text-xs cursor-pointer" style={{ color: mutedTextColor }}>Optional attributes</summary><div className="mt-2 space-y-1.5 text-[10px] sm:text-xs pl-2 border-l-2" style={{ borderColor: inputBorder }}><div><code className="font-mono" style={{ color: textColor }}>data-theme</code> <span style={{ color: mutedTextColor }}>sets &quot;light&quot; or &quot;dark&quot;</span></div><div><code className="font-mono" style={{ color: textColor }}>data-default-plan</code> <span style={{ color: mutedTextColor }}>pre-selects a plan</span></div><div><code className="font-mono" style={{ color: textColor }}>data-redirect-on-success</code> <span style={{ color: mutedTextColor }}>URL to send the page to after signup</span></div></div></details>
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1.5"><label className="text-xs font-medium" style={{ color: mutedTextColor }}>Button link (no scripts)</label><button onClick={() => copyToClipboard(embedButtonSnippet, 'embed-code')} className="text-xs font-medium inline-flex items-center gap-1" style={{ color: agencyPrimaryColor }}>{copied === 'embed-code' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} Copy</button></div>
+                <pre className="rounded-lg p-3 text-[10px] sm:text-xs font-mono overflow-x-auto" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${inputBorder}`, color: mutedTextColor, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{embedButtonSnippet}</pre>
+              </div>
+            </div>
+          </details>
+        </div>
 
-          {/* ── Section B: Embed Button (link-style) ── */}
-          <div>
-            <div className="flex flex-wrap items-center gap-2 mb-1.5">
-              <h4 className="text-sm sm:text-base font-semibold" style={{ color: textColor }}>Embed Button</h4>
-              <span className="text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6', color: mutedTextColor }}>Link</span>
-            </div>
-            <p className="text-xs sm:text-sm mb-3" style={{ color: mutedTextColor }}>A simple branded link to your signup page. Opens in a new tab, useful if your page can&apos;t load external scripts.</p>
-            <div className="relative">
-              <pre className="rounded-lg p-3 text-[10px] sm:text-xs font-mono overflow-x-auto" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${inputBorder}`, color: mutedTextColor, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{embedButtonSnippet}</pre>
-              <button onClick={() => copyToClipboard(embedButtonSnippet, 'embed-code')} className="absolute top-2 right-2 p-1.5 rounded-lg transition-colors" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb', color: mutedTextColor }}>{copied === 'embed-code' ? <Check className="h-3.5 w-3.5" style={{ color: agencyPrimaryColor }} /> : <Copy className="h-3.5 w-3.5" />}</button>
-            </div>
-            <div className="mt-3 flex items-center gap-2"><span className="text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>Preview:</span><a href={signupUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', padding: '14px 32px', background: agencyPrimaryColor, color: isLightColor(agencyPrimaryColor) ? '#050505' : '#ffffff', borderRadius: '8px', textDecoration: 'none', fontWeight: 600, fontSize: '16px' }}>Start Free Trial</a></div>
+        {/* AI WEB CALL, click-to-edit widget */}
+        <div className="rounded-2xl p-4 sm:p-5" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <Phone className="h-4 w-4" style={{ color: agencyPrimaryColor }} />
+            <h4 className="text-sm sm:text-base font-semibold" style={{ color: textColor }}>AI Web Call</h4>
+            <span className="ml-auto inline-flex items-center gap-1.5 text-[11px]" style={{ color: mutedTextColor }}><Wand2 className="h-3.5 w-3.5" style={{ color: agencyPrimaryColor }} />Click any part of the widget to edit it</span>
+            {(webcallTextSaved || webcallStyleSaved) && <span className="inline-flex items-center gap-1.5 text-[11px] font-medium" style={{ color: agencyPrimaryColor }}><Check className="h-3.5 w-3.5" />Saved</span>}
           </div>
+
+          <WebCallWidgetEditor
+            title={webcallTitle}
+            subtitle={webcallSubtitle}
+            cta={webcallCta}
+            onCommitText={handleCommitWebcallText}
+            style={webcallStyle}
+            onChangeStyle={handleChangeWebcallStyle}
+            primaryColor={agencyPrimaryColor}
+            websiteTheme={(agency as any)?.website_theme || 'dark'}
+            phoneNumber={(agency as any)?.demo_phone_number || ''}
+            agencyName={agency?.name || ''}
+            editorTheme={webcallEditorTheme}
+            brand={{ primary: agencyPrimaryColor, secondary: secondaryColor, accent: accentColor }}
+            disabled={demoMode}
+          />
+
+          <details className="mt-5 pt-4 group" style={{ borderTop: `1px solid ${borderColor}` }}>
+            <summary className="text-xs font-medium cursor-pointer inline-flex items-center gap-1.5" style={{ color: agencyPrimaryColor }}><Code className="h-3.5 w-3.5" />Get the embed code</summary>
+            <div className="mt-4">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-[11px] font-medium" style={{ color: mutedTextColor }}>Visitors hear:</span>
+                <div className="inline-flex rounded-lg p-0.5" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
+                  {(['demo', 'client'] as const).map((m) => (
+                    <button key={m} onClick={() => setWebcallMode(m)} className="px-3 py-1 rounded-md text-xs font-semibold transition-colors" style={webcallMode === m ? { backgroundColor: agencyPrimaryColor, color: isLightColor(agencyPrimaryColor) ? '#050505' : '#ffffff' } : { color: inputMuted }}>{m === 'demo' ? 'Demo assistant' : 'A test client'}</button>
+                  ))}
+                </div>
+              </div>
+              {webcallMode === 'client' && (
+                <div className="mb-3 max-w-sm relative">
+                  <button type="button" onClick={() => setWebcallClientOpen((o) => !o)} className="w-full flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: inputText }}>
+                    <span className="truncate">{webcallSelectedClientName}</span><ChevronDown className="h-4 w-4 flex-shrink-0" style={{ color: mutedTextColor }} />
+                  </button>
+                  {webcallClientOpen && (
+                    <div className="absolute z-30 left-0 right-0 mt-1 rounded-lg overflow-hidden py-1 max-h-60 overflow-y-auto" style={{ backgroundColor: cardBg, border: `1px solid ${inputBorder}` }}>
+                      {webcallClients.length === 0 ? (<div className="px-3 py-2 text-xs" style={{ color: mutedTextColor }}>No clients yet</div>) : webcallClients.map((c) => (<button key={c.id} onClick={() => { setWebcallClientId(c.id); setWebcallClientOpen(false); }} className="w-full text-left px-3 py-2 text-sm" style={{ color: textColor, backgroundColor: c.id === webcallClientId ? agencyPrimaryColor + '18' : 'transparent' }}>{c.business_name}</button>))}
+                    </div>
+                  )}
+                </div>
+              )}
+              <div className="flex items-center justify-between mb-1.5"><label className="text-xs font-medium" style={{ color: mutedTextColor }}>Embed code</label><button onClick={() => copyToClipboard(webcallSnippet, 'webcall-code')} className="text-xs font-medium inline-flex items-center gap-1" style={{ color: agencyPrimaryColor }}>{copied === 'webcall-code' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} Copy</button></div>
+              <pre className="rounded-lg p-3 text-[10px] sm:text-xs font-mono overflow-x-auto leading-relaxed" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${inputBorder}`, color: textColor, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{webcallSnippet}</pre>
+            </div>
+          </details>
         </div>
       </div>)}
 
