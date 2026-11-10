@@ -1535,18 +1535,18 @@ export default function DemoPage() {
             <MarketingWebCall
               agencyId={DEMO_AGENCY_ID}
               mode="demo"
-              eyebrow="The agency demo line"
-              name="Your demo receptionist"
-              tagline="The number you'd give a prospect to hear the AI before they ever sign up. It answers like a real front desk."
+              eyebrow="The Agency Demo Line"
+              name="Your Demo Receptionist"
+              tagline="The line you hand a prospect to hear the AI before they sign up."
               hints={['What are your hours?', 'Do you take new clients?', 'Can I book an appointment?']}
             />
             <MarketingWebCall
               agencyId={DEMO_AGENCY_ID}
               mode="client"
               clientId={MED_SPA_CLIENT_ID}
-              eyebrow="A live client, med spa"
+              eyebrow="A Live Client, Med Spa"
               name={MED_SPA_NAME}
-              tagline="A real client receptionist trained on a med spa: service and pricing questions, and booking consults, 24/7. This is what your clients get."
+              tagline="A real client receptionist: service and pricing questions, and booking, 24/7."
               hints={['How much is a Botox consult?', 'Are you open Saturday?', 'Book me a consultation']}
               notConfiguredNote="The med spa demo assistant is being set up. Check back shortly."
             />

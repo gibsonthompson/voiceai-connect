@@ -196,6 +196,15 @@ export default function MarketingWebCall({
       .mwc-eq{display:flex;align-items:center;justify-content:center;gap:3px;height:52%}
       .mwc-bar{width:3px;border-radius:3px;background:${EM_INK};height:22%;transform-origin:center;animation:mwcBar 1s ease-in-out infinite;animation-delay:calc(var(--i) * .08s);transform:scaleY(calc(.35 + var(--vol,0) * 2.1))}
       @keyframes mwcBar{0%,100%{height:22%}50%{height:78%}}
+      .mwc-console{position:relative;border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,0.025),rgba(255,255,255,0.008));border:1px solid rgba(255,255,255,0.08);box-shadow:inset 0 1px 0 rgba(255,255,255,0.04),0 20px 50px -30px rgba(0,0,0,0.8);overflow:hidden}
+      .mwc-console::after{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(120% 80% at 50% -10%,rgba(1,245,209,0.10),transparent 60%)}
+      .mwc-dot{position:relative;display:inline-flex;height:7px;width:7px;border-radius:9999px;background:${EM}}
+      .mwc-dot::before{content:'';position:absolute;inset:-4px;border-radius:9999px;background:rgba(1,245,209,0.35);animation:mwcDot 2s ease-out infinite}
+      @keyframes mwcDot{0%{transform:scale(.6);opacity:.7}80%{opacity:0}100%{transform:scale(1.8);opacity:0}}
+      .mwc-well{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+      .mwc-arc{position:absolute;border-radius:9999px;border:1px solid rgba(1,245,209,0.14)}
+      .mwc-arc-ping{animation:mwcArc 3s ease-out infinite}
+      @keyframes mwcArc{0%{transform:scale(.7);opacity:.5}100%{transform:scale(1.25);opacity:0}}
     `}</style>
   );
 
@@ -277,16 +286,14 @@ export default function MarketingWebCall({
   }
 
   // ---- Card variant ----
+  const live = phase === 'live';
   return (
-    <div className="calc-shell p-7 lg:p-8 flex flex-col text-left">
+    <div className="calc-shell p-6 flex flex-col text-left">
       {styleTag}
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          {eyebrow && <p className="t-eyebrow text-em mb-3">{eyebrow}</p>}
-          {name && <h3 className="font-display text-[22px] sm:text-[24px] font-medium text-white leading-tight tracking-tight">{name}</h3>}
-          {tagline && <p className="text-[13.5px] text-white/55 mt-2 leading-relaxed max-w-md">{tagline}</p>}
-        </div>
-        {liveChip}
+      <div className="min-w-0">
+        {eyebrow && <p className="t-eyebrow text-em mb-2.5">{eyebrow}</p>}
+        {name && <h3 className="font-display text-[22px] sm:text-[23px] font-semibold text-white leading-tight tracking-tight">{name}</h3>}
+        {tagline && <p className="text-[13.5px] text-white/55 mt-1.5 leading-relaxed max-w-md">{tagline}</p>}
       </div>
 
       {notReady ? (
@@ -296,22 +303,41 @@ export default function MarketingWebCall({
         </div>
       ) : (
         <>
-          {/* Stage: the reactive orb */}
-          <div className="mt-7 flex flex-col items-center">
-            <CallViz phase={phase} volume={volume} size={132} />
-            {number && (phase === 'idle' || phase === 'error') && (
-              <div className="mt-6 inline-flex flex-col items-center">
-                <span className="font-mono text-[10px] tracking-[0.16em] uppercase text-white/35">Their AI line</span>
-                <span className="font-display text-[22px] font-medium text-white tracking-tight mt-0.5">{number}</span>
+          {/* Call console: compact — reactive orb beside the live line */}
+          <div className="mwc-console mt-5 p-5">
+            <div className="relative z-[1] flex items-center gap-4 sm:gap-5">
+              <div className="relative flex items-center justify-center flex-none" style={{ width: 76, height: 76 }}>
+                {(phase === 'idle' || phase === 'error') && (
+                  <span className="mwc-well" aria-hidden>
+                    <span className="mwc-arc" style={{ width: 76, height: 76 }} />
+                    <span className="mwc-arc mwc-arc-ping" style={{ width: 76, height: 76 }} />
+                  </span>
+                )}
+                <CallViz phase={phase} volume={volume} size={54} />
               </div>
-            )}
+              <div className="min-w-0 flex-1">
+                <span className="inline-flex flex-wrap items-center gap-x-1.5 text-[11.5px] font-medium" style={{ color: live ? '#ff9b9b' : 'rgba(255,255,255,0.6)' }}>
+                  <span className="mwc-dot" style={live ? { background: '#ff6b6b' } : undefined} />
+                  {live ? 'Live Call' : phase === 'connecting' ? 'Connecting' : phase === 'ended' ? 'Call Ended' : 'Online Now'}
+                  {inCall ? <span className="text-white/35 tabular-nums">· {mmss}</span> : <span className="text-white/30">· Answers 24/7</span>}
+                </span>
+                {number && (phase === 'idle' || phase === 'error') ? (
+                  <>
+                    <p className="text-[10px] tracking-[0.14em] uppercase text-white/35 mt-2.5">Their AI Line</p>
+                    <p className="font-display text-[22px] sm:text-[24px] font-semibold text-white tracking-tight tabular-nums leading-tight mt-0.5">{number}</p>
+                  </>
+                ) : (
+                  <p className="text-[13px] text-white/50 mt-1.5">{phase === 'connecting' ? 'Connecting your call.' : phase === 'live' ? 'Listening. Just talk.' : 'Call ended.'}</p>
+                )}
+              </div>
+            </div>
           </div>
 
           {hints && hints.length > 0 && phase === 'idle' && (
-            <div className="mt-6">
-              <p className="text-[12px] text-white/40 mb-2 text-center">Try asking it</p>
-              <div className="flex flex-wrap gap-2 justify-center">
-                {hints.map((h) => <span key={h} className="rounded-full px-3 py-1.5 text-[12.5px] text-white/65 border border-white/10 bg-white/[0.02]">{h}</span>)}
+            <div className="mt-4">
+              <p className="text-[11.5px] text-white/40 mb-2.5">Ask It Anything, Out Loud</p>
+              <div className="flex flex-wrap gap-2">
+                {hints.map((h) => <span key={h} className="rounded-full px-3.5 py-2 text-[12.5px] text-white/70 border border-white/10 bg-white/[0.02]">&ldquo;{h}&rdquo;</span>)}
               </div>
             </div>
           )}
@@ -319,7 +345,16 @@ export default function MarketingWebCall({
           {(inCall || phase === 'ended') && transcript}
           {error && phase !== 'error' && <p className="text-[13px] mt-3" style={{ color: '#ff6b6b' }}>{error}</p>}
 
-          <div className="flex justify-center">{controls}</div>
+          {(phase === 'idle' || phase === 'error') ? (
+            <>
+              <button onClick={startCall} className="mt-5 w-full inline-flex items-center justify-center gap-2.5 rounded-full px-6 py-3.5 text-[15px] font-semibold transition-all hover:brightness-105 active:scale-[0.98]" style={{ backgroundColor: EM, color: EM_INK, boxShadow: '0 10px 26px -10px rgba(1,245,209,0.7)' }}>
+                <Phone className="h-[18px] w-[18px]" /> Talk To It
+              </button>
+              <p className="mt-2.5 text-center text-[12px] text-white/40">Uses your mic. No signup.</p>
+            </>
+          ) : (
+            <div className="mt-5">{controls}</div>
+          )}
         </>
       )}
     </div>
