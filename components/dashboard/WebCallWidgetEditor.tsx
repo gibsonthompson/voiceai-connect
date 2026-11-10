@@ -39,6 +39,9 @@ export interface WebCallWidgetEditorProps {
   editorTheme: EditorTheme;
   brand?: BrandColors;
   disabled?: boolean;
+  // "Visitors hear" control (demo vs a test client + client picker), rendered by
+  // the parent so it owns the client list/state, shown on the canvas card panel.
+  modeControl?: React.ReactNode;
 }
 
 export default function WebCallWidgetEditor(props: WebCallWidgetEditorProps) {
@@ -71,13 +74,13 @@ export default function WebCallWidgetEditor(props: WebCallWidgetEditorProps) {
           title={<InlineText value={props.title} placeholder={`Talk to ${props.agencyName || 'your business'}`} maxLength={60} onCommit={(v) => props.onCommitText({ title: v })} ariaLabel="Widget title" style={{ color: palette.heading }} />}
           subtitle={<InlineText value={props.subtitle} placeholder="AI receptionist" maxLength={60} onCommit={(v) => props.onCommitText({ subtitle: v })} ariaLabel="Widget subtitle" style={{ color: palette.muted }} />}
           cta={<InlineText value={props.cta} placeholder="Tap to call and talk to the AI. Allow your mic when asked." maxLength={160} multiline onCommit={(v) => props.onCommitText({ cta: v })} ariaLabel="Widget prompt" style={{ color: palette.muted }} />}
-          phone={<span>{phoneDisplay}</span>}
+          phone={<InlineText value={style.phoneText || ''} placeholder={phoneDisplay} maxLength={24} onCommit={(v) => set({ phoneText: v })} ariaLabel="Phone number" style={{ color: palette.heading }} />}
         />
       </div>
 
       {/* Property panel for the selected part */}
       <PropertyPanel title={selected ? regionLabel(selected) : 'Widget style'} theme={t} onClose={selected ? () => setSelected(null) : undefined}>
-        {renderControls(selected, style, palette, set, t, props.brand)}
+        {renderControls(selected, style, palette, set, t, props.brand, props.modeControl)}
       </PropertyPanel>
 
       <style>{`@media (min-width: 900px){ .wce-grid{ grid-template-columns: minmax(0,1fr) 300px !important; align-items: start; } }`}</style>
@@ -104,6 +107,7 @@ function renderControls(
   set: (patch: Partial<WebCallStyle>) => void,
   t: EditorTheme,
   brand?: BrandColors,
+  modeControl?: React.ReactNode,
 ): React.ReactNode {
   const orderItems = palette.order.map((b: WebCallBlock) => ({ id: b, label: WEBCALL_BLOCK_LABELS[b] }));
 
@@ -126,12 +130,18 @@ function renderControls(
       return (<>
         <ToggleField label="Show phone number" checked={palette.showPhone} onChange={(v) => set({ showPhone: v })} theme={t} />
         <ColorField label="Number color" value={style.headingColor} fallback={palette.heading} onChange={(v) => set({ headingColor: v })} theme={t} brand={brand} />
+        {style.phoneText ? (
+          <button type="button" onClick={() => set({ phoneText: '' })} style={{ fontSize: 12, fontWeight: 500, color: t.primary, textAlign: 'left', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>Use my real demo number</button>
+        ) : (
+          <p style={{ fontSize: 11.5, color: t.muted, lineHeight: 1.5 }}>Click the number on the widget to type a custom one.</p>
+        )}
       </>);
     case 'cta':
       return <ColorField label="Prompt color" value={style.subTextColor} fallback={palette.muted} onChange={(v) => set({ subTextColor: v })} theme={t} brand={brand} />;
     case 'card':
     default:
       return (<>
+        {modeControl ? (<div style={{ paddingBottom: 14, marginBottom: 2, borderBottom: `1px solid ${t.inputBorder}` }}>{modeControl}</div>) : null}
         <SegmentField label="Theme" value={style.theme || 'auto'} options={[{ value: 'auto', label: 'Auto' }, { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }]} onChange={(v) => set({ theme: v })} theme={t} />
         <ColorField label="Card background" value={style.cardBg} fallback={palette.cardBg} onChange={(v) => set({ cardBg: v })} theme={t} brand={brand} />
         <SegmentField label="Corners" value={style.radius || 'md'} options={[{ value: 'sm', label: 'Sharp' }, { value: 'md', label: 'Round' }, { value: 'lg', label: 'Soft' }]} onChange={(v) => set({ radius: v })} theme={t} />

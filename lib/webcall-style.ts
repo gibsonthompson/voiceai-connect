@@ -41,6 +41,7 @@ export interface WebCallStyle {
   accentColor?: string;     // ring glow / brand accent; default = brand primary
   showIcon?: boolean;       // header icon chip; default true
   showPhone?: boolean;      // the big phone-number line; default true
+  phoneText?: string;       // custom display number; default = agency's real demo number
   size?: WebCallSize;       // overall scale; default 'md'
   radius?: WebCallRadius;   // card corner rounding; default 'md'
   order?: WebCallBlock[];   // order of the body elements; default WEBCALL_BLOCKS

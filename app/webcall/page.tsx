@@ -199,7 +199,7 @@ function WebcallInner() {
             fonts={fonts}
             title={titleText}
             subtitle={subtitleText}
-            phone={config?.phoneNumber ? formatPhone(config.phoneNumber) : undefined}
+            phone={(() => { const pt = config?.style?.phoneText?.trim(); return pt ? pt : (config?.phoneNumber ? formatPhone(config.phoneNumber) : undefined); })()}
             cta={ctaText}
             connecting={phase === 'connecting'}
             interactive
