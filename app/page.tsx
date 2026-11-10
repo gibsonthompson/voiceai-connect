@@ -14,6 +14,11 @@ import MarketingNav from '@/components/marketing-nav';
 import MarketingFooter from '@/components/marketing-footer';
 import WhiteLabelStack from '@/components/white-label-stack';
 import HeroDemo from '@/components/marketing/HeroDemo';
+import MarketingWebCall from '@/components/marketing/MarketingWebCall';
+
+// VoiceAI Connect demo agency: has a demo assistant + a real-looking 404 line
+// that is never provisioned, so it powers the in-browser "talk to it" demo.
+const DEMO_AGENCY_ID = '8e611704-7c1f-4605-a842-4b794a315171';
 
 
 /* ─── Hooks ─────────────────────────────────────────────────────────────── */
@@ -575,6 +580,10 @@ export default function HomePage() {
                 </span>
                 <span className="ml-2 waveform max-sm:hidden">{Array.from({ length: 10 }).map((_, j) => (<span key={j} className="waveform-bar" style={{ animationDelay: `${j * 80}ms` }} />))}</span>
               </a>
+              <div className="mt-6 pt-6 border-t border-white/[0.06]">
+                <p className="text-[12.5px] text-white/50 mb-1">On a computer? Talk to it right here, no dialing.</p>
+                <MarketingWebCall agencyId={DEMO_AGENCY_ID} mode="demo" variant="inline" />
+              </div>
               <div className="mt-auto pt-8 flex flex-wrap gap-x-6 gap-y-2">
                 {['Answers 24/7', 'Natural, human-sounding voice', 'Connects you to a live demo'].map(x => (
                   <span key={x} className="flex items-center gap-2 text-[12.5px] text-white/55"><Check className="w-3.5 h-3.5 text-em flex-shrink-0" strokeWidth={2.5} />{x}</span>

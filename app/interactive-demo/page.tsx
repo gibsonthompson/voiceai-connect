@@ -21,6 +21,16 @@ import {
 } from 'lucide-react';
 import MarketingNav from '@/components/marketing-nav';
 import MarketingFooter from '@/components/marketing-footer';
+import MarketingWebCall from '@/components/marketing/MarketingWebCall';
+
+// Live web-call demos. The VoiceAI Connect demo agency already has a demo
+// assistant and a real-looking 404 line that is never provisioned, so it powers
+// the agency demo with no extra setup. Create the med spa test client's
+// assistant in the dashboard, then paste its client id below to light up the
+// client demo (its card shows a "being set up" state until then).
+const DEMO_AGENCY_ID = '8e611704-7c1f-4605-a842-4b794a315171';
+const MED_SPA_CLIENT_ID = ''; // <-- paste the med spa test client id here
+const MED_SPA_NAME = 'Luxe Aesthetics';
 
 // ─── Demo Data ─────────────────────────────────────────────────────────────────
 
@@ -1506,6 +1516,42 @@ export default function DemoPage() {
               This is the actual product, not a video. Poke around the business you&apos;d be running: local businesses paying you every month, the AI handling their calls, all under your brand. Flip between what you see and what your clients see, or take the guided tour. No signup required.
             </p>
           </div>
+        </div>
+      </section>
+
+      {/* ════════ CALL A LIVE AI RECEPTIONIST ════════ */}
+      <section className="bg-ink pb-6 lg:pb-10">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
+          <div className="max-w-2xl mb-10">
+            <p className="t-eyebrow text-em mb-4">Hear it first</p>
+            <h2 className="font-display font-medium text-white tracking-tight" style={{ fontSize: 'clamp(1.6rem, 3.2vw, 2.4rem)', letterSpacing: '-0.025em', lineHeight: 1.08 }}>
+              Call a live AI receptionist, right from your browser.
+            </h2>
+            <p className="t-body mt-4 max-w-xl text-[1rem]">
+              No phone, no signup. Talk to two real receptionists: the demo line a prospect hears, and a working client, a med spa, exactly like the ones you&apos;d set up. Allow your mic, then just talk.
+            </p>
+          </div>
+          <div className="grid lg:grid-cols-2 gap-5">
+            <MarketingWebCall
+              agencyId={DEMO_AGENCY_ID}
+              mode="demo"
+              eyebrow="The agency demo line"
+              name="Your demo receptionist"
+              tagline="The number you'd give a prospect to hear the AI before they ever sign up. It answers like a real front desk."
+              hints={['What are your hours?', 'Do you take new clients?', 'Can I book an appointment?']}
+            />
+            <MarketingWebCall
+              agencyId={DEMO_AGENCY_ID}
+              mode="client"
+              clientId={MED_SPA_CLIENT_ID}
+              eyebrow="A live client, med spa"
+              name={MED_SPA_NAME}
+              tagline="A real client receptionist trained on a med spa: service and pricing questions, and booking consults, 24/7. This is what your clients get."
+              hints={['How much is a Botox consult?', 'Are you open Saturday?', 'Book me a consultation']}
+              notConfiguredNote="The med spa demo assistant is being set up. Check back shortly."
+            />
+          </div>
+          <p className="mt-5 text-[12.5px] text-white/35">The numbers shown are demo placeholders. Nothing is dialed, the call happens in your browser.</p>
         </div>
       </section>
 
