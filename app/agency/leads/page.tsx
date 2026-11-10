@@ -128,6 +128,69 @@ function LeadThumb({ leadId, placeId, children }: { leadId: string; placeId?: st
   return <>{children}</>;
 }
 
+// A single large gallery image, streamed through the authed proxy as a blob and
+// revoked on unmount (nothing stored). The first photo is rendered wider.
+function GalleryImg({ src, big }: { src: string; big: boolean }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    let cancelled = false; let obj: string | null = null;
+    (async () => {
+      try {
+        const token = localStorage.getItem('auth_token') || '';
+        const r = await fetch(src, { headers: { Authorization: `Bearer ${token}` } });
+        if (!r.ok) { if (!cancelled) setFailed(true); return; }
+        const b = await r.blob();
+        if (cancelled) return;
+        obj = URL.createObjectURL(b);
+        setUrl(obj);
+      } catch { if (!cancelled) setFailed(true); }
+    })();
+    return () => { cancelled = true; if (obj) URL.revokeObjectURL(obj); };
+  }, [src]);
+  const cls = `h-44 sm:h-52 ${big ? 'w-64 sm:w-[20rem]' : 'w-52 sm:w-60'} flex-shrink-0 rounded-xl object-cover border border-[var(--lp-border)] bg-[var(--lp-hover)]`;
+  if (failed) return null;
+  if (!url) return <div className={`${cls} animate-pulse`} />;
+  return <img src={url} className={cls} alt="" loading="lazy" />;
+}
+
+// ---------------------------------------------------------------------------
+// LeadPhotoGallery: the lead's Google business photos, shown large. A scrolling
+// strip of the first few photos (first one wider), rendered prominently on the
+// working-lead card. Only leads with a place_id trigger a lookup; if there are
+// no photos it renders nothing (no empty band). Context is cached server-side.
+// ---------------------------------------------------------------------------
+function LeadPhotoGallery({ leadId, placeId }: { leadId: string; placeId?: string | null }) {
+  const { agency } = useAgency();
+  const [photos, setPhotos] = useState<{ ref: string }[] | null>(null);
+  const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+  useEffect(() => {
+    if (!placeId || !agency?.id) { setPhotos([]); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = localStorage.getItem('auth_token') || '';
+        const res = await fetch(`${backendUrl}/api/agency/${agency.id}/leads/${leadId}/place-context`, { headers: { Authorization: `Bearer ${token}` } });
+        const data = await res.json().catch(() => ({}));
+        if (cancelled) return;
+        setPhotos(data?.available && Array.isArray(data.photos) ? data.photos.slice(0, 5) : []);
+      } catch { if (!cancelled) setPhotos([]); }
+    })();
+    return () => { cancelled = true; };
+  }, [leadId, placeId, agency?.id, backendUrl]);
+
+  if (!placeId) return null;
+  if (photos === null) return <div className="mt-4 h-44 sm:h-52 rounded-xl animate-pulse bg-[var(--lp-hover)]" />;
+  if (photos.length === 0) return null;
+  return (
+    <div className="mt-4 -mx-1 flex gap-2.5 overflow-x-auto px-1 pb-1" style={{ scrollbarWidth: 'thin' }}>
+      {photos.map((p, i) => (
+        <GalleryImg key={i} big={i === 0} src={`${backendUrl}/api/agency/${agency!.id}/leads/${leadId}/photo?ref=${encodeURIComponent(p.ref)}&max=640`} />
+      ))}
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // The focus card: one lead at a time, with the actions to work it. This is the
 // centrepiece of the page, everything else exists to feed it the next lead.
@@ -177,10 +240,8 @@ function FocusCard({
       {/* Identity */}
       <div className="px-4 sm:px-6 pt-3">
         <div className="flex items-start gap-3 sm:gap-4">
-          <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl flex-shrink-0 overflow-hidden bg-[var(--lp-primary-15)]">
-            <LeadThumb leadId={lead.id} placeId={lead.place_id}>
-              <span className="text-xl sm:text-2xl font-semibold text-[var(--lp-primary)]">{lead.business_name?.charAt(0)?.toUpperCase() || '?'}</span>
-            </LeadThumb>
+          <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl flex-shrink-0 bg-[var(--lp-primary-15)]">
+            <span className="text-xl sm:text-2xl font-semibold text-[var(--lp-primary)]">{lead.business_name?.charAt(0)?.toUpperCase() || '?'}</span>
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
@@ -191,6 +252,9 @@ function FocusCard({
             )}
           </div>
         </div>
+
+        {/* Business photos (Google), shown large */}
+        <LeadPhotoGallery leadId={lead.id} placeId={lead.place_id} />
 
         {/* Contact rows */}
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
