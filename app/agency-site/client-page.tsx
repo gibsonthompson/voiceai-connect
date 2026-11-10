@@ -6,6 +6,7 @@ import MarketingPage from '@/components/MarketingPage';
 import MarketingPageBeside from '@/components/MarketingPageBeside';
 import MarketingPageEditorial from '@/components/MarketingPageEditorial';
 import AgencySupportWidget from '@/components/AgencySupportWidget';
+import { EditorProvider } from '@/components/agency/MarketingEditable';
 import { MarketingConfig, defaultMarketingConfig } from '@/types/marketing';
 import { getCurrencySymbol } from '@/lib/currency-symbols';
 import { getCurrencyForCountry, currencies } from '@/lib/currency';
@@ -204,6 +205,24 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
   const mc: any = (previewMode && livePreview) ? livePreview : (agency.marketing_config || {});
   const previewing = previewMode && !!livePreview;
 
+  // Editor mode: when loaded with &editor=1 the hero text becomes click-to-type.
+  // Each edit (and a focus "select") is relayed to the dashboard, which applies
+  // it to the content editor's config. Inert on the public site.
+  // Deferred to after mount so the server and first client render agree (the
+  // non-editor hero), then flips on to reveal the click-to-type affordance.
+  const [editorMode, setEditorMode] = useState(false);
+  useEffect(() => {
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('editor') === '1') setEditorMode(true);
+  }, []);
+  const onEdit = (field: string, value: string) => {
+    try {
+      window.parent?.postMessage(
+        field === '__select__' ? { type: 'voiceai:edit_select', region: value } : { type: 'voiceai:edit_content', field, value },
+        '*',
+      );
+    } catch { /* ignore */ }
+  };
+
   // Resolve demo phone: manual override → auto-provisioned → platform fallback
   // No platform fallback: if the agency hasn't created its own demo number, we
   // show nothing (the templates hide the demo CTA), rather than leaking the
@@ -380,7 +399,10 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
 
   return (
     <>
-      <TemplateComponent config={marketingConfig} />
+      {editorMode && <style>{`[data-vai-edit]{border-radius:4px;transition:box-shadow .12s ease,background-color .12s ease} [data-vai-edit]:hover{box-shadow:0 0 0 2px ${(agency.primary_color || '#00a19b')}66} [data-vai-edit]:focus{box-shadow:0 0 0 2px ${(agency.primary_color || '#00a19b')};background-color:${(agency.primary_color || '#00a19b')}14}`}</style>}
+      <EditorProvider value={{ editor: editorMode, onEdit }}>
+        <TemplateComponent config={marketingConfig} />
+      </EditorProvider>
       <AgencySupportWidget
         agencyId={agency.id}
         agencyName={agency.name}

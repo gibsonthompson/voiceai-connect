@@ -435,15 +435,20 @@ export default function MarketingWebsitePage() {
     const win = contentPreviewRef.current?.contentWindow;
     if (win) { try { win.postMessage({ type: 'voiceai:preview_content', config: merged }, '*'); } catch { /* ignore */ } }
   }, []);
+  // Inline edits relayed back from the preview (click-to-type on the site).
+  const [inboundContentEdit, setInboundContentEdit] = useState<{ field: string; value: string; nonce: number } | null>(null);
   useEffect(() => {
     const onMsg = (e: MessageEvent) => {
       const d = e.data;
-      if (d && typeof d === 'object' && d.type === 'voiceai:cpreview_ready' && contentPreviewConfig.current) pushContentPreview(contentPreviewConfig.current);
+      if (!d || typeof d !== 'object') return;
+      if (d.type === 'voiceai:cpreview_ready' && contentPreviewConfig.current) pushContentPreview(contentPreviewConfig.current);
+      if (d.type === 'voiceai:edit_content' && typeof d.field === 'string') setInboundContentEdit({ field: d.field, value: typeof d.value === 'string' ? d.value : '', nonce: Date.now() });
+      if (d.type === 'voiceai:edit_select' && typeof d.region === 'string' && d.region.startsWith('hero.')) setContentScrollTarget('hero');
     };
     window.addEventListener('message', onMsg);
     return () => window.removeEventListener('message', onMsg);
   }, [pushContentPreview]);
-  const contentPreviewSrc = `${subdomainUrl}/?preview=1`;
+  const contentPreviewSrc = `${subdomainUrl}/?preview=1&editor=1`;
 
   // Load this agency's clients for the web-call "test client" option.
   useEffect(() => {
@@ -935,7 +940,7 @@ export default function MarketingWebsitePage() {
       {activeTab === 'content' && (
         <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,560px)] gap-5 items-start">
           <div className="min-w-0">
-            <MarketingContentEditor agency={agency} demoMode={demoMode} refreshAgency={refreshAgency} isDark={isDark} textColor={textColor} mutedTextColor={mutedTextColor} borderColor={borderColor} cardBg={cardBg} inputBg={inputBg} inputBorder={inputBorder} agencyPrimaryColor={agencyPrimaryColor} backendUrl={backendUrl} scrollToSection={contentScrollTarget} onScrolled={() => setContentScrollTarget(null)} onPreview={pushContentPreview} />
+            <MarketingContentEditor agency={agency} demoMode={demoMode} refreshAgency={refreshAgency} isDark={isDark} textColor={textColor} mutedTextColor={mutedTextColor} borderColor={borderColor} cardBg={cardBg} inputBg={inputBg} inputBorder={inputBorder} agencyPrimaryColor={agencyPrimaryColor} backendUrl={backendUrl} scrollToSection={contentScrollTarget} onScrolled={() => setContentScrollTarget(null)} onPreview={pushContentPreview} inboundEdit={inboundContentEdit} />
           </div>
           <div className="hidden lg:block lg:sticky lg:top-4">
             <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${inputBorder}` }}>

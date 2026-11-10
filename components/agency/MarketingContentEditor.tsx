@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   ChevronDown, ChevronRight, Save, Loader2, Check, Plus, Trash2,
   Phone, Type, AlertTriangle, BarChart3, Lightbulb, ListOrdered,
@@ -204,6 +204,9 @@ interface MarketingContentEditorProps {
   // Fires (debounced) with the full merged marketing_config whenever content
   // changes, so the parent can push it into a live site preview beside the editor.
   onPreview?: (merged: any) => void;
+  // An inline edit relayed back from the preview (click-to-type on the site).
+  // A new object (unique nonce) each time so the apply effect re-runs.
+  inboundEdit?: { field: string; value: string; nonce: number } | null;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -242,7 +245,7 @@ function Section({
 export default function MarketingContentEditor({
   agency, demoMode, refreshAgency,
   isDark, textColor, mutedTextColor, borderColor, cardBg, inputBg, inputBorder, agencyPrimaryColor, backendUrl,
-  scrollToSection, onScrolled, onPreview
+  scrollToSection, onScrolled, onPreview, inboundEdit
 }: MarketingContentEditorProps) {
 
   const [config, setConfig] = useState<EditorConfig>(DEFAULT_CONFIG);
@@ -331,12 +334,30 @@ export default function MarketingContentEditor({
     };
   }, [agency, config]);
 
-  // Push the live config into the preview as the agency types (debounced).
+  // Push the live config into the preview as the agency types (debounced). When
+  // the change CAME from the preview (a click-to-type inline edit), skip the
+  // push once: the preview already shows that text, and echoing it back would
+  // reset the agency's cursor.
+  const skipPush = useRef(false);
   useEffect(() => {
     if (!onPreview) return;
+    if (skipPush.current) { skipPush.current = false; return; }
     const t = setTimeout(() => onPreview(buildMerged()), 220);
     return () => clearTimeout(t);
   }, [buildMerged, onPreview]);
+
+  // Apply an inline edit relayed from the preview (click-to-type on the site).
+  useEffect(() => {
+    if (!inboundEdit) return;
+    const { field, value } = inboundEdit;
+    skipPush.current = true;
+    update(prev => {
+      if (field === 'hero.headline') return { ...prev, hero: { ...prev.hero, headline: value.split('\n') } };
+      if (field === 'hero.badge') return { ...prev, hero: { ...prev.hero, badge: value } };
+      if (field === 'hero.description') return { ...prev, hero: { ...prev.hero, description: value } };
+      return prev;
+    });
+  }, [inboundEdit]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const inputStyle = { backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor };
   const inputClass = "w-full rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-sm transition-colors focus:outline-none";

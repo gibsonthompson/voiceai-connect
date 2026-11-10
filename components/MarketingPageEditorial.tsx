@@ -13,6 +13,7 @@
 'use client';
 import { openAgencySupport, visibleFooterLinks, isSupportLink } from '@/lib/marketing-links';
 import CustomScripts from './CustomScripts';
+import { Editable } from '@/components/agency/MarketingEditable';
 
 import React, { useState } from 'react';
 import { MarketingConfig, defaultMarketingConfig } from '@/types/marketing';
@@ -193,10 +194,10 @@ function Hero({ config }: { config: MarketingConfig }) {
   return (
     <header className="ed-hero">
       <div className="ed-container ed-hero-inner">
-        {hero.badge && <p className="ed-hero-badge">{hero.badge}</p>}
-        <h1 className="ed-hero-title">{(Array.isArray(hero.headline) ? hero.headline : [hero.headline]).map((line, i) => <span key={i}>{line}</span>)}</h1>
+        {hero.badge && <Editable as="p" className="ed-hero-badge" field="hero.badge" value={hero.badge}>{hero.badge}</Editable>}
+        <Editable as="h1" className="ed-hero-title" field="hero.headline" multiline value={(Array.isArray(hero.headline) ? hero.headline : [hero.headline]).join('\n')}>{(Array.isArray(hero.headline) ? hero.headline : [hero.headline]).map((line, i) => <span key={i}>{line}</span>)}</Editable>
         {hero.subtitle && <p className="ed-hero-sub">{hero.subtitle}</p>}
-        {hero.description && <p className="ed-hero-desc">{hero.description}</p>}
+        {hero.description && <Editable as="p" className="ed-hero-desc" field="hero.description" value={hero.description}>{hero.description}</Editable>}
         <div className="ed-hero-cta">
           <a href="/signup" className="ed-btn ed-btn-primary">{config.signup?.trialDays === 0 ? 'Get Started' : 'Start free trial'}</a>
           {hasDemo

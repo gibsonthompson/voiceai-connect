@@ -11,6 +11,7 @@
 'use client';
 import { openAgencySupport, visibleFooterLinks, isSupportLink } from '@/lib/marketing-links';
 import CustomScripts from './CustomScripts';
+import { Editable } from '@/components/agency/MarketingEditable';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MarketingConfig, defaultMarketingConfig } from '@/types/marketing';
@@ -222,10 +223,10 @@ function Hero({ config }: { config: MarketingConfig }) {
     <section className="bsd-hero">
       <div className="bsd-container bsd-hero-grid">
         <div className="bsd-hero-copy">
-          <span className="bsd-eyebrow"><span className="bsd-eyebrow-dot" />{hero.badge}</span>
-          <h1>{hero.headline.map((line, i) => <span key={i} className="line">{line}</span>)}</h1>
+          <span className="bsd-eyebrow"><span className="bsd-eyebrow-dot" /><Editable as="span" field="hero.badge" value={hero.badge}>{hero.badge}</Editable></span>
+          <Editable as="h1" field="hero.headline" multiline value={(Array.isArray(hero.headline) ? hero.headline : [hero.headline]).join('\n')}>{hero.headline.map((line, i) => <span key={i} className="line">{line}</span>)}</Editable>
           <p className="bsd-hero-price">{subtitle}</p>
-          <p className="bsd-hero-desc">{hero.description}</p>
+          <Editable as="p" className="bsd-hero-desc" field="hero.description" value={hero.description}>{hero.description}</Editable>
           <div className="bsd-hero-ctas">
             <a href="/signup" className="bsd-btn bsd-btn-primary bsd-btn-lg">{config.signup?.trialDays === 0 ? 'Get Started' : `Start free trial, ${config.signup?.trialDays ?? 7} days free`}</a>
             {hero.demoPhone

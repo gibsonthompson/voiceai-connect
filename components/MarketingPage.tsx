@@ -2,6 +2,7 @@
 'use client';
 import { openAgencySupport, visibleFooterLinks, isSupportLink } from '@/lib/marketing-links';
 import CustomScripts from './CustomScripts';
+import { Editable } from '@/components/agency/MarketingEditable';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { MarketingConfig, defaultMarketingConfig } from '@/types/marketing';
@@ -190,11 +191,11 @@ function HeroSection({ config, contrastColors }: { config: MarketingConfig; cont
     <section className="hero">
       <div className="container">
         <div className="hero-content">
-          <div className="hero-badge"><span className="badge-dot"></span><span>{hero.badge}</span></div>
-          <h1 className="hero-title">
+          <div className="hero-badge"><span className="badge-dot"></span><Editable as="span" field="hero.badge" value={hero.badge}>{hero.badge}</Editable></div>
+          <Editable as="h1" className="hero-title" field="hero.headline" multiline value={(Array.isArray(hero.headline) ? hero.headline : [hero.headline]).join('\n')}>
             {hero.headline.map((line, i) => (<span key={i} style={{ display: 'block' }}>{line}</span>))}
-          </h1>
-          <p className="hero-subtitle">{hero.description}</p>
+          </Editable>
+          <Editable as="p" className="hero-subtitle" field="hero.description" value={hero.description}>{hero.description}</Editable>
           <div className="hero-ctas">
             <a href="/signup" className="btn-large btn-primary">{config.signup?.trialDays === 0 ? 'Get Started' : `Start Free Trial, ${config.signup?.trialDays ?? 7} Day${(config.signup?.trialDays ?? 7) === 1 ? '' : 's'} Free`}</a>
             {hero.demoPhone ? (
