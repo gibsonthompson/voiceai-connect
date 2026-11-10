@@ -12,6 +12,7 @@ import {
 import { countries as supportedCountries } from '@/lib/currency';
 import { getCountryFromCookie } from '@/lib/geo';
 import { useEmbedMessaging } from '@/lib/embed-messaging';
+import { resolveSignupPalette, SignupStyle, isHex as isSignupHex } from '@/lib/signup-style';
 import { SELECTABLE_INDUSTRIES } from '@/lib/industries';
 import HowDidYouHear from '@/components/how-did-you-hear';
 import { isValidPhone } from '@/lib/phone';
@@ -403,6 +404,24 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
   // correctly and fires analytics. step=1 marks the data-collection step.
   useEmbedMessaging(isEmbed, 1);
 
+  // Live style/text pushed from the dashboard Embed-tab editor while this form
+  // is shown in its preview iframe, so the agency sees changes instantly
+  // without a reload. Only active in embed mode; never affects real signups.
+  const [liveStyle, setLiveStyle] = useState<SignupStyle | null>(null);
+  const [liveText, setLiveText] = useState<{ headline?: string; subtitle?: string } | null>(null);
+  useEffect(() => {
+    if (!isEmbed || typeof window === 'undefined') return;
+    const onMsg = (e: MessageEvent) => {
+      const d = e.data;
+      if (!d || typeof d !== 'object' || d.type !== 'voiceai:preview_style') return;
+      setLiveStyle(d.style && typeof d.style === 'object' ? d.style : null);
+      if (d.text && typeof d.text === 'object') setLiveText(d.text);
+    };
+    window.addEventListener('message', onMsg);
+    try { window.parent?.postMessage({ type: 'voiceai:ready' }, '*'); } catch {}
+    return () => window.removeEventListener('message', onMsg);
+  }, [isEmbed]);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -463,10 +482,22 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
   const phoneConfig = COUNTRY_PHONE_CONFIG[formData.country] || { code: '', placeholder: 'Phone number' };
   const useMask = phoneConfig.mask && (formData.country === 'US' || formData.country === 'CA');
 
-  const isDark = agency.website_theme === 'dark';
-  const primaryColor = agency.primary_color || '#01f5d1';
+  // Signup-form style: the agency's saved style (marketing_config.signup),
+  // overridden by any live preview push. Empty style resolves to the form's
+  // existing look, so this is purely additive.
+  const signupStyle: SignupStyle = liveStyle || ((agency as any).marketing_config?.signup || {});
+  const signupPalette = resolveSignupPalette(signupStyle, { primaryColor: agency.primary_color, websiteTheme: agency.website_theme });
+
+  const isDark = signupPalette.isDark;
+  const primaryColor = signupPalette.brand;
   const logoAlign = agency.signup_logo_align || 'left';
   const accentColor = agency.accent_color || primaryColor;
+  // Optional explicit overrides for the headline, submit button, and surface.
+  const headingColor = signupPalette.heading;
+  const buttonColor = signupPalette.button;
+  const buttonTextColor = signupPalette.buttonText;
+  const fieldRadius = signupPalette.radius;
+  const styleCardBg = isSignupHex(signupStyle.cardBg) ? signupStyle.cardBg : null;
   // Agency brand fonts (same system as the dashboard branding page). The body
   // font drives labels, inputs and placeholders via the wrapper; the display
   // font is applied to the headline.
@@ -490,7 +521,7 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
   const bgColor = isEmbed ? 'transparent' : (isDark ? '#050505' : '#ffffff');
   const textColor = isDark ? '#fafaf9' : '#111827';
   const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
-  const cardBg = isDark ? 'rgba(10,10,10,0.5)' : '#ffffff';
+  const cardBg = styleCardBg || (isDark ? 'rgba(10,10,10,0.5)' : '#ffffff');
   const cardBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
   const headerBg = isDark ? 'rgba(5,5,5,0.8)' : 'rgba(255,255,255,0.8)';
   const headerBorder = isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6';
@@ -618,8 +649,8 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
                 <Sparkles className="h-4 w-4" style={{ color: primaryColor }} />
                 <span style={{ color: primaryColor }}>{trialDays > 0 ? `${trialDays}-day free trial` : 'Free trial'}</span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight" style={{ fontFamily: fontStack(dispFont, 'display') }}>{(agency as any).signup_headline || 'Get Your AI Receptionist'}</h1>
-              <p className="mt-2" style={{ color: mutedTextColor }}>{(agency as any).signup_subtitle || `Start your free trial with ${agency.name}`}</p>
+              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight" style={{ fontFamily: fontStack(dispFont, 'display'), color: headingColor }}>{(liveText?.headline ?? (agency as any).signup_headline) || 'Get Your AI Receptionist'}</h1>
+              <p className="mt-2" style={{ color: mutedTextColor }}>{(liveText?.subtitle ?? (agency as any).signup_subtitle) || `Start your free trial with ${agency.name}`}</p>
             </div>
 
             <form onSubmit={handleSubmit} noValidate autoComplete="off" className="space-y-5">
@@ -679,7 +710,7 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
 
               <button type="submit" disabled={loading}
                 className="group relative w-full inline-flex items-center justify-center gap-2 rounded-full px-6 py-4 text-base font-medium transition-all hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] disabled:opacity-50"
-                style={{ backgroundColor: primaryColor, color: primaryLight ? '#050505' : '#fafaf9', fontWeight: 800, boxShadow: isDark ? `0 0 40px ${primaryColor}30` : `0 4px 14px ${primaryColor}40` }}>
+                style={{ backgroundColor: buttonColor, color: buttonTextColor, borderRadius: signupStyle.radius ? fieldRadius : undefined, fontWeight: 800, boxShadow: isDark ? `0 0 40px ${primaryColor}30` : `0 4px 14px ${primaryColor}40` }}>
                 {loading ? (<><Loader2 className="h-5 w-5 animate-spin" />Please wait...</>) : (<>Continue to Plans<ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" /></>)}
               </button>
             </form>

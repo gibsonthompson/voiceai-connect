@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Globe, ExternalLink, Copy, Check, Eye, Link as LinkIcon, Phone,
@@ -16,6 +16,8 @@ import { useTheme } from '../../../hooks/useTheme';
 import MarketingContentEditor from '@/components/agency/MarketingContentEditor';
 import WebCallWidgetEditor from '@/components/dashboard/WebCallWidgetEditor';
 import { WebCallStyle } from '@/lib/webcall-style';
+import { ColorField, SegmentField, EditorTheme } from '@/components/dashboard/inline-editor';
+import { SignupStyle, resolveSignupPalette } from '@/lib/signup-style';
 
 type ActiveTab = 'overview' | 'template' | 'sections' | 'content' | 'colors' | 'domain' | 'tracking' | 'seo' | 'navigation' | 'legal' | 'embed';
 
@@ -191,6 +193,14 @@ export default function MarketingWebsitePage() {
   // refreshAgency to keep marketing_config fresh for other savers, but we must
   // not let that reset the editor mid-edit (that was the "snaps back" bug).
   const webcallHydrated = useRef(false);
+  // Signup-form widget style (lives under marketing_config.signup) + its live
+  // preview bridge to the embedded /signup iframe.
+  const [signupStyle, setSignupStyle] = useState<SignupStyle>({});
+  const [signupStyleSaved, setSignupStyleSaved] = useState(false);
+  const signupStyleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const signupHydrated = useRef(false);
+  const signupPreviewRef = useRef<HTMLIFrameElement>(null);
+  const [signupPreviewHeight, setSignupPreviewHeight] = useState(760);
   // Colors
   const [primaryColor, setPrimaryColor] = useState('#00a19b');
   const [secondaryColor, setSecondaryColor] = useState('#007e77');
@@ -333,6 +343,55 @@ export default function MarketingWebsitePage() {
     webcallHydrated.current = true;
     setWebcallStyle((((agency as any).marketing_config || {}).webcall || {}) as WebCallStyle);
   }, [agency]);
+
+  // Hydrate the signup-widget style once (same anti-clobber guard as web call).
+  useEffect(() => {
+    if (!agency || signupHydrated.current) return;
+    signupHydrated.current = true;
+    setSignupStyle((((agency as any).marketing_config || {}).signup || {}) as SignupStyle);
+  }, [agency]);
+
+  // Push the current signup style + text into the preview iframe so it updates
+  // live, and auto-size the preview to the form's real height (the form posts
+  // voiceai:resize). Re-sent whenever the style or text changes, and on ready.
+  const pushSignupPreview = useCallback(() => {
+    const win = signupPreviewRef.current?.contentWindow;
+    if (!win) return;
+    try { win.postMessage({ type: 'voiceai:preview_style', style: signupStyle, text: { headline: signupHeadline, subtitle: signupSubtitle } }, '*'); } catch { /* ignore */ }
+  }, [signupStyle, signupHeadline, signupSubtitle]);
+
+  useEffect(() => {
+    const onMsg = (e: MessageEvent) => {
+      const d = e.data;
+      if (!d || typeof d !== 'object') return;
+      if (d.type === 'voiceai:resize' && typeof d.height === 'number') setSignupPreviewHeight(Math.max(320, Math.min(2200, Math.ceil(d.height))));
+      if (d.type === 'voiceai:ready') pushSignupPreview();
+    };
+    window.addEventListener('message', onMsg);
+    return () => window.removeEventListener('message', onMsg);
+  }, [pushSignupPreview]);
+
+  // Keep the preview in sync as the agency edits (debounce not needed; the
+  // iframe just re-renders).
+  useEffect(() => { pushSignupPreview(); }, [pushSignupPreview]);
+
+  const handleChangeSignupStyle = (next: SignupStyle) => {
+    setSignupStyle(next);
+    if (demoMode || !agency) return;
+    if (signupStyleTimer.current) clearTimeout(signupStyleTimer.current);
+    signupStyleTimer.current = setTimeout(async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        const current = (agency.marketing_config || {}) as any;
+        const updated = { ...current, signup: next };
+        const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ marketing_config: updated }) });
+        if (response.ok) { await refreshAgency(); setSignupStyleSaved(true); setTimeout(() => setSignupStyleSaved(false), 2000); }
+      } catch (error) { console.error('Failed to save signup style:', error); }
+    }, 600);
+  };
+
+  const signupEditorTheme: EditorTheme = { text: textColor, muted: mutedTextColor, border: borderColor, inputBg, inputBorder, inputText, cardBg, primary: agencyPrimaryColor, isDark };
+  const signupPalette = resolveSignupPalette(signupStyle, { primaryColor: agencyPrimaryColor, websiteTheme: (agency as any)?.website_theme || 'light' });
 
   // Load this agency's clients for the web-call "test client" option.
   useEffect(() => {
@@ -716,6 +775,27 @@ export default function MarketingWebsitePage() {
               <button onClick={handleSaveSignupText} disabled={savingSignupText} className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50 transition-colors" style={{ backgroundColor: agencyPrimaryColor }}>{savingSignupText ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save</button>
               {signupTextSaved && <span className="flex items-center gap-1.5 text-xs" style={{ color: agencyPrimaryColor }}><Check className="h-4 w-4" />Saved!</span>}
             </div>
+
+            {/* Form style: colors + theme + corners. Saves to marketing_config.signup
+                and pushes live into the preview below. Same pickers as Branding. */}
+            <div className="mt-5 pt-5" style={{ borderTop: `1px solid ${borderColor}` }}>
+              <div className="flex items-center justify-between mb-3">
+                <label className="text-xs font-medium" style={{ color: mutedTextColor }}>Form style</label>
+                {signupStyleSaved && <span className="flex items-center gap-1.5 text-xs" style={{ color: agencyPrimaryColor }}><Check className="h-4 w-4" />Saved</span>}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
+                <SegmentField label="Theme" value={signupStyle.theme || 'auto'} options={[{ value: 'auto', label: 'Auto' }, { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }]} onChange={(v) => handleChangeSignupStyle({ ...signupStyle, theme: v })} theme={signupEditorTheme} />
+                <SegmentField label="Corners" value={signupStyle.radius || 'md'} options={[{ value: 'sm', label: 'Sharp' }, { value: 'md', label: 'Round' }, { value: 'lg', label: 'Soft' }]} onChange={(v) => handleChangeSignupStyle({ ...signupStyle, radius: v })} theme={signupEditorTheme} />
+                <ColorField label="Brand / accent" value={signupStyle.brandColor} fallback={signupPalette.brand} onChange={(v) => handleChangeSignupStyle({ ...signupStyle, brandColor: v })} theme={signupEditorTheme} brand={{ primary: agencyPrimaryColor, secondary: secondaryColor, accent: accentColor }} />
+                <ColorField label="Headline color" value={signupStyle.headingColor} fallback={signupPalette.heading} onChange={(v) => handleChangeSignupStyle({ ...signupStyle, headingColor: v })} theme={signupEditorTheme} brand={{ primary: agencyPrimaryColor, secondary: secondaryColor, accent: accentColor }} />
+                <ColorField label="Button color" value={signupStyle.buttonColor} fallback={signupPalette.button} onChange={(v) => handleChangeSignupStyle({ ...signupStyle, buttonColor: v })} theme={signupEditorTheme} brand={{ primary: agencyPrimaryColor, secondary: secondaryColor, accent: accentColor }} />
+                <ColorField label="Button text" value={signupStyle.buttonTextColor} fallback={signupPalette.buttonText} onChange={(v) => handleChangeSignupStyle({ ...signupStyle, buttonTextColor: v })} theme={signupEditorTheme} brand={{ primary: agencyPrimaryColor, secondary: secondaryColor, accent: accentColor }} />
+                <div className="sm:col-span-2">
+                  <ColorField label="Form background" value={signupStyle.cardBg} fallback={signupPalette.cardBg} onChange={(v) => handleChangeSignupStyle({ ...signupStyle, cardBg: v })} theme={signupEditorTheme} brand={{ primary: agencyPrimaryColor, secondary: secondaryColor, accent: accentColor }} />
+                </div>
+              </div>
+              <p className="mt-3 text-[10px] sm:text-xs" style={{ color: mutedTextColor }}>Changes save automatically and update the live preview below.</p>
+            </div>
           </div>
 
           {/* ── Section A: Inline Signup Widget (recommended) ── */}
@@ -739,7 +819,7 @@ export default function MarketingWebsitePage() {
                 <span className="flex items-center gap-1.5 ml-1.5 text-[10px] sm:text-xs font-medium" style={{ color: mutedTextColor }}><Eye className="h-3.5 w-3.5" />Live preview, the real form your visitors see</span>
               </div>
               {agency?.id && !demoMode && hasAccess ? (
-                <iframe title="Signup widget preview" src={widgetPreviewSrc} loading="lazy" className="block w-full" style={{ height: 1040, border: 0, backgroundColor: '#ffffff' }} />
+                <iframe ref={signupPreviewRef} title="Signup widget preview" src={widgetPreviewSrc} loading="lazy" onLoad={pushSignupPreview} className="block w-full transition-[height] duration-200" style={{ height: signupPreviewHeight, border: 0, backgroundColor: signupPalette.pageBg }} />
               ) : (
                 <div className="flex items-center justify-center text-center px-6" style={{ height: 320, backgroundColor: inputBg }}>
                   <p className="text-xs sm:text-sm" style={{ color: inputMuted }}>{demoMode ? 'Turn off demo mode to load your live signup form here.' : 'Your live signup form preview will appear here.'}</p>
