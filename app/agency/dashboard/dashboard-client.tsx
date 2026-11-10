@@ -197,7 +197,7 @@ export default function AgencyDashboardPage() {
       <div className="mb-6 sm:mb-8">
         <div>
           <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Welcome back{user?.first_name ? `, ${user.first_name}` : ''}!</h1>
-          <p className="mt-1 text-sm sm:text-base" style={{ color: theme.cardTextMuted }}>Here&apos;s how your agency is performing.</p>
+          <p className="mt-1 text-sm sm:text-base" style={{ color: theme.textMuted }}>Here&apos;s how your agency is performing.</p>
         </div>
       </div>
 

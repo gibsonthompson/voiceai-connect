@@ -166,7 +166,7 @@ export default function AILabBuilder({ agencyId, api, theme, logoUrl }: { agency
       <div className="min-h-[75vh] flex flex-col items-center justify-center px-6 text-center">
         <Loader2 className="h-8 w-8 animate-spin mb-5" style={{ color: theme.iconColor }} />
         <p className="text-[18px] font-semibold" style={{ color: theme.text }}>Creating Your Receptionist</p>
-        <p className="text-[15px] mt-1.5" style={{ color: theme.cardTextMuted }}>Reading your site and building the AI. No number is being bought yet.</p>
+        <p className="text-[15px] mt-1.5" style={{ color: theme.textMuted }}>Reading your site and building the AI. No number is being bought yet.</p>
       </div>
     );
   }

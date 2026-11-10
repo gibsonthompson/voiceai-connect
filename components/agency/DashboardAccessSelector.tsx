@@ -84,7 +84,7 @@ export default function DashboardAccessSelector({ clientId, theme }: DashboardAc
   if (loading) {
     return (
       <div className="flex items-center justify-center py-4">
-        <Loader2 className="w-4 h-4 animate-spin" style={{ color: theme.cardTextMuted }} />
+        <Loader2 className="w-4 h-4 animate-spin" style={{ color: theme.textMuted }} />
       </div>
     );
   }
@@ -93,7 +93,7 @@ export default function DashboardAccessSelector({ clientId, theme }: DashboardAc
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <Shield className="w-4 h-4" style={{ color: theme.iconColor }} />
-        <span className="text-sm font-semibold uppercase tracking-wider" style={{ color: theme.cardTextMuted }}>Client Dashboard Access</span>
+        <span className="text-sm font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Client Dashboard Access</span>
       </div>
 
       {message && (
@@ -129,7 +129,7 @@ export default function DashboardAccessSelector({ clientId, theme }: DashboardAc
                   <span className="font-semibold text-sm" style={{ color: selected ? theme.primary : theme.text }}>
                     {opt.label}
                   </span>
-                  <p className="text-xs leading-snug mt-0.5" style={{ color: theme.cardTextMuted }}>{opt.desc}</p>
+                  <p className="text-xs leading-snug mt-0.5" style={{ color: theme.textMuted }}>{opt.desc}</p>
                 </div>
               </div>
             </button>
@@ -140,7 +140,7 @@ export default function DashboardAccessSelector({ clientId, theme }: DashboardAc
       {saving && (
         <div className="flex items-center justify-center gap-2 py-1">
           <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: theme.iconColor }} />
-          <span className="text-xs" style={{ color: theme.cardTextMuted }}>Updating...</span>
+          <span className="text-xs" style={{ color: theme.textMuted }}>Updating...</span>
         </div>
       )}
     </div>

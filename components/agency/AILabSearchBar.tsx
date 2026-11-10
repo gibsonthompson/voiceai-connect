@@ -100,7 +100,7 @@ export default function AILabSearchBar({ agencyId, api, theme, logoUrl }: { agen
       <div className="min-h-[75vh] flex flex-col items-center justify-center px-6 text-center">
         <Loader2 className="h-7 w-7 animate-spin mb-4" style={{ color: theme.iconColor }} />
         <p className="text-[15px] font-medium" style={{ color: theme.text }}>Building your receptionist</p>
-        <p className="text-sm mt-1" style={{ color: theme.cardTextMuted }}>Setting up the AI, pulling in your details, and assigning a number.</p>
+        <p className="text-sm mt-1" style={{ color: theme.textMuted }}>Setting up the AI, pulling in your details, and assigning a number.</p>
       </div>
     );
   }

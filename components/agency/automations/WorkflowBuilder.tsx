@@ -202,7 +202,7 @@ function Select({ value, options, onChange, theme }: { value: string; options: {
     <div className="relative">
       <button type="button" onClick={() => setOpen((o) => !o)} className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-sm" style={{ backgroundColor: theme.inputBg || theme.card, border: `1px solid ${theme.inputBorder || theme.border}`, color: theme.text }}>
         <span className="truncate">{cur ? cur.label : 'Select'}</span>
-        <ChevronDown className="h-4 w-4 shrink-0" style={{ color: theme.cardTextMuted }} />
+        <ChevronDown className="h-4 w-4 shrink-0" style={{ color: theme.textMuted }} />
       </button>
       {open && (
         <>

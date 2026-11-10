@@ -144,7 +144,7 @@ export default function AgencyCallDetailPage() {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <Loader2 className="h-8 w-8 animate-spin" style={{ color: primaryColor }} />
-        <span className="ml-2 text-sm" style={{ color: theme.cardTextMuted }}>Loading call details...</span>
+        <span className="ml-2 text-sm" style={{ color: theme.textMuted }}>Loading call details...</span>
       </div>
     );
   }
@@ -158,7 +158,7 @@ export default function AgencyCallDetailPage() {
         >
           <Phone className="h-7 w-7" style={{ color: '#f87171', opacity: 0.5 }} />
         </div>
-        <p className="mt-4 font-medium" style={{ color: theme.cardTextMuted }}>Call not found</p>
+        <p className="mt-4 font-medium" style={{ color: theme.textMuted }}>Call not found</p>
         <Link 
           href={`/agency/clients/${clientId}/calls`}
           className="text-sm mt-2 inline-flex items-center gap-1"
@@ -177,7 +177,7 @@ export default function AgencyCallDetailPage() {
       <Link 
         href={`/agency/clients/${clientId}/calls`}
         className="inline-flex items-center gap-2 text-sm transition-colors mb-4 sm:mb-6 hover:opacity-80"
-        style={{ color: theme.cardTextMuted }}
+        style={{ color: theme.textMuted }}
       >
         <ArrowLeft className="h-4 w-4" />
         Back to {client?.business_name ? `${client.business_name} Calls` : 'Calls'}
@@ -197,7 +197,7 @@ export default function AgencyCallDetailPage() {
                   {client.business_name}
                 </span>
               )}
-              <span className="text-xs sm:text-sm" style={{ color: theme.cardTextMuted }}>
+              <span className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
                 {client ? '•' : ''} {new Date(call.created_at).toLocaleDateString('en-US', {
                   weekday: 'short',
                   month: 'short',

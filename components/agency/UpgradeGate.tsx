@@ -58,10 +58,10 @@ export default function UpgradeGate({
             </div>
             <div className="min-w-0">
               <p className="font-semibold text-sm sm:text-base" style={{ color: theme.text }}>{title}</p>
-              <p className="text-[10px] sm:text-xs" style={{ color: theme.cardTextMuted }}>Available on {tierLabel}{tier === 'pro' ? ' and above' : ''}</p>
+              <p className="text-[10px] sm:text-xs" style={{ color: theme.textMuted }}>Available on {tierLabel}{tier === 'pro' ? ' and above' : ''}</p>
             </div>
           </div>
-          <p className="text-xs sm:text-sm mb-4 leading-relaxed" style={{ color: theme.cardTextMuted }}>{description}</p>
+          <p className="text-xs sm:text-sm mb-4 leading-relaxed" style={{ color: theme.textMuted }}>{description}</p>
           <a
             href="/agency/settings?tab=billing"
             className="inline-flex items-center justify-center gap-2 w-full rounded-xl px-4 py-2.5 text-sm font-medium transition-opacity hover:opacity-90"

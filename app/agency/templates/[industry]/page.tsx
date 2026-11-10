@@ -359,14 +359,14 @@ export default function TemplateEditorPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="mb-6">
-        <Link href="/agency/templates" className="inline-flex items-center gap-2 text-sm mb-4 transition-colors" style={{ color: theme.cardTextMuted }}>
+        <Link href="/agency/templates" className="inline-flex items-center gap-2 text-sm mb-4 transition-colors" style={{ color: theme.textMuted }}>
           <ArrowLeft className="h-4 w-4" /> Back to AI Lab
         </Link>
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>{industryInfo?.label || 'Edit Template'}</h1>
-            <p className="mt-1 text-sm" style={{ color: theme.cardTextMuted }}>{industryInfo?.description}</p>
-            <p className="mt-1 text-xs" style={{ color: theme.cardTextMuted }}>New clients in this industry will inherit this configuration.</p>
+            <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>{industryInfo?.description}</p>
+            <p className="mt-1 text-xs" style={{ color: theme.textMuted }}>New clients in this industry will inherit this configuration.</p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             {template?.isCustom && (
@@ -383,7 +383,7 @@ export default function TemplateEditorPage() {
           <Loader2 className="h-5 w-5 flex-shrink-0 mt-0.5 animate-spin" style={{ color: theme.iconColor }} />
           <div>
             <p className="text-sm font-medium" style={{ color: theme.text }}>Building your {industryInfo.label} receptionist…</p>
-            <p className="text-sm mt-0.5" style={{ color: theme.cardTextMuted }}>The AI is writing an industry-specific knowledge base and system prompt for this vertical. This page updates on its own when it's ready, usually under a minute. Hold off on editing until it finishes so your changes aren't overwritten.</p>
+            <p className="text-sm mt-0.5" style={{ color: theme.textMuted }}>The AI is writing an industry-specific knowledge base and system prompt for this vertical. This page updates on its own when it's ready, usually under a minute. Hold off on editing until it finishes so your changes aren't overwritten.</p>
           </div>
         </div>
       )}
@@ -402,7 +402,7 @@ export default function TemplateEditorPage() {
 
       <div className="mb-6 rounded-xl p-3 flex items-start gap-3" style={{ backgroundColor: hexToRgba(theme.primary, theme.isDark ? 0.06 : 0.04), border: `1px solid ${hexToRgba(theme.primary, 0.15)}` }}>
         <Info className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: theme.iconColor }} />
-        <p className="text-xs" style={{ color: theme.cardTextMuted }}>
+        <p className="text-xs" style={{ color: theme.textMuted }}>
           Use <code className="px-1.5 py-0.5 rounded text-xs" style={{ backgroundColor: theme.hover }}>{'{businessName}'}</code> in prompts - it&apos;s replaced with the client&apos;s actual business name at signup.
         </p>
       </div>

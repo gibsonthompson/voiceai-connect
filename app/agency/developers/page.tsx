@@ -68,7 +68,7 @@ function CodeBlock({ code, label, theme }: { code: string; label?: string; theme
   return (
     <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${theme.inputBorder}` }}>
       <div className="flex items-center justify-between px-3 py-2" style={{ backgroundColor: theme.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', borderBottom: `1px solid ${theme.inputBorder}` }}>
-        <span className="text-[11px] font-medium uppercase tracking-wide" style={{ color: theme.cardTextMuted }}>{label || 'Example'}</span>
+        <span className="text-[11px] font-medium uppercase tracking-wide" style={{ color: theme.textMuted }}>{label || 'Example'}</span>
         <CopyButton text={code} theme={theme} />
       </div>
       <pre className="overflow-x-auto px-3 py-3 text-[12px] leading-relaxed" style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.3)' : '#fff' }}>
@@ -114,7 +114,7 @@ function FieldsTable({ title, rows, theme }: { title: string; rows: Field[]; the
   if (!rows || rows.length === 0) return null;
   return (
     <div className="mt-3">
-      <p className="text-[11px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: theme.cardTextMuted }}>{title}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-wide mb-1.5" style={{ color: theme.textMuted }}>{title}</p>
       <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${theme.inputBorder}` }}>
         {rows.map((f, i) => (
           <div
@@ -127,7 +127,7 @@ function FieldsTable({ title, rows, theme }: { title: string; rows: Field[]; the
             </div>
             <div className="min-w-0">
               <span className="text-[11px] font-mono" style={{ color: theme.primary }}>{f.type}</span>
-              <p className="text-[12px] mt-0.5 leading-relaxed" style={{ color: theme.cardTextMuted }}>{f.note}</p>
+              <p className="text-[12px] mt-0.5 leading-relaxed" style={{ color: theme.textMuted }}>{f.note}</p>
             </div>
           </div>
         ))}
@@ -157,7 +157,7 @@ function Endpoint({ ep, theme }: { ep: EndpointDef; theme: any }) {
         <code className="text-[13px] font-mono font-medium break-all" style={{ color: theme.text }}>{ep.path}</code>
         <ScopePill scope={ep.scope} theme={theme} />
       </div>
-      <p className="text-[13px] mt-2.5 leading-relaxed" style={{ color: theme.cardTextMuted }}>{ep.summary}</p>
+      <p className="text-[13px] mt-2.5 leading-relaxed" style={{ color: theme.textMuted }}>{ep.summary}</p>
 
       {ep.query && <FieldsTable title="Query parameters" rows={ep.query} theme={theme} />}
       {ep.body && <FieldsTable title="Body fields" rows={ep.body} theme={theme} />}
@@ -165,7 +165,7 @@ function Endpoint({ ep, theme }: { ep: EndpointDef; theme: any }) {
       {ep.notes && ep.notes.length > 0 && (
         <ul className="mt-3 space-y-1.5">
           {ep.notes.map((n, i) => (
-            <li key={i} className="flex items-start gap-2 text-[12px] leading-relaxed" style={{ color: theme.cardTextMuted }}>
+            <li key={i} className="flex items-start gap-2 text-[12px] leading-relaxed" style={{ color: theme.textMuted }}>
               <ChevronRight className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" style={{ color: theme.primary }} />
               <span>{n}</span>
             </li>
@@ -190,7 +190,7 @@ function SectionHeading({ id, icon: Icon, title, theme, sub }: { id: string; ico
         </div>
         <h2 className="text-lg sm:text-xl font-semibold" style={{ color: theme.text }}>{title}</h2>
       </div>
-      {sub && <p className="text-[13px] mt-2 leading-relaxed" style={{ color: theme.cardTextMuted }}>{sub}</p>}
+      {sub && <p className="text-[13px] mt-2 leading-relaxed" style={{ color: theme.textMuted }}>{sub}</p>}
     </div>
   );
 }
@@ -207,7 +207,7 @@ function EventCard({ ev, theme }: { ev: EventDef; theme: any }) {
         <Radio className="h-4 w-4 flex-shrink-0" style={{ color: theme.primary }} />
         <code className="text-[13px] font-mono font-semibold" style={{ color: theme.text }}>{ev.type}</code>
       </div>
-      <p className="text-[13px] mt-2 leading-relaxed" style={{ color: theme.cardTextMuted }}>{ev.when}</p>
+      <p className="text-[13px] mt-2 leading-relaxed" style={{ color: theme.textMuted }}>{ev.when}</p>
       <div className="mt-3">
         <CodeBlock code={ev.payload} label="Payload" theme={theme} />
       </div>
@@ -261,7 +261,7 @@ export default function DeveloperReferencePage() {
           <Link
             href="/agency/settings?tab=developer"
             className="inline-flex items-center gap-1.5 text-[12px] font-medium mb-4"
-            style={{ color: theme.cardTextMuted }}
+            style={{ color: theme.textMuted }}
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Back to Settings
           </Link>
@@ -271,7 +271,7 @@ export default function DeveloperReferencePage() {
             </div>
             <div>
               <h1 className="text-xl sm:text-2xl font-bold" style={{ color: theme.text }}>Developer Reference</h1>
-              <p className="text-[13px] mt-0.5" style={{ color: theme.cardTextMuted }}>The complete API and webhooks reference for VoiceAI Connect.</p>
+              <p className="text-[13px] mt-0.5" style={{ color: theme.textMuted }}>The complete API and webhooks reference for VoiceAI Connect.</p>
             </div>
           </div>
         </div>
@@ -292,7 +292,7 @@ export default function DeveloperReferencePage() {
                     key={n.id}
                     href={`#${n.id}`}
                     className="flex items-center gap-2 rounded-lg px-3 py-2 text-[12px] sm:text-[13px] font-medium whitespace-nowrap transition-colors"
-                    style={{ color: theme.cardTextMuted }}
+                    style={{ color: theme.textMuted }}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = theme.isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
                   >
@@ -319,7 +319,7 @@ export default function DeveloperReferencePage() {
                     { k: 'Format', v: 'JSON over HTTPS' },
                   ].map((c) => (
                     <div key={c.k} className="rounded-xl p-3" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                      <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: theme.cardTextMuted }}>{c.k}</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: theme.textMuted }}>{c.k}</p>
                       <p className="text-[12px] font-mono mt-1 break-all" style={{ color: theme.text }}>{c.v}</p>
                     </div>
                   ))}
@@ -337,7 +337,7 @@ export default function DeveloperReferencePage() {
                 <SectionHeading id="base-url" icon={Code} title="Base URL and Versioning" theme={theme}
                   sub="All endpoints are relative to the versioned base. The current version is v1. When a breaking change ships it lands under a new version prefix, so v1 stays stable." />
                 <CodeBlock theme={theme} label="Base URL" code={BASE} />
-                <p className="text-[13px] leading-relaxed" style={{ color: theme.cardTextMuted }}>
+                <p className="text-[13px] leading-relaxed" style={{ color: theme.textMuted }}>
                   A path like <Code2 theme={theme}>/clients</Code2> in this reference means <Code2 theme={theme}>{`${BASE}/clients`}</Code2>.
                 </p>
               </section>
@@ -352,8 +352,8 @@ export default function DeveloperReferencePage() {
                 <CodeBlock theme={theme} label="x-api-key header (alternative)" code={`curl ${BASE}/account \\
   -H "x-api-key: YOUR_API_KEY"`} />
                 <div className="rounded-xl p-3.5 flex items-start gap-2.5" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                  <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.cardTextMuted }} />
-                  <p className="text-[12.5px] leading-relaxed" style={{ color: theme.cardTextMuted }}>
+                  <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.textMuted }} />
+                  <p className="text-[12.5px] leading-relaxed" style={{ color: theme.textMuted }}>
                     A missing or invalid key returns <Code2 theme={theme}>401 authentication_error</Code2>. A key on a suspended account returns <Code2 theme={theme}>403 account_suspended</Code2>. A key on a plan without API access returns <Code2 theme={theme}>403 upgrade_required</Code2>.
                   </p>
                 </div>
@@ -366,14 +366,14 @@ export default function DeveloperReferencePage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="rounded-xl p-4" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                     <div className="flex items-center gap-2 mb-1.5"><ScopePill scope="read" theme={theme} /><span className="text-[13px] font-semibold" style={{ color: theme.text }}>Read only</span></div>
-                    <p className="text-[12.5px] leading-relaxed" style={{ color: theme.cardTextMuted }}>Can call every GET endpoint: list and fetch clients, calls, appointments, usage, numbers, and webhook config. Cannot create or change anything.</p>
+                    <p className="text-[12.5px] leading-relaxed" style={{ color: theme.textMuted }}>Can call every GET endpoint: list and fetch clients, calls, appointments, usage, numbers, and webhook config. Cannot create or change anything.</p>
                   </div>
                   <div className="rounded-xl p-4" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                     <div className="flex items-center gap-2 mb-1.5"><ScopePill scope="read_write" theme={theme} /><span className="text-[13px] font-semibold" style={{ color: theme.text }}>Read & write</span></div>
-                    <p className="text-[12.5px] leading-relaxed" style={{ color: theme.cardTextMuted }}>Everything a read key can do, plus create clients, update receptionist settings, book, reschedule and cancel appointments, and manage webhook endpoints.</p>
+                    <p className="text-[12.5px] leading-relaxed" style={{ color: theme.textMuted }}>Everything a read key can do, plus create clients, update receptionist settings, book, reschedule and cancel appointments, and manage webhook endpoints.</p>
                   </div>
                 </div>
-                <p className="text-[12.5px] leading-relaxed" style={{ color: theme.cardTextMuted }}>
+                <p className="text-[12.5px] leading-relaxed" style={{ color: theme.textMuted }}>
                   Endpoints that change data are marked <ScopePill scope="read_write" theme={theme} /> in this reference. Calling one with a read-only key returns <Code2 theme={theme}>403 insufficient_scope</Code2>.
                 </p>
               </section>
@@ -488,7 +488,7 @@ curl "${BASE}/calls?limit=50&cursor=2026-11-01T18:22:03.511Z" \\
                   sub="Instead of polling, register an endpoint and we POST a signed JSON event to it the moment something happens: a call finishes, an appointment is booked, a client is provisioned, billing changes." />
 
                 <p className="text-[13px] font-semibold" style={{ color: theme.text }}>The event envelope</p>
-                <p className="text-[13px] leading-relaxed" style={{ color: theme.cardTextMuted }}>Every event, for every type, arrives in the same shape. The per-event detail lives in <Code2 theme={theme}>data</Code2>.</p>
+                <p className="text-[13px] leading-relaxed" style={{ color: theme.textMuted }}>Every event, for every type, arrives in the same shape. The per-event detail lives in <Code2 theme={theme}>data</Code2>.</p>
                 <CodeBlock theme={theme} label="Envelope" code={`{
   "id": "0e8c...uuid",          // unique event id
   "type": "call.completed",     // one of the event types below
@@ -505,7 +505,7 @@ curl "${BASE}/calls?limit=50&cursor=2026-11-01T18:22:03.511Z" \\
                 ]} />
 
                 <p className="text-[13px] font-semibold pt-1" style={{ color: theme.text }}>Verify the signature</p>
-                <p className="text-[13px] leading-relaxed" style={{ color: theme.cardTextMuted }}>
+                <p className="text-[13px] leading-relaxed" style={{ color: theme.textMuted }}>
                   The header is <Code2 theme={theme}>t=&lt;unix&gt;,v1=&lt;hmac&gt;</Code2>. Recompute the HMAC with your endpoint secret (shown once when you add the endpoint) over the exact string <Code2 theme={theme}>{`\${t}.\${rawBody}`}</Code2> using SHA-256, then compare. Use the raw request body, not a re-serialized object, or the signature will not match.
                 </p>
                 <CodeBlock theme={theme} label="Node.js (Express)" code={`const crypto = require('crypto');
@@ -550,7 +550,7 @@ def verify(request, secret):
                     'Your endpoint must be a public http(s) URL. Localhost and private or internal addresses are rejected.',
                     'Inspect recent attempts with GET /webhooks/:id/deliveries, or send a test with POST /webhooks/:id/ping.',
                   ].map((t, i) => (
-                    <li key={i} className="flex items-start gap-2 text-[12.5px] leading-relaxed" style={{ color: theme.cardTextMuted }}>
+                    <li key={i} className="flex items-start gap-2 text-[12.5px] leading-relaxed" style={{ color: theme.textMuted }}>
                       <ChevronRight className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" style={{ color: theme.primary }} />
                       <span>{t}</span>
                     </li>
@@ -558,7 +558,7 @@ def verify(request, secret):
                 </ul>
 
                 <p className="text-[13px] font-semibold pt-1" style={{ color: theme.text }}>The ping event</p>
-                <p className="text-[13px] leading-relaxed" style={{ color: theme.cardTextMuted }}>Sending a test delivers a <Code2 theme={theme}>ping</Code2> event. It uses the same envelope and signature so you can validate your handler end to end before real traffic.</p>
+                <p className="text-[13px] leading-relaxed" style={{ color: theme.textMuted }}>Sending a test delivers a <Code2 theme={theme}>ping</Code2> event. It uses the same envelope and signature so you can validate your handler end to end before real traffic.</p>
                 <CodeBlock theme={theme} label="ping payload" code={`{
   "id": "e2b1...uuid",
   "type": "ping",
@@ -577,7 +577,7 @@ def verify(request, secret):
               </section>
 
               <div className="pt-4 text-center">
-                <p className="text-[12px]" style={{ color: theme.cardTextMuted }}>
+                <p className="text-[12px]" style={{ color: theme.textMuted }}>
                   Questions, or a field you need that is not exposed yet? Reach out and we will add it.
                 </p>
               </div>

@@ -30,7 +30,7 @@ export default function AgencyAgentsPage() {
         </div>
         <div className="min-w-0">
           <h1 className="text-lg sm:text-xl lg:text-2xl font-semibold tracking-tight truncate" style={{ color: theme.text }}>Agents</h1>
-          <p className="text-xs sm:text-[13px]" style={{ color: theme.cardTextMuted }}>Add agents and assign each one the businesses they monitor and handle calls for.</p>
+          <p className="text-xs sm:text-[13px]" style={{ color: theme.textMuted }}>Add agents and assign each one the businesses they monitor and handle calls for.</p>
         </div>
       </div>
 

@@ -104,10 +104,10 @@ export default function BroadcastBanner() {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             {bc.title && <p className="text-sm sm:text-[15px] font-semibold leading-snug" style={{ color: theme.text }}>{bc.title}</p>}
-            {bc.body && <p className="text-[13px] mt-0.5 leading-relaxed" style={{ color: theme.cardTextMuted }}>{bc.body}</p>}
+            {bc.body && <p className="text-[13px] mt-0.5 leading-relaxed" style={{ color: theme.textMuted }}>{bc.body}</p>}
           </div>
           <button onClick={dismiss} aria-label="Dismiss" title="Dismiss"
-            className="flex-shrink-0 -mt-0.5 -mr-0.5 p-1 rounded-lg transition hover:opacity-70" style={{ color: theme.cardTextMuted }}>
+            className="flex-shrink-0 -mt-0.5 -mr-0.5 p-1 rounded-lg transition hover:opacity-70" style={{ color: theme.textMuted }}>
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -122,7 +122,7 @@ export default function BroadcastBanner() {
               </a>
             )}
             {countdown && (
-              <span className="inline-flex items-center gap-1 text-[11px] font-medium" style={{ color: theme.cardTextMuted }}>
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium" style={{ color: theme.textMuted }}>
                 <Clock className="h-3 w-3" /> Available for {countdown}
               </span>
             )}

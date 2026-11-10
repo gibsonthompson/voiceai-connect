@@ -42,7 +42,7 @@ export default function VoicePicker({ theme, voices, value, onChange, filter, on
     <div>
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <label className="text-sm font-medium" style={{ color: theme.cardTextMuted }}>Voice</label>
+          <label className="text-sm font-medium" style={{ color: theme.textMuted }}>Voice</label>
           {notInList && <span className="text-sm" style={{ color: '#f59e0b' }}>Live voice not in list — pick one to set it</span>}
         </div>
         <div className="flex gap-1">

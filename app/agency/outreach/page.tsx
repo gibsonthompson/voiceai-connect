@@ -178,7 +178,7 @@ export default function OutreachPage() {
             <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Mail className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
             <div>
               <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Outreach</h1>
-              <p className="mt-0.5 text-sm" style={{ color: theme.cardTextMuted }}>13 conversion-tested templates</p>
+              <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>13 conversion-tested templates</p>
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -187,7 +187,7 @@ export default function OutreachPage() {
               <div className="flex items-center gap-2 mb-3">
                 <Mail className="h-4 w-4 text-purple-400" />
                 <h3 className="text-sm font-medium" style={{ color: theme.text }}>Email Templates</h3>
-                <span className="text-xs" style={{ color: theme.cardTextMuted }}>({previewEmails.length})</span>
+                <span className="text-xs" style={{ color: theme.textMuted }}>({previewEmails.length})</span>
               </div>
               <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
                 {previewEmails.map((t, i) => (

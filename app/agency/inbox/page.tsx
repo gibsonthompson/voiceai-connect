@@ -295,7 +295,7 @@ export default function AgencyInboxPage() {
     <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
       style={type === 'platform'
         ? { background: theme.primary15, color: theme.primary }
-        : { background: theme.isDark ? 'rgba(255,255,255,0.06)' : '#f1f5f9', color: theme.cardTextMuted }}>
+        : { background: theme.isDark ? 'rgba(255,255,255,0.06)' : '#f1f5f9', color: theme.textMuted }}>
       {TYPE_META[type].short}
     </span>
   );

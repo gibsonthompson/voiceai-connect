@@ -204,36 +204,36 @@ export default function ClientServicesSection({ clientId, theme, compact, indust
   const renderFormFields = (includeAction = true) => (
     <div className="space-y-4">
       <div>
-        <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.cardTextMuted }}>Service Name *</label>
+        <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>Service Name *</label>
         <input type="text" placeholder={servicePlaceholder} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none" style={inputStyle} />
       </div>
       <div>
-        <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.cardTextMuted }}>Price</label>
+        <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>Price</label>
         <input type="text" placeholder="$45, $50-100, or Varies" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none" style={inputStyle} />
-        <p className="text-[10px] mt-1" style={{ color: theme.cardTextMuted }}>What the AI quotes callers. Free text, so ranges or &quot;Varies&quot; are fine. Leave blank to not quote a price.</p>
+        <p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>What the AI quotes callers. Free text, so ranges or &quot;Varies&quot; are fine. Leave blank to not quote a price.</p>
       </div>
       <div>
-        <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.cardTextMuted }}>Description</label>
+        <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>Description</label>
         <textarea placeholder="A short blurb the AI can share about this service" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none resize-none" style={inputStyle} />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.cardTextMuted }}>Duration</label>
+          <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>Duration</label>
           <CustomSelect ui={ddUI} value={customDur ? 'custom' : String(form.duration_minutes)} options={durationOptions} onChange={(v) => { if (v === 'custom') { setCustomDur(true); } else { setCustomDur(false); setForm({ ...form, duration_minutes: parseInt(v) }); } }} />
           {customDur && (
             <div className="mt-2 flex items-center gap-2">
               <input type="number" min={1} max={480} step={5} value={form.duration_minutes || ''} onChange={(e) => setForm({ ...form, duration_minutes: Math.max(1, Math.min(480, parseInt(e.target.value) || 0)) })} placeholder="e.g. 75" className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none" style={inputStyle} />
-              <span className="text-xs flex-shrink-0" style={{ color: theme.cardTextMuted }}>min</span>
+              <span className="text-xs flex-shrink-0" style={{ color: theme.textMuted }}>min</span>
             </div>
           )}
         </div>
         <div>
-          <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.cardTextMuted }}>Buffer After</label>
+          <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>Buffer After</label>
           <CustomSelect ui={ddUI} value={String(form.buffer_minutes)} options={bufferOptions} onChange={(v) => setForm({ ...form, buffer_minutes: parseInt(v) })} />
         </div>
       </div>
       <div>
-        <label className="block text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: theme.cardTextMuted }}>Booking Mode</label>
+        <label className="block text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: theme.textMuted }}>Booking Mode</label>
         <div className="space-y-2">
           {BOOKING_MODES.map(mode => (
             <button key={mode.value} onClick={() => setForm({ ...form, booking_mode: mode.value })} className="w-full text-left p-3 rounded-xl border-2 transition" style={{ borderColor: form.booking_mode === mode.value ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'), backgroundColor: form.booking_mode === mode.value ? hexToRgba(theme.primary, theme.isDark ? 0.08 : 0.03) : 'transparent' }}>
@@ -241,20 +241,20 @@ export default function ClientServicesSection({ clientId, theme, compact, indust
                 <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0" style={{ borderColor: form.booking_mode === mode.value ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)') }}>{form.booking_mode === mode.value && <div className="w-2 h-2 rounded-full" style={{ backgroundColor: theme.primary }} />}</div>
                 <span className="text-xs font-medium" style={{ color: form.booking_mode === mode.value ? theme.primary : theme.text }}>{mode.label}</span>
               </div>
-              <p className="text-[10px] mt-0.5 ml-6" style={{ color: theme.cardTextMuted }}>{mode.desc}</p>
+              <p className="text-[10px] mt-0.5 ml-6" style={{ color: theme.textMuted }}>{mode.desc}</p>
             </button>
           ))}
         </div>
       </div>
       {allStaff.length > 0 && (
         <div>
-          <label className="block text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: theme.cardTextMuted }}>Assigned Staff <span className="normal-case font-normal">(who performs this service)</span></label>
+          <label className="block text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: theme.textMuted }}>Assigned Staff <span className="normal-case font-normal">(who performs this service)</span></label>
           <div className="flex flex-wrap gap-2">
             {allStaff.map(s => { const isAssigned = form.assigned_staff.includes(s.id); return (
               <button key={s.id} onClick={() => toggleStaffAssignment(s.id)} className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all" style={{ backgroundColor: isAssigned ? hexToRgba(theme.primary, theme.isDark ? 0.15 : 0.08) : (theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6'), color: isAssigned ? theme.primary : theme.textMuted, border: `1px solid ${isAssigned ? hexToRgba(theme.primary, 0.3) : 'transparent'}` }}>{isAssigned ? <Check className="h-3 w-3" /> : <Plus className="h-3 w-3" />}{s.name}</button>
             ); })}
           </div>
-          {form.assigned_staff.length === 0 && <p className="text-[10px] mt-1" style={{ color: theme.cardTextMuted }}>No staff assigned, any available provider can handle this service</p>}
+          {form.assigned_staff.length === 0 && <p className="text-[10px] mt-1" style={{ color: theme.textMuted }}>No staff assigned, any available provider can handle this service</p>}
         </div>
       )}
       {includeAction && (
@@ -276,7 +276,7 @@ export default function ClientServicesSection({ clientId, theme, compact, indust
       {compact && !hideHeader && (
         <div className="flex items-center gap-2 mb-3">
           <Briefcase className="w-4 h-4" style={{ color: theme.iconColor }} />
-          <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.cardTextMuted }}>Services</span>
+          <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Services</span>
         </div>
       )}
 

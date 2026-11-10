@@ -119,7 +119,7 @@ export default function WebhooksTab({ agency, theme }: { agency: any; theme: any
     <UpgradeGate locked={!isScale} tier="scale" title="Unlock webhooks with Scale" description="Get a signed POST to your server the moment a call finishes, an appointment is booked, or a client is provisioned, so VoiceAI Connect can drive your CRM, notifications, and automations in real time instead of you polling for changes. Scale unlocks webhook endpoints." theme={theme}>
     <div className="space-y-4 sm:space-y-6">
       <div className="flex items-start justify-between gap-3">
-        <div><h3 className="text-base sm:text-lg font-medium mb-1">Webhooks</h3><p className="text-xs sm:text-sm" style={{ color: theme.cardTextMuted }}>We POST a signed JSON event to your URL the moment something happens: a call finishes, an appointment is booked, a client is provisioned, billing changes. Verify each delivery with your endpoint secret.</p></div>
+        <div><h3 className="text-base sm:text-lg font-medium mb-1">Webhooks</h3><p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>We POST a signed JSON event to your URL the moment something happens: a call finishes, an appointment is booked, a client is provisioned, billing changes. Verify each delivery with your endpoint secret.</p></div>
         {!showCreate && (<button onClick={() => setShowCreate(true)} className="inline-flex items-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium flex-shrink-0" style={{ backgroundColor: theme.primary, color: theme.primaryText }}><Plus className="h-4 w-4" />Add endpoint</button>)}
       </div>
 
@@ -128,7 +128,7 @@ export default function WebhooksTab({ agency, theme }: { agency: any; theme: any
           <div className="flex items-center justify-center h-9 w-9 rounded-lg flex-shrink-0" style={{ backgroundColor: theme.isDark ? 'rgba(0,0,0,0.25)' : '#fff' }}><BookOpen className="h-5 w-5" style={{ color: theme.primary }} /></div>
           <div className="min-w-0">
             <p className="text-sm font-medium" style={{ color: theme.primary }}>Webhooks Reference</p>
-            <p className="text-[11px] sm:text-xs mt-0.5" style={{ color: theme.cardTextMuted }}>The event envelope, all 14 event types with payloads, signature verification, and retries.</p>
+            <p className="text-[11px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>The event envelope, all 14 event types with payloads, signature verification, and retries.</p>
           </div>
         </div>
         <ArrowRight className="h-4 w-4 flex-shrink-0 transition-transform group-hover:translate-x-0.5" style={{ color: theme.primary }} />
@@ -143,7 +143,7 @@ export default function WebhooksTab({ agency, theme }: { agency: any; theme: any
             <code className="flex-1 min-w-0 rounded-lg px-3 py-2 text-xs font-mono break-all" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>{freshSecret}</code>
             <button onClick={copySecret} className="inline-flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium flex-shrink-0" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}{copied ? 'Copied' : 'Copy'}</button>
           </div>
-          <button onClick={() => setFreshSecret(null)} className="mt-3 text-xs underline" style={{ color: theme.cardTextMuted }}>Done</button>
+          <button onClick={() => setFreshSecret(null)} className="mt-3 text-xs underline" style={{ color: theme.textMuted }}>Done</button>
         </div>
       )}
 
@@ -176,7 +176,7 @@ export default function WebhooksTab({ agency, theme }: { agency: any; theme: any
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center py-8"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.cardTextMuted }} /></div>
+        <div className="flex items-center justify-center py-8"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.textMuted }} /></div>
       ) : hooks.length === 0 ? (
         <div className="rounded-xl p-6 text-center" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}><Webhook className="h-6 w-6 mx-auto mb-2" style={{ color: theme.textMuted }} /><p className="text-sm" style={{ color: theme.textMuted }}>No endpoints yet. Add one to receive events.</p></div>
       ) : (
@@ -189,9 +189,9 @@ export default function WebhooksTab({ agency, theme }: { agency: any; theme: any
                     <p className="text-sm font-medium font-mono truncate">{h.url}</p>
                     <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: h.status === 'active' ? theme.primary15 : theme.errorBg, color: h.status === 'active' ? theme.primary : theme.errorText }}>{h.status}</span>
                   </div>
-                  <p className="text-[11px] mt-1" style={{ color: theme.cardTextMuted }}>{(h.events || []).includes('*') ? 'All events' : (h.events || []).join(', ')}</p>
-                  {h.description && <p className="text-[11px] mt-0.5" style={{ color: theme.cardTextMuted }}>{h.description}</p>}
-                  <p className="text-[10px] mt-0.5" style={{ color: theme.cardTextMuted }}>{h.last_delivery_at ? `Last delivery ${new Date(h.last_delivery_at).toLocaleString()}` : 'No deliveries yet'}{h.last_error ? ` , last error: ${h.last_error}` : ''}</p>
+                  <p className="text-[11px] mt-1" style={{ color: theme.textMuted }}>{(h.events || []).includes('*') ? 'All events' : (h.events || []).join(', ')}</p>
+                  {h.description && <p className="text-[11px] mt-0.5" style={{ color: theme.textMuted }}>{h.description}</p>}
+                  <p className="text-[10px] mt-0.5" style={{ color: theme.textMuted }}>{h.last_delivery_at ? `Last delivery ${new Date(h.last_delivery_at).toLocaleString()}` : 'No deliveries yet'}{h.last_error ? ` , last error: ${h.last_error}` : ''}</p>
                   {pingMsg && pingMsg.id === h.id && (<p className="text-[11px] mt-1 font-medium" style={{ color: pingMsg.ok ? theme.primary : theme.errorText }}>{pingMsg.ok ? 'Test event delivered.' : 'Test event failed to deliver.'}</p>)}
                 </div>
                 <div className="flex items-center gap-1.5 flex-shrink-0">

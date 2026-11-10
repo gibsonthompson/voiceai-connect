@@ -102,7 +102,7 @@ function ProgressBar({ progress, theme }: { progress: any; theme: any }) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-sm font-semibold truncate" style={{ color: theme.primary }}>{progress.message || "Working..."}</div>
-          <div className="text-xs mt-0.5" style={{ color: theme.cardTextMuted }}>{sub}</div>
+          <div className="text-xs mt-0.5" style={{ color: theme.textMuted }}>{sub}</div>
         </div>
         <div className="text-lg font-bold tabular-nums shrink-0" style={{ color: theme.primary }}>{pct}%</div>
       </div>

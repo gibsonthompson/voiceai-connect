@@ -242,7 +242,7 @@ export default function AgencyPaymentsPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><Wallet className="h-5 w-5" style={{ color: theme.iconColor }} /></div>
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Payments</h1>
-            <p className="mt-0.5 text-sm" style={{ color: theme.cardTextMuted }}>Your balance, payouts, and client payments.</p>
+            <p className="mt-0.5 text-sm" style={{ color: theme.textMuted }}>Your balance, payouts, and client payments.</p>
           </div>
         </div>
 

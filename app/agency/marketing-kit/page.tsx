@@ -117,7 +117,7 @@ function ColorRow({
   const customActive = !isAuto && !uniq.some((c) => c.toLowerCase() === value.toLowerCase());
   return (
     <div>
-      <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: theme.cardTextMuted }}>{label}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: theme.textMuted }}>{label}</p>
       {/* One scrollable row so swatches never wrap onto a second line in the narrow rail. */}
       <div className="mk-swatches flex items-center gap-1.5 flex-nowrap overflow-x-auto pb-0.5">
         {autoLabel && (
@@ -137,7 +137,7 @@ function ColorRow({
         })}
         <label title="Custom color" className="flex-shrink-0 inline-flex items-center justify-center h-7 w-7 rounded-full cursor-pointer relative"
           style={{ background: customActive ? value : theme.hover, border: `2px solid ${customActive ? theme.text : theme.border}`, boxShadow: customActive ? `0 0 0 2px ${theme.card}` : 'none' }}>
-          {!customActive && <Plus className="h-3.5 w-3.5" style={{ color: theme.cardTextMuted }} />}
+          {!customActive && <Plus className="h-3.5 w-3.5" style={{ color: theme.textMuted }} />}
           <input type="color" value={isValidHex(value) ? value : '#ffffff'} onChange={(e) => onPick(e.target.value)} style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }} />
         </label>
       </div>

@@ -204,20 +204,20 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
   const renderFormFields = (includeAction = true) => (
     <div className="space-y-3">
       <div>
-        <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.cardTextMuted }}>Name *</label>
+        <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>Name *</label>
         <input type="text" placeholder={ph.name} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none" style={inputStyle} />
       </div>
       <div>
-        <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.cardTextMuted }}>Role</label>
+        <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>Role</label>
         <input type="text" placeholder={ph.role} value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none" style={inputStyle} />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.cardTextMuted }}>Phone</label>
+          <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>Phone</label>
           <input type="tel" placeholder="(555) 123-4567" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none" style={inputStyle} />
         </div>
         <div>
-          <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.cardTextMuted }}>Email</label>
+          <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>Email</label>
           <input type="email" placeholder="name@business.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none" style={inputStyle} />
         </div>
       </div>
@@ -237,9 +237,9 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
       {/* When to route a caller here. Fed into the live prompt's transfer routing so the AI connects the right caller to the right person. Only relevant when transferable. */}
       {form.transferable && (
         <div>
-          <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.cardTextMuted }}>When should callers go to this person?</label>
+          <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>When should callers go to this person?</label>
           <textarea rows={2} placeholder="e.g. Billing and payment questions, or anyone asking about an existing invoice" value={form.transferCriteria} onChange={(e) => setForm({ ...form, transferCriteria: e.target.value })} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none resize-none" style={inputStyle} />
-          <p className="text-[11px] mt-0.5 leading-snug" style={{ color: theme.cardTextMuted }}>The AI reads this on live calls to decide which callers to connect to this person. Leave blank to let it route by name and role.</p>
+          <p className="text-[11px] mt-0.5 leading-snug" style={{ color: theme.textMuted }}>The AI reads this on live calls to decide which callers to connect to this person. Leave blank to let it route by name and role.</p>
         </div>
       )}
       {/* Working hours (optional): powers "is X in?" answers and gates transfers */}
@@ -247,7 +247,7 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-sm font-medium" style={{ color: theme.text }}>Set working hours</p>
-            <p className="text-[11px] mt-0.5 leading-snug" style={{ color: theme.cardTextMuted }}>Lets the AI say when this person is in, and only offer to transfer callers while they are on shift. Leave off to keep them always available.</p>
+            <p className="text-[11px] mt-0.5 leading-snug" style={{ color: theme.textMuted }}>Lets the AI say when this person is in, and only offer to transfer callers while they are on shift. Leave off to keep them always available.</p>
           </div>
           <button type="button" role="switch" aria-checked={form.hoursEnabled} onClick={() => setForm({ ...form, hoursEnabled: !form.hoursEnabled })} className="relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors focus:outline-none" style={{ backgroundColor: form.hoursEnabled ? theme.primary : (theme.isDark ? 'rgba(255,255,255,0.1)' : '#d1d5db') }}>
             <span className="pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transition" style={{ transform: form.hoursEnabled ? 'translate(22px, 4px)' : 'translate(4px, 4px)' }} />
@@ -265,7 +265,7 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
                   {!day.closed && (
                     <div className="flex items-center gap-1 flex-1 min-w-0">
                       <div className="flex-1 min-w-0"><CustomSelect ui={ddUI} size="sm" value={day.open} options={timeOptions} onChange={(v) => setDay({ open: v })} /></div>
-                      <span className="text-[10px] flex-shrink-0" style={{ color: theme.cardTextMuted }}>to</span>
+                      <span className="text-[10px] flex-shrink-0" style={{ color: theme.textMuted }}>to</span>
                       <div className="flex-1 min-w-0"><CustomSelect ui={ddUI} size="sm" value={day.close} options={timeOptions} onChange={(v) => setDay({ close: v })} /></div>
                     </div>
                   )}
@@ -276,7 +276,7 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
         )}
       </div>
       <div>
-        <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.cardTextMuted }}>Notes</label>
+        <label className="block text-[11px] font-semibold uppercase tracking-wider mb-1" style={{ color: theme.textMuted }}>Notes</label>
         <textarea placeholder={ph.notes} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none resize-none" style={inputStyle} />
       </div>
       {includeAction && (
@@ -296,14 +296,14 @@ export default function StaffMembersSection({ clientId, theme, compact, industry
         </h2>
       )}
       {!compact && (
-        <p className="text-[10px] sm:text-xs mb-2 sm:mb-3" style={{ color: theme.cardTextMuted }}>
+        <p className="text-[10px] sm:text-xs mb-2 sm:mb-3" style={{ color: theme.textMuted }}>
           People your AI knows about, for call routing, scheduling, and referrals
         </p>
       )}
       {compact && !hideHeader && (
         <div className="flex items-center gap-2 mb-3">
           <Users className="w-4 h-4" style={{ color: theme.iconColor }} />
-          <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.cardTextMuted }}>Staff Directory</span>
+          <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: theme.textMuted }}>Staff Directory</span>
         </div>
       )}
 

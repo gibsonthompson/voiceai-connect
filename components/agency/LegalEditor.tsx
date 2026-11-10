@@ -205,7 +205,7 @@ export default function LegalEditor({ agencyId, backendUrl, theme, agency }: Leg
     <div className="space-y-4 sm:space-y-6">
       <div>
         <h3 className="text-base sm:text-lg font-medium mb-1">Legal Pages</h3>
-        <p className="text-xs sm:text-sm" style={{ color: theme.cardTextMuted }}>
+        <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
           Customize the parts of your Terms, Privacy, and Billing pages that are yours to set. Everything else is standard protective language that is always published. Changes go live when you save.
         </p>
       </div>
@@ -248,10 +248,10 @@ export default function LegalEditor({ agencyId, backendUrl, theme, agency }: Leg
                 <div className="flex items-center justify-between gap-2 mb-1.5">
                   <label className="text-sm font-medium" style={{ color: theme.text }}>{field.label}</label>
                   {!isDefault && (field.kind === 'longtext' || field.kind === 'refund' || field.kind === 'text') && (
-                    <button onClick={() => resetField(field.key)} className="inline-flex items-center gap-1 text-[11px] font-medium" style={{ color: theme.cardTextMuted }}><RotateCcw className="h-3 w-3" /> Reset to default</button>
+                    <button onClick={() => resetField(field.key)} className="inline-flex items-center gap-1 text-[11px] font-medium" style={{ color: theme.textMuted }}><RotateCcw className="h-3 w-3" /> Reset to default</button>
                   )}
                 </div>
-                <p className="text-[11px] sm:text-xs mb-2" style={{ color: theme.cardTextMuted }}>{field.help}</p>
+                <p className="text-[11px] sm:text-xs mb-2" style={{ color: theme.textMuted }}>{field.help}</p>
 
                 {(SYNCABLE as string[]).includes(field.key as string) && (
                   <button type="button" onClick={() => toggleSync(field.key as keyof SyncState)}
@@ -266,7 +266,7 @@ export default function LegalEditor({ agencyId, backendUrl, theme, agency }: Leg
 
                 {field.kind === 'refund' && (
                   <div className="mb-2">
-                    <p className="text-[11px] mb-1.5" style={{ color: theme.cardTextMuted }}>Quick fill:</p>
+                    <p className="text-[11px] mb-1.5" style={{ color: theme.textMuted }}>Quick fill:</p>
                     <div className="flex flex-wrap gap-1.5">
                       {REFUND_PRESETS.map((p) => (
                         <button key={p.key} onClick={() => setField(field.key, p.text)} className="rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors" style={{ backgroundColor: theme.primary15, color: theme.primary }}>{p.label}</button>
@@ -303,7 +303,7 @@ export default function LegalEditor({ agencyId, backendUrl, theme, agency }: Leg
             <Shield className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: theme.iconColor }} />
             <div>
               <p className="text-sm font-medium mb-0.5" style={{ color: theme.text }}>The rest of this page is protected</p>
-              <p className="text-[11px] sm:text-xs leading-relaxed" style={{ color: theme.cardTextMuted }}>
+              <p className="text-[11px] sm:text-xs leading-relaxed" style={{ color: theme.textMuted }}>
                 {activeDoc === 'terms'
                   ? 'Sections like liability, indemnification, acceptable use, intellectual property, termination, and the class-action waiver are standard legal protections. They are always included and can’t be removed here. Use Preview to see the full page.'
                   : 'Your data-handling, recording-consent, retention, security, and user-rights sections are always included and can’t be removed here. Use Preview to see the full page.'}
@@ -346,7 +346,7 @@ export default function LegalEditor({ agencyId, backendUrl, theme, agency }: Leg
         <button onClick={handleSave} disabled={saving} className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>
           {saving ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</> : <><Check className="h-4 w-4" /> Save {DOC_TITLES[activeDoc]}</>}
         </button>
-        <span className="inline-flex items-center gap-1 text-[11px]" style={{ color: theme.cardTextMuted }}><Lock className="h-3 w-3" /> Protected sections are always included</span>
+        <span className="inline-flex items-center gap-1 text-[11px]" style={{ color: theme.textMuted }}><Lock className="h-3 w-3" /> Protected sections are always included</span>
       </div>
     </div>
   );

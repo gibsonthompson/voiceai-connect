@@ -162,14 +162,14 @@ export default function NewLeadPage() {
         <Link 
           href="/agency/leads"
           className="inline-flex items-center gap-2 text-sm transition-colors mb-4"
-          style={{ color: theme.cardTextMuted }}
+          style={{ color: theme.textMuted }}
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Leads
         </Link>
         
         <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Add New Lead</h1>
-        <p className="mt-1 text-sm" style={{ color: theme.cardTextMuted }}>Track a potential client in your pipeline</p>
+        <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>Track a potential client in your pipeline</p>
       </div>
 
       {/* Error Message */}

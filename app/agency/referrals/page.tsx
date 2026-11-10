@@ -102,7 +102,7 @@ export default function ReferralsPage() {
               </div>
               <h1 className="text-2xl font-semibold" style={{ color: theme.text }}>Referral Program</h1>
             </div>
-            <p style={{ color: theme.cardTextMuted }}>Earn 40% recurring commission for every agency you refer</p>
+            <p style={{ color: theme.textMuted }}>Earn 40% recurring commission for every agency you refer</p>
           </div>
 
           <div className="rounded-2xl p-6 mb-8" style={{ backgroundColor: theme.primary + '08', border: `1px solid ${theme.primary}30` }}>
@@ -112,7 +112,7 @@ export default function ReferralsPage() {
             </h2>
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1 rounded-xl px-4 py-3" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
-                <span className="text-sm" style={{ color: theme.cardTextMuted }}>myvoiceaiconnect.com/signup?ref=your-code</span>
+                <span className="text-sm" style={{ color: theme.textMuted }}>myvoiceaiconnect.com/signup?ref=your-code</span>
               </div>
               <div className="px-6 py-3 rounded-xl font-medium flex items-center gap-2" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.inputBorder}`, color: theme.text }}>
                 <Copy className="h-4 w-4" /> Copy Link

@@ -35,9 +35,9 @@ export default function FirstClientBanner() {
         <a href="/agency/acquisition" className="text-sm font-semibold inline-flex items-center gap-1" style={{ color: theme.text }}>
           Land your next client <ChevronRight className="h-3.5 w-3.5" style={{ color: theme.iconColor }} />
         </a>
-        <p className="text-[12px]" style={{ color: theme.cardTextMuted }}>See your pipeline and follow up the prospects who called your demo line.</p>
+        <p className="text-[12px]" style={{ color: theme.textMuted }}>See your pipeline and follow up the prospects who called your demo line.</p>
       </div>
-      <button onClick={dismiss} aria-label="Dismiss" className="flex-shrink-0 p-1 rounded-md transition-colors" style={{ color: theme.cardTextMuted }}>
+      <button onClick={dismiss} aria-label="Dismiss" className="flex-shrink-0 p-1 rounded-md transition-colors" style={{ color: theme.textMuted }}>
         <X className="h-4 w-4" />
       </button>
     </div>

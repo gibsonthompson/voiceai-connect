@@ -237,7 +237,7 @@ export default function SupportPage() {
         {/* Page header, same chrome as every other dashboard tab */}
         <div className="mb-5 sm:mb-6">
           <h1 className="text-xl sm:text-2xl font-semibold tracking-tight" style={{ color: theme.text }}>Support</h1>
-          <p className="mt-1 text-sm leading-relaxed" style={{ color: theme.cardTextMuted }}>
+          <p className="mt-1 text-sm leading-relaxed" style={{ color: theme.textMuted }}>
             Get instant answers about your dashboard, billing, clients, and troubleshooting, or send your chat to our team.
           </p>
         </div>

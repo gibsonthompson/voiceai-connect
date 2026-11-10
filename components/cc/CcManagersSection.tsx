@@ -144,7 +144,7 @@ export default function CcManagersSection({ theme }: { theme: any }) {
   if (!canManageTeam) return null;
 
   const field = { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text } as React.CSSProperties;
-  const Label = ({ children }: { children: React.ReactNode }) => (<label className="block text-[12px] font-medium mb-1.5" style={{ color: theme.cardTextMuted }}>{children}</label>);
+  const Label = ({ children }: { children: React.ReactNode }) => (<label className="block text-[12px] font-medium mb-1.5" style={{ color: theme.textMuted }}>{children}</label>);
   const Switch = ({ on, onClick }: { on: boolean; onClick: () => void }) => (
     <button type="button" onClick={onClick} className="relative rounded-full flex-shrink-0 transition-colors" style={{ backgroundColor: on ? theme.primary : theme.hover, width: '2.5rem', height: '1.5rem' }}>
       <span className="absolute rounded-full bg-white shadow-sm transition-all" style={{ width: '1.125rem', height: '1.125rem', top: '0.1875rem', left: on ? 'calc(100% - 1.3125rem)' : '0.1875rem' }} />

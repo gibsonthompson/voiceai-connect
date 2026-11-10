@@ -341,7 +341,7 @@ export default function LeadDetailPage() {
         <Link 
           href="/agency/leads"
           className="inline-flex items-center gap-2 text-sm transition-colors mb-8"
-          style={{ color: theme.cardTextMuted }}
+          style={{ color: theme.textMuted }}
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Leads
@@ -386,7 +386,7 @@ export default function LeadDetailPage() {
         <Link 
           href="/agency/leads"
           className="inline-flex items-center gap-2 text-sm transition-colors mb-4"
-          style={{ color: theme.cardTextMuted }}
+          style={{ color: theme.textMuted }}
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Leads
@@ -397,7 +397,7 @@ export default function LeadDetailPage() {
             <div className="flex h-12 w-12 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}><span className="text-lg font-semibold" style={{ color: theme.primary }}>{lead?.business_name?.charAt(0) || '?'}</span></div>
             <div className="min-w-0">
               <h1 className="text-lg sm:text-2xl font-semibold tracking-tight truncate" style={{ color: theme.text }}>{lead?.business_name}</h1>
-              <p className="text-sm mt-0.5" style={{ color: theme.cardTextMuted }}>
+              <p className="text-sm mt-0.5" style={{ color: theme.textMuted }}>
                 {lead?.industry ? `${lead.industry} · ` : ''}Added {lead?.created_at ? new Date(lead.created_at).toLocaleDateString() : '\u2014'}
               </p>
             </div>

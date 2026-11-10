@@ -113,7 +113,7 @@ export default function AgentPresenceBar({ agencyId }: { agencyId: string | unde
         className="flex items-center gap-3 px-4 sm:px-6 lg:px-8 py-2 overflow-x-auto md:sticky md:top-0 z-20"
         style={{ backgroundColor: theme.bg }}
       >
-        <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold flex-shrink-0" style={{ color: theme.cardTextMuted }}>
+        <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold flex-shrink-0" style={{ color: theme.textMuted }}>
           <Users className="h-3.5 w-3.5" /> Agents
         </span>
         <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold flex-shrink-0 px-2 py-0.5 rounded-full" style={{ backgroundColor: `${GREEN}1a`, color: GREEN }}>

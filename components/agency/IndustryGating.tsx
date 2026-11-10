@@ -100,7 +100,7 @@ function IndustryGatingBody({ hideHeader, embedded }: { hideHeader?: boolean; em
     return (
       <div className={outerClass} style={outerStyle}>
         {Header}
-        <p className="text-[11px] sm:text-xs mb-3" style={{ color: theme.cardTextMuted }}>
+        <p className="text-[11px] sm:text-xs mb-3" style={{ color: theme.textMuted }}>
           Limit which industries clients can choose at signup, or lock your agency to a single vertical.
         </p>
         <div className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm" style={{ background: theme.primary15, color: theme.text }}>
@@ -114,7 +114,7 @@ function IndustryGatingBody({ hideHeader, embedded }: { hideHeader?: boolean; em
   return (
     <div className={outerClass} style={outerStyle}>
       {Header}
-      <p className="text-[11px] sm:text-xs mb-3" style={{ color: theme.cardTextMuted }}>
+      <p className="text-[11px] sm:text-xs mb-3" style={{ color: theme.textMuted }}>
         Control which industries a client can pick when they sign up on your site.
       </p>
 

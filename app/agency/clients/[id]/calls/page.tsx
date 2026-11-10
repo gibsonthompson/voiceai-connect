@@ -152,7 +152,7 @@ export default function AgencyClientCallsPage() {
       <Link 
         href={`/agency/clients/${clientId}`}
         className="inline-flex items-center gap-2 text-sm transition-colors mb-4 sm:mb-6 hover:opacity-80"
-        style={{ color: theme.cardTextMuted }}
+        style={{ color: theme.textMuted }}
       >
         <ArrowLeft className="h-4 w-4" />
         Back to {client?.business_name || 'Client'}
@@ -165,7 +165,7 @@ export default function AgencyClientCallsPage() {
             <h1 className="text-xl sm:text-2xl font-semibold" style={{ color: theme.text }}>
               Call History
             </h1>
-            <p className="mt-1 text-sm" style={{ color: theme.cardTextMuted }}>
+            <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>
               {client?.business_name ? `${client.business_name} · ` : ''}{calls.length} total calls
             </p>
           </div>
