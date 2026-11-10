@@ -201,6 +201,9 @@ interface MarketingContentEditorProps {
   backendUrl: string;
   scrollToSection?: string | null;
   onScrolled?: () => void;
+  // Fires (debounced) with the full merged marketing_config whenever content
+  // changes, so the parent can push it into a live site preview beside the editor.
+  onPreview?: (merged: any) => void;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -239,7 +242,7 @@ function Section({
 export default function MarketingContentEditor({
   agency, demoMode, refreshAgency,
   isDark, textColor, mutedTextColor, borderColor, cardBg, inputBg, inputBorder, agencyPrimaryColor, backendUrl,
-  scrollToSection, onScrolled
+  scrollToSection, onScrolled, onPreview
 }: MarketingContentEditorProps) {
 
   const [config, setConfig] = useState<EditorConfig>(DEFAULT_CONFIG);
@@ -306,6 +309,35 @@ export default function MarketingContentEditor({
     setSaved(false);
   }, []);
 
+  // One source of truth for the saved/previewed marketing_config shape, so the
+  // live preview shows exactly what a save would persist.
+  const buildMerged = useCallback(() => {
+    const existing = (agency?.marketing_config && typeof agency.marketing_config === 'object') ? agency.marketing_config : {};
+    return {
+      ...existing,
+      hero: config.hero,
+      stats: config.stats,
+      problems: config.problems,
+      solution: config.solution,
+      steps: config.steps,
+      stepsHeading: config.stepsHeading,
+      stepsSubheading: config.stepsSubheading,
+      features: config.features,
+      industries: config.industries,
+      showIndustries: config.showIndustries !== false,
+      pricing: config.pricing,
+      faqs: config.faqs,
+      footer: { ...(existing.footer || {}), email: config.footer.email, tagline: config.footer.tagline },
+    };
+  }, [agency, config]);
+
+  // Push the live config into the preview as the agency types (debounced).
+  useEffect(() => {
+    if (!onPreview) return;
+    const t = setTimeout(() => onPreview(buildMerged()), 220);
+    return () => clearTimeout(t);
+  }, [buildMerged, onPreview]);
+
   const inputStyle = { backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: textColor };
   const inputClass = "w-full rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-sm transition-colors focus:outline-none";
   const labelStyle = { color: isDark ? 'rgba(250,250,249,0.7)' : '#374151' };
@@ -332,23 +364,7 @@ export default function MarketingContentEditor({
     setSaving(true); setSaved(false);
     try {
       // Deep merge: preserve existing marketing_config keys not managed by editor
-      const existing = (agency.marketing_config && typeof agency.marketing_config === 'object') ? agency.marketing_config : {};
-      const merged = {
-        ...existing,
-        hero: config.hero,
-        stats: config.stats,
-        problems: config.problems,
-        solution: config.solution,
-        steps: config.steps,
-        stepsHeading: config.stepsHeading,
-        stepsSubheading: config.stepsSubheading,
-        features: config.features,
-        industries: config.industries,
-        showIndustries: config.showIndustries !== false,
-        pricing: config.pricing,
-        faqs: config.faqs,
-        footer: { ...(existing.footer || {}), email: config.footer.email, tagline: config.footer.tagline },
-      };
+      const merged = buildMerged();
 
       const token = localStorage.getItem('auth_token');
       const response = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {

@@ -1,7 +1,7 @@
 // app/agency-site/client-page.tsx
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import MarketingPage from '@/components/MarketingPage';
 import MarketingPageBeside from '@/components/MarketingPageBeside';
 import MarketingPageEditorial from '@/components/MarketingPageEditorial';
@@ -181,6 +181,29 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
     setCachedTheme(agency.website_theme);
   }, [agency]);
 
+  // ── Live preview bridge ──
+  // When this site is loaded inside the dashboard's Content tab with ?preview=1,
+  // it listens for the editor's live marketing_config and overlays it so the
+  // agency sees edits update in real time, before saving. Entirely inert on the
+  // real public site (previewMode is false there), so nothing changes live.
+  const [previewMode] = useState(() => typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('preview') === '1');
+  const [livePreview, setLivePreview] = useState<any | null>(null);
+  useEffect(() => {
+    if (!previewMode || typeof window === 'undefined') return;
+    const onMsg = (e: MessageEvent) => {
+      const d = e.data;
+      if (d && typeof d === 'object' && d.type === 'voiceai:preview_content') {
+        setLivePreview(d.config && typeof d.config === 'object' ? d.config : null);
+      }
+    };
+    window.addEventListener('message', onMsg);
+    try { window.parent?.postMessage({ type: 'voiceai:cpreview_ready' }, '*'); } catch { /* ignore */ }
+    return () => window.removeEventListener('message', onMsg);
+  }, [previewMode]);
+  // Content source: the live-edited config while previewing, else the saved one.
+  const mc: any = (previewMode && livePreview) ? livePreview : (agency.marketing_config || {});
+  const previewing = previewMode && !!livePreview;
+
   // Resolve demo phone: manual override → auto-provisioned → platform fallback
   // No platform fallback: if the agency hasn't created its own demo number, we
   // show nothing (the templates hide the demo CTA), rather than leaking the
@@ -296,8 +319,8 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
       customBodyScripts: agency.custom_body_scripts || undefined,
     },
     // Merge any advanced config the agency has set via marketing_config JSONB
-    // This is where unique generated copy lives
-    ...(agency.marketing_config || {}),
+    // (or the live-edited config while previewing). This is where unique copy lives.
+    ...(mc || {}),
     // Login URL last so the custom-domain/subdomain resolution always wins
     clientLoginPath: loginUrl,
     // After the marketing_config spread so the dedicated column always wins
@@ -330,13 +353,19 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
     // The stored hero is merged first so custom badge/headline copy still survives.
     hero: {
       ...defaultMarketingConfig.hero,
-      ...(agency.marketing_config?.hero || {}),
-      badge: agency.company_tagline || agency.marketing_config?.hero?.badge || defaultMarketingConfig.hero.badge,
-      headline: agency.website_headline
-        ? (agency.website_headline.split('\n').length > 1
-            ? agency.website_headline.split('\n')
-            : [agency.website_headline])
-        : (agency.marketing_config?.hero?.headline || defaultMarketingConfig.hero.headline),
+      ...(mc?.hero || {}),
+      // While previewing, the live-edited hero wins so edits show instantly.
+      // On the real site, the dedicated columns still win over stale JSONB.
+      badge: previewing
+        ? (mc?.hero?.badge || agency.company_tagline || defaultMarketingConfig.hero.badge)
+        : (agency.company_tagline || mc?.hero?.badge || defaultMarketingConfig.hero.badge),
+      headline: previewing
+        ? ((mc?.hero?.headline && mc.hero.headline.length) ? mc.hero.headline : defaultMarketingConfig.hero.headline)
+        : (agency.website_headline
+            ? (agency.website_headline.split('\n').length > 1
+                ? agency.website_headline.split('\n')
+                : [agency.website_headline])
+            : (mc?.hero?.headline || defaultMarketingConfig.hero.headline)),
       subtitle: `AI Receptionist Starting at ${currencySymbol}${startingPrice}/month`,
       demoPhone,
     },

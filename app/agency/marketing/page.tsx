@@ -424,6 +424,27 @@ export default function MarketingWebsitePage() {
   const commitSignupTextRef = useRef(commitSignupText);
   commitSignupTextRef.current = commitSignupText;
 
+  // ── Content tab: live marketing-site preview beside the editor ──
+  // The content editor pushes its merged config here on every change; we relay
+  // it to the preview iframe (a real render of the agency site in ?preview=1
+  // mode), which overlays it live.
+  const contentPreviewRef = useRef<HTMLIFrameElement>(null);
+  const contentPreviewConfig = useRef<any>(null);
+  const pushContentPreview = useCallback((merged: any) => {
+    contentPreviewConfig.current = merged;
+    const win = contentPreviewRef.current?.contentWindow;
+    if (win) { try { win.postMessage({ type: 'voiceai:preview_content', config: merged }, '*'); } catch { /* ignore */ } }
+  }, []);
+  useEffect(() => {
+    const onMsg = (e: MessageEvent) => {
+      const d = e.data;
+      if (d && typeof d === 'object' && d.type === 'voiceai:cpreview_ready' && contentPreviewConfig.current) pushContentPreview(contentPreviewConfig.current);
+    };
+    window.addEventListener('message', onMsg);
+    return () => window.removeEventListener('message', onMsg);
+  }, [pushContentPreview]);
+  const contentPreviewSrc = `${subdomainUrl}/?preview=1`;
+
   // Load this agency's clients for the web-call "test client" option.
   useEffect(() => {
     if (!agency?.id || demoMode) return;
@@ -819,33 +840,36 @@ export default function MarketingWebsitePage() {
             editorTheme={webcallEditorTheme}
             brand={{ primary: agencyPrimaryColor, secondary: secondaryColor, accent: accentColor }}
             disabled={demoMode}
+            modeControl={(
+              <div>
+                <p className="text-xs font-medium mb-1.5" style={{ color: mutedTextColor }}>Visitors hear</p>
+                <div className="inline-flex rounded-lg p-0.5" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
+                  {(['demo', 'client'] as const).map((m) => (
+                    <button key={m} type="button" onClick={() => setWebcallMode(m)} className="px-3 py-1 rounded-md text-xs font-semibold transition-colors" style={webcallMode === m ? { backgroundColor: agencyPrimaryColor, color: isLightColor(agencyPrimaryColor) ? '#050505' : '#ffffff' } : { color: inputMuted }}>{m === 'demo' ? 'Demo assistant' : 'A test client'}</button>
+                  ))}
+                </div>
+                {webcallMode === 'client' && (
+                  <div className="relative mt-2">
+                    <button type="button" onClick={() => setWebcallClientOpen((o) => !o)} className="w-full flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: inputText }}>
+                      <span className="truncate">{webcallSelectedClientName}</span><ChevronDown className="h-4 w-4 flex-shrink-0" style={{ color: mutedTextColor }} />
+                    </button>
+                    {webcallClientOpen && (
+                      <div className="absolute z-30 left-0 right-0 mt-1 rounded-lg overflow-hidden py-1 max-h-60 overflow-y-auto" style={{ backgroundColor: cardBg, border: `1px solid ${inputBorder}` }}>
+                        {webcallClients.length === 0 ? (<div className="px-3 py-2 text-xs" style={{ color: mutedTextColor }}>No clients yet</div>) : webcallClients.map((c) => (<button key={c.id} type="button" onClick={() => { setWebcallClientId(c.id); setWebcallClientOpen(false); }} className="w-full text-left px-3 py-2 text-sm" style={{ color: textColor, backgroundColor: c.id === webcallClientId ? agencyPrimaryColor + '18' : 'transparent' }}>{c.business_name}</button>))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           />
 
           <details className="mt-5 pt-4 group" style={{ borderTop: `1px solid ${borderColor}` }}>
             <summary className="text-xs font-medium cursor-pointer inline-flex items-center gap-1.5" style={{ color: agencyPrimaryColor }}><Code className="h-3.5 w-3.5" />Get the embed code</summary>
             <div className="mt-4">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-[11px] font-medium" style={{ color: mutedTextColor }}>Visitors hear:</span>
-                <div className="inline-flex rounded-lg p-0.5" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
-                  {(['demo', 'client'] as const).map((m) => (
-                    <button key={m} onClick={() => setWebcallMode(m)} className="px-3 py-1 rounded-md text-xs font-semibold transition-colors" style={webcallMode === m ? { backgroundColor: agencyPrimaryColor, color: isLightColor(agencyPrimaryColor) ? '#050505' : '#ffffff' } : { color: inputMuted }}>{m === 'demo' ? 'Demo assistant' : 'A test client'}</button>
-                  ))}
-                </div>
-              </div>
-              {webcallMode === 'client' && (
-                <div className="mb-3 max-w-sm relative">
-                  <button type="button" onClick={() => setWebcallClientOpen((o) => !o)} className="w-full flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: inputText }}>
-                    <span className="truncate">{webcallSelectedClientName}</span><ChevronDown className="h-4 w-4 flex-shrink-0" style={{ color: mutedTextColor }} />
-                  </button>
-                  {webcallClientOpen && (
-                    <div className="absolute z-30 left-0 right-0 mt-1 rounded-lg overflow-hidden py-1 max-h-60 overflow-y-auto" style={{ backgroundColor: cardBg, border: `1px solid ${inputBorder}` }}>
-                      {webcallClients.length === 0 ? (<div className="px-3 py-2 text-xs" style={{ color: mutedTextColor }}>No clients yet</div>) : webcallClients.map((c) => (<button key={c.id} onClick={() => { setWebcallClientId(c.id); setWebcallClientOpen(false); }} className="w-full text-left px-3 py-2 text-sm" style={{ color: textColor, backgroundColor: c.id === webcallClientId ? agencyPrimaryColor + '18' : 'transparent' }}>{c.business_name}</button>))}
-                    </div>
-                  )}
-                </div>
-              )}
               <div className="flex items-center justify-between mb-1.5"><label className="text-xs font-medium" style={{ color: mutedTextColor }}>Embed code</label><button onClick={() => copyToClipboard(webcallSnippet, 'webcall-code')} className="text-xs font-medium inline-flex items-center gap-1" style={{ color: agencyPrimaryColor }}>{copied === 'webcall-code' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} Copy</button></div>
               <pre className="rounded-lg p-3 text-[10px] sm:text-xs font-mono overflow-x-auto leading-relaxed" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${inputBorder}`, color: textColor, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{webcallSnippet}</pre>
+              <p className="text-[10px] mt-2" style={{ color: mutedTextColor }}>This snippet matches whatever you set on the widget above, including who visitors hear.</p>
             </div>
           </details>
         </div>
@@ -908,7 +932,29 @@ export default function MarketingWebsitePage() {
       </div>)}
 
       {/* ══════════════ CONTENT ══════════════ */}
-      {activeTab === 'content' && (<MarketingContentEditor agency={agency} demoMode={demoMode} refreshAgency={refreshAgency} isDark={isDark} textColor={textColor} mutedTextColor={mutedTextColor} borderColor={borderColor} cardBg={cardBg} inputBg={inputBg} inputBorder={inputBorder} agencyPrimaryColor={agencyPrimaryColor} backendUrl={backendUrl} scrollToSection={contentScrollTarget} onScrolled={() => setContentScrollTarget(null)} />)}
+      {activeTab === 'content' && (
+        <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,560px)] gap-5 items-start">
+          <div className="min-w-0">
+            <MarketingContentEditor agency={agency} demoMode={demoMode} refreshAgency={refreshAgency} isDark={isDark} textColor={textColor} mutedTextColor={mutedTextColor} borderColor={borderColor} cardBg={cardBg} inputBg={inputBg} inputBorder={inputBorder} agencyPrimaryColor={agencyPrimaryColor} backendUrl={backendUrl} scrollToSection={contentScrollTarget} onScrolled={() => setContentScrollTarget(null)} onPreview={pushContentPreview} />
+          </div>
+          <div className="hidden lg:block lg:sticky lg:top-4">
+            <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${inputBorder}` }}>
+              <div className="flex items-center gap-2 px-3 py-2" style={{ backgroundColor: inputBg, borderBottom: `1px solid ${inputBorder}` }}>
+                <span className="flex gap-1.5"><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#f87171' }} /><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#fbbf24' }} /><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#01f5d1' }} /></span>
+                <span className="flex items-center gap-1.5 ml-1.5 text-[10px] sm:text-xs font-medium" style={{ color: mutedTextColor }}><Eye className="h-3.5 w-3.5" />Live preview, updates as you type</span>
+                <a href={subdomainUrl} target="_blank" rel="noopener noreferrer" className="ml-auto inline-flex items-center gap-1 text-[10px] sm:text-xs font-medium" style={{ color: agencyPrimaryColor }}><ExternalLink className="h-3.5 w-3.5" />Open</a>
+              </div>
+              {agency?.slug && !demoMode && hasAccess ? (
+                <iframe ref={contentPreviewRef} title="Marketing site preview" src={contentPreviewSrc} loading="lazy" onLoad={() => { if (contentPreviewConfig.current) pushContentPreview(contentPreviewConfig.current); }} style={{ width: '100%', height: 'calc(100vh - 150px)', minHeight: 520, border: 0, backgroundColor: isDark ? '#0b0c0f' : '#f6f7f9' }} />
+              ) : (
+                <div className="flex items-center justify-center text-center px-6" style={{ height: 480, backgroundColor: inputBg }}>
+                  <p className="text-xs sm:text-sm" style={{ color: inputMuted }}>{demoMode ? 'Turn off demo mode to load your live site preview here.' : 'Your live marketing-site preview will appear here.'}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ══════════════ NAVIGATION ══════════════ */}
       {activeTab === 'navigation' && (<div className="space-y-4 sm:space-y-6">
