@@ -80,7 +80,7 @@ export default function WebCallShell({
     }
     // cta
     return wrap('cta', (
-      <p key="cta" style={{ fontSize: 13.5 * s, lineHeight: 1.5, color: p.muted, margin: '0 auto', maxWidth: 300, whiteSpace: 'pre-line' }}>
+      <p key="cta" style={{ fontSize: 13.5 * s, lineHeight: 1.5, color: p.muted, margin: '0 auto', maxWidth: 300, whiteSpace: 'pre-line', textWrap: 'balance' }}>
         {connecting ? 'Calling...' : cta}
       </p>
     ));

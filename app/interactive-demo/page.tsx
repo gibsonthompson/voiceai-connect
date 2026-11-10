@@ -1503,31 +1503,16 @@ export default function DemoPage() {
     <main className="min-h-screen bg-ink">
       <MarketingNav />
 
-      {/* ════════ HERO ════════ */}
-      <section className="canvas-dot relative pt-32 lg:pt-40 pb-10 lg:pb-14 overflow-hidden">
+      {/* ════════ CALL A LIVE AI RECEPTIONIST (in-browser hook, now first) ════════ */}
+      <section className="canvas-dot relative pt-32 lg:pt-40 pb-6 lg:pb-10 overflow-hidden">
         <div className="hero-aurora" />
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative">
-          <div className="max-w-3xl">
-            <p className="t-eyebrow text-em mb-5">Interactive demo</p>
-            <h1 className="font-display font-medium text-white tracking-tight" style={{ fontSize: 'clamp(2rem, 4vw, 3.25rem)', letterSpacing: '-0.025em', lineHeight: 1.05 }}>
-              Click around. This is the agency you&apos;d run.
-            </h1>
-            <p className="t-body mt-5 max-w-xl text-[1rem]">
-              This is the actual product, not a video. Poke around the business you&apos;d be running: local businesses paying you every month, the AI handling their calls, all under your brand. Flip between what you see and what your clients see, or take the guided tour. No signup required.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ════════ CALL A LIVE AI RECEPTIONIST ════════ */}
-      <section className="bg-ink pb-6 lg:pb-10">
-        <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
           <div className="max-w-2xl mb-10">
             <p className="t-eyebrow text-em mb-4">Hear it first</p>
-            <h2 className="font-display font-medium text-white tracking-tight" style={{ fontSize: 'clamp(1.6rem, 3.2vw, 2.4rem)', letterSpacing: '-0.025em', lineHeight: 1.08 }}>
+            <h1 className="font-display font-medium text-white tracking-tight" style={{ fontSize: 'clamp(1.9rem, 3.6vw, 2.75rem)', letterSpacing: '-0.025em', lineHeight: 1.06, textWrap: 'balance' }}>
               Call a live AI receptionist, right from your browser.
-            </h2>
-            <p className="t-body mt-4 max-w-xl text-[1rem]">
+            </h1>
+            <p className="t-body mt-4 max-w-xl text-[1rem]" style={{ textWrap: 'pretty' }}>
               No phone, no signup. Talk to two real receptionists: the demo line a prospect hears, and a working client, a med spa, exactly like the ones you&apos;d set up. Allow your mic, then just talk.
             </p>
           </div>
@@ -1552,6 +1537,21 @@ export default function DemoPage() {
             />
           </div>
           <p className="mt-5 text-[12.5px] text-white/35">The numbers shown are demo placeholders. Nothing is dialed, the call happens in your browser.</p>
+        </div>
+      </section>
+
+      {/* ════════ INTRO ABOVE THE DEMO ════════ */}
+      <section className="bg-ink pt-4 lg:pt-6 pb-8 lg:pb-10">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
+          <div className="max-w-3xl">
+            <p className="t-eyebrow text-em mb-5">Interactive demo</p>
+            <h2 className="font-display font-medium text-white tracking-tight" style={{ fontSize: 'clamp(2rem, 4vw, 3.25rem)', letterSpacing: '-0.025em', lineHeight: 1.05, textWrap: 'balance' }}>
+              Click around. This is the agency you&apos;d run.
+            </h2>
+            <p className="t-body mt-5 max-w-xl text-[1rem]" style={{ textWrap: 'pretty' }}>
+              This is the actual product, not a video. Poke around the business you&apos;d be running: local businesses paying you every month, the AI handling their calls, all under your brand. Flip between what you see and what your clients see, or take the guided tour. No signup required.
+            </p>
+          </div>
         </div>
       </section>
 

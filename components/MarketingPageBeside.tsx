@@ -757,16 +757,21 @@ function AiWebCall({ config }: { config: MarketingConfig }) {
   const agencyId = wc.agencyId || '';
   if (!agencyId) return null;
   const title = (wc.title || '').trim() || `Talk to ${config.branding.name}`;
-  const subtitle = (wc.subtitle || '').trim() || 'Hear the AI receptionist answer, live, right now.';
+  const subtitle = (wc.subtitle || '').trim() || 'Hear the AI answer live, right here in your browser. No app, nothing to dial.';
   const cta = (wc.cta || '').trim() || 'Talk to the AI right in your browser.\nAllow your mic when asked.';
+  const primary = config.branding.primaryColor || '#00a19b';
   const src = `/webcall?embed=true&agency=${encodeURIComponent(agencyId)}&mode=demo`;
   return (
     <section id="ai-web-call" className="bsd-section bsd-section-soft">
       <div className="bsd-container">
         <div className="bsd-section-head center">
           <span className="bsd-eyebrow">Live demo</span>
-          <h2>{title}</h2>
-          <p>{subtitle}</p>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.78rem', fontWeight: 600, color: primary, background: `${primary}18`, border: `1px solid ${primary}33`, borderRadius: '999px', padding: '5px 13px', margin: '0.55rem 0 0.9rem' }}>
+            <span style={{ width: 7, height: 7, borderRadius: '999px', background: primary, display: 'inline-block' }} />
+            Live in your browser, no app, nothing to dial
+          </span>
+          <h2 style={{ textWrap: 'balance' }}>{title}</h2>
+          <p style={{ textWrap: 'balance' }}>{subtitle}</p>
         </div>
         <div style={{ maxWidth: '34rem', margin: '0 auto' }}>
           <div style={{ borderRadius: '1.25rem', overflow: 'hidden', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 24px 60px rgba(0,0,0,0.14)', background: '#f6f7f9' }}>
