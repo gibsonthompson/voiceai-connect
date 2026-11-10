@@ -164,11 +164,18 @@ export interface Theme {
   text: string;
   textMuted: string;
   textSubtle: string;
+  // Text that sits directly on a card surface. Legible on the card background
+  // (which can differ from the page), so text on a custom card color never
+  // disappears. Falls back to the page text when no solid card color is set.
+  cardText: string;
+  cardTextMuted: string;
   card: string;
   cardHover: string;
   input: string;
   inputBorder: string;
   inputFocus: string;
+  // Placeholder text color derived from the input surface so it stays legible.
+  inputPlaceholder: string;
   border: string;
   borderSubtle: string;
   hover: string;
@@ -238,6 +245,19 @@ function buildDarkTheme(brandPrimary: string, overrides?: BrandingOverrides): Th
   const cardBorder = isValidHex(overrides?.card_border) ? overrides!.card_border! : baseBorder;
   const buttonText = isValidHex(overrides?.button_text) ? overrides!.button_text! : getContrastText(primary, true);
 
+  // On-card text. Only diverges from the page text when a SOLID card color is
+  // set; the default translucent card reuses the page text so nothing changes.
+  // A manual text override wins when it actually reads on the card; otherwise it
+  // is derived from the card background so any card color stays legible.
+  const cardIsSolid = isValidHex(overrides?.card_bg);
+  const cardText = cardIsSolid
+    ? ((isValidHex(overrides?.text_primary) && hasSufficientContrast(overrides!.text_primary!, cardBg)) ? overrides!.text_primary! : getContrastText(cardBg, true))
+    : textPrimary;
+  const cardTextMuted = cardIsSolid
+    ? ((isValidHex(overrides?.text_muted) && hasSufficientContrast(overrides!.text_muted!, cardBg)) ? overrides!.text_muted! : (isLightColor(cardBg) ? 'rgba(5,5,5,0.55)' : 'rgba(250,250,249,0.55)'))
+    : textMuted;
+  const inputPlaceholder = isLightColor(autoInputBg(cardBg, true)) ? 'rgba(5,5,5,0.4)' : 'rgba(250,250,249,0.4)';
+
   const navBg = isValidHex(overrides?.nav_bg) ? overrides!.nav_bg! : baseSidebarBg;
   const hasNavBgOverride = navBg !== baseSidebarBg;
   const navText = isValidHex(overrides?.nav_text) ? overrides!.nav_text! : (hasNavBgOverride ? autoNavText(navBg) : baseText);
@@ -279,6 +299,9 @@ function buildDarkTheme(brandPrimary: string, overrides?: BrandingOverrides): Th
     text: textPrimary,
     textMuted: textMuted,
     textSubtle: _textLegible ? 'rgba(250,250,249,0.35)' : (isLightColor(pageBg) ? 'rgba(5,5,5,0.4)' : 'rgba(250,250,249,0.35)'),
+    cardText,
+    cardTextMuted,
+    inputPlaceholder,
 
     card: cardBg,
     cardHover: autoCardHover(cardBg, true),
@@ -358,6 +381,19 @@ function buildLightTheme(brandPrimary: string, overrides?: BrandingOverrides): T
   const cardBorder = isValidHex(overrides?.card_border) ? overrides!.card_border! : baseBorder;
   const buttonText = isValidHex(overrides?.button_text) ? overrides!.button_text! : getContrastText(primary, false);
 
+  // On-card text. Only diverges from the page text when a SOLID card color is
+  // set; the default translucent card reuses the page text so nothing changes.
+  // A manual text override wins when it actually reads on the card; otherwise it
+  // is derived from the card background so any card color stays legible.
+  const cardIsSolid = isValidHex(overrides?.card_bg);
+  const cardText = cardIsSolid
+    ? ((isValidHex(overrides?.text_primary) && hasSufficientContrast(overrides!.text_primary!, cardBg)) ? overrides!.text_primary! : getContrastText(cardBg, false))
+    : textPrimary;
+  const cardTextMuted = cardIsSolid
+    ? ((isValidHex(overrides?.text_muted) && hasSufficientContrast(overrides!.text_muted!, cardBg)) ? overrides!.text_muted! : (isLightColor(cardBg) ? 'rgba(5,5,5,0.55)' : 'rgba(250,250,249,0.55)'))
+    : textMuted;
+  const inputPlaceholder = isLightColor(autoInputBg(cardBg, false)) ? 'rgba(5,5,5,0.4)' : 'rgba(250,250,249,0.4)';
+
   const navBg = isValidHex(overrides?.nav_bg) ? overrides!.nav_bg! : baseSidebarBg;
   const hasNavBgOverride = navBg !== baseSidebarBg;
   const navText = isValidHex(overrides?.nav_text) ? overrides!.nav_text! : (hasNavBgOverride ? autoNavText(navBg) : baseText);
@@ -397,6 +433,9 @@ function buildLightTheme(brandPrimary: string, overrides?: BrandingOverrides): T
     text: textPrimary,
     textMuted: textMuted,
     textSubtle: _textLegible ? '#9ca3af' : (isLightColor(pageBg) ? '#6b7280' : 'rgba(250,250,249,0.6)'),
+    cardText,
+    cardTextMuted,
+    inputPlaceholder,
 
     card: cardBg,
     cardHover: autoCardHover(cardBg, false),
