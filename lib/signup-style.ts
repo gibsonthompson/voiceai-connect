@@ -26,6 +26,7 @@ export interface SignupStyle {
   buttonColor?: string;      // submit-button fill; default = brand
   buttonTextColor?: string;  // submit-button text; default auto-contrast
   headingColor?: string;     // form headline color; default = theme text
+  subTextColor?: string;     // subtitle / subtext color; default = muted theme text
   cardBg?: string;           // form surface background; default follows theme
   radius?: SignupRadius;     // input/button corner rounding; default 'md'
 }
@@ -38,6 +39,7 @@ export interface SignupPalette {
   heading: string;
   text: string;
   muted: string;
+  subText: string;
   cardBg: string;
   pageBg: string;
   border: string;
@@ -78,6 +80,8 @@ export function resolveSignupPalette(
   const text = isDark ? '#fafaf9' : '#111111';
   const heading = isHex(s.headingColor) ? s.headingColor! : text;
   const cardBg = isHex(s.cardBg) ? s.cardBg! : (isDark ? '#0a0a0a' : '#ffffff');
+  const muted = isDark ? 'rgba(250,250,249,0.6)' : '#6b7280';
+  const subText = isHex(s.subTextColor) ? s.subTextColor! : muted;
 
   return {
     isDark,
@@ -86,7 +90,8 @@ export function resolveSignupPalette(
     buttonText,
     heading,
     text,
-    muted: isDark ? 'rgba(250,250,249,0.6)' : '#6b7280',
+    muted,
+    subText,
     cardBg,
     pageBg: isDark ? '#050505' : '#f6f7f9',
     border: isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb',

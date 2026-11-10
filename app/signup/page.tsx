@@ -536,6 +536,7 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
   const bgColor = isEmbed ? 'transparent' : (isDark ? '#050505' : '#ffffff');
   const textColor = isDark ? '#fafaf9' : '#111827';
   const mutedTextColor = isDark ? 'rgba(250,250,249,0.5)' : '#6b7280';
+  const subtitleColor = signupPalette.subText;
   const cardBg = styleCardBg || (isDark ? 'rgba(10,10,10,0.5)' : '#ffffff');
   const cardBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb';
   const headerBg = isDark ? 'rgba(5,5,5,0.8)' : 'rgba(255,255,255,0.8)';
@@ -679,9 +680,9 @@ function ClientSignupForm({ agency, isEmbed }: { agency: Agency; isEmbed: boolea
                   onFocus={() => postParent({ type: 'voiceai:select', region: 'subtitle' })}
                   onInput={() => postParent({ type: 'voiceai:edit_text', field: 'subtitle', value: subRef.current?.textContent || '' })}
                   onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur(); } }}
-                  className="mt-2 outline-none" style={{ color: mutedTextColor, cursor: 'text', borderRadius: 6, padding: '2px 8px' }} title="Click to edit" />
+                  className="mt-2 outline-none" style={{ color: subtitleColor, cursor: 'text', borderRadius: 6, padding: '2px 8px' }} title="Click to edit" />
               ) : (
-                <p className="mt-2" style={{ color: mutedTextColor }}>{editorSubtitle}</p>
+                <p className="mt-2" style={{ color: subtitleColor }}>{editorSubtitle}</p>
               )}
             </div>
 
