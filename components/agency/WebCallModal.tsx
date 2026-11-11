@@ -27,7 +27,7 @@ interface Props {
 
 type Phase = 'loading' | 'idle' | 'connecting' | 'live' | 'ended' | 'error';
 interface Line { role: 'user' | 'assistant'; text: string; }
-interface Info { assistantId: string | null; businessName: string; phone: string | null; primary: string; }
+interface Info { assistant: any; assistantId: string | null; businessName: string; phone: string | null; primary: string; }
 
 function formatPhone(raw: string | null): string {
   if (!raw) return '';
@@ -64,11 +64,13 @@ export default function WebCallModal({ clientId, open, onClose, theme }: Props) 
     (async () => {
       try {
         const token = (typeof window !== 'undefined' ? localStorage.getItem('auth_token') : '') || '';
-        const res = await fetch(`${API}/api/client/${clientId}/live/info`, { headers: { Authorization: `Bearer ${token}` } });
+        const res = await fetch(`${API}/api/client/${clientId}/live/info?webcall=1`, { headers: { Authorization: `Bearer ${token}` } });
         const data = await res.json().catch(() => ({}));
         if (!res.ok || !data.success) throw new Error(data.error || 'Could not load this client.');
         if (!alive) return;
         setInfo({
+          // Prefer the fresh transient config; fall back to the static id.
+          assistant: data.client?.assistant || null,
           assistantId: data.client?.assistant_id || null,
           businessName: data.client?.business_name || 'this client',
           phone: data.client?.phone_number || null,
@@ -97,7 +99,8 @@ export default function WebCallModal({ clientId, open, onClose, theme }: Props) 
   useEffect(() => { if (transcriptRef.current) transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight; }, [lines, interim]);
 
   const startCall = useCallback(async () => {
-    if (!info?.assistantId) { setError('This client has no AI receptionist set up yet.'); return; }
+    const target = info?.assistant || info?.assistantId;
+    if (!target) { setError('This client has no AI receptionist set up yet.'); return; }
     if (!vapiKey) { setError('Web calling is not configured.'); return; }
     setPhase('connecting'); setError(''); setLines([]); setInterim(null); setSeconds(0); setMuted(false);
     try {
@@ -117,7 +120,7 @@ export default function WebCallModal({ clientId, open, onClose, theme }: Props) 
         if (m.transcriptType === 'partial') setInterim({ role, text });
         else if (m.transcriptType === 'final') { setLines((prev) => [...prev, { role, text }]); setInterim(null); }
       });
-      await v.start(info.assistantId);
+      await v.start(target);
     } catch (e: any) {
       setError(e?.message || 'Could not start the call. Check microphone permissions.');
       setPhase('ended');
@@ -221,12 +224,12 @@ export default function WebCallModal({ clientId, open, onClose, theme }: Props) 
                 {phase === 'ended' ? 'Call ended. Start another whenever you want.' : 'Talk to this client’s AI receptionist right in your browser to test it. Your microphone is used for the call.'}
               </p>
               {error && <p className="mt-3 text-[13px]" style={{ color: '#ef4444' }}>{error}</p>}
-              <button type="button" onClick={startCall} disabled={!info?.assistantId}
+              <button type="button" onClick={startCall} disabled={!(info?.assistant || info?.assistantId)}
                 className="mt-7 inline-flex items-center gap-2 rounded-full px-8 py-3.5 text-[15px] font-semibold transition-transform hover:scale-[1.03] active:scale-[0.98] disabled:opacity-50"
                 style={{ backgroundColor: primary, color: primaryText }}>
                 <Phone className="h-5 w-5" /> {phase === 'ended' ? 'Call Again' : 'Start Web Call'}
               </button>
-              {!info?.assistantId && phase === 'idle' && <p className="mt-4 text-[12.5px]" style={{ color: textMuted }}>This client has no AI receptionist set up yet.</p>}
+              {!(info?.assistant || info?.assistantId) && phase === 'idle' && <p className="mt-4 text-[12.5px]" style={{ color: textMuted }}>This client has no AI receptionist set up yet.</p>}
             </div>
           )}
 

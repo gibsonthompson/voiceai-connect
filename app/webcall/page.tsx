@@ -25,7 +25,7 @@ import { resolveWebCallPalette, WebCallStyle } from '@/lib/webcall-style';
 type Phase = 'loading' | 'idle' | 'connecting' | 'live' | 'ended' | 'error';
 interface Line { role: 'user' | 'assistant'; text: string; }
 interface WebcallConfig {
-  assistantId: string; label: string; phoneNumber: string | null; title: string | null; subtitle: string | null; cta: string | null; agencyName: string | null; logoUrl: string | null;
+  assistant: any; label: string; phoneNumber: string | null; title: string | null; subtitle: string | null; cta: string | null; agencyName: string | null; logoUrl: string | null;
   primaryColor: string; accentColor: string; websiteTheme: string;
   displayFont: string | null; bodyFont: string | null;
   style?: WebCallStyle | null;
@@ -125,7 +125,7 @@ function WebcallInner() {
   useEffect(() => () => { try { vapiRef.current?.stop(); } catch {} stopTimer(); }, [stopTimer]);
 
   const startCall = useCallback(async () => {
-    if (!config?.assistantId || !vapiKey) { setError('This web call is not configured yet.'); setPhase('error'); return; }
+    if (!config?.assistant || !vapiKey) { setError('This web call is not configured yet.'); setPhase('error'); return; }
     setPhase('connecting'); setError(''); setLines([]); setInterim(null); setSeconds(0); setMuted(false);
     try {
       const { default: Vapi } = await import('@vapi-ai/web');
@@ -146,7 +146,7 @@ function WebcallInner() {
         if (m.transcriptType === 'partial') { setInterim({ role, text }); }
         else if (m.transcriptType === 'final') { setLines((prev) => [...prev, { role, text }]); setInterim(null); }
       });
-      await v.start(config.assistantId);
+      await v.start(config.assistant);
     } catch (e: any) {
       setError(e?.message || 'Could not start the call. Check microphone permissions.');
       setPhase('ended');
