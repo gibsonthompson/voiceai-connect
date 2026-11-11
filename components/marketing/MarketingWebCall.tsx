@@ -14,7 +14,7 @@
 // ============================================================================
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Phone, PhoneOff, Mic, Loader2, AlertTriangle } from 'lucide-react';
+import { Phone, PhoneOff, Mic, Loader2, AlertTriangle, ArrowUpRight } from 'lucide-react';
 
 const EM = '#01f5d1';
 const EM_INK = '#04120f';
@@ -257,6 +257,18 @@ export default function MarketingWebCall({
     </div>
   );
 
+  // After the call ends: the whole point of the demo was to get them here, so
+  // make the next step obvious and personal. Shown in both variants.
+  const endedCta = phase === 'ended' ? (
+    <div className="mt-4 rounded-2xl p-5 text-center" style={{ background: 'rgba(1,245,209,0.05)', border: '1px solid rgba(1,245,209,0.18)' }}>
+      <p className="text-[14px] text-white/80 leading-relaxed">That is the receptionist your clients would get, answering every call 24/7 under your brand.</p>
+      <a href="/signup" className="mt-3.5 inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-[14.5px] font-semibold transition-all hover:brightness-105 active:scale-[0.98]" style={{ backgroundColor: EM, color: EM_INK, boxShadow: '0 12px 30px -10px rgba(1,245,209,0.7)' }}>
+        Start your 14-day free trial <ArrowUpRight className="h-4 w-4" />
+      </a>
+      <p className="mt-2.5 text-[12px] text-white/40">No card to start. Your first client can be live today.</p>
+    </div>
+  ) : null;
+
   // Live status chip (animated) used in headers.
   const liveChip = inCall ? (
     <span className="inline-flex items-center gap-2 flex-shrink-0 rounded-full px-2.5 py-1" style={{ backgroundColor: phase === 'live' ? 'rgba(255,107,107,0.12)' : 'rgba(255,255,255,0.06)', border: `1px solid ${phase === 'live' ? 'rgba(255,107,107,0.3)' : 'rgba(255,255,255,0.12)'}` }}>
@@ -280,6 +292,7 @@ export default function MarketingWebCall({
         )}
         {(inCall || phase === 'ended') && transcript}
         {error && phase !== 'error' && <p className="text-[13px] mt-3" style={{ color: '#ff6b6b' }}>{error}</p>}
+        {endedCta}
         {controls}
       </div>
     );
@@ -353,7 +366,7 @@ export default function MarketingWebCall({
               <p className="mt-2.5 text-center text-[12px] text-white/40">Uses your mic. No signup.</p>
             </>
           ) : (
-            <div className="mt-5">{controls}</div>
+            <div className="mt-5">{endedCta}{controls}</div>
           )}
         </>
       )}

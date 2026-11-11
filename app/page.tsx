@@ -288,14 +288,14 @@ export default function HomePage() {
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative">
           <div ref={r1} className="fade-up max-w-4xl">
             <span className="racing-line" />
-            <h1 className="t-h1 text-white max-w-[18ch]">
-              The white-label AI receptionist platform for agencies.
+            <h1 className="t-h1 text-white max-w-[20ch]" style={{ fontSize: 'clamp(2.1rem, 4.8vw, 4.25rem)', textWrap: 'balance' }}>
+              Your next recurring revenue stream is an AI service you didn&apos;t have to build.
             </h1>
-            <p className="font-display text-[19px] lg:text-[23px] font-medium mt-7 max-w-2xl leading-snug" style={{ color: 'var(--steel-100)' }}>
-              Buy it at $99 a month. Sell it at your price. Keep the margin.
+            <p className="font-display text-[19px] lg:text-[23px] font-medium mt-7 max-w-2xl leading-snug" style={{ color: 'var(--steel-100)', textWrap: 'balance' }}>
+              We built the infrastructure. You buy it at $99 a month, sell it at your price, and keep the margin.
             </p>
-            <p className="t-body mt-6 max-w-2xl text-[1rem]">
-              VoiceAI Connect is a multi-tenant voice AI platform purpose-built for agencies and resellers. Brand the product as your own, onboard local businesses in under sixty seconds, and collect monthly recurring revenue while we operate the underlying infrastructure. Sixteen enterprise vendors integrated and shipped as a single agency-ready application.
+            <p className="t-body mt-6 max-w-2xl text-[1rem]" style={{ textWrap: 'pretty' }}>
+              The demand is already there, every local business is missing calls. We spent the last year wiring sixteen enterprise tools into one platform so you would not have to. Put your brand on it, sign up a business in under a minute, and keep the recurring revenue. The calls, the numbers, and the dashboards all run quietly under your name, so you stay the one your clients trust.
             </p>
             <div className="mt-10 flex flex-wrap gap-3">
               <Link href="/signup" className="btn btn-em">Get started free <ArrowUpRight className="w-3.5 h-3.5" /></Link>
