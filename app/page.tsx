@@ -295,7 +295,7 @@ export default function HomePage() {
               We built the infrastructure. You buy it at $99 a month, sell it at your price, and keep the margin.
             </p>
             <p className="t-body mt-6 max-w-2xl text-[1rem]" style={{ textWrap: 'pretty' }}>
-              The demand is already there, every local business is missing calls. We spent the last year wiring sixteen enterprise tools into one platform so you would not have to. Put your brand on it, sign up a business in under a minute, and keep the recurring revenue. The calls, the numbers, and the dashboards all run quietly under your name, so you stay the one your clients trust.
+              The demand is already there, every local business is missing calls. We wired sixteen enterprise tools into one platform so you would not have to. Put your brand on it, sign up a business in under a minute, and keep the recurring revenue. The calls, the numbers, and the dashboards all run quietly under your name, so you stay the one your clients trust.
             </p>
             <div className="mt-10 flex flex-wrap gap-3">
               <Link href="/signup" className="btn btn-em">Get started free <ArrowUpRight className="w-3.5 h-3.5" /></Link>
