@@ -321,6 +321,8 @@ export default function AgencyLeadsPage() {
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [skippedIds, setSkippedIds] = useState<Set<string>>(new Set());
   const [deletingLead, setDeletingLead] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
+  const [deleteError, setDeleteError] = useState('');
 
   // Action modals
   const [composerOpen, setComposerOpen] = useState(false);
@@ -494,15 +496,17 @@ export default function AgencyLeadsPage() {
   const focusLead = (id: string) => { setCurrentId(id); if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' }); };
   const skipCurrent = () => { if (!currentLead) return; const id = currentLead.id; advanceFrom(id); setSkippedIds((prev) => new Set(prev).add(id)); };
 
-  // Quick delete straight from the working card. Confirms, advances to the next
-  // lead, and drops it from the list. Demo mode removes it locally (no API).
-  const deleteCurrent = async () => {
-    if (!currentLead || !agency) return;
-    const id = currentLead.id;
-    const name = currentLead.business_name || 'this lead';
-    if (!confirm(`Delete ${name}? This can't be undone.`)) return;
-    if (readOnly) { advanceFrom(id); setLeads((prev) => prev.filter((l) => l.id !== id)); return; }
-    setDeletingLead(true);
+  // Quick delete from the working card, via a small custom confirm modal (not a
+  // native dialog). Opening captures the lead; confirming does the work.
+  const requestDelete = () => { if (!currentLead) return; setDeleteError(''); setConfirmDelete({ id: currentLead.id, name: currentLead.business_name || 'this lead' }); };
+  const closeDeleteConfirm = () => { if (deletingLead) return; setConfirmDelete(null); setDeleteError(''); };
+
+  const performDelete = async () => {
+    if (!confirmDelete || !agency) return;
+    const id = confirmDelete.id;
+    // Demo / free accounts show demo leads, so there is nothing to delete server-side.
+    if (readOnly) { advanceFrom(id); setLeads((prev) => prev.filter((l) => l.id !== id)); setConfirmDelete(null); return; }
+    setDeletingLead(true); setDeleteError('');
     try {
       const token = localStorage.getItem('auth_token');
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
@@ -510,8 +514,9 @@ export default function AgencyLeadsPage() {
       if (!res.ok) throw new Error('Failed to delete lead');
       advanceFrom(id);
       setLeads((prev) => prev.filter((l) => l.id !== id));
+      setConfirmDelete(null);
     } catch {
-      alert('Could not delete this lead. Please try again.');
+      setDeleteError('Could not delete this lead. Please try again.');
     } finally {
       setDeletingLead(false);
     }
@@ -630,7 +635,7 @@ export default function AgencyLeadsPage() {
           onSms={openSms}
           onCall={openCall}
           onSkip={skipCurrent}
-          onDelete={deleteCurrent}
+          onDelete={requestDelete}
           deleting={deletingLead}
           queueItem={currentQueueItem}
         />
@@ -740,6 +745,34 @@ export default function AgencyLeadsPage() {
           />
         );
       })()}
+
+      {/* Custom (non-native) delete confirmation, intentionally small. */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeDeleteConfirm} />
+          <div className="relative w-full max-w-xs rounded-2xl p-5 bg-[var(--lp-card)] border border-[var(--lp-border)] shadow-2xl">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full flex-shrink-0 bg-[var(--lp-error-bg)]">
+                <Trash2 className="h-5 w-5 text-[var(--lp-error)]" />
+              </div>
+              <h3 className="text-[15px] font-semibold text-[var(--lp-text)]">Delete lead?</h3>
+            </div>
+            <p className="mt-2.5 text-[13px] leading-relaxed text-[var(--lp-muted)]">
+              <span className="font-medium text-[var(--lp-text)]">{confirmDelete.name}</span> will be removed from your pipeline. This can&apos;t be undone.
+            </p>
+            {deleteError && <p className="mt-2 text-[12.5px] text-[var(--lp-error)]">{deleteError}</p>}
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button onClick={closeDeleteConfirm} disabled={deletingLead} className="flex items-center justify-center rounded-xl px-3 py-2.5 text-sm font-medium transition-colors bg-[var(--lp-card)] border border-[var(--lp-border)] text-[var(--lp-text)] hover:bg-[var(--lp-hover)] disabled:opacity-50">
+                Cancel
+              </button>
+              <button onClick={performDelete} disabled={deletingLead} className="flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-white transition-colors disabled:opacity-60" style={{ backgroundColor: '#ef4444' }}>
+                {deletingLead ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 
