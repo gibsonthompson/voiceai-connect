@@ -288,7 +288,7 @@ export default function HomePage() {
         <div className="max-w-[1280px] mx-auto px-6 lg:px-10 relative">
           <div ref={r1} className="fade-up max-w-4xl">
             <span className="racing-line" />
-            <h1 className="t-h1 text-white max-w-[20ch]" style={{ fontSize: 'clamp(2.1rem, 4.8vw, 4.25rem)', textWrap: 'balance' }}>
+            <h1 className="t-h1 text-white max-w-[18ch]" style={{ fontSize: 'clamp(3rem, 7vw, 6rem)', textWrap: 'balance' }}>
               Your next recurring revenue stream is an AI service you didn&apos;t have to build.
             </h1>
             <p className="font-display text-[19px] lg:text-[23px] font-medium mt-7 max-w-2xl leading-snug" style={{ color: 'var(--steel-100)', textWrap: 'balance' }}>
