@@ -25,10 +25,11 @@
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Check, Loader2, Monitor, Tablet, Smartphone, MousePointerClick, ExternalLink, AlertCircle, Layers, X, ChevronUp, ChevronDown, FileText, Undo2, Save, LayoutTemplate } from 'lucide-react';
+import { ArrowLeft, Check, Loader2, Monitor, Tablet, Smartphone, MousePointerClick, ExternalLink, AlertCircle, Layers, X, ChevronUp, ChevronDown, FileText, Undo2, Save, LayoutTemplate, Type } from 'lucide-react';
 import { useAgency } from '../../context';
 import { defaultMarketingConfig } from '@/types/marketing';
 import { setByPath, getByPath, clone } from '@/lib/editable-path';
+import { fontOptions } from '@/lib/brandFonts';
 import { resolveSectionOrder, SECTION_LABELS } from '@/lib/marketing-sections';
 import { getIndustryPage, INDUSTRY_PAGE_LIST } from '@/lib/industry-pages';
 
@@ -218,6 +219,26 @@ export default function WebsiteEditorPage() {
       templateInitRef.current = true;
     }
   }, [agency]);
+  // Marketing fonts, seeded once from the agency's branding (marketing_display_font
+  // / marketing_body_font). '' means "Default" (the template's own fonts). Changed
+  // live from the toolbar, previewed in the iframe, and persisted on save. Refs
+  // mirror them so pushConfig (bound once) always re-asserts the latest.
+  const [fontMenuOpen, setFontMenuOpen] = useState(false);
+  const [displayFont, setDisplayFont] = useState<string>('');
+  const [bodyFont, setBodyFont] = useState<string>('');
+  const displayFontRef = useRef<string>('');
+  const bodyFontRef = useRef<string>('');
+  const fontsInitRef = useRef(false);
+  const pendingFontsRef = useRef(false);
+  useEffect(() => {
+    if (agency && !fontsInitRef.current) {
+      const dz = (agency as any).marketing_display_font || '';
+      const bz = (agency as any).marketing_body_font || '';
+      displayFontRef.current = dz; bodyFontRef.current = bz;
+      setDisplayFont(dz); setBodyFont(bz);
+      fontsInitRef.current = true;
+    }
+  }, [agency]);
   const templateSections = useMemo(() => SECTIONS.filter((s) => s.templates.includes(selectedTemplate)), [selectedTemplate]);
   const defByKey = useMemo(() => Object.fromEntries(SECTIONS.map((s) => [s.key, s])) as Record<string, SectionDef>, []);
 
@@ -291,10 +312,11 @@ export default function WebsiteEditorPage() {
     if (win && configRef.current) {
       try { win.postMessage({ type: 'voiceai:preview_content', config: configRef.current }, '*'); } catch { /* ignore */ }
       try { win.postMessage({ type: 'voiceai:preview_template', template: selectedTemplateRef.current }, '*'); } catch { /* ignore */ }
+      try { win.postMessage({ type: 'voiceai:preview_fonts', display: displayFontRef.current, body: bodyFontRef.current }, '*'); } catch { /* ignore */ }
     }
   }, []);
 
-  const hasUnsaved = useCallback(() => configDirtyRef.current || Object.keys(pendingCols.current).length > 0 || pendingTemplateRef.current !== null, []);
+  const hasUnsaved = useCallback(() => configDirtyRef.current || Object.keys(pendingCols.current).length > 0 || pendingTemplateRef.current !== null || pendingFontsRef.current, []);
   const markConfigDirty = useCallback(() => { configDirtyRef.current = true; setSaveState('dirty'); }, []);
   const markColsDirty = useCallback(() => { setSaveState('dirty'); }, []);
 
@@ -352,6 +374,19 @@ export default function WebsiteEditorPage() {
     pendingTemplateRef.current = null;
   }, [agency, backendUrl]);
 
+  // One PUT for a pending font change (marketing_display_font / marketing_body_font).
+  // '' persists as null so the site falls back to the template's default fonts.
+  const putFonts = useCallback(async () => {
+    if (!pendingFontsRef.current) return;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    const res = await fetch(`${backendUrl}/api/agency/${agency!.id}/settings`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ marketing_display_font: displayFontRef.current || null, marketing_body_font: bodyFontRef.current || null }),
+    });
+    if (!res.ok) throw new Error(String(res.status));
+    pendingFontsRef.current = false;
+  }, [agency, backendUrl]);
+
   // Manual save (the Save button / exit prompt). Saves whatever is dirty.
   const save = useCallback(async (): Promise<boolean> => {
     if (!hasUnsaved()) return true;
@@ -362,6 +397,7 @@ export default function WebsiteEditorPage() {
       if (configDirtyRef.current) tasks.push(putConfig());
       if (Object.keys(pendingCols.current).length) tasks.push(putCols());
       if (pendingTemplateRef.current) tasks.push(putTemplate());
+      if (pendingFontsRef.current) tasks.push(putFonts());
       await Promise.all(tasks);
       configDirtyRef.current = false;
       setSaveState('saved');
@@ -371,7 +407,7 @@ export default function WebsiteEditorPage() {
       setSaveState('error');
       return false;
     }
-  }, [agency, demoMode, hasUnsaved, putConfig, putCols, putTemplate, refreshAgency]);
+  }, [agency, demoMode, hasUnsaved, putConfig, putCols, putTemplate, putFonts, refreshAgency]);
 
   // Undo the last change: restore the snapshot and re-derive the panel state
   // (show flags + order live in the config), then re-push to the preview.
@@ -423,6 +459,17 @@ export default function WebsiteEditorPage() {
     setSaveState('dirty');
     pushConfig();
   }, [pushConfig]);
+
+  // Change a marketing font live. '' clears the override back to the template
+  // default. The preview re-renders with the new font; persisted on save.
+  const changeFont = useCallback((slot: 'display' | 'body', value: string) => {
+    if (slot === 'display') { displayFontRef.current = value; setDisplayFont(value); }
+    else { bodyFontRef.current = value; setBodyFont(value); }
+    pendingFontsRef.current = true;
+    setSaveState('dirty');
+    const win = iframeRef.current?.contentWindow;
+    try { win?.postMessage({ type: 'voiceai:preview_fonts', display: displayFontRef.current, body: bodyFontRef.current }, '*'); } catch { /* ignore */ }
+  }, []);
 
   // Move a section up (-1) or down (+1) in the render order.
   const moveSection = useCallback((index: number, dir: -1 | 1) => {
@@ -663,6 +710,47 @@ export default function WebsiteEditorPage() {
                     <div className="text-[11px] mt-0.5" style={{ color: ui.dimmer }}>{t.style}</div>
                   </button>
                 ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Fonts switcher (marketing template pages only). Seeded from the
+            branding page's marketing fonts; previews live, persists on save. */}
+        {!isColumnPage(currentPage) && (
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setFontMenuOpen((o) => !o)}
+              title="Change fonts"
+              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors"
+              style={{ color: fontMenuOpen ? ui.activeText : ui.text, backgroundColor: fontMenuOpen ? ui.activeBg : ui.ctl }}
+            >
+              <Type className="h-4 w-4" />
+              <span className="hidden sm:inline">Fonts</span>
+              <ChevronDown className="h-3.5 w-3.5" />
+            </button>
+            {fontMenuOpen && (
+              <div className="absolute right-0 mt-1 rounded-lg z-20 flex" style={{ backgroundColor: ui.menu, border: `1px solid ${ui.menuBorder}`, boxShadow: ui.menuShadow }}>
+                {([['display', 'Headings'], ['body', 'Body']] as ['display' | 'body', string][]).map(([slot, heading]) => {
+                  const current = slot === 'display' ? displayFont : bodyFont;
+                  const opts = [{ value: '', label: 'Default' }, ...fontOptions(slot)];
+                  return (
+                    <div key={slot} style={{ width: 170, maxHeight: 340, overflowY: 'auto', borderRight: slot === 'display' ? `1px solid ${ui.menuBorder}` : undefined }}>
+                      <div className="px-3 pt-2 pb-1 text-[10px] uppercase tracking-wide sticky top-0" style={{ color: ui.dimmer, letterSpacing: '0.06em', backgroundColor: ui.menu }}>{heading}</div>
+                      {opts.map((o) => (
+                        <button
+                          key={o.value || 'default'}
+                          onClick={() => changeFont(slot, o.value)}
+                          className="w-full text-left px-3 py-1.5 text-sm transition-colors flex items-center justify-between gap-2"
+                          style={{ color: current === o.value ? ui.text : ui.dim, backgroundColor: current === o.value ? ui.ctl2 : 'transparent' }}
+                        >
+                          {o.label}
+                          {current === o.value && <Check className="h-3.5 w-3.5 shrink-0" style={{ color: accent }} />}
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

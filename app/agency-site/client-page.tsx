@@ -7,6 +7,7 @@ import MarketingPageBeside from '@/components/MarketingPageBeside';
 import MarketingPageEditorial from '@/components/MarketingPageEditorial';
 import AgencySupportWidget from '@/components/AgencySupportWidget';
 import { EditorProvider } from '@/components/agency/MarketingEditable';
+import { googleFontsHref, fontStack } from '@/lib/brandFonts';
 import { MarketingConfig, defaultMarketingConfig } from '@/types/marketing';
 import type { IndustryPageData } from '@/lib/industry-pages';
 import { getCurrencySymbol } from '@/lib/currency-symbols';
@@ -193,6 +194,11 @@ export default function AgencySiteClient({ agency, industry }: { agency: Agency;
   // Template chosen live in the editor's template switcher. Only ever set while
   // previewing; the public site always renders the saved marketing_template.
   const [templateOverride, setTemplateOverride] = useState<string | null>(null);
+  // Fonts chosen live in the editor's font picker. Only set while previewing;
+  // the public site always renders the saved marketing_display_font/body_font.
+  // null = no override (use the saved columns); a field set to '' means the
+  // agency picked "Default" (fall back to the template's built-in fonts).
+  const [fontOverride, setFontOverride] = useState<{ display: string | null; body: string | null } | null>(null);
   useEffect(() => {
     if (!previewMode || typeof window === 'undefined') return;
     const onMsg = (e: MessageEvent) => {
@@ -203,11 +209,31 @@ export default function AgencySiteClient({ agency, industry }: { agency: Agency;
       if (d && typeof d === 'object' && d.type === 'voiceai:preview_template' && typeof d.template === 'string') {
         setTemplateOverride(d.template);
       }
+      if (d && typeof d === 'object' && d.type === 'voiceai:preview_fonts') {
+        setFontOverride({ display: typeof d.display === 'string' && d.display ? d.display : null, body: typeof d.body === 'string' && d.body ? d.body : null });
+      }
     };
     window.addEventListener('message', onMsg);
     try { window.parent?.postMessage({ type: 'voiceai:cpreview_ready' }, '*'); } catch { /* ignore */ }
     return () => window.removeEventListener('message', onMsg);
   }, [previewMode]);
+
+  // Resolved marketing fonts: the live editor pick wins while previewing, else
+  // the agency's saved branding fonts. Null leaves the template default in place.
+  const mkDisplayFont = (previewMode && fontOverride) ? fontOverride.display : ((agency as any).marketing_display_font || null);
+  const mkBodyFont = (previewMode && fontOverride) ? fontOverride.body : ((agency as any).marketing_body_font || null);
+  // Google Fonts stylesheet for the chosen families. Rendered in the markup
+  // (below) so it ships in the server HTML for an immediate first paint on the
+  // public site; React just updates the href when the editor switches fonts live.
+  const fontHref = googleFontsHref([mkDisplayFont, mkBodyFont]);
+  // Override each template's font variables so whichever template renders picks
+  // up the brand fonts. Only vars for set families are emitted, so an unset
+  // slot keeps the template's own default.
+  const fontVarCss = (mkDisplayFont || mkBodyFont) ? `.marketing-page, .beside, .editorial {${
+    mkDisplayFont ? `--font-primary:${fontStack(mkDisplayFont, 'display')};--bsd-font-display:${fontStack(mkDisplayFont, 'display')};--ed-serif:${fontStack(mkDisplayFont, 'display')};` : ''
+  }${
+    mkBodyFont ? `--font-secondary:${fontStack(mkBodyFont, 'body')};--bsd-font-body:${fontStack(mkBodyFont, 'body')};--ed-sans:${fontStack(mkBodyFont, 'body')};` : ''
+  }}` : '';
   // Content source: the live-edited config while previewing, else the saved one.
   const mc: any = (previewMode && livePreview) ? livePreview : (agency.marketing_config || {});
   const previewing = previewMode && !!livePreview;
@@ -446,6 +472,8 @@ export default function AgencySiteClient({ agency, industry }: { agency: Agency;
 
   return (
     <>
+      {fontHref && <link rel="stylesheet" href={fontHref} />}
+      {fontVarCss && <style dangerouslySetInnerHTML={{ __html: fontVarCss }} />}
       {editorMode && <style>{`[data-vai-edit]{border-radius:4px;transition:box-shadow .12s ease,background-color .12s ease} [data-vai-edit]:hover{box-shadow:0 0 0 2px ${(agency.primary_color || '#00a19b')}66} [data-vai-edit]:focus{box-shadow:0 0 0 2px ${(agency.primary_color || '#00a19b')};background-color:${(agency.primary_color || '#00a19b')}14}`}</style>}
       <EditorProvider value={{ editor: editorMode, onEdit, onItem }}>
         <TemplateComponent config={renderConfig} />
