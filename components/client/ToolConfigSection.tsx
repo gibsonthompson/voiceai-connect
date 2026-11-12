@@ -134,6 +134,7 @@ const INDUSTRY_SMS_EXAMPLES: Record<string, string> = {
   optometry: 'New patient form',
   physical_therapy: 'Intake form',
   salon_spa: 'Booking link',
+  med_spa: 'Consultation booking link',
   legal: 'Intake form',
   real_estate: 'Listing link',
   automotive: 'Specials link',

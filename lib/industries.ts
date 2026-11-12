@@ -19,7 +19,7 @@ import type { ElementType } from 'react';
 import {
   Wrench, Droplets, Truck, Stethoscope, Smile, Scale, Home, Building2,
   Calculator, Briefcase, UtensilsCrossed, Sparkles, Dumbbell, ShoppingBag,
-  Car, Package, HardHat, Hammer, Trash2, Wind, Zap, Bug, Trees,
+  Car, Package, HardHat, Hammer, Trash2, Wind, Zap, Bug, Trees, Syringe,
 } from 'lucide-react';
 
 // String name -> lucide component. Backend endpoints return icon names as
@@ -28,7 +28,7 @@ import {
 export const INDUSTRY_ICON_MAP: Record<string, ElementType> = {
   Wrench, Droplets, Truck, Stethoscope, Smile, Scale, Home, Building2,
   Calculator, Briefcase, UtensilsCrossed, Sparkles, Dumbbell, ShoppingBag,
-  Car, Package, HardHat, Hammer, Trash2, Wind, Zap, Bug, Trees,
+  Car, Package, HardHat, Hammer, Trash2, Wind, Zap, Bug, Trees, Syringe,
 };
 
 export interface IndustryIntelligence {
@@ -184,6 +184,14 @@ export const INDUSTRIES: Industry[] = [
     description: 'Salons, barbershops, day spas',
     intelligence: { services: 42, faqs: 11, terms: 6, features: ['Duration Estimates', 'Upsell Suggestions', 'Cancellation Policy'] },
     aliases: ['beauty_wellness', 'salon', 'spa', 'Salon/Spa (hair, nails, skincare)'],
+  },
+  {
+    value: 'med_spa',
+    label: 'Med Spa & Aesthetics',
+    icon: 'Syringe',
+    description: 'Med spas, aesthetic and skin clinics',
+    intelligence: { services: 36, faqs: 10, terms: 9, features: ['Consultation Booking', 'No Medical Advice', 'Memberships & Packages'] },
+    aliases: ['medspa', 'medical_spa', 'med_spa_aesthetics', 'aesthetics', 'aesthetic_clinic'],
   },
   {
     value: 'automotive',
