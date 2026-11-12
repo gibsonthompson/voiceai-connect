@@ -25,7 +25,7 @@
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Check, Loader2, Monitor, Tablet, Smartphone, MousePointerClick, ExternalLink, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Check, Loader2, Monitor, Tablet, Smartphone, MousePointerClick, ExternalLink, AlertCircle, Layers, X } from 'lucide-react';
 import { useAgency } from '../../context';
 import { defaultMarketingConfig } from '@/types/marketing';
 import { setByPath, clone } from '@/lib/editable-path';
@@ -57,6 +57,36 @@ function regionLabel(field: string): string {
   return map[top] || top.charAt(0).toUpperCase() + top.slice(1);
 }
 
+// Toggleable sections per template, in render order. `flag` is the
+// marketing_config key the templates already read. `defaultOn` is what the
+// template shows when the flag is unset (opt-in sections default off). Only
+// sections the current template actually renders are listed per template.
+type SectionDef = { key: string; label: string; hint: string; flag: string; defaultOn: boolean | ((t: string) => boolean); templates: string[] };
+const SECTIONS: SectionDef[] = [
+  { key: 'proofStrip', label: 'Stats bar', hint: 'The row of headline numbers under the hero', flag: 'showProofStrip', defaultOn: true, templates: ['beside'] },
+  { key: 'problemSolution', label: 'Problem & solution', hint: 'The "losing customers" problem cards and solution block', flag: 'showProblemSolution', defaultOn: true, templates: ['classic', 'beside'] },
+  { key: 'howItWorks', label: 'How it works', hint: 'The numbered setup steps', flag: 'showHowItWorks', defaultOn: true, templates: ['classic', 'beside', 'editorial'] },
+  { key: 'features', label: 'Features', hint: 'What the AI receptionist handles on calls', flag: 'showFeatures', defaultOn: true, templates: ['classic', 'beside', 'editorial'] },
+  { key: 'commandCenter', label: 'Command center', hint: 'The phone mockup and benefit list', flag: 'showCommandCenter', defaultOn: true, templates: ['classic', 'beside'] },
+  { key: 'industries', label: 'Industries', hint: 'Cards for the business types you serve', flag: 'showIndustries', defaultOn: (t) => t === 'editorial', templates: ['classic', 'beside', 'editorial'] },
+  { key: 'comparison', label: 'Comparison table', hint: 'How you stack up vs other options', flag: 'showComparison', defaultOn: false, templates: ['classic', 'beside'] },
+  { key: 'testimonials', label: 'Testimonial', hint: 'The large customer quote', flag: 'showTestimonials', defaultOn: true, templates: ['editorial'] },
+  { key: 'roiCalculator', label: 'ROI calculator', hint: 'The missed-call cost slider', flag: 'showROICalculator', defaultOn: true, templates: ['classic', 'beside'] },
+  { key: 'aiWebCall', label: 'AI web call', hint: 'An in-page button to talk to your AI live', flag: 'showAiWebCall', defaultOn: false, templates: ['classic', 'beside', 'editorial'] },
+  { key: 'pricing', label: 'Pricing', hint: 'Your plan cards', flag: 'showPricing', defaultOn: true, templates: ['classic', 'beside', 'editorial'] },
+  { key: 'faq', label: 'FAQ', hint: 'The questions accordion', flag: 'showFAQ', defaultOn: true, templates: ['classic', 'beside', 'editorial'] },
+  { key: 'finalCta', label: 'Final call to action', hint: 'The closing sign-up push', flag: 'showFinalCTA', defaultOn: true, templates: ['classic', 'beside', 'editorial'] },
+];
+function sectionDefaultOn(def: SectionDef, template: string): boolean {
+  return typeof def.defaultOn === 'function' ? def.defaultOn(template) : def.defaultOn;
+}
+function sectionIsOn(def: SectionDef, source: any, template: string): boolean {
+  const v = source ? source[def.flag] : undefined;
+  if (v === true) return true;
+  if (v === false) return false;
+  return sectionDefaultOn(def, template);
+}
+
 export default function WebsiteEditorPage() {
   const router = useRouter();
   const { agency, loading, refreshAgency, demoMode } = useAgency();
@@ -65,12 +95,19 @@ export default function WebsiteEditorPage() {
   const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
   const subdomainUrl = agency?.slug ? `https://${agency.slug}.${platformDomain}` : '';
   const editorSrc = subdomainUrl ? `${subdomainUrl}/?preview=1&editor=1` : '';
+  const accent = (agency as any)?.primary_color || '#00a19b';
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [device, setDevice] = useState<Device>('desktop');
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [activeRegion, setActiveRegion] = useState<string>('');
   const [iframeReady, setIframeReady] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
+  // Section on/off state, mirrored in React so the panel re-renders. The source
+  // of truth for saving is still configRef; toggles write to both.
+  const [flags, setFlags] = useState<Record<string, boolean>>({});
+  const template = (agency as any)?.marketing_template || 'classic';
+  const templateSections = useMemo(() => SECTIONS.filter((s) => s.templates.includes(template)), [template]);
 
   // The working copy of marketing_config. Mutated by edits, pushed to the
   // iframe, and autosaved. Held in a ref so the message handler (bound once)
@@ -117,9 +154,12 @@ export default function WebsiteEditorPage() {
   useEffect(() => {
     if (seed && !configReady) {
       configRef.current = seed;
+      const initial: Record<string, boolean> = {};
+      for (const def of templateSections) initial[def.flag] = sectionIsOn(def, seed, template);
+      setFlags(initial);
       setConfigReady(true);
     }
-  }, [seed, configReady]);
+  }, [seed, configReady, templateSections, template]);
 
   // Push the working config into the iframe so it renders the editable baseline.
   const pushConfig = useCallback(() => {
@@ -162,6 +202,17 @@ export default function WebsiteEditorPage() {
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => { doSave(); }, 900);
   }, [doSave]);
+
+  // Flip a section on/off: update the panel state, the working config, the live
+  // preview, and queue a save. Writes the explicit boolean the templates read.
+  const toggleSection = useCallback((flag: string) => {
+    if (!configRef.current) return;
+    const next = !flags[flag];
+    setFlags((f) => ({ ...f, [flag]: next }));
+    configRef.current = setByPath(configRef.current, flag, next);
+    pushConfig();
+    scheduleSave();
+  }, [flags, pushConfig, scheduleSave]);
 
   // Inbound bridge from the iframe (Editable regions on the agency site).
   useEffect(() => {
@@ -238,6 +289,16 @@ export default function WebsiteEditorPage() {
           </div>
         )}
 
+        {/* Sections panel toggle */}
+        <button
+          onClick={() => setPanelOpen((o) => !o)}
+          title="Show or hide sections"
+          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors"
+          style={{ color: panelOpen ? '#0b0c0f' : '#e5e7eb', backgroundColor: panelOpen ? '#ffffff' : 'rgba(255,255,255,0.06)' }}
+        >
+          <Layers className="h-4 w-4" /><span className="hidden sm:inline">Sections</span>
+        </button>
+
         {/* Device toggle */}
         <div className="flex items-center rounded-lg p-0.5" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
           {([['desktop', Monitor], ['tablet', Tablet], ['mobile', Smartphone]] as [Device, any][]).map(([d, Icon]) => (
@@ -278,7 +339,8 @@ export default function WebsiteEditorPage() {
         )}
       </div>
 
-      {/* Canvas */}
+      {/* Canvas + sections panel */}
+      <div className="flex-1 flex min-h-0">
       <div className="flex-1 overflow-auto" style={{ padding: device === 'desktop' ? 0 : '20px 12px' }}>
         {!editorSrc ? (
           <div className="h-full flex items-center justify-center text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
@@ -308,6 +370,38 @@ export default function WebsiteEditorPage() {
             )}
           </div>
         )}
+      </div>
+
+      {/* Sections panel */}
+      {panelOpen && (
+        <aside className="shrink-0 overflow-y-auto" style={{ width: 300, backgroundColor: '#0b0c0f', borderLeft: '1px solid rgba(255,255,255,0.08)' }}>
+          <div className="p-4">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-sm font-semibold" style={{ color: '#fff' }}>Sections</h3>
+              <button onClick={() => setPanelOpen(false)} className="inline-flex items-center justify-center rounded-md" style={{ width: 26, height: 26, color: 'rgba(255,255,255,0.6)', backgroundColor: 'rgba(255,255,255,0.06)' }} aria-label="Close sections">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <p className="text-xs mb-4" style={{ color: 'rgba(255,255,255,0.5)' }}>Turn sections on or off. Your header, hero and footer always stay. Changes save as you go.</p>
+            <div className="space-y-1">
+              {templateSections.map((def) => {
+                const on = flags[def.flag] ?? sectionDefaultOn(def, template);
+                return (
+                  <button key={def.key} type="button" onClick={() => toggleSection(def.flag)} className="w-full text-left rounded-lg p-2.5 flex items-start gap-3 transition-colors" style={{ backgroundColor: on ? 'rgba(255,255,255,0.06)' : 'transparent' }}>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-medium" style={{ color: on ? '#fff' : 'rgba(255,255,255,0.55)' }}>{def.label}</span>
+                      <span className="block text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>{def.hint}</span>
+                    </span>
+                    <span className="shrink-0 mt-0.5 inline-flex items-center rounded-full transition-all" style={{ width: 34, height: 20, padding: 2, backgroundColor: on ? accent : 'rgba(255,255,255,0.18)', justifyContent: on ? 'flex-end' : 'flex-start' }}>
+                      <span style={{ width: 16, height: 16, borderRadius: '999px', backgroundColor: '#fff', display: 'block' }} />
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </aside>
+      )}
       </div>
     </div>
   );
