@@ -258,7 +258,7 @@ function ProblemSolutionSection({ config, contrastColors }: { config: MarketingC
         </div>
         <ItemAdd path="problems" label="problem" />
         <div className="solution-box" style={{ background: `linear-gradient(135deg, ${branding.primaryColor} 0%, ${branding.primaryHoverColor} 100%)`, color: contrastColors.text }}>
-          <h2 style={{ color: contrastColors.text }}>{branding.name} Is <Editable as="span" field="solution.headline" value={solution.headline}>{solution.headline}</Editable></h2>
+          <h2 style={{ color: contrastColors.text }}>{branding.name} <TEdit config={config} k="solutionConnector" d="Is" /> <Editable as="span" field="solution.headline" value={solution.headline}>{solution.headline}</Editable></h2>
           {solution.paragraphs.map((p, i) => (<Editable as="p" key={i} className="solution-text" style={{ color: contrastColors.textMuted }} field={`solution.paragraphs.${i}`} value={p}>{p}</Editable>))}
           <p className="solution-highlight" style={{ background: contrastColors.buttonBg, color: contrastColors.text }}>
             <strong style={{ color: contrastColors.isLight ? branding.primaryHoverColor : branding.accentColor }}>And here&apos;s the best part:</strong>{' '}<Editable as="span" field="solution.highlight" value={solution.highlight}>{solution.highlight}</Editable>
@@ -316,62 +316,56 @@ function AppShowcaseSection({ config, contrastColors }: { config: MarketingConfi
       <div className="container">
         <div className="section-header">
           <Editable as="h2" field="sectionHeadings.commandCenterHeadline" value={config.sectionHeadings?.commandCenterHeadline ?? 'See Every Conversation. Manage Everything from Your Phone.'}>{config.sectionHeadings?.commandCenterHeadline ?? 'See Every Conversation. Manage Everything from Your Phone.'}</Editable>
-          <p>Unlike old-school answering services that just take messages, {branding.name} gives you a complete command center for every customer interaction.</p>
+          <p><TEdit config={config} k="commandDescPre" d="Unlike old-school answering services that just take messages," /> {branding.name} <TEdit config={config} k="commandDescPost" d="gives you a complete command center for every customer interaction." /></p>
         </div>
         <div className="app-features">
           <div className="app-screenshot">
             <div className="dashboard-mockup">
-              <svg viewBox="0 0 320 640" fill="none" className="dashboard-image" style={{ width: '100%', maxWidth: '320px', height: 'auto' }}>
-                <rect x="8" y="8" width="304" height="624" rx="40" fill="#1a1a1a" stroke="#333" strokeWidth="2"/>
-                <rect x="18" y="18" width="284" height="604" rx="32" fill="#f8fafc"/>
-                <rect x="18" y="18" width="284" height="42" rx="32" fill="#1a1a1a"/>
-                <rect x="18" y="40" width="284" height="16" fill="#1a1a1a"/>
-                <rect x="115" y="24" width="90" height="28" rx="14" fill="#1a1a1a"/>
-                <rect x="18" y="56" width="284" height="44" fill={branding.primaryColor}/>
-                <path d="M36 78 L44 70 M36 78 L44 86" stroke={contrastColors.text} strokeWidth="2" strokeLinecap="round"/>
-                <text x="160" y="82" textAnchor="middle" fontFamily="system-ui" fontSize="15" fontWeight="600" fill={contrastColors.text}>Call Details</text>
-                <rect x="18" y="100" width="284" height="56" fill="white"/>
-                <text x="32" y="124" fontFamily="system-ui" fontSize="15" fontWeight="700" fill="#1f2937">{config.sampleCall?.customerName || 'Jordan Blake'}</text>
-                <text x="32" y="142" fontFamily="system-ui" fontSize="11" fill="#6b7280">Today, 2:34 PM · 3m 42s</text>
-                <rect x="224" y="114" width="64" height="24" rx="12" fill={tintBg} stroke={tintBgStrong} strokeWidth="1"/>
-                <text x="256" y="130" textAnchor="middle" fontFamily="system-ui" fontSize="10" fontWeight="600" fill={branding.primaryColor}>Normal</text>
-                <rect x="26" y="170" width="268" height="136" rx="12" fill="white" stroke="#e5e7eb" strokeWidth="1"/>
-                <rect x="38" y="182" width="28" height="28" rx="8" fill={tintBg}/>
-                <path d="M48 192 L48 200 M52 192 L56 196 L52 200 M48 196 L56 196" stroke={branding.primaryColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                <text x="74" y="201" fontFamily="system-ui" fontSize="12" fontWeight="700" fill="#1f2937">AI Summary</text>
-                <text fontFamily="system-ui" fontSize="11" fill="#6b7280">
-                  <tspan x="38" y="228">Caller wanted to book an</tspan>
-                  <tspan x="38" dy="17">appointment and asked for the</tspan>
-                  <tspan x="38" dy="17">next available time. Requested a</tspan>
-                  <tspan x="38" dy="17">callback to confirm.</tspan>
-                </text>
-                <rect x="26" y="320" width="268" height="64" rx="12" fill="white" stroke="#e5e7eb" strokeWidth="1"/>
-                <text x="38" y="345" fontFamily="system-ui" fontSize="12" fontWeight="700" fill="#1f2937">Call Recording</text>
-                <rect x="38" y="356" width="244" height="14" rx="7" fill="#f3f4f6"/>
-                <rect x="38" y="356" width="110" height="14" rx="7" fill={branding.primaryColor} opacity="0.4"/>
-                <circle cx="148" cy="363" r="5" fill={branding.primaryColor}/>
-                <text x="258" y="367" textAnchor="end" fontFamily="system-ui" fontSize="9" fill="#6b7280">1:24 / 3:42</text>
-                <rect x="26" y="398" width="268" height="136" rx="12" fill="white" stroke="#e5e7eb" strokeWidth="1"/>
-                <text x="38" y="422" fontFamily="system-ui" fontSize="12" fontWeight="700" fill="#1f2937">Contact Details</text>
-                <rect x="38" y="434" width="24" height="24" rx="6" fill="#f3f4f6"/>
-                <circle cx="50" cy="442" r="4" stroke="#9ca3af" strokeWidth="1.2" fill="none"/>
-                <path d="M44 451 Q50 447 56 451" stroke="#9ca3af" strokeWidth="1.2" fill="none"/>
-                <text x="70" y="440" fontFamily="system-ui" fontSize="9" fill="#9ca3af">Name</text>
-                <text x="70" y="453" fontFamily="system-ui" fontSize="11" fill="#1f2937">{config.sampleCall?.customerName || 'Jordan Blake'}</text>
-                <rect x="38" y="468" width="24" height="24" rx="6" fill="#f3f4f6"/>
-                <path d="M47 474 C47 474 47 480 51 484" stroke="#9ca3af" strokeWidth="1.2" fill="none" strokeLinecap="round"/>
-                <text x="70" y="476" fontFamily="system-ui" fontSize="9" fill="#9ca3af">Phone</text>
-                <text x="70" y="489" fontFamily="system-ui" fontSize="11" fill={branding.primaryColor}>(555) 123-4567</text>
-                <rect x="38" y="502" width="24" height="24" rx="6" fill="#f3f4f6"/>
-                <rect x="45" y="509" width="10" height="10" rx="2" stroke="#9ca3af" strokeWidth="1.2" fill="none"/>
-                <text x="70" y="510" fontFamily="system-ui" fontSize="9" fill="#9ca3af">Service</text>
-                <text x="70" y="523" fontFamily="system-ui" fontSize="11" fill="#1f2937">{config.sampleCall?.service || 'Appointment booking'}</text>
-                <rect x="26" y="550" width="130" height="40" rx="20" fill={branding.primaryColor}/>
-                <text x="91" y="574" textAnchor="middle" fontFamily="system-ui" fontSize="12" fontWeight="600" fill={contrastColors.text}>Call Back</text>
-                <rect x="164" y="550" width="130" height="40" rx="20" fill="white" stroke="#e5e7eb" strokeWidth="1"/>
-                <text x="229" y="574" textAnchor="middle" fontFamily="system-ui" fontSize="12" fontWeight="600" fill="#374151">Send SMS</text>
-                <rect x="120" y="606" width="80" height="4" rx="2" fill="#1a1a1a"/>
-              </svg>
+              {/* Editable HTML phone mockup (was a static SVG). Name, summary and
+                  service are click-to-edit; the labels use the text overrides. */}
+              <div style={{ width: '100%', maxWidth: 320, margin: '0 auto', background: '#1a1a1a', borderRadius: 40, padding: 10, boxShadow: '0 30px 60px rgba(0,0,0,0.18)' }}>
+                <div style={{ background: '#f8fafc', borderRadius: 30, overflow: 'hidden' }}>
+                  <div style={{ height: 26, background: '#1a1a1a' }} />
+                  <div style={{ background: branding.primaryColor, color: contrastColors.text, padding: '12px 16px', display: 'flex', alignItems: 'center' }}>
+                    <span style={{ fontSize: 18, lineHeight: 1, width: 16 }}>&#8249;</span>
+                    <span style={{ flex: 1, textAlign: 'center', fontWeight: 600, fontSize: 15 }}><TEdit config={config} k="mockHeader" d="Call Details" /></span>
+                    <span style={{ width: 16 }} />
+                  </div>
+                  <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', background: '#fff' }}>
+                    <div style={{ minWidth: 0 }}>
+                      <Editable as="div" field="sampleCall.customerName" value={config.sampleCall?.customerName || 'Jordan Blake'} style={{ fontWeight: 700, fontSize: 15, color: '#1f2937' }}>{config.sampleCall?.customerName || 'Jordan Blake'}</Editable>
+                      <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}><TEdit config={config} k="mockTime" d="Today, 2:34 PM · 3m 42s" /></div>
+                    </div>
+                    <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 600, color: branding.primaryColor, background: tintBg, border: `1px solid ${tintBgStrong}`, borderRadius: 12, padding: '4px 10px' }}><TEdit config={config} k="mockStatus" d="Normal" /></span>
+                  </div>
+                  <div style={{ margin: '0 14px 12px', padding: 12, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                      <span style={{ width: 18, height: 18, display: 'inline-flex', color: branding.primaryColor }}>{Icons.file}</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: '#1f2937' }}><TEdit config={config} k="mockAiSummary" d="AI Summary" /></span>
+                    </div>
+                    <Editable as="p" field="sampleCall.summary" value={config.sampleCall?.summary || 'Caller wanted to book an appointment and asked for the next available time. Requested a callback to confirm.'} style={{ fontSize: 11, color: '#6b7280', margin: 0, lineHeight: 1.5 }}>{config.sampleCall?.summary || 'Caller wanted to book an appointment and asked for the next available time. Requested a callback to confirm.'}</Editable>
+                  </div>
+                  <div style={{ margin: '0 14px 12px', padding: 12, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#1f2937', marginBottom: 8 }}><TEdit config={config} k="mockRecording" d="Call Recording" /></div>
+                    <div style={{ position: 'relative', height: 14, borderRadius: 7, background: '#f3f4f6' }}>
+                      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '45%', borderRadius: 7, background: branding.primaryColor, opacity: 0.4 }} />
+                      <div style={{ position: 'absolute', left: '45%', top: '50%', transform: 'translate(-50%,-50%)', width: 10, height: 10, borderRadius: '50%', background: branding.primaryColor }} />
+                    </div>
+                    <div style={{ textAlign: 'right', fontSize: 9, color: '#6b7280', marginTop: 4 }}>1:24 / 3:42</div>
+                  </div>
+                  <div style={{ margin: '0 14px 12px', padding: 12, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#1f2937', marginBottom: 8 }}><TEdit config={config} k="mockContact" d="Contact Details" /></div>
+                    <div style={{ fontSize: 9, color: '#9ca3af' }}><TEdit config={config} k="mockPhoneLabel" d="Phone" /></div>
+                    <div style={{ fontSize: 11, color: branding.primaryColor, marginBottom: 8 }}>(555) 123-4567</div>
+                    <div style={{ fontSize: 9, color: '#9ca3af' }}><TEdit config={config} k="mockServiceLabel" d="Service" /></div>
+                    <Editable as="div" field="sampleCall.service" value={config.sampleCall?.service || 'Appointment booking'} style={{ fontSize: 11, color: '#1f2937' }}>{config.sampleCall?.service || 'Appointment booking'}</Editable>
+                  </div>
+                  <div style={{ display: 'flex', gap: 10, padding: '0 14px 18px' }}>
+                    <div style={{ flex: 1, textAlign: 'center', padding: '11px', borderRadius: 20, background: branding.primaryColor, color: contrastColors.text, fontWeight: 600, fontSize: 12 }}><TEdit config={config} k="mockCallBack" d="Call Back" /></div>
+                    <div style={{ flex: 1, textAlign: 'center', padding: '11px', borderRadius: 20, background: '#fff', border: '1px solid #e5e7eb', color: '#374151', fontWeight: 600, fontSize: 12 }}><TEdit config={config} k="mockSendSms" d="Send SMS" /></div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           <div className="app-benefits">
@@ -506,7 +500,7 @@ function ComparisonSection({ config }: { config: MarketingConfig }) {
   return (
     <section className="comparison">
       <div className="container">
-        <div className="section-header"><h2>Why {branding.name} Beats Every Other Option</h2></div>
+        <div className="section-header"><h2><TEdit config={config} k="comparisonHeadPre" d="Why" /> {branding.name} <TEdit config={config} k="comparisonHeadPost" d="Beats Every Other Option" /></h2></div>
         <div className="comparison-cards">
           {[
             { name: branding.name, highlight: true, getData: (d: typeof comparisonData[0]) => d.ours },
@@ -599,7 +593,7 @@ function ROICalculatorSection({ config }: { config: MarketingConfig }) {
           </div>
           <div style={{ padding: '1.5rem', borderRadius: 'var(--radius-lg)', background: tintBg, border: `1px solid ${branding.primaryColor}25`, textAlign: 'center' }}>
             <div className="roi-summary-grid" style={{ display: 'grid', gap: '1rem', alignItems: 'center' }}>
-              <div><p style={{ fontSize: '0.688rem', fontWeight: 600, color: 'var(--text-light)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{branding.name} Cost</p><p style={{ fontSize: '1.5rem', fontWeight: 800, color: branding.primaryColor, fontFamily: 'var(--font-primary)', marginBottom: 0 }}>{cs}{lowestPrice}/mo</p></div>
+              <div><p style={{ fontSize: '0.688rem', fontWeight: 600, color: 'var(--text-light)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{branding.name} <TEdit config={config} k="roiCostLabel" d="Cost" /></p><p style={{ fontSize: '1.5rem', fontWeight: 800, color: branding.primaryColor, fontFamily: 'var(--font-primary)', marginBottom: 0 }}>{cs}{lowestPrice}/mo</p></div>
               <div><TEdit config={config} as="p" style={{ fontSize: '0.688rem', fontWeight: 600, color: 'var(--text-light)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }} k="roiAnnualSavings" d="Annual Savings" /><p style={{ fontSize: '1.5rem', fontWeight: 800, color: '#10b981', fontFamily: 'var(--font-primary)', marginBottom: 0 }}>{cs}{annualSavings.toLocaleString()}</p></div>
               <div><TEdit config={config} as="p" style={{ fontSize: '0.688rem', fontWeight: 600, color: 'var(--text-light)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }} k="roiReturn" d="Return on Investment" /><p style={{ fontSize: '1.5rem', fontWeight: 800, color: '#10b981', fontFamily: 'var(--font-primary)', marginBottom: 0 }}>{roiMultiple}x ROI</p></div>
             </div>

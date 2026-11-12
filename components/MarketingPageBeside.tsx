@@ -347,7 +347,7 @@ function ProblemSolution({ config, textOnPrimary, mutedOnPrimary }: { config: Ma
         </div>
         <div style={{ textAlign: 'center' }}><ItemAdd path="problems" label="problem" /></div>
         <div className="bsd-solution bsd-reveal">
-          <h2 style={{ color: textOnPrimary }}>{branding.name} is <Editable as="span" field="solution.headline" value={solution.headline}>{solution.headline}</Editable></h2>
+          <h2 style={{ color: textOnPrimary }}>{branding.name} <TEdit config={config} k="solutionConnector" d="is" /> <Editable as="span" field="solution.headline" value={solution.headline}>{solution.headline}</Editable></h2>
           {solution.paragraphs.map((para, i) => <Editable as="p" key={i} style={{ color: mutedOnPrimary }} field={`solution.paragraphs.${i}`} value={para}>{para}</Editable>)}
           <span className="bsd-solution-hi" style={{ color: textOnPrimary }}><strong><TEdit config={config} k="solutionBestPart" d="The best part:" /></strong> <Editable as="span" field="solution.highlight" value={solution.highlight}>{solution.highlight}</Editable></span>
         </div>
@@ -446,7 +446,7 @@ function CommandCenter({ config, primary, textOnPrimary }: { config: MarketingCo
         <div className="bsd-section-head center">
           <TEdit config={config} as="span" className="bsd-eyebrow" k="eyebrowCommand" d="Your command center" />
           <Editable as="h2" field="sectionHeadings.commandCenterHeadline" value={config.sectionHeadings?.commandCenterHeadline ?? 'See every conversation, manage it all from your phone'}>{config.sectionHeadings?.commandCenterHeadline ?? 'See every conversation, manage it all from your phone'}</Editable>
-          <p>Unlike an answering service that just takes messages, {branding.name} gives you the full picture of every customer.</p>
+          <p><TEdit config={config} k="commandDescPre" d="Unlike an answering service that just takes messages," /> {branding.name} <TEdit config={config} k="commandDescPost" d="gives you the full picture of every customer." /></p>
         </div>
         <div className="bsd-cc">
           <div className="bsd-cc-phone bsd-reveal">
@@ -577,7 +577,7 @@ function Comparison({ config }: { config: MarketingConfig }) {
       <div className="bsd-container">
         <div className="bsd-section-head center">
           <TEdit config={config} as="span" className="bsd-eyebrow" k="eyebrowComparison" d="The comparison" />
-          <h2>Why {branding.name} beats every other option</h2>
+          <h2><TEdit config={config} k="comparisonHeadPre" d="Why" /> {branding.name} <TEdit config={config} k="comparisonHeadPost" d="beats every other option" /></h2>
         </div>
         <div className="bsd-compare-wrap bsd-reveal">
           <table className="bsd-compare">
@@ -655,7 +655,7 @@ function ROICalculator({ config }: { config: MarketingConfig }) {
           </div>
           <div className="bsd-roi-summary">
             <div className="bsd-roi-summary-grid">
-              <div><p className="k">{config.branding.name} cost</p><p className="v pri">{priceString(cs, lowest, pos)}/mo</p></div>
+              <div><p className="k">{config.branding.name} <TEdit config={config} k="roiCostLabel" d="cost" /></p><p className="v pri">{priceString(cs, lowest, pos)}/mo</p></div>
               <div><TEdit config={config} as="p" className="k" k="roiAnnualSavings" d="Annual savings" /><p className="v pos">{m(annualSavings)}</p></div>
               <div><TEdit config={config} as="p" className="k" k="roiReturn" d="Return on investment" /><p className="v pos">{roi}x</p></div>
             </div>
