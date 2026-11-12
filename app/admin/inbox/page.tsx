@@ -14,7 +14,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   MessageSquare, Send, ArrowLeft, Loader2, RefreshCw, Phone, Building2, Bot,
-  ExternalLink, Mail, LifeBuoy, CheckCircle2, RotateCcw,
+  ExternalLink, Mail, LifeBuoy, CheckCircle2, RotateCcw, Copy, Check,
 } from 'lucide-react';
 
 type SupportStatus = 'none' | 'support' | 'resolved';
@@ -92,6 +92,7 @@ export default function AdminInboxPage() {
   const [reply, setReply] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+  const [copiedEmail, setCopiedEmail] = useState(false);
   const threadEndRef = useRef<HTMLDivElement | null>(null);
   const threadScrollRef = useRef<HTMLDivElement | null>(null);
   const stickRef = useRef(true);
@@ -304,7 +305,21 @@ export default function AdminInboxPage() {
                         : 'In-dashboard help widget'}</span>
                   )}
                   {selected.contactPhone && (<span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" />{selected.contactPhone}</span>)}
-                  {selected.email && (<span className="inline-flex items-center gap-1 truncate"><Mail className="h-3 w-3" />{selected.email}</span>)}
+                  {selected.email && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); const addr = selected.email || ''; navigator.clipboard?.writeText(addr).then(() => { setCopiedEmail(true); setTimeout(() => setCopiedEmail(false), 1500); }).catch(() => {}); }}
+                      className="inline-flex items-center gap-1 truncate rounded px-1 -mx-1 cursor-pointer transition-colors hover:bg-black/5"
+                      style={{ color: 'var(--a-dim)' }}
+                      title="Copy email"
+                    >
+                      <Mail className="h-3 w-3 shrink-0" />
+                      <span className="truncate">{selected.email}</span>
+                      {copiedEmail
+                        ? <Check className="h-3 w-3 shrink-0" style={{ color: 'var(--a-em-deep, #047857)' }} />
+                        : <Copy className="h-3 w-3 shrink-0 opacity-50" />}
+                    </button>
+                  )}
                   {selected.type === 'agency' && !selected.contactPhone && !selected.email && <span>Agency</span>}
                 </div>
               </div>
