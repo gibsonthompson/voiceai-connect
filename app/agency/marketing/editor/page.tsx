@@ -29,7 +29,7 @@ import { ArrowLeft, Check, Loader2, Monitor, Tablet, Smartphone, MousePointerCli
 import { useAgency } from '../../context';
 import { defaultMarketingConfig } from '@/types/marketing';
 import { setByPath, getByPath, clone } from '@/lib/editable-path';
-import { fontOptions } from '@/lib/brandFonts';
+import { fontOptions, allFontsHref } from '@/lib/brandFonts';
 import { resolveSectionOrder, SECTION_LABELS } from '@/lib/marketing-sections';
 import { getIndustryPage, INDUSTRY_PAGE_LIST } from '@/lib/industry-pages';
 
@@ -230,6 +230,7 @@ export default function WebsiteEditorPage() {
   const bodyFontRef = useRef<string>('');
   const fontsInitRef = useRef(false);
   const pendingFontsRef = useRef(false);
+  const fontPreviewLoadedRef = useRef(false);
   useEffect(() => {
     if (agency && !fontsInitRef.current) {
       const dz = (agency as any).marketing_display_font || '';
@@ -239,6 +240,18 @@ export default function WebsiteEditorPage() {
       fontsInitRef.current = true;
     }
   }, [agency]);
+  // Load the whole brand-font catalog the first time the Fonts menu opens, so
+  // each option can render in its own typeface. Loaded lazily (not on mount) to
+  // avoid pulling ~40 families into every editor session.
+  useEffect(() => {
+    if (!fontMenuOpen || fontPreviewLoadedRef.current || typeof document === 'undefined') return;
+    const href = allFontsHref();
+    if (!href) return;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet'; link.href = href;
+    document.head.appendChild(link);
+    fontPreviewLoadedRef.current = true;
+  }, [fontMenuOpen]);
   const templateSections = useMemo(() => SECTIONS.filter((s) => s.templates.includes(selectedTemplate)), [selectedTemplate]);
   const defByKey = useMemo(() => Object.fromEntries(SECTIONS.map((s) => [s.key, s])) as Record<string, SectionDef>, []);
 
@@ -741,8 +754,8 @@ export default function WebsiteEditorPage() {
                         <button
                           key={o.value || 'default'}
                           onClick={() => changeFont(slot, o.value)}
-                          className="w-full text-left px-3 py-1.5 text-sm transition-colors flex items-center justify-between gap-2"
-                          style={{ color: current === o.value ? ui.text : ui.dim, backgroundColor: current === o.value ? ui.ctl2 : 'transparent' }}
+                          className="w-full text-left px-3 py-1.5 text-[15px] transition-colors flex items-center justify-between gap-2"
+                          style={{ color: current === o.value ? ui.text : ui.dim, backgroundColor: current === o.value ? ui.ctl2 : 'transparent', fontFamily: o.value ? `'${o.value}', sans-serif` : undefined }}
                         >
                           {o.label}
                           {current === o.value && <Check className="h-3.5 w-3.5 shrink-0" style={{ color: accent }} />}
