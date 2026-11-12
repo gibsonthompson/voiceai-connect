@@ -89,6 +89,13 @@ export default function ClientAIAgentPage() {
   const { client, branding, loading, isFeatureEnabled } = useClient();
   // White-glove / manual billing: hide self-serve upgrade CTAs on locked features.
   const hideBilling = !!(client?.agency as any)?.hide_client_billing;
+  // Calendar is shown only when the agency has turned it on for this client
+  // (same flag that gates the Calendar tab and page). When the agency hides it,
+  // none of the calendar connect options below appear.
+  const showCalendar = (client as any)?.show_client_calendar === true;
+  // CRM (GoHighLevel) calendar is held back until the GoHighLevel app is approved.
+  // Flip this to true to bring the Connect-your-CRM-calendar option back.
+  const CRM_CALENDAR_ENABLED = false;
   const theme = useClientTheme();
   const [message, setMessage] = useState('');
   const [messageError, setMessageError] = useState(false);
@@ -439,6 +446,7 @@ export default function ClientAIAgentPage() {
           <p className="text-center text-[11px] mt-1.5" style={{ color: theme.textMuted4 }}>Call your AI number to hear your settings in action</p>
         </section>
 
+        {showCalendar && (<>
         {/* Google Calendar Integration */}
         <div id="calendar-section" className="fu fu2 scroll-mt-6">
           <SectionCard icon={SectionCalendarIcon} title="Google Calendar" subtitle={isCalendarConnected ? 'Your AI can book appointments to your calendar' : 'Let your AI book appointments to your calendar'} live={!!isCalendarConnected} theme={theme} primaryColor={primaryColor} glass={glass}>
@@ -514,7 +522,8 @@ export default function ClientAIAgentPage() {
           </SectionCard>
         </div>
 
-        {/* GoHighLevel Integration */}
+        {/* GoHighLevel Integration (held back until the GoHighLevel app is approved) */}
+        {CRM_CALENDAR_ENABLED && (
         <div id="ghl-section" className="fu fu2 scroll-mt-6">
           <SectionCard icon={SectionCalendarIcon} title="CRM Calendar" subtitle={isGhlConnected ? 'Your AI books into your CRM calendar' : 'Connect your CRM calendar so your AI books there'} live={!!isGhlConnected} theme={theme} primaryColor={primaryColor} glass={glass}>
             {ghlLoading ? (
@@ -570,11 +579,13 @@ export default function ClientAIAgentPage() {
             )}
           </SectionCard>
         </div>
+        )}
 
         {/* VoiceAI Connect native calendar */}
         <div id="native-calendar-section" className="fu fu2 scroll-mt-6">
           <NativeCalendarSection client={client} theme={theme} primaryColor={primaryColor} />
         </div>
+        </>)}
 
         {/* Voice Selection */}
         <div className="fu fu2">
