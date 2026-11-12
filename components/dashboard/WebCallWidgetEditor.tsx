@@ -79,10 +79,12 @@ export default function WebCallWidgetEditor(props: WebCallWidgetEditorProps) {
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr)', gap: 16 }} className="wce-grid">
-      {/* Preview (click to select, edit text in place) */}
+      {/* Preview (click to select, edit text in place). Sticky so the widget
+          stays pinned in view while the controls are scrolled/edited below it,
+          in both the stacked (narrow) and two-pane (wide) layouts. */}
       <div
         onClick={() => setSelected(null)}
-        style={{ borderRadius: 16, border: `1px solid ${t.inputBorder}`, backgroundColor: palette.pageBg, padding: '34px 16px 18px', display: 'flex', justifyContent: 'center' }}
+        style={{ position: 'sticky', top: 12, zIndex: 5, alignSelf: 'start', borderRadius: 16, border: `1px solid ${t.inputBorder}`, backgroundColor: palette.pageBg, padding: '24px 16px 18px', display: 'flex', justifyContent: 'center', boxShadow: t.isDark ? '0 14px 34px -16px rgba(0,0,0,0.65)' : '0 14px 34px -18px rgba(2,6,23,0.3)' }}
       >
         <WebCallShell
           palette={palette}
