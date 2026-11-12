@@ -181,6 +181,12 @@ export interface MarketingConfig {
   analytics?: AnalyticsConfig;
   og?: OGConfig;
   sectionHeadings?: SectionHeadings;
+  // Free-form overrides for the small UI labels in the templates (eyebrows, card
+  // micro-labels, nav items, footer headers, stat labels, etc.). Keyed by a
+  // stable id the template passes; when a key is unset the template renders its
+  // own built-in default. Lets any hardcoded string become click-to-edit without
+  // a dedicated typed field. Written by the in-context editor.
+  text?: Record<string, string>;
   // Per-agency overrides for industry landing pages, keyed by page slug (e.g.
   // 'auto'). Each value may override that page's headline, subheadline,
   // problems, sampleCall and faqs; anything omitted falls back to the static

@@ -922,7 +922,18 @@ function AgencySignupForm({ isEmbed }: { isEmbed: boolean }) {
       clearReferralCode();
       if (data.token) localStorage.setItem('agency_password_token', data.token);
       if (data.agencyId) localStorage.setItem('onboarding_agency_id', data.agencyId);
-      window.location.href = '/onboarding';
+      // Set the password FIRST, right after signup and before plan selection and
+      // Stripe checkout, so an account is never left without a password when
+      // someone drops off at those later steps (the old order set it last). The
+      // set-password page logs them in and returns them to onboarding to pick a
+      // plan; it clears localStorage, so the agency id is carried in returnTo.
+      // Fallback to the old direct-to-onboarding path if no token came back.
+      if (data.token && data.agencyId) {
+        const returnTo = encodeURIComponent(`/onboarding?agency=${data.agencyId}`);
+        window.location.href = `/auth/set-password?token=${encodeURIComponent(data.token)}&returnTo=${returnTo}`;
+      } else {
+        window.location.href = '/onboarding';
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
       setLoading(false);

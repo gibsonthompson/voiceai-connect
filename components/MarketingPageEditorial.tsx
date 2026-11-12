@@ -13,7 +13,7 @@
 'use client';
 import { openAgencySupport, visibleFooterLinks, isSupportLink } from '@/lib/marketing-links';
 import CustomScripts from './CustomScripts';
-import { Editable, ItemAdd, ItemRemove, useEditor } from '@/components/agency/MarketingEditable';
+import { Editable, ItemAdd, ItemRemove, useEditor, TEdit } from '@/components/agency/MarketingEditable';
 import { resolveSectionOrder } from '@/lib/marketing-sections';
 
 import React, { useState } from 'react';
@@ -183,10 +183,10 @@ function Nav({ config }: { config: MarketingConfig }) {
           {(config.customNavLinks || []).filter((link) => { const u = (link.url || '').toLowerCase(); if (config.showHowItWorks === false && u.includes('#how-it-works')) return false; if (config.showFeatures === false && u.includes('#features')) return false; if (config.showPricing === false && u.includes('#pricing')) return false; if (config.showFAQ === false && u.includes('#faq')) return false; return true; }).map((link, i) => (
             <li key={`nav-custom-${i}`}>{isSupportLink(link.url, link.label) ? <a href="#support" onClick={(e) => { e.preventDefault(); openAgencySupport(); }}>{link.label}</a> : <a href={link.url} target="_blank" rel="noopener noreferrer">{link.label}</a>}</li>
           ))}
-          {config.showFeatures !== false && <li><a href="#features">Features</a></li>}
-          {config.showHowItWorks !== false && <li><a href="#how">How it works</a></li>}
-          {config.showPricing !== false && <li><a href="#pricing">Pricing</a></li>}
-          {config.showFAQ !== false && <li><a href="/faq">FAQ</a></li>}
+          {config.showFeatures !== false && <li><a href="#features"><TEdit config={config} k="navFeatures" d="Features" /></a></li>}
+          {config.showHowItWorks !== false && <li><a href="#how"><TEdit config={config} k="navHowItWorks" d="How it works" /></a></li>}
+          {config.showPricing !== false && <li><a href="#pricing"><TEdit config={config} k="navPricing" d="Pricing" /></a></li>}
+          {config.showFAQ !== false && <li><a href="/faq"><TEdit config={config} k="navFaq" d="FAQ" /></a></li>}
         </ul>
         <div className="ed-nav-actions">
           <a href="/signup" className="ed-btn ed-btn-primary ed-btn-sm">{config.signup?.trialDays === 0 ? 'Get Started' : 'Start free trial'}</a>
@@ -410,7 +410,7 @@ function Pricing({ config }: { config: MarketingConfig }) {
             const annual = t.annualPrice ?? Math.round(t.price * 9);
             return (
             <article className={`ed-price ${t.isPopular ? 'ed-price-pop' : ''} ${wideLast && i === tiers.length - 1 ? 'ed-cell-wide' : ''}`} key={i}>
-              {t.isPopular && <span className="ed-price-flag ed-accent-bg">Most popular</span>}
+              {t.isPopular && <span className="ed-price-flag ed-accent-bg"><TEdit config={config} k="pricingPopular" d="Most popular" /></span>}
               <h3 className="ed-price-name">{t.name}</h3>
               {t.subtitle && <p className="ed-price-sub">{t.subtitle}</p>}
               <p className="ed-price-amt">{priceString(cs, isAnnual ? annual : t.price, pos)}<span>{isAnnual ? '/yr' : '/mo'}</span></p>
@@ -534,10 +534,10 @@ function Footer({ config }: { config: MarketingConfig }) {
         </div>
         {groups.map((g, gi) => (
           <nav className="ed-footer-col" key={gi}>
-            <h4 className="ed-footer-head">{g.head}</h4>
+            <TEdit config={config} as="h4" className="ed-footer-head" k={`footer${g.head}`} d={g.head} />
             <ul>
               {g.links.map((l, j) => <li key={j}><a href={l.support ? '#support' : l.href} onClick={l.support ? (e) => { e.preventDefault(); openAgencySupport(); } : undefined}>{l.label}</a></li>)}
-              {gi === groups.length - 1 && config.clientLoginPath && <li><a href={config.clientLoginPath}>Client login</a></li>}
+              {gi === groups.length - 1 && config.clientLoginPath && <li><a href={config.clientLoginPath}><TEdit config={config} k="footerClientLogin" d="Client login" /></a></li>}
             </ul>
           </nav>
         ))}

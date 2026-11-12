@@ -91,6 +91,19 @@ export function Editable({
   );
 }
 
+// Convenience wrapper for a hard-coded UI label backed by the config.text
+// override map. `k` is a stable key; `d` is the built-in default shown when the
+// agency hasn't overridden it. Keeps the templates terse while making every
+// label click-to-edit. On the public site it renders exactly `d` (or the
+// override) with no extra markup.
+export function TEdit({ config, as = 'span', k, d, className, style }: {
+  config: { text?: Record<string, string> };
+  as?: AsTag; k: string; d: string; className?: string; style?: React.CSSProperties;
+}) {
+  const v = (config.text && typeof config.text[k] === 'string') ? config.text[k] : d;
+  return <Editable as={as} field={`text.${k}`} value={v} className={className} style={style}>{v}</Editable>;
+}
+
 // "+ Add" control placed at the end of a repeatable list. Renders nothing on
 // the public site; in editor mode it asks the parent to append a new item to
 // the config array at `path`.

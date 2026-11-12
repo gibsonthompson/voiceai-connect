@@ -11,7 +11,7 @@
 'use client';
 import { openAgencySupport, visibleFooterLinks, isSupportLink } from '@/lib/marketing-links';
 import CustomScripts from './CustomScripts';
-import { Editable, ItemAdd, ItemRemove, useEditor } from '@/components/agency/MarketingEditable';
+import { Editable, ItemAdd, ItemRemove, useEditor, TEdit } from '@/components/agency/MarketingEditable';
 import { resolveSectionOrder } from '@/lib/marketing-sections';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
@@ -202,13 +202,13 @@ function Nav({ config }: { config: MarketingConfig }) {
           {(config.customNavLinks || []).filter((link) => { const u = (link.url || '').toLowerCase(); if (config.showHowItWorks === false && u.includes('#how-it-works')) return false; if (config.showFeatures === false && u.includes('#features')) return false; if (config.showPricing === false && u.includes('#pricing')) return false; if (config.showFAQ === false && u.includes('#faq')) return false; return true; }).map((link, i) => (
             <li key={`nav-custom-${i}`}>{isSupportLink(link.url, link.label) ? <a href="#support" onClick={(e) => { e.preventDefault(); openAgencySupport(); }}>{link.label}</a> : <a href={link.url} target="_blank" rel="noopener noreferrer">{link.label}</a>}</li>
           ))}
-          {config.showFeatures !== false && <li><a href="#features">Features</a></li>}
-          {config.showHowItWorks !== false && <li><a href="#how">How it works</a></li>}
-          {config.showPricing !== false && <li><a href="#pricing">Pricing</a></li>}
-          {config.showFAQ !== false && <li><a href="/faq">FAQ</a></li>}
+          {config.showFeatures !== false && <li><a href="#features"><TEdit config={config} k="navFeatures" d="Features" /></a></li>}
+          {config.showHowItWorks !== false && <li><a href="#how"><TEdit config={config} k="navHowItWorks" d="How it works" /></a></li>}
+          {config.showPricing !== false && <li><a href="#pricing"><TEdit config={config} k="navPricing" d="Pricing" /></a></li>}
+          {config.showFAQ !== false && <li><a href="/faq"><TEdit config={config} k="navFaq" d="FAQ" /></a></li>}
         </ul>
         <div className="bsd-nav-actions">
-          {config.footer.phone && <a href={`tel:${config.footer.phone.replace(/\D/g, '')}`} className="bsd-btn bsd-btn-ghost bsd-btn-sm bsd-nav-call">Call us</a>}
+          {config.footer.phone && <a href={`tel:${config.footer.phone.replace(/\D/g, '')}`} className="bsd-btn bsd-btn-ghost bsd-btn-sm bsd-nav-call"><TEdit config={config} k="navCall" d="Call us" /></a>}
           <a href="/signup" className="bsd-btn bsd-btn-primary bsd-btn-sm">{config.signup?.trialDays === 0 ? 'Get Started' : 'Start free trial'}</a>
         </div>
       </div>
@@ -237,12 +237,12 @@ function Hero({ config }: { config: MarketingConfig }) {
           <div className="bsd-hero-ctas">
             <a href="/signup" className="bsd-btn bsd-btn-primary bsd-btn-lg">{config.signup?.trialDays === 0 ? 'Get Started' : `Start free trial, ${config.signup?.trialDays ?? 7} days free`}</a>
             {hero.demoPhone
-              ? <a href="/demo" className="bsd-btn bsd-btn-ghost bsd-btn-lg">{Icons.phone}Try live demo</a>
-              : (config.showHowItWorks !== false ? <a href="#how" className="bsd-btn bsd-btn-ghost bsd-btn-lg">See how it works</a> : null)}
+              ? <a href="/demo" className="bsd-btn bsd-btn-ghost bsd-btn-lg">{Icons.phone}<TEdit config={config} k="heroDemoBtn" d="Try live demo" /></a>
+              : (config.showHowItWorks !== false ? <a href="#how" className="bsd-btn bsd-btn-ghost bsd-btn-lg"><TEdit config={config} k="heroSeeHow" d="See how it works" /></a> : null)}
           </div>
           {hero.demoPhone && (
             <div className="bsd-hero-demo">
-              <span className="bsd-hero-demo-label">Hear it live</span>
+              <span className="bsd-hero-demo-label"><TEdit config={config} k="heroDemoLabel" d="Hear it live" /></span>
               <a href={telHref(hero.demoPhone)} className="bsd-hero-demo-num">{Icons.phone}{hero.demoPhone}</a>
             </div>
           )}
@@ -260,35 +260,35 @@ function Hero({ config }: { config: MarketingConfig }) {
                 <div className="bsd-card-avatar">{initialsOf(config.sampleCall?.customerName)}</div>
                 <div>
                   <Editable as="div" className="bsd-card-name" field="sampleCall.customerName" value={config.sampleCall?.customerName || 'Jordan Blake'}>{config.sampleCall?.customerName || 'Jordan Blake'}</Editable>
-                  <div className="bsd-card-time">Today, 2:34 PM, 3m 42s</div>
+                  <div className="bsd-card-time"><TEdit config={config} k="cardTime" d="Today, 2:34 PM, 3m 42s" /></div>
                 </div>
               </div>
-              <span className="bsd-chip">Booked</span>
+              <span className="bsd-chip"><TEdit config={config} k="cardChip" d="Booked" /></span>
             </div>
             <div className="bsd-card-block">
-              <h5>{Icons.zap}AI summary</h5>
+              <h5>{Icons.zap}<TEdit config={config} k="cardAiSummary" d="AI summary" /></h5>
               <Editable as="p" field="sampleCall.summary" value={config.sampleCall?.summary || 'Caller wanted to book an appointment and asked for the next available time.'}>{config.sampleCall?.summary || 'Caller wanted to book an appointment and asked for the next available time.'}</Editable>
             </div>
             <div className="bsd-card-block">
-              <div className="bsd-card-row"><span>Service</span><Editable as="span" field="sampleCall.service" value={config.sampleCall?.service || 'Appointment booking'}>{config.sampleCall?.service || 'Appointment booking'}</Editable></div>
-              <div className="bsd-card-row"><span>Appointment</span><span>Thu, 10:00 AM</span></div>
-              <div className="bsd-card-row"><span>Callback number</span><span>{branding.name ? '(555) 123-4567' : ''}</span></div>
+              <div className="bsd-card-row"><span><TEdit config={config} k="cardServiceLabel" d="Service" /></span><Editable as="span" field="sampleCall.service" value={config.sampleCall?.service || 'Appointment booking'}>{config.sampleCall?.service || 'Appointment booking'}</Editable></div>
+              <div className="bsd-card-row"><span><TEdit config={config} k="cardApptLabel" d="Appointment" /></span><TEdit config={config} k="cardApptValue" d="Thu, 10:00 AM" /></div>
+              <div className="bsd-card-row"><span><TEdit config={config} k="cardCallbackLabel" d="Callback number" /></span><span>{branding.name ? '(555) 123-4567' : ''}</span></div>
             </div>
           </div>
 
           {/* Floating accent: live call (wide screens only) */}
           <div className="bsd-card bsd-card-float bsd-card-call">
             <div className="bsd-card-head" style={{ marginBottom: '0.5rem' }}>
-              <span className="bsd-card-name" style={{ fontSize: '0.85rem' }}>Live call</span>
+              <span className="bsd-card-name" style={{ fontSize: '0.85rem' }}><TEdit config={config} k="liveCall" d="Live call" /></span>
               <span className="bsd-wave"><i /><i /><i /><i /><i /><i /></span>
             </div>
-            <div className="bsd-card-row"><span>Answered in</span><span>0.4s</span></div>
+            <div className="bsd-card-row"><span><TEdit config={config} k="answeredInLabel" d="Answered in" /></span><TEdit config={config} k="answeredInValue" d="0.4s" /></div>
           </div>
 
           {/* Floating accent: SMS summary (wide screens only) */}
           <div className="bsd-card bsd-card-float bsd-card-sms">
             <div className="bsd-card-block" style={{ background: 'transparent', border: 'none', padding: 0 }}>
-              <h5>{Icons.message}Text summary sent</h5>
+              <h5>{Icons.message}<TEdit config={config} k="textSummarySent" d="Text summary sent" /></h5>
               <p style={{ fontSize: '0.8rem' }}>New call from {config.sampleCall?.customerName || 'Jordan Blake'}. Appointment booked for Thursday at 10 AM.</p>
             </div>
           </div>
@@ -304,10 +304,10 @@ function Hero({ config }: { config: MarketingConfig }) {
 function ProofStrip({ config }: { config: MarketingConfig }) {
   const s = config.stats;
   const items = [
-    { value: s.setupTime, label: 'Setup time', field: 'stats.setupTime' },
-    { value: s.responseTime, label: 'Response time', field: 'stats.responseTime' },
-    { value: s.businessesServed, label: 'Availability', field: 'stats.businessesServed' },
-    { value: s.satisfaction, label: 'Calls answered', field: 'stats.satisfaction' },
+    { value: s.setupTime, label: 'Setup time', field: 'stats.setupTime', lk: 'statLabelSetup' },
+    { value: s.responseTime, label: 'Response time', field: 'stats.responseTime', lk: 'statLabelResponse' },
+    { value: s.businessesServed, label: 'Availability', field: 'stats.businessesServed', lk: 'statLabelAvailability' },
+    { value: s.satisfaction, label: 'Calls answered', field: 'stats.satisfaction', lk: 'statLabelCalls' },
   ];
   return (
     <section className="bsd-proof">
@@ -315,7 +315,7 @@ function ProofStrip({ config }: { config: MarketingConfig }) {
         {items.map((it, i) => (
           <div key={i} className="bsd-proof-item bsd-reveal">
             <Editable as="div" className="bsd-proof-value" field={it.field} value={it.value}>{it.value}</Editable>
-            <div className="bsd-proof-label">{it.label}</div>
+            <TEdit config={config} as="div" className="bsd-proof-label" k={it.lk} d={it.label} />
           </div>
         ))}
       </div>
@@ -332,7 +332,7 @@ function ProblemSolution({ config, textOnPrimary, mutedOnPrimary }: { config: Ma
     <section className="bsd-section">
       <div className="bsd-container">
         <div className="bsd-section-head center">
-          <span className="bsd-eyebrow">The cost of a missed call</span>
+          <TEdit config={config} as="span" className="bsd-eyebrow" k="eyebrowProblem" d="The cost of a missed call" />
           <Editable as="h2" field="sectionHeadings.problemHeadline" value={config.sectionHeadings?.problemHeadline ?? 'You’re losing customers every time your phone rings'}>{config.sectionHeadings?.problemHeadline ?? 'You’re losing customers every time your phone rings'}</Editable>
         </div>
         <div className="bsd-problems bsd-stagger">
@@ -349,7 +349,7 @@ function ProblemSolution({ config, textOnPrimary, mutedOnPrimary }: { config: Ma
         <div className="bsd-solution bsd-reveal">
           <h2 style={{ color: textOnPrimary }}>{branding.name} is <Editable as="span" field="solution.headline" value={solution.headline}>{solution.headline}</Editable></h2>
           {solution.paragraphs.map((para, i) => <Editable as="p" key={i} style={{ color: mutedOnPrimary }} field={`solution.paragraphs.${i}`} value={para}>{para}</Editable>)}
-          <span className="bsd-solution-hi" style={{ color: textOnPrimary }}><strong>The best part:</strong> <Editable as="span" field="solution.highlight" value={solution.highlight}>{solution.highlight}</Editable></span>
+          <span className="bsd-solution-hi" style={{ color: textOnPrimary }}><strong><TEdit config={config} k="solutionBestPart" d="The best part:" /></strong> <Editable as="span" field="solution.highlight" value={solution.highlight}>{solution.highlight}</Editable></span>
         </div>
       </div>
     </section>
@@ -365,7 +365,7 @@ function HowItWorks({ config }: { config: MarketingConfig }) {
     <section id="how" className="bsd-section bsd-section-soft">
       <div className="bsd-container">
         <div className="bsd-section-head center">
-          <span className="bsd-eyebrow">How it works</span>
+          <TEdit config={config} as="span" className="bsd-eyebrow" k="eyebrowHow" d="How it works" />
           <Editable as="h2" field="stepsHeading" value={config.stepsHeading || 'From signup to your first answered call'}>{config.stepsHeading || 'From signup to your first answered call'}</Editable>
           <Editable as="p" field="stepsSubheading" value={config.stepsSubheading || 'A few simple steps, no tech skills required.'}>{config.stepsSubheading || 'A few simple steps, no tech skills required.'}</Editable>
         </div>
@@ -405,9 +405,9 @@ function FeatureExplorer({ config }: { config: MarketingConfig }) {
     <section id="features" className="bsd-section">
       <div className="bsd-container">
         <div className="bsd-section-head center">
-          <span className="bsd-eyebrow">Capabilities</span>
+          <TEdit config={config} as="span" className="bsd-eyebrow" k="eyebrowFeatures" d="Capabilities" />
           <Editable as="h2" field="sectionHeadings.featuresHeadline" value={config.sectionHeadings?.featuresHeadline ?? 'Everything you need. Nothing you don’t.'}>{config.sectionHeadings?.featuresHeadline ?? 'Everything you need. Nothing you don’t.'}</Editable>
-          <p>Tap through what your AI receptionist handles on every call.</p>
+          <TEdit config={config} as="p" k="featuresSubtitle" d="Tap through what your AI receptionist handles on every call." />
         </div>
         <div className="bsd-fx">
           <div className="bsd-fx-pills">
@@ -444,7 +444,7 @@ function CommandCenter({ config, primary, textOnPrimary }: { config: MarketingCo
     <section className="bsd-section bsd-section-soft">
       <div className="bsd-container">
         <div className="bsd-section-head center">
-          <span className="bsd-eyebrow">Your command center</span>
+          <TEdit config={config} as="span" className="bsd-eyebrow" k="eyebrowCommand" d="Your command center" />
           <Editable as="h2" field="sectionHeadings.commandCenterHeadline" value={config.sectionHeadings?.commandCenterHeadline ?? 'See every conversation, manage it all from your phone'}>{config.sectionHeadings?.commandCenterHeadline ?? 'See every conversation, manage it all from your phone'}</Editable>
           <p>Unlike an answering service that just takes messages, {branding.name} gives you the full picture of every customer.</p>
         </div>
@@ -500,7 +500,7 @@ function CommandCenter({ config, primary, textOnPrimary }: { config: MarketingCo
               <ItemAdd path="benefits" label="benefit" />
             </div>
             <div className="bsd-sms bsd-reveal">
-              <div className="bsd-sms-head">Messages</div>
+              <div className="bsd-sms-head"><TEdit config={config} k="smsHead" d="Messages" /></div>
               <div className="bsd-sms-body">
                 <div className="bsd-sms-bubble">
                   <strong>{branding.name}</strong>
@@ -524,7 +524,7 @@ function Industries({ config }: { config: MarketingConfig }) {
     <section className="bsd-section">
       <div className="bsd-container">
         <div className="bsd-section-head center">
-          <span className="bsd-eyebrow">Who it&rsquo;s for</span>
+          <TEdit config={config} as="span" className="bsd-eyebrow" k="eyebrowIndustries" d="Who it’s for" />
           <Editable as="h2" field="sectionHeadings.industriesHeadline" value={config.sectionHeadings?.industriesHeadline ?? 'Built for businesses that can’t afford to miss calls'}>{config.sectionHeadings?.industriesHeadline ?? 'Built for businesses that can’t afford to miss calls'}</Editable>
         </div>
         <div className="bsd-industries bsd-stagger">
@@ -576,7 +576,7 @@ function Comparison({ config }: { config: MarketingConfig }) {
     <section className="bsd-section bsd-section-soft">
       <div className="bsd-container">
         <div className="bsd-section-head center">
-          <span className="bsd-eyebrow">The comparison</span>
+          <TEdit config={config} as="span" className="bsd-eyebrow" k="eyebrowComparison" d="The comparison" />
           <h2>Why {branding.name} beats every other option</h2>
         </div>
         <div className="bsd-compare-wrap bsd-reveal">
@@ -585,9 +585,9 @@ function Comparison({ config }: { config: MarketingConfig }) {
               <tr>
                 <th></th>
                 <th className="bsd-col-us">{branding.name}</th>
-                <th>Human receptionist</th>
-                <th>Traditional service</th>
-                <th>Just voicemail</th>
+                <th><TEdit config={config} k="compHuman" d="Human receptionist" /></th>
+                <th><TEdit config={config} k="compService" d="Traditional service" /></th>
+                <th><TEdit config={config} k="compVoicemail" d="Just voicemail" /></th>
               </tr>
             </thead>
             <tbody>
@@ -630,25 +630,25 @@ function ROICalculator({ config }: { config: MarketingConfig }) {
     <section className="bsd-section">
       <div className="bsd-container">
         <div className="bsd-section-head center">
-          <span className="bsd-eyebrow">Do the math</span>
+          <TEdit config={config} as="span" className="bsd-eyebrow" k="eyebrowRoi" d="Do the math" />
           <Editable as="h2" field="sectionHeadings.roiHeadline" value={config.sectionHeadings?.roiHeadline ?? 'What are missed calls costing you?'}>{config.sectionHeadings?.roiHeadline ?? 'What are missed calls costing you?'}</Editable>
           <p>The average missed call costs a small business about {m(COST)} in lost revenue. Move the slider to see yours.</p>
         </div>
         <div className="bsd-roi bsd-reveal">
           <div className="bsd-roi-top">
-            <span>Calls you miss per week</span>
+            <span><TEdit config={config} k="roiSliderLabel" d="Calls you miss per week" /></span>
             <span>{missed}</span>
           </div>
           <input type="range" min={1} max={25} value={missed} onChange={e => setMissed(Number(e.target.value))} aria-label="Calls missed per week" />
           <div className="bsd-roi-scale"><span>1</span><span>5</span><span>10</span><span>15</span><span>20</span><span>25</span></div>
           <div className="bsd-roi-cards">
             <div className="bsd-roi-loss">
-              <p className="k">Monthly revenue lost</p>
+              <TEdit config={config} as="p" className="k" k="roiMonthlyLost" d="Monthly revenue lost" />
               <p className="v">{m(monthlyLost)}</p>
               <p className="s">{missed}/week is about {monthlyMissed} calls a month x {m(COST)}</p>
             </div>
             <div className="bsd-roi-loss">
-              <p className="k">Annual revenue lost</p>
+              <TEdit config={config} as="p" className="k" k="roiAnnualLost" d="Annual revenue lost" />
               <p className="v">{m(annualLost)}</p>
               <p className="s">Going to your competitors</p>
             </div>
@@ -656,8 +656,8 @@ function ROICalculator({ config }: { config: MarketingConfig }) {
           <div className="bsd-roi-summary">
             <div className="bsd-roi-summary-grid">
               <div><p className="k">{config.branding.name} cost</p><p className="v pri">{priceString(cs, lowest, pos)}/mo</p></div>
-              <div><p className="k">Annual savings</p><p className="v pos">{m(annualSavings)}</p></div>
-              <div><p className="k">Return on investment</p><p className="v pos">{roi}x</p></div>
+              <div><TEdit config={config} as="p" className="k" k="roiAnnualSavings" d="Annual savings" /><p className="v pos">{m(annualSavings)}</p></div>
+              <div><TEdit config={config} as="p" className="k" k="roiReturn" d="Return on investment" /><p className="v pos">{roi}x</p></div>
             </div>
             <a href="/signup" className="bsd-btn bsd-btn-primary" style={{ marginTop: '1.25rem' }}>Stop losing {m(monthlyLost)}/month</a>
           </div>
@@ -685,7 +685,7 @@ function Pricing({ config }: { config: MarketingConfig }) {
     <section id="pricing" className="bsd-section bsd-section-soft">
       <div className="bsd-container">
         <div className="bsd-section-head center">
-          <span className="bsd-eyebrow">Pricing</span>
+          <TEdit config={config} as="span" className="bsd-eyebrow" k="eyebrowPricing" d="Pricing" />
           <Editable as="h2" field="sectionHeadings.pricingHeadline" value={config.sectionHeadings?.pricingHeadline ?? 'Simple pricing. No hidden fees.'}>{config.sectionHeadings?.pricingHeadline ?? 'Simple pricing. No hidden fees.'}</Editable>
           <p>All plans include the {branding.name} app, text summaries, call recordings{config.signup?.trialDays !== 0 ? `, and a ${config.signup?.trialDays ?? 7}-day free trial` : ''}.</p>
         </div>
@@ -708,7 +708,7 @@ function Pricing({ config }: { config: MarketingConfig }) {
             const annual = tier.annualPrice ?? Math.round(tier.price * 9);
             return (
             <div key={i} className={`bsd-price bsd-reveal${tier.isPopular ? ' pop' : ''}`}>
-              {tier.isPopular && <div className="bsd-price-badge">{Icons.star}Most popular</div>}
+              {tier.isPopular && <div className="bsd-price-badge">{Icons.star}<TEdit config={config} k="pricingPopular" d="Most popular" /></div>}
               <h3>{tier.name}</h3>
               <div className="bsd-price-amt">
                 {pos !== 'after' && <span className="bsd-price-cur">{cs}</span>}
@@ -748,7 +748,7 @@ function FAQ({ config }: { config: MarketingConfig }) {
     <section id="faq" className="bsd-section">
       <div className="bsd-container">
         <div className="bsd-section-head center">
-          <span className="bsd-eyebrow">FAQ</span>
+          <TEdit config={config} as="span" className="bsd-eyebrow" k="eyebrowFaqSection" d="FAQ" />
           <Editable as="h2" field="sectionHeadings.faqHeadline" value={config.sectionHeadings?.faqHeadline ?? 'Questions? We’ve got answers.'}>{config.sectionHeadings?.faqHeadline ?? 'Questions? We’ve got answers.'}</Editable>
         </div>
         <div className="bsd-faq-list">
@@ -787,7 +787,7 @@ function AiWebCall({ config }: { config: MarketingConfig }) {
     <section id="ai-web-call" className="bsd-section bsd-section-soft">
       <div className="bsd-container">
         <div className="bsd-section-head center">
-          <span className="bsd-eyebrow">Live demo</span>
+          <TEdit config={config} as="span" className="bsd-eyebrow" k="eyebrowWebcall" d="Live demo" />
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.78rem', fontWeight: 600, color: primary, background: `${primary}18`, border: `1px solid ${primary}33`, borderRadius: '999px', padding: '5px 13px', margin: '0.55rem 0 0.9rem' }}>
             <span style={{ width: 7, height: 7, borderRadius: '999px', background: primary, display: 'inline-block' }} />
             Live in your browser, no app, nothing to dial
@@ -842,23 +842,23 @@ function Footer({ config }: { config: MarketingConfig }) {
             <a href={homeUrl} className="bsd-footer-brand">
               {branding.logoUrl ? <img src={branding.logoUrl} alt={branding.name} /> : <span>{branding.name}</span>}
             </a>
-            <p className="bsd-footer-tag">{tagline}</p>
+            <TEdit config={config} as="p" className="bsd-footer-tag" k="footerTagline" d={tagline} />
           </div>
           <div className="bsd-footer-col">
-            <h4>Product</h4>
+            <h4><TEdit config={config} k="footerProduct" d="Product" /></h4>
             {footer.productLinks.map((l, i) => <a key={i} href={l.href}>{l.label}</a>)}
           </div>
           {visibleFooterLinks(footer.industryLinks).length > 0 && (
           <div className="bsd-footer-col">
-            <h4>Industries</h4>
+            <h4><TEdit config={config} k="footerIndustries" d="Industries" /></h4>
             {visibleFooterLinks(footer.industryLinks).map((l, i) => <a key={i} href={l.support ? '#support' : l.href} onClick={l.support ? (e) => { e.preventDefault(); openAgencySupport(); } : undefined}>{l.label}</a>)}
           </div>
           )}
           <div className="bsd-footer-col">
-            <h4>Company</h4>
+            <h4><TEdit config={config} k="footerCompany" d="Company" /></h4>
             {(config.customNavLinks || []).map((l, i) => (isSupportLink(l.url, l.label) ? <a key={`fc-${i}`} href="#support" onClick={(e) => { e.preventDefault(); openAgencySupport(); }}>{l.label}</a> : <a key={`fc-${i}`} href={l.url} target="_blank" rel="noopener noreferrer">{l.label}</a>))}
             {visibleFooterLinks(footer.companyLinks).map((l, i) => <a key={i} href={l.support ? '#support' : l.href} onClick={l.support ? (e) => { e.preventDefault(); openAgencySupport(); } : undefined}>{l.label}</a>)}
-            {config.clientLoginPath && <a href={config.clientLoginPath}>Client login</a>}
+            {config.clientLoginPath && <a href={config.clientLoginPath}><TEdit config={config} k="footerClientLogin" d="Client login" /></a>}
           </div>
         </div>
         <div className="bsd-footer-bottom">

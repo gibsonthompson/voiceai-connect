@@ -28,7 +28,7 @@ const REFERRAL_OPTIONS = [
 const steps = [
   { id: 1, name: 'Agency', icon: Building, description: 'Name your agency' },
   { id: 2, name: 'Plan', icon: Zap, description: 'Choose your plan' },
-  { id: 3, name: 'Password', icon: Lock, description: 'Set password & go' },
+  { id: 3, name: 'Launch', icon: Lock, description: 'Confirm and go' },
 ];
 
 // Countries the platform can actually format and route SMS/voice for. This is
@@ -280,6 +280,17 @@ function OnboardingContent() {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [agencyDetails, setAgencyDetails] = useState({ name: '', phone: '', referralSource: '', country: 'US' });
   const selectedCountry = getCountry(agencyDetails.country);
+
+  // The password is now set right after signup (before this flow), so by the
+  // time someone is here it's almost always already done. The one-time setup
+  // token is consumed by that step, so its ABSENCE means the password is set.
+  // An in-flight signup from the old order still carries the token and sets the
+  // password on the final step (handleSetPassword branches on it), so this only
+  // drives the labels below, never the behavior.
+  const [pwAlreadySet, setPwAlreadySet] = useState(false);
+  useEffect(() => {
+    try { setPwAlreadySet(!localStorage.getItem('agency_password_token')); } catch { /* ignore */ }
+  }, []);
 
   useEffect(() => {
     const fetchAgency = async () => {
@@ -641,11 +652,11 @@ function OnboardingContent() {
                 <Lock className="w-8 h-8 sm:w-10 sm:h-10 text-emerald-400" />
               </div>
               <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-                {selectedPlan === 'free' ? 'Set Your Password' : "You're Almost In"}
+                {selectedPlan === 'free' ? (pwAlreadySet ? "You're All Set" : 'Set Your Password') : "You're Almost In"}
               </h2>
               <p className="mt-2 text-[#fafaf9]/50">
                 {selectedPlan === 'free'
-                  ? 'Create a password and start building your agency'
+                  ? (pwAlreadySet ? 'Launch your dashboard and start building your agency' : 'Create a password and start building your agency')
                   : 'Add your card to start your 14-day free trial — you won\u2019t be charged today'}
               </p>
             </div>
@@ -683,12 +694,12 @@ function OnboardingContent() {
                 {loading ? (
                   <><Loader2 className="w-5 h-5 animate-spin" />{selectedPlan === 'free' ? 'Setting up...' : 'Redirecting to secure checkout...'}</>
                 ) : (
-                  <>{selectedPlan === 'free' ? 'Set Password & Go' : 'Add Card & Start Trial'}<ArrowRight className="w-5 h-5" /></>
+                  <>{selectedPlan === 'free' ? (pwAlreadySet ? 'Launch My Agency' : 'Set Password & Go') : 'Add Card & Start Trial'}<ArrowRight className="w-5 h-5" /></>
                 )}
               </button>
               {selectedPlan !== 'free' && (
                 <p className="text-center text-xs text-[#fafaf9]/40">
-                  Secure checkout by Stripe. You set your password right after.
+                  {pwAlreadySet ? 'Secure checkout by Stripe. You won’t be charged today.' : 'Secure checkout by Stripe. You set your password right after.'}
                 </p>
               )}
             </div>

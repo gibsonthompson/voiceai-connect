@@ -2,7 +2,7 @@
 'use client';
 import { openAgencySupport, visibleFooterLinks, isSupportLink } from '@/lib/marketing-links';
 import CustomScripts from './CustomScripts';
-import { Editable, ItemAdd, ItemRemove } from '@/components/agency/MarketingEditable';
+import { Editable, ItemAdd, ItemRemove, TEdit } from '@/components/agency/MarketingEditable';
 import { resolveSectionOrder } from '@/lib/marketing-sections';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -170,14 +170,14 @@ function Navigation({ config }: { config: MarketingConfig }) {
             {(config.customNavLinks || []).filter((link) => { const u = (link.url || '').toLowerCase(); if (config.showHowItWorks === false && u.includes('#how-it-works')) return false; if (config.showFeatures === false && u.includes('#features')) return false; if (config.showPricing === false && u.includes('#pricing')) return false; if (config.showFAQ === false && u.includes('#faq')) return false; return true; }).map((link, i) => (
               <li key={`custom-nav-${i}`}>{isSupportLink(link.url, link.label) ? <a href="#support" onClick={(e) => { e.preventDefault(); openAgencySupport(); }}>{link.label}</a> : <a href={link.url} target="_blank" rel="noopener noreferrer">{link.label}</a>}</li>
             ))}
-            {config.showFeatures !== false && <li><a href="#features">Features</a></li>}
-            {config.showHowItWorks !== false && <li><a href="#how-it-works">How It Works</a></li>}
-            {config.hero?.demoPhone && <li><a href="/demo">Demo</a></li>}
-            {config.showPricing !== false && <li><a href="#pricing">Pricing</a></li>}
-            {config.showFAQ !== false && <li><a href="/faq">FAQ</a></li>}
+            {config.showFeatures !== false && <li><a href="#features"><TEdit config={config} k="navFeatures" d="Features" /></a></li>}
+            {config.showHowItWorks !== false && <li><a href="#how-it-works"><TEdit config={config} k="navHowItWorks" d="How It Works" /></a></li>}
+            {config.hero?.demoPhone && <li><a href="/demo"><TEdit config={config} k="navDemo" d="Demo" /></a></li>}
+            {config.showPricing !== false && <li><a href="#pricing"><TEdit config={config} k="navPricing" d="Pricing" /></a></li>}
+            {config.showFAQ !== false && <li><a href="/faq"><TEdit config={config} k="navFaq" d="FAQ" /></a></li>}
           </ul>
           <div className="nav-actions">
-            {config.footer.phone && <a href={`tel:${config.footer.phone.replace(/\D/g, '')}`} className="btn-ghost">Call Us</a>}
+            {config.footer.phone && <a href={`tel:${config.footer.phone.replace(/\D/g, '')}`} className="btn-ghost"><TEdit config={config} k="navCall" d="Call Us" /></a>}
             <a href="/signup" className="btn-primary">Start Free Trial</a>
           </div>
         </div>
@@ -537,14 +537,14 @@ function ComparisonSection({ config }: { config: MarketingConfig }) {
           </table>
         </div>
         <div className="comparison-summary">
-          <h3>The Bottom Line</h3>
+          <TEdit config={config} as="h3" k="bottomLineHeading" d="The Bottom Line" />
           <p><strong>You have three choices:</strong></p>
           <ol>
             <li><strong>Hire staff:</strong> Professional, but {moneyRange(36000, 54000)}/year + benefits</li>
             <li><strong>Traditional service:</strong> 24/7 but generic, no appointments, {moneyRange(300, 600)}/month</li>
             <li><strong>{branding.name}:</strong> Custom AI, books appointments, text summaries, mobile app, {oursLowest}/month</li>
           </ol>
-          <p className="comparison-conclusion">The choice is obvious.</p>
+          <TEdit config={config} as="p" className="comparison-conclusion" k="comparisonConclusion" d="The choice is obvious." />
         </div>
       </div>
     </section>
@@ -579,7 +579,7 @@ function ROICalculatorSection({ config }: { config: MarketingConfig }) {
         <div className="live-stats" style={{ display: 'block', padding: '2rem' }}>
           <div style={{ marginBottom: '2rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.75rem' }}>
-              <span style={{ fontFamily: 'var(--font-primary)', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-medium)' }}>Calls you miss per week</span>
+              <TEdit config={config} as="span" style={{ fontFamily: 'var(--font-primary)', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-medium)' }} k="roiSliderLabel" d="Calls you miss per week" />
               <span style={{ fontFamily: 'var(--font-primary)', fontSize: '2rem', fontWeight: 800, color: branding.primaryColor }}>{missedPerWeek}</span>
             </div>
             <input type="range" min={1} max={25} value={missedPerWeek} onChange={e => setMissedPerWeek(Number(e.target.value))} style={{ width: '100%', accentColor: branding.primaryColor, height: '6px', cursor: 'pointer' }} />
@@ -587,12 +587,12 @@ function ROICalculatorSection({ config }: { config: MarketingConfig }) {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
             <div style={{ padding: '1.25rem', borderRadius: 'var(--radius-md)', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.15)', textAlign: 'center' }}>
-              <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#ef4444', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Monthly Revenue Lost</p>
+              <TEdit config={config} as="p" style={{ fontSize: '0.75rem', fontWeight: 600, color: '#ef4444', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }} k="roiMonthlyLost" d="Monthly Revenue Lost" />
               <p style={{ fontSize: 'clamp(1.5rem, 3vw, 2.25rem)', fontWeight: 800, color: '#ef4444', fontFamily: 'var(--font-primary)', lineHeight: 1.1 }}>{cs}{monthlyLost.toLocaleString()}</p>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginTop: '0.25rem', marginBottom: 0 }}>{missedPerWeek}/week is about {monthlyMissed} calls a month × {cs}{COST_PER_MISSED}</p>
             </div>
             <div style={{ padding: '1.25rem', borderRadius: 'var(--radius-md)', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)', textAlign: 'center' }}>
-              <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#dc2626', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Annual Revenue Lost</p>
+              <TEdit config={config} as="p" style={{ fontSize: '0.75rem', fontWeight: 600, color: '#dc2626', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }} k="roiAnnualLost" d="Annual Revenue Lost" />
               <p style={{ fontSize: 'clamp(1.5rem, 3vw, 2.25rem)', fontWeight: 800, color: '#dc2626', fontFamily: 'var(--font-primary)', lineHeight: 1.1 }}>{cs}{annualLost.toLocaleString()}</p>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginTop: '0.25rem', marginBottom: 0 }}>That&apos;s going to your competitors</p>
             </div>
@@ -600,8 +600,8 @@ function ROICalculatorSection({ config }: { config: MarketingConfig }) {
           <div style={{ padding: '1.5rem', borderRadius: 'var(--radius-lg)', background: tintBg, border: `1px solid ${branding.primaryColor}25`, textAlign: 'center' }}>
             <div className="roi-summary-grid" style={{ display: 'grid', gap: '1rem', alignItems: 'center' }}>
               <div><p style={{ fontSize: '0.688rem', fontWeight: 600, color: 'var(--text-light)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{branding.name} Cost</p><p style={{ fontSize: '1.5rem', fontWeight: 800, color: branding.primaryColor, fontFamily: 'var(--font-primary)', marginBottom: 0 }}>{cs}{lowestPrice}/mo</p></div>
-              <div><p style={{ fontSize: '0.688rem', fontWeight: 600, color: 'var(--text-light)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Annual Savings</p><p style={{ fontSize: '1.5rem', fontWeight: 800, color: '#10b981', fontFamily: 'var(--font-primary)', marginBottom: 0 }}>{cs}{annualSavings.toLocaleString()}</p></div>
-              <div><p style={{ fontSize: '0.688rem', fontWeight: 600, color: 'var(--text-light)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Return on Investment</p><p style={{ fontSize: '1.5rem', fontWeight: 800, color: '#10b981', fontFamily: 'var(--font-primary)', marginBottom: 0 }}>{roiMultiple}x ROI</p></div>
+              <div><TEdit config={config} as="p" style={{ fontSize: '0.688rem', fontWeight: 600, color: 'var(--text-light)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }} k="roiAnnualSavings" d="Annual Savings" /><p style={{ fontSize: '1.5rem', fontWeight: 800, color: '#10b981', fontFamily: 'var(--font-primary)', marginBottom: 0 }}>{cs}{annualSavings.toLocaleString()}</p></div>
+              <div><TEdit config={config} as="p" style={{ fontSize: '0.688rem', fontWeight: 600, color: 'var(--text-light)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }} k="roiReturn" d="Return on Investment" /><p style={{ fontSize: '1.5rem', fontWeight: 800, color: '#10b981', fontFamily: 'var(--font-primary)', marginBottom: 0 }}>{roiMultiple}x ROI</p></div>
             </div>
             <a href="/signup" className="btn-primary" style={{ marginTop: '1.25rem', display: 'inline-flex' }}>Stop Losing {cs}{monthlyLost.toLocaleString()}/month, Start Free Trial</a>
           </div>
@@ -650,7 +650,7 @@ function PricingSection({ config }: { config: MarketingConfig }) {
             const annual = tier.annualPrice ?? Math.round(tier.price * 9);
             return (
             <div key={i} className={`pricing-card ${tier.isPopular ? 'pricing-popular' : ''}`}>
-              {tier.isPopular && (<div className="pricing-badge"><span style={{ color: '#f59e0b', width: '1rem', height: '1rem' }}>{Icons.star}</span>Most Popular</div>)}
+              {tier.isPopular && (<div className="pricing-badge"><span style={{ color: '#f59e0b', width: '1rem', height: '1rem' }}>{Icons.star}</span><TEdit config={config} k="pricingPopular" d="Most Popular" /></div>)}
               <div className="pricing-header">
                 <h3>{tier.name}</h3>
                 <div className="pricing-price"><span className="price-currency">{cs}</span><span className="price-amount">{isAnnual ? annual : tier.price}</span><span className="price-period">{isAnnual ? '/year' : '/month'}</span></div>
@@ -829,27 +829,27 @@ function Footer({ config }: { config: MarketingConfig }) {
                 </div>
               ) : (<span>{branding.name}</span>)}
             </div>
-            <p className="footer-tagline">Professional AI that answers every call, books appointments, and sends you instant summaries, 24/7.</p>
+            <TEdit config={config} as="p" className="footer-tagline" k="footerTagline" d="Professional AI that answers every call, books appointments, and sends you instant summaries, 24/7." />
             <div className="footer-contact">
               {footer.address && <p>{footer.address}</p>}
             </div>
           </div>
           <div className="footer-col">
-            <h4>Product</h4>
+            <h4><TEdit config={config} k="footerProduct" d="Product" /></h4>
             <ul className="footer-links">{footer.productLinks.map((link, i) => (<li key={i}><a href={link.href}>{link.label}</a></li>))}</ul>
           </div>
           {visibleFooterLinks(footer.industryLinks).length > 0 && (
           <div className="footer-col">
-            <h4>Industries</h4>
+            <h4><TEdit config={config} k="footerIndustries" d="Industries" /></h4>
             <ul className="footer-links">{visibleFooterLinks(footer.industryLinks).map((link, i) => (<li key={i}><a href={link.support ? '#support' : link.href} onClick={link.support ? (e) => { e.preventDefault(); openAgencySupport(); } : undefined}>{link.label}</a></li>))}</ul>
           </div>
           )}
           <div className="footer-col">
-            <h4>Company</h4>
+            <h4><TEdit config={config} k="footerCompany" d="Company" /></h4>
             <ul className="footer-links">
               {(config.customNavLinks || []).map((link, i) => (<li key={`custom-footer-${i}`}>{isSupportLink(link.url, link.label) ? <a href="#support" onClick={(e) => { e.preventDefault(); openAgencySupport(); }}>{link.label}</a> : <a href={link.url} target="_blank" rel="noopener noreferrer">{link.label}</a>}</li>))}
               {visibleFooterLinks(footer.companyLinks).map((link, i) => (<li key={i}><a href={link.support ? '#support' : link.href} onClick={link.support ? (e) => { e.preventDefault(); openAgencySupport(); } : undefined}>{link.label}</a></li>))}
-              {config.clientLoginPath && <li><a href={config.clientLoginPath}>Client Login</a></li>}
+              {config.clientLoginPath && <li><a href={config.clientLoginPath}><TEdit config={config} k="footerClientLogin" d="Client Login" /></a></li>}
             </ul>
           </div>
         </div>
