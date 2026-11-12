@@ -486,8 +486,8 @@ function FinalCTA({ config }: { config: MarketingConfig }) {
     <section className="ed-final ed-accent-bg">
       <div className="ed-final-wave"><Wave /></div>
       <div className="ed-container ed-final-inner">
-        <h2 className="ed-final-title">Never miss another call</h2>
-        <p className="ed-final-sub">Set up {branding.name}{config.stats?.setupTime ? ` in ${config.stats.setupTime}` : ''}. Your AI answers the very next ring.</p>
+        <h2 className="ed-final-title">{config.finalCta?.heading || 'Never miss another call'}</h2>
+        <p className="ed-final-sub">{config.finalCta?.body || `Set up ${branding.name}${config.stats?.setupTime ? ` in ${config.stats.setupTime}` : ''}. Your AI answers the very next ring.`}</p>
         <div className="ed-final-cta">
           <a href="/signup" className="ed-btn ed-btn-on-accent">{config.signup?.trialDays === 0 ? 'Get Started' : 'Start free trial'}</a>
           {hasDemo && <a href={telHref(hero.demoPhone)} className="ed-btn ed-btn-on-accent-line">{hero.demoInstructions || `Call ${hero.demoPhone}`}</a>}

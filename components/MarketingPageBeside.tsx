@@ -170,6 +170,9 @@ function useReveal<T extends HTMLElement>() {
 // ============================================================================
 // SHARED HELPERS
 // ============================================================================
+function initialsOf(name?: string): string {
+  return ((name || '').trim().split(/\s+/).map(w => w[0] || '').join('').slice(0, 2).toUpperCase()) || 'JB';
+}
 function telHref(phone: string): string {
   const digits = (phone || '').replace(/\D/g, '');
   if (!digits) return 'tel:';
@@ -253,9 +256,9 @@ function Hero({ config }: { config: MarketingConfig }) {
           <div className="bsd-card bsd-card-main">
             <div className="bsd-card-head">
               <div className="bsd-card-caller">
-                <div className="bsd-card-avatar">JD</div>
+                <div className="bsd-card-avatar">{initialsOf(config.sampleCall?.customerName)}</div>
                 <div>
-                  <div className="bsd-card-name">John Davidson</div>
+                  <div className="bsd-card-name">{config.sampleCall?.customerName || 'Jordan Blake'}</div>
                   <div className="bsd-card-time">Today, 2:34 PM, 3m 42s</div>
                 </div>
               </div>
@@ -263,10 +266,10 @@ function Hero({ config }: { config: MarketingConfig }) {
             </div>
             <div className="bsd-card-block">
               <h5>{Icons.zap}AI summary</h5>
-              <p>Caller wanted a quote for a project starting next month. Qualified as a strong lead and asked to schedule an on-site estimate.</p>
+              <p>{config.sampleCall?.summary || 'Caller wanted to book an appointment and asked for the next available time.'}</p>
             </div>
             <div className="bsd-card-block">
-              <div className="bsd-card-row"><span>Service</span><span>Project estimate</span></div>
+              <div className="bsd-card-row"><span>Service</span><span>{config.sampleCall?.service || 'Appointment booking'}</span></div>
               <div className="bsd-card-row"><span>Appointment</span><span>Thu, 10:00 AM</span></div>
               <div className="bsd-card-row"><span>Callback number</span><span>{branding.name ? '(555) 123-4567' : ''}</span></div>
             </div>
@@ -285,7 +288,7 @@ function Hero({ config }: { config: MarketingConfig }) {
           <div className="bsd-card bsd-card-float bsd-card-sms">
             <div className="bsd-card-block" style={{ background: 'transparent', border: 'none', padding: 0 }}>
               <h5>{Icons.message}Text summary sent</h5>
-              <p style={{ fontSize: '0.8rem' }}>New call from Sarah M. Appointment booked for Thursday at 10 AM.</p>
+              <p style={{ fontSize: '0.8rem' }}>New call from {config.sampleCall?.customerName || 'Jordan Blake'}. Appointment booked for Thursday at 10 AM.</p>
             </div>
           </div>
         </div>
@@ -443,16 +446,16 @@ function CommandCenter({ config, primary, textOnPrimary }: { config: MarketingCo
               <rect x="115" y="24" width="90" height="26" rx="13" fill="#1a1a1a"/>
               <rect x="18" y="60" width="284" height="46" fill={primary}/>
               <text x="160" y="88" textAnchor="middle" fontFamily="system-ui" fontSize="15" fontWeight="600" fill={textOnPrimary}>Call details</text>
-              <text x="32" y="140" fontFamily="system-ui" fontSize="15" fontWeight="700" fill="#1f2937">John Davidson</text>
+              <text x="32" y="140" fontFamily="system-ui" fontSize="15" fontWeight="700" fill="#1f2937">{config.sampleCall?.customerName || 'Jordan Blake'}</text>
               <text x="32" y="158" fontFamily="system-ui" fontSize="11" fill="#6b7280">Today, 2:34 PM, 3m 42s</text>
               <rect x="224" y="128" width="66" height="24" rx="12" fill={primary} opacity="0.12"/>
               <text x="257" y="144" textAnchor="middle" fontFamily="system-ui" fontSize="10" fontWeight="600" fill={primary}>Booked</text>
               <rect x="26" y="176" width="268" height="120" rx="12" fill="#ffffff" stroke="#e5e7eb"/>
               <text x="40" y="202" fontFamily="system-ui" fontSize="12" fontWeight="700" fill="#1f2937">AI Summary</text>
               <text fontFamily="system-ui" fontSize="11" fill="#6b7280">
-                <tspan x="40" y="226">Caller wants a quote for a project</tspan>
-                <tspan x="40" dy="17">starting next month. Requested a</tspan>
-                <tspan x="40" dy="17">callback at their convenience.</tspan>
+                <tspan x="40" y="226">Caller wanted to book an</tspan>
+                <tspan x="40" dy="17">appointment and asked for the</tspan>
+                <tspan x="40" dy="17">next available time.</tspan>
               </text>
               <rect x="26" y="312" width="268" height="66" rx="12" fill="#ffffff" stroke="#e5e7eb"/>
               <text x="40" y="338" fontFamily="system-ui" fontSize="12" fontWeight="700" fill="#1f2937">Recording</text>
@@ -464,7 +467,7 @@ function CommandCenter({ config, primary, textOnPrimary }: { config: MarketingCo
               <text x="40" y="446" fontFamily="system-ui" fontSize="10" fill="#9ca3af">Phone</text>
               <text x="40" y="462" fontFamily="system-ui" fontSize="11" fill={primary}>(555) 123-4567</text>
               <text x="40" y="486" fontFamily="system-ui" fontSize="10" fill="#9ca3af">Service</text>
-              <text x="40" y="502" fontFamily="system-ui" fontSize="11" fill="#1f2937">Project estimate</text>
+              <text x="40" y="502" fontFamily="system-ui" fontSize="11" fill="#1f2937">{config.sampleCall?.service || 'Appointment booking'}</text>
               <rect x="26" y="530" width="128" height="42" rx="21" fill={primary}/>
               <text x="90" y="556" textAnchor="middle" fontFamily="system-ui" fontSize="12" fontWeight="600" fill={textOnPrimary}>Call back</text>
               <rect x="166" y="530" width="128" height="42" rx="21" fill="#ffffff" stroke="#e5e7eb"/>
@@ -489,7 +492,7 @@ function CommandCenter({ config, primary, textOnPrimary }: { config: MarketingCo
               <div className="bsd-sms-body">
                 <div className="bsd-sms-bubble">
                   <strong>{branding.name}</strong>
-                  <p>New call from Sarah M. at 2:47 PM. Requested a service estimate. Appointment booked Thursday at 10 AM.</p>
+                  <p>New call from {config.sampleCall?.customerName || 'Jordan Blake'} at 2:47 PM. Appointment booked Thursday at 10 AM.</p>
                 </div>
               </div>
             </div>
@@ -600,7 +603,7 @@ function ROICalculator({ config }: { config: MarketingConfig }) {
   const pos = config.currencySymbolPosition || 'before';
   const lowest = pricing.length > 0 ? pricing[0].price : 49;
   const [missed, setMissed] = useState(5);
-  const COST = 500;
+  const COST = config.roi?.missedCallCost ?? 500;
   const monthlyMissed = Math.round(missed * 4.33);
   const monthlyLost = monthlyMissed * COST;
   const annualLost = monthlyLost * 12;
@@ -792,8 +795,8 @@ function FinalCTA({ config, textOnPrimary, mutedOnPrimary }: { config: Marketing
   return (
     <section className="bsd-final">
       <div className="bsd-container bsd-final-inner">
-        <h2 style={{ color: textOnPrimary }}>Stop losing customers to voicemail</h2>
-        <p style={{ color: mutedOnPrimary }}>Every missed call is money out the door. While you are on the job or closed for the night, your competitors are answering their phones.</p>
+        <h2 style={{ color: textOnPrimary }}>{config.finalCta?.heading || 'Stop Losing Customers to Voicemail'}</h2>
+        <p style={{ color: mutedOnPrimary }}>{config.finalCta?.body || 'Every missed call is money out the door. While you are busy or closed, your competitors are answering their phones.'}</p>
         <div className="bsd-final-actions">
           <a href="/signup" className="bsd-btn bsd-btn-lg bsd-final-btn">{config.signup?.trialDays === 0 ? 'Get started' : `Start your ${config.signup?.trialDays ?? 7}-day free trial`}</a>
           {hero.demoPhone && <a href={telHref(hero.demoPhone)} className="bsd-final-demo">{Icons.phone}or call the live demo: {hero.demoPhone}</a>}

@@ -326,7 +326,7 @@ function AppShowcaseSection({ config, contrastColors }: { config: MarketingConfi
                 <path d="M36 78 L44 70 M36 78 L44 86" stroke={contrastColors.text} strokeWidth="2" strokeLinecap="round"/>
                 <text x="160" y="82" textAnchor="middle" fontFamily="system-ui" fontSize="15" fontWeight="600" fill={contrastColors.text}>Call Details</text>
                 <rect x="18" y="100" width="284" height="56" fill="white"/>
-                <text x="32" y="124" fontFamily="system-ui" fontSize="15" fontWeight="700" fill="#1f2937">John Davidson</text>
+                <text x="32" y="124" fontFamily="system-ui" fontSize="15" fontWeight="700" fill="#1f2937">{config.sampleCall?.customerName || 'Jordan Blake'}</text>
                 <text x="32" y="142" fontFamily="system-ui" fontSize="11" fill="#6b7280">Today, 2:34 PM · 3m 42s</text>
                 <rect x="224" y="114" width="64" height="24" rx="12" fill={tintBg} stroke={tintBgStrong} strokeWidth="1"/>
                 <text x="256" y="130" textAnchor="middle" fontFamily="system-ui" fontSize="10" fontWeight="600" fill={branding.primaryColor}>Normal</text>
@@ -335,10 +335,10 @@ function AppShowcaseSection({ config, contrastColors }: { config: MarketingConfi
                 <path d="M48 192 L48 200 M52 192 L56 196 L52 200 M48 196 L56 196" stroke={branding.primaryColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
                 <text x="74" y="201" fontFamily="system-ui" fontSize="12" fontWeight="700" fill="#1f2937">AI Summary</text>
                 <text fontFamily="system-ui" fontSize="11" fill="#6b7280">
-                  <tspan x="38" y="228">Caller interested in getting a quote</tspan>
-                  <tspan x="38" dy="17">for a project starting next month.</tspan>
-                  <tspan x="38" dy="17">Requested a callback at their</tspan>
-                  <tspan x="38" dy="17">earliest convenience.</tspan>
+                  <tspan x="38" y="228">Caller wanted to book an</tspan>
+                  <tspan x="38" dy="17">appointment and asked for the</tspan>
+                  <tspan x="38" dy="17">next available time. Requested a</tspan>
+                  <tspan x="38" dy="17">callback to confirm.</tspan>
                 </text>
                 <rect x="26" y="320" width="268" height="64" rx="12" fill="white" stroke="#e5e7eb" strokeWidth="1"/>
                 <text x="38" y="345" fontFamily="system-ui" fontSize="12" fontWeight="700" fill="#1f2937">Call Recording</text>
@@ -352,7 +352,7 @@ function AppShowcaseSection({ config, contrastColors }: { config: MarketingConfi
                 <circle cx="50" cy="442" r="4" stroke="#9ca3af" strokeWidth="1.2" fill="none"/>
                 <path d="M44 451 Q50 447 56 451" stroke="#9ca3af" strokeWidth="1.2" fill="none"/>
                 <text x="70" y="440" fontFamily="system-ui" fontSize="9" fill="#9ca3af">Name</text>
-                <text x="70" y="453" fontFamily="system-ui" fontSize="11" fill="#1f2937">John Davidson</text>
+                <text x="70" y="453" fontFamily="system-ui" fontSize="11" fill="#1f2937">{config.sampleCall?.customerName || 'Jordan Blake'}</text>
                 <rect x="38" y="468" width="24" height="24" rx="6" fill="#f3f4f6"/>
                 <path d="M47 474 C47 474 47 480 51 484" stroke="#9ca3af" strokeWidth="1.2" fill="none" strokeLinecap="round"/>
                 <text x="70" y="476" fontFamily="system-ui" fontSize="9" fill="#9ca3af">Phone</text>
@@ -360,7 +360,7 @@ function AppShowcaseSection({ config, contrastColors }: { config: MarketingConfi
                 <rect x="38" y="502" width="24" height="24" rx="6" fill="#f3f4f6"/>
                 <rect x="45" y="509" width="10" height="10" rx="2" stroke="#9ca3af" strokeWidth="1.2" fill="none"/>
                 <text x="70" y="510" fontFamily="system-ui" fontSize="9" fill="#9ca3af">Service</text>
-                <text x="70" y="523" fontFamily="system-ui" fontSize="11" fill="#1f2937">Project Estimate</text>
+                <text x="70" y="523" fontFamily="system-ui" fontSize="11" fill="#1f2937">{config.sampleCall?.service || 'Appointment booking'}</text>
                 <rect x="26" y="550" width="130" height="40" rx="20" fill={branding.primaryColor}/>
                 <text x="91" y="574" textAnchor="middle" fontFamily="system-ui" fontSize="12" fontWeight="600" fill={contrastColors.text}>Call Back</text>
                 <rect x="164" y="550" width="130" height="40" rx="20" fill="white" stroke="#e5e7eb" strokeWidth="1"/>
@@ -385,8 +385,8 @@ function AppShowcaseSection({ config, contrastColors }: { config: MarketingConfi
             <div className="sms-content">
               <div className="sms-message">
                 <strong>{branding.name}</strong>
-                <p>New call from Sarah M. at 2:47pm</p>
-                <p><strong>Requested:</strong> Service estimate<br/><strong>Phone:</strong> (555) 123-4567<br/><strong>Appointment booked:</strong> Thursday at 10am</p>
+                <p>New call from {config.sampleCall?.customerName || 'Jordan Blake'} at 2:47pm</p>
+                <p><strong>Requested:</strong> {config.sampleCall?.service || 'Appointment booking'}<br/><strong>Phone:</strong> (555) 123-4567<br/><strong>Appointment booked:</strong> Thursday at 10am</p>
                 <span className="sms-link">View Full Call in App</span>
               </div>
             </div>
@@ -548,7 +548,7 @@ function ROICalculatorSection({ config }: { config: MarketingConfig }) {
   const cs = config.currencySymbol || '$';
   const lowestPrice = pricing.length > 0 ? pricing[0].price : 49;
   const [missedPerWeek, setMissedPerWeek] = useState(5);
-  const COST_PER_MISSED = 500;
+  const COST_PER_MISSED = config.roi?.missedCallCost ?? 500;
   const monthlyMissed = Math.round(missedPerWeek * 4.33);
   const monthlyLost = monthlyMissed * COST_PER_MISSED;
   const annualLost = monthlyLost * 12;
@@ -563,7 +563,7 @@ function ROICalculatorSection({ config }: { config: MarketingConfig }) {
       <div className="container">
         <div className="section-header">
           <h2>What Are Missed Calls Costing You?</h2>
-          <p>Industry research shows the average missed call costs a small business <strong>{cs}500</strong> in lost revenue. Use the slider to see your potential losses.</p>
+          <p>Industry research shows the average missed call costs a small business <strong>{cs}{COST_PER_MISSED.toLocaleString()}</strong> in lost revenue. Use the slider to see your potential losses.</p>
         </div>
         <div className="live-stats" style={{ display: 'block', padding: '2rem' }}>
           <div style={{ marginBottom: '2rem' }}>
@@ -732,9 +732,9 @@ function FinalCTASection({ config, contrastColors }: { config: MarketingConfig; 
     <section className="final-cta" style={{ background: `linear-gradient(135deg, ${branding.primaryColor} 0%, ${branding.primaryHoverColor} 100%)` }}>
       <div className="container">
         <div className="final-cta-content">
-          <h2 style={{ color: contrastColors.text }}>Stop Losing Customers to Voicemail</h2>
+          <h2 style={{ color: contrastColors.text }}>{config.finalCta?.heading || 'Stop Losing Customers to Voicemail'}</h2>
           <p className="final-cta-text" style={{ color: contrastColors.textMuted }}>
-            Every missed call is money out the door. While you&apos;re on the job, in a meeting, or closed for the night, <strong style={{ color: contrastColors.text }}>your competitors are answering their phones.</strong>
+            {config.finalCta?.body || 'Every missed call is money out the door. While you are busy or closed, your competitors are answering their phones.'}
           </p>
           <div className="final-cta-boxes">
             {hero.demoPhone && (

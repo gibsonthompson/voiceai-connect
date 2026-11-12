@@ -201,6 +201,17 @@ export interface MarketingConfig {
   // templates reflect the real trial length and hide "no credit card required"
   // when a card is actually required. setupTime stays editable via stats.setupTime.
   signup?: { cardRequired: boolean; trialDays: number };
+  // Editable "what a missed call costs" figure for the ROI calculator. This
+  // varies a lot by industry and country, so agencies set their own. Templates
+  // fall back to 500 when unset.
+  roi?: { missedCallCost?: number };
+  // Editable final call-to-action copy. Templates fall back to their own default
+  // heading/body when a field is blank.
+  finalCta?: { heading?: string; body?: string };
+  // The sample call shown in the product mockups (hero card, phone, SMS). Neutral
+  // by default so the site does not read as any single trade; agencies can tailor
+  // it. Templates fall back to these when a field is blank.
+  sampleCall?: { customerName?: string; service?: string; summary?: string };
 }
 
 // ============================================================================
@@ -522,4 +533,12 @@ export const defaultMarketingConfig: MarketingConfig = {
   showIndustries: true,
   showComparison: true,
   showTestimonials: false,
+  roi: { missedCallCost: 500 },
+  // finalCta is intentionally left unset so each template keeps its own default
+  // heading/body; the agency overrides it from the content editor when they want.
+  sampleCall: {
+    customerName: 'Jordan Blake',
+    service: 'Appointment booking',
+    summary: 'Caller wanted to book an appointment and asked for the next available time.',
+  },
 };

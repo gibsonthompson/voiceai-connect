@@ -93,6 +93,9 @@ interface EditorConfig {
   pricing: PricingTier[];
   faqs: FAQItem[];
   footer: FooterConfig;
+  roi: { missedCallCost: number };
+  finalCta: { heading: string; body: string };
+  sampleCall: { customerName: string; service: string; summary: string };
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -161,6 +164,9 @@ const DEFAULT_CONFIG: EditorConfig = {
     tagline: 'Professional AI that answers every call, books appointments, and sends instant summaries — 24/7.',
   },
   showIndustries: true,
+  roi: { missedCallCost: 500 },
+  finalCta: { heading: '', body: '' },
+  sampleCall: { customerName: 'Jordan Blake', service: 'Appointment booking', summary: 'Caller wanted to book an appointment and asked for the next available time.' },
 };
 
 const ICON_OPTIONS = [
@@ -284,6 +290,13 @@ export default function MarketingContentEditor({
         pricing: mc.pricing?.length ? mc.pricing.map((t: any) => ({ ...t, price: typeof t.price === 'number' ? t.price : parseInt(t.price) || 0 })) : prev.pricing,
         faqs: mc.faqs?.length ? mc.faqs.map((f: any) => ({ question: f.question || '', answer: f.answer || '' })) : prev.faqs,
         footer: { ...prev.footer, email: mc.footer?.email || prev.footer.email, tagline: mc.footer?.tagline || prev.footer.tagline },
+        roi: { missedCallCost: typeof mc.roi?.missedCallCost === 'number' ? mc.roi.missedCallCost : prev.roi.missedCallCost },
+        finalCta: { heading: mc.finalCta?.heading ?? prev.finalCta.heading, body: mc.finalCta?.body ?? prev.finalCta.body },
+        sampleCall: {
+          customerName: mc.sampleCall?.customerName ?? prev.sampleCall.customerName,
+          service: mc.sampleCall?.service ?? prev.sampleCall.service,
+          summary: mc.sampleCall?.summary ?? prev.sampleCall.summary,
+        },
       }));
     }
   }, [agency]);
@@ -334,6 +347,11 @@ export default function MarketingContentEditor({
       pricing: config.pricing,
       faqs: config.faqs,
       footer: { ...(existing.footer || {}), email: config.footer.email, tagline: config.footer.tagline },
+      roi: { missedCallCost: config.roi.missedCallCost },
+      // Only persist final CTA overrides when non-blank, so blank fields let each
+      // template keep its own default heading/body.
+      finalCta: { heading: config.finalCta.heading.trim(), body: config.finalCta.body.trim() },
+      sampleCall: config.sampleCall,
     };
   }, [agency, config]);
 
@@ -694,6 +712,65 @@ export default function MarketingContentEditor({
           </button>
         )}
         <p className="text-xs" style={{ color: mutedTextColor }}>The result line shows in bold under each card. Leave it blank to hide it.</p>
+      </Section>
+
+      {/* ── FINAL CTA, CALCULATOR & SAMPLE CALL ───────────────────────── */}
+      <Section title="Final CTA, Calculator & Sample Call" icon={Lightbulb} description="The closing call-to-action, the missed-call cost figure, and the example call shown in the app mockup"
+        anchorId="extras" isOpen={openSections.has('extras')} onToggle={() => toggleSection('extras')} {...sectionTheme}>
+
+        <div className="space-y-2">
+          <span className="text-xs font-semibold" style={{ color: textColor }}>Final call-to-action</span>
+          <div>
+            <label className="block text-xs mb-1" style={{ color: mutedTextColor }}>Heading</label>
+            <input type="text" value={config.finalCta.heading} placeholder="Leave blank to use the template default"
+              onChange={e => update(p => ({ ...p, finalCta: { ...p.finalCta, heading: e.target.value } }))}
+              className={inputClass} style={inputStyle} />
+          </div>
+          <div>
+            <label className="block text-xs mb-1" style={{ color: mutedTextColor }}>Text</label>
+            <textarea value={config.finalCta.body} placeholder="Leave blank to use the template default" rows={2}
+              onChange={e => update(p => ({ ...p, finalCta: { ...p.finalCta, body: e.target.value } }))}
+              className={inputClass + ' resize-none'} style={inputStyle} />
+          </div>
+          <p className="text-xs" style={{ color: mutedTextColor }}>Leave either blank to keep your template&apos;s default wording.</p>
+        </div>
+
+        <div className="space-y-2 pt-2" style={{ borderTop: `1px solid ${borderColor}` }}>
+          <span className="text-xs font-semibold" style={{ color: textColor }}>Missed-call calculator</span>
+          <label className="block text-xs mb-1" style={{ color: mutedTextColor }}>What one missed call costs a business</label>
+          <div className="flex items-center gap-2">
+            <span className="text-sm" style={{ color: mutedTextColor }}>$</span>
+            <input type="number" min={0} value={config.roi.missedCallCost}
+              onChange={e => update(p => ({ ...p, roi: { missedCallCost: Math.max(0, parseInt(e.target.value) || 0) } }))}
+              className={inputClass} style={inputStyle} />
+          </div>
+          <p className="text-xs" style={{ color: mutedTextColor }}>Used in the ROI calculator. This varies a lot by industry, so set what fits your market.</p>
+        </div>
+
+        <div className="space-y-2 pt-2" style={{ borderTop: `1px solid ${borderColor}` }}>
+          <span className="text-xs font-semibold" style={{ color: textColor }}>Sample call (shown in the app mockup)</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs mb-1" style={{ color: mutedTextColor }}>Caller name</label>
+              <input type="text" value={config.sampleCall.customerName} placeholder="e.g. Jordan Blake"
+                onChange={e => update(p => ({ ...p, sampleCall: { ...p.sampleCall, customerName: e.target.value } }))}
+                className={inputClass} style={inputStyle} />
+            </div>
+            <div>
+              <label className="block text-xs mb-1" style={{ color: mutedTextColor }}>Service / reason</label>
+              <input type="text" value={config.sampleCall.service} placeholder="e.g. Appointment booking"
+                onChange={e => update(p => ({ ...p, sampleCall: { ...p.sampleCall, service: e.target.value } }))}
+                className={inputClass} style={inputStyle} />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs mb-1" style={{ color: mutedTextColor }}>Call summary</label>
+            <textarea value={config.sampleCall.summary} placeholder="e.g. Caller wanted to book an appointment and asked for the next available time." rows={2}
+              onChange={e => update(p => ({ ...p, sampleCall: { ...p.sampleCall, summary: e.target.value } }))}
+              className={inputClass + ' resize-none'} style={inputStyle} />
+          </div>
+          <p className="text-xs" style={{ color: mutedTextColor }}>This is the example call on your homepage. Keep it neutral, or tailor it to the kind of business you sell to.</p>
+        </div>
       </Section>
 
       {/* ── PRICING ───────────────────────────────────────────────────── */}
