@@ -106,8 +106,6 @@ export default function WebCallShell({
 
   return (
     <div style={{ width: '100%', maxWidth: 440, position: 'relative', fontFamily: fontStack(fonts?.body, 'body') }}>
-      {/* Soft brand glow so the widget reads as intentional on any site. */}
-      <div style={{ position: 'absolute', top: -40, left: 20, right: 20, height: 160, borderRadius: '50%', background: `radial-gradient(60% 100% at 50% 0%, ${hexA(p.accent, 0.20)}, transparent 72%)`, pointerEvents: 'none' }} />
       {wrap('card', (
         <div style={{ position: 'relative', borderRadius: p.radius, border: `1px solid ${p.border}`, backgroundColor: p.cardBg, overflow: 'hidden', boxShadow: p.isDark ? '0 24px 60px rgba(0,0,0,0.5)' : `0 1px 0 rgba(255,255,255,0.7) inset, 0 30px 60px -22px rgba(2,6,23,0.24), 0 0 0 1px ${hexA(p.accent, 0.03)}` }}>
           {/* Thin brand accent line across the very top edge. */}
@@ -115,13 +113,13 @@ export default function WebCallShell({
           {/* Accent wash along the top edge, inside the card. */}
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 150, background: `radial-gradient(120% 100% at 50% 0%, ${hexA(p.accent, 0.10)}, transparent 70%)`, pointerEvents: 'none' }} />
           {/* Header */}
-          <div style={{ position: 'relative', padding: '18px 20px', borderBottom: `1px solid ${p.border}`, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ position: 'relative', padding: '20px 20px', borderBottom: `1px solid ${p.border}`, display: 'flex', alignItems: 'center', gap: 12 }}>
             {iconChip}
             <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontWeight: 800, fontSize: 17, letterSpacing: '-0.02em', fontFamily: fontStack(fonts?.display, 'display'), lineHeight: 1.12, color: p.heading }}>
+              <div style={{ fontWeight: 900, fontSize: 17, letterSpacing: '-0.02em', fontFamily: fontStack(fonts?.display, 'display'), lineHeight: 1.2, color: p.heading }}>
                 {wrap('title', title)}
               </div>
-              <div style={{ fontSize: 12.5, color: p.muted, marginTop: 2 }}>
+              <div style={{ fontSize: 12.5, color: p.muted, marginTop: 3 }}>
                 {connecting ? 'Calling...' : wrap('subtitle', subtitle)}
               </div>
             </div>
