@@ -246,7 +246,7 @@ function Hero({ config }: { config: MarketingConfig }) {
             </div>
           )}
           <div className="bsd-hero-trust">
-            {hero.trustItems.map((item, i) => <span key={i}>{Icons.check}{item}</span>)}
+            {hero.trustItems.map((item, i) => <span key={i}>{Icons.check}<Editable as="span" field={`hero.trustItems.${i}`} value={item}>{item}</Editable></span>)}
           </div>
         </div>
 
@@ -332,21 +332,21 @@ function ProblemSolution({ config, textOnPrimary, mutedOnPrimary }: { config: Ma
       <div className="bsd-container">
         <div className="bsd-section-head center">
           <span className="bsd-eyebrow">The cost of a missed call</span>
-          <h2>You&rsquo;re losing customers every time your phone rings</h2>
+          <Editable as="h2" field="sectionHeadings.problemHeadline" value={config.sectionHeadings?.problemHeadline ?? 'You’re losing customers every time your phone rings'}>{config.sectionHeadings?.problemHeadline ?? 'You’re losing customers every time your phone rings'}</Editable>
         </div>
         <div className="bsd-problems bsd-stagger">
           {problems.map((p, i) => (
             <div key={i} className="bsd-problem bsd-reveal">
               <div className="bsd-problem-icon">{Icons.x}</div>
-              <h3>{p.title}</h3>
-              <p>&ldquo;{p.description}&rdquo;</p>
+              <Editable as="h3" field={`problems.${i}.title`} value={p.title}>{p.title}</Editable>
+              <p>&ldquo;<Editable as="span" field={`problems.${i}.description`} value={p.description}>{p.description}</Editable>&rdquo;</p>
             </div>
           ))}
         </div>
         <div className="bsd-solution bsd-reveal">
-          <h2 style={{ color: textOnPrimary }}>{branding.name} is {solution.headline}</h2>
-          {solution.paragraphs.map((para, i) => <p key={i} style={{ color: mutedOnPrimary }}>{para}</p>)}
-          <span className="bsd-solution-hi" style={{ color: textOnPrimary }}><strong>The best part:</strong> {solution.highlight}</span>
+          <h2 style={{ color: textOnPrimary }}>{branding.name} is <Editable as="span" field="solution.headline" value={solution.headline}>{solution.headline}</Editable></h2>
+          {solution.paragraphs.map((para, i) => <Editable as="p" key={i} style={{ color: mutedOnPrimary }} field={`solution.paragraphs.${i}`} value={para}>{para}</Editable>)}
+          <span className="bsd-solution-hi" style={{ color: textOnPrimary }}><strong>The best part:</strong> <Editable as="span" field="solution.highlight" value={solution.highlight}>{solution.highlight}</Editable></span>
         </div>
       </div>
     </section>
@@ -363,16 +363,16 @@ function HowItWorks({ config }: { config: MarketingConfig }) {
       <div className="bsd-container">
         <div className="bsd-section-head center">
           <span className="bsd-eyebrow">How it works</span>
-          <h2>{config.stepsHeading || 'From signup to your first answered call'}</h2>
-          <p>{config.stepsSubheading || 'A few simple steps, no tech skills required.'}</p>
+          <Editable as="h2" field="stepsHeading" value={config.stepsHeading || 'From signup to your first answered call'}>{config.stepsHeading || 'From signup to your first answered call'}</Editable>
+          <Editable as="p" field="stepsSubheading" value={config.stepsSubheading || 'A few simple steps, no tech skills required.'}>{config.stepsSubheading || 'A few simple steps, no tech skills required.'}</Editable>
         </div>
         <div className="bsd-steps bsd-stagger">
           {steps.map((step, i) => (
             <div key={i} className="bsd-step bsd-reveal">
               <div className="bsd-step-num">{i + 1}</div>
-              <h3>{step.title}</h3>
-              <p>{step.description}</p>
-              <span className="bsd-step-time">{Icons.clock}{step.time}</span>
+              <Editable as="h3" field={`steps.${i}.title`} value={step.title}>{step.title}</Editable>
+              <Editable as="p" field={`steps.${i}.description`} value={step.description}>{step.description}</Editable>
+              <span className="bsd-step-time">{Icons.clock}<Editable as="span" field={`steps.${i}.time`} value={step.time}>{step.time}</Editable></span>
             </div>
           ))}
         </div>
@@ -400,7 +400,7 @@ function FeatureExplorer({ config }: { config: MarketingConfig }) {
       <div className="bsd-container">
         <div className="bsd-section-head center">
           <span className="bsd-eyebrow">Capabilities</span>
-          <h2>Everything you need. Nothing you don&rsquo;t.</h2>
+          <Editable as="h2" field="sectionHeadings.featuresHeadline" value={config.sectionHeadings?.featuresHeadline ?? 'Everything you need. Nothing you don’t.'}>{config.sectionHeadings?.featuresHeadline ?? 'Everything you need. Nothing you don’t.'}</Editable>
           <p>Tap through what your AI receptionist handles on every call.</p>
         </div>
         <div className="bsd-fx">
@@ -414,8 +414,8 @@ function FeatureExplorer({ config }: { config: MarketingConfig }) {
           <div className="bsd-fx-panel">
             <div className="bsd-fx-detail">
               <div className="bsd-fx-detail-icon">{Icons[iconKey]}</div>
-              <h3>{current.title}</h3>
-              <p>{current.description}</p>
+              <Editable as="h3" field={`features.${safeActive}.title`} value={current.title}>{current.title}</Editable>
+              <Editable as="p" field={`features.${safeActive}.description`} value={current.description}>{current.description}</Editable>
             </div>
             <div className="bsd-fx-visual">{Icons[iconKey]}</div>
           </div>
@@ -435,7 +435,7 @@ function CommandCenter({ config, primary, textOnPrimary }: { config: MarketingCo
       <div className="bsd-container">
         <div className="bsd-section-head center">
           <span className="bsd-eyebrow">Your command center</span>
-          <h2>See every conversation, manage it all from your phone</h2>
+          <Editable as="h2" field="sectionHeadings.commandCenterHeadline" value={config.sectionHeadings?.commandCenterHeadline ?? 'See every conversation, manage it all from your phone'}>{config.sectionHeadings?.commandCenterHeadline ?? 'See every conversation, manage it all from your phone'}</Editable>
           <p>Unlike an answering service that just takes messages, {branding.name} gives you the full picture of every customer.</p>
         </div>
         <div className="bsd-cc">
@@ -481,8 +481,8 @@ function CommandCenter({ config, primary, textOnPrimary }: { config: MarketingCo
                 <div key={i} className="bsd-benefit bsd-reveal">
                   <div className="bsd-benefit-icon">{Icons[BENEFIT_ICON_KEYS[b.icon] || 'zap']}</div>
                   <div>
-                    <h3>{b.title}</h3>
-                    <p>{b.description}</p>
+                    <Editable as="h3" field={`benefits.${i}.title`} value={b.title}>{b.title}</Editable>
+                    <Editable as="p" field={`benefits.${i}.description`} value={b.description}>{b.description}</Editable>
                   </div>
                 </div>
               ))}
@@ -513,16 +513,16 @@ function Industries({ config }: { config: MarketingConfig }) {
       <div className="bsd-container">
         <div className="bsd-section-head center">
           <span className="bsd-eyebrow">Who it&rsquo;s for</span>
-          <h2>Built for businesses that can&rsquo;t afford to miss calls</h2>
+          <Editable as="h2" field="sectionHeadings.industriesHeadline" value={config.sectionHeadings?.industriesHeadline ?? 'Built for businesses that can’t afford to miss calls'}>{config.sectionHeadings?.industriesHeadline ?? 'Built for businesses that can’t afford to miss calls'}</Editable>
         </div>
         <div className="bsd-industries bsd-stagger">
           {industries.map((ind, i) => (
             <div key={i} className="bsd-industry bsd-reveal">
               <div className="bsd-industry-icon">{Icons[INDUSTRY_ICON_KEYS[ind.icon] || 'briefcase']}</div>
-              <h3>{ind.title}</h3>
-              <p className="bsd-industry-sub">{ind.subtitle}</p>
-              <p>{ind.description}</p>
-              <div className="bsd-industry-res">{ind.result}</div>
+              <Editable as="h3" field={`industries.${i}.title`} value={ind.title}>{ind.title}</Editable>
+              <Editable as="p" className="bsd-industry-sub" field={`industries.${i}.subtitle`} value={ind.subtitle}>{ind.subtitle}</Editable>
+              <Editable as="p" field={`industries.${i}.description`} value={ind.description}>{ind.description}</Editable>
+              <Editable as="div" className="bsd-industry-res" field={`industries.${i}.result`} value={ind.result}>{ind.result}</Editable>
             </div>
           ))}
         </div>
@@ -617,7 +617,7 @@ function ROICalculator({ config }: { config: MarketingConfig }) {
       <div className="bsd-container">
         <div className="bsd-section-head center">
           <span className="bsd-eyebrow">Do the math</span>
-          <h2>What are missed calls costing you?</h2>
+          <Editable as="h2" field="sectionHeadings.roiHeadline" value={config.sectionHeadings?.roiHeadline ?? 'What are missed calls costing you?'}>{config.sectionHeadings?.roiHeadline ?? 'What are missed calls costing you?'}</Editable>
           <p>The average missed call costs a small business about {m(COST)} in lost revenue. Move the slider to see yours.</p>
         </div>
         <div className="bsd-roi bsd-reveal">
@@ -672,7 +672,7 @@ function Pricing({ config }: { config: MarketingConfig }) {
       <div className="bsd-container">
         <div className="bsd-section-head center">
           <span className="bsd-eyebrow">Pricing</span>
-          <h2>Simple pricing. No hidden fees.</h2>
+          <Editable as="h2" field="sectionHeadings.pricingHeadline" value={config.sectionHeadings?.pricingHeadline ?? 'Simple pricing. No hidden fees.'}>{config.sectionHeadings?.pricingHeadline ?? 'Simple pricing. No hidden fees.'}</Editable>
           <p>All plans include the {branding.name} app, text summaries, call recordings{config.signup?.trialDays !== 0 ? `, and a ${config.signup?.trialDays ?? 7}-day free trial` : ''}.</p>
         </div>
         {annualAvailable && (
@@ -735,13 +735,13 @@ function FAQ({ config }: { config: MarketingConfig }) {
       <div className="bsd-container">
         <div className="bsd-section-head center">
           <span className="bsd-eyebrow">FAQ</span>
-          <h2>Questions? We&rsquo;ve got answers.</h2>
+          <Editable as="h2" field="sectionHeadings.faqHeadline" value={config.sectionHeadings?.faqHeadline ?? 'Questions? We’ve got answers.'}>{config.sectionHeadings?.faqHeadline ?? 'Questions? We’ve got answers.'}</Editable>
         </div>
         <div className="bsd-faq-list">
           {faqs.map((faq, i) => (
             <div key={i} className={`bsd-faq-item${open === i ? ' open' : ''}`}>
               <button type="button" className="bsd-faq-q" onClick={() => setOpen(open === i ? null : i)} aria-expanded={open === i}>
-                <span>{faq.question}</span>
+                <Editable as="span" field={`faqs.${i}.question`} value={faq.question}>{faq.question}</Editable>
                 <span className="bsd-faq-icon">+</span>
               </button>
               <div className="bsd-faq-a"><SafeFAQContent html={faq.answer} /></div>
@@ -795,8 +795,8 @@ function FinalCTA({ config, textOnPrimary, mutedOnPrimary }: { config: Marketing
   return (
     <section className="bsd-final">
       <div className="bsd-container bsd-final-inner">
-        <h2 style={{ color: textOnPrimary }}>{config.finalCta?.heading || 'Stop Losing Customers to Voicemail'}</h2>
-        <p style={{ color: mutedOnPrimary }}>{config.finalCta?.body || 'Every missed call is money out the door. While you are busy or closed, your competitors are answering their phones.'}</p>
+        <Editable as="h2" style={{ color: textOnPrimary }} field="finalCta.heading" value={config.finalCta?.heading || 'Stop Losing Customers to Voicemail'}>{config.finalCta?.heading || 'Stop Losing Customers to Voicemail'}</Editable>
+        <Editable as="p" style={{ color: mutedOnPrimary }} field="finalCta.body" value={config.finalCta?.body || 'Every missed call is money out the door. While you are busy or closed, your competitors are answering their phones.'}>{config.finalCta?.body || 'Every missed call is money out the door. While you are busy or closed, your competitors are answering their phones.'}</Editable>
         <div className="bsd-final-actions">
           <a href="/signup" className="bsd-btn bsd-btn-lg bsd-final-btn">{config.signup?.trialDays === 0 ? 'Get started' : `Start your ${config.signup?.trialDays ?? 7}-day free trial`}</a>
           {hero.demoPhone && <a href={telHref(hero.demoPhone)} className="bsd-final-demo">{Icons.phone}or call the live demo: {hero.demoPhone}</a>}

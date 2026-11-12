@@ -216,7 +216,7 @@ function Hero({ config }: { config: MarketingConfig }) {
         </div>
         {hero.trustItems && hero.trustItems.length > 0 && (
           <ul className="ed-hero-trust">
-            {hero.trustItems.map((t, i) => <li key={i}><span className="ed-tick">{Icons.check}</span>{t}</li>)}
+            {hero.trustItems.map((t, i) => <li key={i}><span className="ed-tick">{Icons.check}</span><Editable as="span" field={`hero.trustItems.${i}`} value={t}>{t}</Editable></li>)}
           </ul>
         )}
       </div>
@@ -237,17 +237,17 @@ function Features({ config }: { config: MarketingConfig }) {
     <section className="ed-features" id="features">
       <div className="ed-container">
         <div className="ed-feat-head">
-          <h2 className="ed-h2">{config.solution?.headline || 'Everything the phone needs to do'}</h2>
-          {lead && <p className="ed-feat-head-p">{lead}</p>}
+          <Editable as="h2" className="ed-h2" field="solution.headline" value={config.solution?.headline || 'Everything the phone needs to do'}>{config.solution?.headline || 'Everything the phone needs to do'}</Editable>
+          {lead && <Editable as="p" className="ed-feat-head-p" field="solution.paragraphs.0" value={lead}>{lead}</Editable>}
         </div>
         <div className="ed-feat-grid">
           {features.map((f, i) => (
             <article className={`ed-feat ${odd && i === features.length - 1 ? 'ed-cell-wide' : ''}`} key={i}>
               <span className="ed-feat-ico">{featureIcon(f.icon)}</span>
               <div className="ed-feat-body">
-                <h3 className="ed-feat-title">{f.title}</h3>
-                <p className="ed-feat-desc">{f.description}</p>
-                {f.example && <p className="ed-feat-eg">{f.example}</p>}
+                <Editable as="h3" className="ed-feat-title" field={`features.${i}.title`} value={f.title}>{f.title}</Editable>
+                <Editable as="p" className="ed-feat-desc" field={`features.${i}.description`} value={f.description}>{f.description}</Editable>
+                {f.example && <Editable as="p" className="ed-feat-eg" field={`features.${i}.example`} value={f.example}>{f.example}</Editable>}
                 {f.integrations && f.integrations.length > 0 && (
                   <ul className="ed-feat-tags">{f.integrations.map((t, j) => <li key={j}>{t}</li>)}</ul>
                 )}
@@ -269,15 +269,15 @@ function Steps({ config }: { config: MarketingConfig }) {
   return (
     <section className="ed-steps" id="how">
       <div className="ed-container">
-        <div className="ed-section-head"><h2 className="ed-h2">{config.stepsHeading || 'From signup to your first answered call'}</h2><p style={{ marginTop: '0.6rem', opacity: 0.6, fontSize: '1.0625rem' }}>{config.stepsSubheading || 'A few simple steps, no tech skills required.'}</p></div>
+        <div className="ed-section-head"><Editable as="h2" className="ed-h2" field="stepsHeading" value={config.stepsHeading || 'From signup to your first answered call'}>{config.stepsHeading || 'From signup to your first answered call'}</Editable><Editable as="p" style={{ marginTop: '0.6rem', opacity: 0.6, fontSize: '1.0625rem' }} field="stepsSubheading" value={config.stepsSubheading || 'A few simple steps, no tech skills required.'}>{config.stepsSubheading || 'A few simple steps, no tech skills required.'}</Editable></div>
         <ol className="ed-step-list">
           {steps.map((s, i) => (
             <li className="ed-step" key={i}>
               <span className="ed-step-n">{String(i + 1).padStart(2, '0')}</span>
               <div className="ed-step-body">
-                <h3 className="ed-h3">{s.title}</h3>
-                <p>{s.description}</p>
-                {s.time && <span className="ed-step-time">{s.time}</span>}
+                <Editable as="h3" className="ed-h3" field={`steps.${i}.title`} value={s.title}>{s.title}</Editable>
+                <Editable as="p" field={`steps.${i}.description`} value={s.description}>{s.description}</Editable>
+                {s.time && <Editable as="span" className="ed-step-time" field={`steps.${i}.time`} value={s.time}>{s.time}</Editable>}
               </div>
             </li>
           ))}
@@ -301,8 +301,8 @@ function ValueCards({ config }: { config: MarketingConfig }) {
           {benefits.map((b, i) => (
             <article className={`ed-value ${wideLast && i === benefits.length - 1 ? 'ed-cell-wide' : ''}`} key={i}>
               <span className="ed-value-ico ed-accent">{benefitIcon(b.icon)}</span>
-              <h3 className="ed-h3">{b.title}</h3>
-              <p>{b.description}</p>
+              <Editable as="h3" className="ed-h3" field={`benefits.${i}.title`} value={b.title}>{b.title}</Editable>
+              <Editable as="p" field={`benefits.${i}.description`} value={b.description}>{b.description}</Editable>
             </article>
           ))}
         </div>
@@ -321,15 +321,15 @@ function Industries({ config }: { config: MarketingConfig }) {
   return (
     <section className="ed-industries">
       <div className="ed-container">
-        <div className="ed-section-head"><h2 className="ed-h2">Built for how you work</h2></div>
+        <div className="ed-section-head"><Editable as="h2" className="ed-h2" field="sectionHeadings.industriesHeadline" value={config.sectionHeadings?.industriesHeadline ?? 'Built for how you work'}>{config.sectionHeadings?.industriesHeadline ?? 'Built for how you work'}</Editable></div>
         <div className={`ed-ind-grid ed-cols-${cols}`}>
           {industries.map((it, i) => (
             <article className={`ed-ind ${wideLast && i === industries.length - 1 ? 'ed-cell-wide' : ''}`} key={i}>
               <span className="ed-feat-ico">{featureIcon(it.icon)}</span>
-              <h3 className="ed-h3">{it.title}</h3>
-              {it.subtitle && <p className="ed-ind-sub">{it.subtitle}</p>}
-              {it.description && <p className="ed-ind-desc">{it.description}</p>}
-              {it.result && <p className="ed-ind-result">{it.result}</p>}
+              <Editable as="h3" className="ed-h3" field={`industries.${i}.title`} value={it.title}>{it.title}</Editable>
+              {it.subtitle && <Editable as="p" className="ed-ind-sub" field={`industries.${i}.subtitle`} value={it.subtitle}>{it.subtitle}</Editable>}
+              {it.description && <Editable as="p" className="ed-ind-desc" field={`industries.${i}.description`} value={it.description}>{it.description}</Editable>}
+              {it.result && <Editable as="p" className="ed-ind-result" field={`industries.${i}.result`} value={it.result}>{it.result}</Editable>}
             </article>
           ))}
         </div>
@@ -348,10 +348,10 @@ function Testimonial({ config }: { config: MarketingConfig }) {
     <section className="ed-quote">
       <div className="ed-container ed-quote-inner">
         <div className="ed-quote-stars ed-accent">{Array.from({ length: t.rating || 5 }).map((_, i) => <span key={i}>{Icons.star}</span>)}</div>
-        <blockquote className="ed-quote-text">{t.quote}</blockquote>
+        <blockquote className="ed-quote-text"><Editable as="span" field="testimonials.0.quote" value={t.quote}>{t.quote}</Editable></blockquote>
         <div className="ed-quote-by">
-          <span className="ed-quote-name">{t.authorName}</span>
-          {t.authorTitle && <span className="ed-quote-title">{t.authorTitle}</span>}
+          <Editable as="span" className="ed-quote-name" field="testimonials.0.authorName" value={t.authorName}>{t.authorName}</Editable>
+          {t.authorTitle && <Editable as="span" className="ed-quote-title" field="testimonials.0.authorTitle" value={t.authorTitle}>{t.authorTitle}</Editable>}
         </div>
       </div>
     </section>
@@ -377,7 +377,7 @@ function Pricing({ config }: { config: MarketingConfig }) {
   return (
     <section className="ed-pricing" id="pricing">
       <div className="ed-container">
-        <div className="ed-section-head"><h2 className="ed-h2">Simple pricing</h2></div>
+        <div className="ed-section-head"><Editable as="h2" className="ed-h2" field="sectionHeadings.pricingHeadline" value={config.sectionHeadings?.pricingHeadline ?? 'Simple pricing'}>{config.sectionHeadings?.pricingHeadline ?? 'Simple pricing'}</Editable></div>
         {annualAvailable && (
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
             <div style={{ display: 'inline-flex', background: 'rgba(125,125,125,0.12)', borderRadius: '999px', padding: '0.25rem', border: '1px solid rgba(125,125,125,0.2)' }}>
@@ -427,12 +427,12 @@ function FAQ({ config }: { config: MarketingConfig }) {
   return (
     <section className="ed-faq" id="faq">
       <div className="ed-container ed-faq-inner">
-        <div className="ed-section-head"><h2 className="ed-h2">Questions</h2></div>
+        <div className="ed-section-head"><Editable as="h2" className="ed-h2" field="sectionHeadings.faqHeadline" value={config.sectionHeadings?.faqHeadline ?? 'Questions'}>{config.sectionHeadings?.faqHeadline ?? 'Questions'}</Editable></div>
         <div className="ed-faq-list">
           {faqs.map((f, i) => (
             <div className={`ed-faq-item ${open === i ? 'ed-open' : ''}`} key={i}>
               <button type="button" className="ed-faq-q" aria-expanded={open === i} onClick={() => setOpen(open === i ? null : i)}>
-                <span>{f.question}</span>
+                <Editable as="span" field={`faqs.${i}.question`} value={f.question}>{f.question}</Editable>
                 <span className="ed-faq-mark">{open === i ? '\u2212' : '+'}</span>
               </button>
               {open === i && <div className="ed-faq-a"><SafeFAQContent html={f.answer} /></div>}
@@ -486,8 +486,8 @@ function FinalCTA({ config }: { config: MarketingConfig }) {
     <section className="ed-final ed-accent-bg">
       <div className="ed-final-wave"><Wave /></div>
       <div className="ed-container ed-final-inner">
-        <h2 className="ed-final-title">{config.finalCta?.heading || 'Never miss another call'}</h2>
-        <p className="ed-final-sub">{config.finalCta?.body || `Set up ${branding.name}${config.stats?.setupTime ? ` in ${config.stats.setupTime}` : ''}. Your AI answers the very next ring.`}</p>
+        <Editable as="h2" className="ed-final-title" field="finalCta.heading" value={config.finalCta?.heading || 'Never miss another call'}>{config.finalCta?.heading || 'Never miss another call'}</Editable>
+        <Editable as="p" className="ed-final-sub" field="finalCta.body" value={config.finalCta?.body || `Set up ${branding.name}${config.stats?.setupTime ? ` in ${config.stats.setupTime}` : ''}. Your AI answers the very next ring.`}>{config.finalCta?.body || `Set up ${branding.name}${config.stats?.setupTime ? ` in ${config.stats.setupTime}` : ''}. Your AI answers the very next ring.`}</Editable>
         <div className="ed-final-cta">
           <a href="/signup" className="ed-btn ed-btn-on-accent">{config.signup?.trialDays === 0 ? 'Get Started' : 'Start free trial'}</a>
           {hasDemo && <a href={telHref(hero.demoPhone)} className="ed-btn ed-btn-on-accent-line">{hero.demoInstructions || `Call ${hero.demoPhone}`}</a>}
