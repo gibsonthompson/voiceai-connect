@@ -484,7 +484,8 @@ Ask me what platform I'm on if that helps.`;
     window.addEventListener('message', onMsg);
     return () => window.removeEventListener('message', onMsg);
   }, [pushContentPreview]);
-  const contentPreviewSrc = `${subdomainUrl}/?preview=1&editor=1`;
+  // View-only preview for the Content tab (editing happens in the full-page editor).
+  const contentPreviewSrc = `${subdomainUrl}/?preview=1`;
 
   // Load this agency's clients for the web-call "test client" option.
   useEffect(() => {
@@ -649,7 +650,7 @@ Ask me what platform I'm on if that helps.`;
     { id: 'overview' as ActiveTab, label: 'Overview', icon: Globe },
     { id: 'embed' as ActiveTab, label: 'Embed', icon: Code },
     { id: 'template' as ActiveTab, label: 'Template', icon: Layout },
-    { id: 'content' as ActiveTab, label: 'Content', icon: Type },
+    { id: 'content' as ActiveTab, label: 'Edit Site', icon: Type },
     { id: 'navigation' as ActiveTab, label: 'Navigation', icon: ExternalLink },
     { id: 'colors' as ActiveTab, label: 'Colors', icon: Palette },
     { id: 'domain' as ActiveTab, label: 'Domain', icon: LinkIcon },
@@ -972,8 +973,8 @@ Ask me what platform I'm on if that helps.`;
 
       {/* ══════════════ CONTENT ══════════════ */}
       {activeTab === 'content' && (
-        <div className="space-y-5">
-        {/* Full-page visual editor entry point */}
+        <div className="space-y-4">
+        {/* Primary entry to the full-page editor */}
         <button
           type="button"
           onClick={() => router.push('/agency/marketing/editor')}
@@ -984,37 +985,34 @@ Ask me what platform I'm on if that helps.`;
             <Wand2 className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold text-sm sm:text-base" style={{ color: textColor }}>Edit your whole site visually</span>
-              <span className="text-[10px] font-bold uppercase tracking-wide rounded-full px-2 py-0.5" style={{ background: agencyPrimaryColor, color: '#fff' }}>New</span>
-            </div>
-            <p className="text-xs sm:text-sm mt-0.5" style={{ color: mutedTextColor }}>Open the full-page editor to scroll your live site and click any text to change it. Turn sections on or off, reorder them, and add or remove items.</p>
+            <span className="font-semibold text-sm sm:text-base" style={{ color: textColor }}>Edit your website</span>
+            <p className="text-xs sm:text-sm mt-0.5" style={{ color: mutedTextColor }}>Open the editor to scroll your live site and click any text to change it, reorder or turn sections on and off, and add or remove items.</p>
           </div>
           <span className="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold transition-transform group-hover:translate-x-0.5" style={{ background: agencyPrimaryColor, color: '#fff' }}>
             Open editor <ExternalLink className="h-3.5 w-3.5" />
           </span>
         </button>
-        <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,560px)] gap-5 items-start">
-          <div className="min-w-0">
-            <MarketingContentEditor agency={agency} demoMode={demoMode} refreshAgency={refreshAgency} isDark={isDark} textColor={textColor} mutedTextColor={mutedTextColor} borderColor={borderColor} cardBg={cardBg} inputBg={inputBg} inputBorder={inputBorder} agencyPrimaryColor={agencyPrimaryColor} backendUrl={backendUrl} scrollToSection={contentScrollTarget} onScrolled={() => setContentScrollTarget(null)} onPreview={pushContentPreview} inboundEdit={inboundContentEdit} />
-          </div>
-          <div className="hidden lg:block lg:sticky lg:top-4">
-            <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${inputBorder}` }}>
-              <div className="flex items-center gap-2 px-3 py-2" style={{ backgroundColor: inputBg, borderBottom: `1px solid ${inputBorder}` }}>
-                <span className="flex gap-1.5"><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#f87171' }} /><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#fbbf24' }} /><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#01f5d1' }} /></span>
-                <span className="flex items-center gap-1.5 ml-1.5 text-[10px] sm:text-xs font-medium" style={{ color: mutedTextColor }}><Eye className="h-3.5 w-3.5" />Live preview, updates as you type</span>
-                <a href={subdomainUrl} target="_blank" rel="noopener noreferrer" className="ml-auto inline-flex items-center gap-1 text-[10px] sm:text-xs font-medium" style={{ color: agencyPrimaryColor }}><ExternalLink className="h-3.5 w-3.5" />Open</a>
-              </div>
-              {agency?.slug && !demoMode && hasAccess ? (
-                <iframe ref={contentPreviewRef} title="Marketing site preview" src={contentPreviewSrc} loading="lazy" onLoad={() => { if (contentPreviewConfig.current) pushContentPreview(contentPreviewConfig.current); }} style={{ width: '100%', height: 'calc(100vh - 150px)', minHeight: 520, border: 0, backgroundColor: isDark ? '#0b0c0f' : '#f6f7f9' }} />
-              ) : (
-                <div className="flex items-center justify-center text-center px-6" style={{ height: 480, backgroundColor: inputBg }}>
-                  <p className="text-xs sm:text-sm" style={{ color: inputMuted }}>{demoMode ? 'Turn off demo mode to load your live site preview here.' : 'Your live marketing-site preview will appear here.'}</p>
-                </div>
-              )}
+
+        {/* The live site, as the focus. Click anywhere to open the editor. */}
+        {agency?.slug && !demoMode && hasAccess ? (
+          <div className="rounded-xl overflow-hidden group relative" style={{ border: `1px solid ${inputBorder}` }}>
+            <div className="flex items-center gap-2 px-3 py-2" style={{ backgroundColor: inputBg, borderBottom: `1px solid ${inputBorder}` }}>
+              <span className="flex gap-1.5"><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#f87171' }} /><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#fbbf24' }} /><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#01f5d1' }} /></span>
+              <span className="flex items-center gap-1.5 ml-1.5 text-[10px] sm:text-xs font-medium" style={{ color: mutedTextColor }}><Eye className="h-3.5 w-3.5" />Live preview</span>
+              <a href={subdomainUrl} target="_blank" rel="noopener noreferrer" className="ml-auto inline-flex items-center gap-1 text-[10px] sm:text-xs font-medium" style={{ color: agencyPrimaryColor }}><ExternalLink className="h-3.5 w-3.5" />Open in new tab</a>
+            </div>
+            <div className="relative">
+              <iframe ref={contentPreviewRef} title="Marketing site preview" src={contentPreviewSrc} loading="lazy" style={{ width: '100%', height: 'calc(100vh - 240px)', minHeight: 560, border: 0, backgroundColor: isDark ? '#0b0c0f' : '#f6f7f9', pointerEvents: 'none' }} />
+              <button type="button" onClick={() => router.push('/agency/marketing/editor')} aria-label="Open the website editor" className="absolute inset-0 flex items-center justify-center cursor-pointer" style={{ background: 'transparent' }}>
+                <span className="opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold" style={{ background: agencyPrimaryColor, color: '#fff', boxShadow: '0 12px 34px rgba(0,0,0,0.28)' }}><Wand2 className="h-4 w-4" />Click to edit your site</span>
+              </button>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="rounded-xl flex items-center justify-center text-center px-6" style={{ height: 480, backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
+            <p className="text-xs sm:text-sm" style={{ color: inputMuted }}>{demoMode ? 'Turn off demo mode to load your live site preview here.' : 'Your live marketing-site preview will appear here.'}</p>
+          </div>
+        )}
         </div>
       )}
 
