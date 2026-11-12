@@ -708,7 +708,7 @@ export default function ClientAIAgentPage() {
         {/* AI Tools */}
         <div className="fu fu4">
           <SectionCard icon={Shield} title="AI Tools" theme={theme} primaryColor={primaryColor}>
-            <ToolConfigSection clientId={client.id} theme={theme} compact industry={client.industry} />
+            <ToolConfigSection clientId={client.id} theme={theme} compact industry={client.industry} client={client} />
           </SectionCard>
         </div>
 
