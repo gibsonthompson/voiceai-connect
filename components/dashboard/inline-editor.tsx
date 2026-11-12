@@ -43,6 +43,22 @@ const PALETTE: string[] = [
 ];
 
 // ------------------------------------------------------------------ InlineText
+// The placeholder is drawn by a :empty::before pseudo-element (see the injected
+// stylesheet) so it lives INSIDE the editable box and inherits its width,
+// alignment and whitespace. A previous version absolutely-positioned the
+// placeholder inside a 24px-wide wrapper, which forced any long placeholder (a
+// phone number, a title) to wrap one token per line and overlap its neighbours.
+function ensureInlineStyles() {
+  if (typeof document === 'undefined') return;
+  if (document.getElementById('vai-inline-styles')) return;
+  const el = document.createElement('style');
+  el.id = 'vai-inline-styles';
+  el.textContent =
+    '.vai-inline:empty::before{content:attr(data-ph);opacity:.45;pointer-events:none;}' +
+    '.vai-inline:focus:empty::before{content:"";}';
+  document.head.appendChild(el);
+}
+
 export function InlineText({
   value, placeholder, onCommit, maxLength, multiline = false, style, ariaLabel,
 }: {
@@ -55,18 +71,16 @@ export function InlineText({
   ariaLabel?: string;
 }) {
   const ref = useRef<HTMLSpanElement>(null);
-  const [empty, setEmpty] = useState(!value);
-  const [focused, setFocused] = useState(false);
+  useEffect(() => { ensureInlineStyles(); }, []);
 
   // Seed / re-seed the DOM from the value prop whenever it changes and the field
   // isn't being edited, so external saves reflect without clobbering the caret.
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    if (document.activeElement !== el && el.textContent !== value) {
+    if (document.activeElement !== el && el.textContent !== (value || '')) {
       el.textContent = value || '';
     }
-    setEmpty(!(el.textContent || '').trim());
   }, [value]);
 
   const commit = () => {
@@ -75,40 +89,32 @@ export function InlineText({
     let text = (el.textContent || '').replace(/\n/g, multiline ? '\n' : ' ').trim();
     if (maxLength && text.length > maxLength) text = text.slice(0, maxLength);
     el.textContent = text;
-    setEmpty(!text);
-    setFocused(false);
-    if (text !== value) onCommit(text);
+    if (text !== (value || '')) onCommit(text);
   };
 
   return (
-    <span style={{ position: 'relative', display: 'inline-block', minWidth: 24 }}>
-      <span
-        ref={ref}
-        role="textbox"
-        aria-label={ariaLabel}
-        tabIndex={0}
-        contentEditable
-        suppressContentEditableWarning
-        spellCheck={false}
-        onFocus={() => setFocused(true)}
-        onInput={() => setEmpty(!((ref.current?.textContent || '').trim()))}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (!multiline && e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur(); }
-          if (e.key === 'Escape') { if (ref.current) ref.current.textContent = value || ''; (e.target as HTMLElement).blur(); }
-        }}
-        style={{
-          outline: 'none', cursor: 'text', borderRadius: 4, padding: '0 2px',
-          whiteSpace: multiline ? 'pre-wrap' : 'normal',
-          ...style,
-        }}
-      />
-      {empty && !focused && placeholder && (
-        <span aria-hidden style={{ position: 'absolute', left: 2, top: 0, pointerEvents: 'none', opacity: 0.45, ...style }}>
-          {placeholder}
-        </span>
-      )}
-    </span>
+    <span
+      ref={ref}
+      role="textbox"
+      aria-label={ariaLabel}
+      tabIndex={0}
+      contentEditable
+      suppressContentEditableWarning
+      spellCheck={false}
+      data-ph={placeholder || ''}
+      className="vai-inline"
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (!multiline && e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur(); }
+        if (e.key === 'Escape') { if (ref.current) ref.current.textContent = value || ''; (e.target as HTMLElement).blur(); }
+      }}
+      style={{
+        display: 'inline-block', maxWidth: '100%', outline: 'none', cursor: 'text',
+        borderRadius: 4, padding: '0 2px',
+        whiteSpace: multiline ? 'pre-wrap' : 'normal',
+        ...style,
+      }}
+    />
   );
 }
 

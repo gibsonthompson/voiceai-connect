@@ -6,7 +6,8 @@ import {
   Globe, ExternalLink, Copy, Check, Eye, Link as LinkIcon, Phone,
   AlertCircle, CheckCircle2, Loader2, RefreshCw, Palette, Type, Save, Upload,
   Wand2, BarChart3, Share2, Layout, DollarSign, Code,
-  ChevronUp, ChevronDown, Trash2, Plus, LayoutDashboard, FileText
+  ChevronUp, ChevronDown, Trash2, Plus, LayoutDashboard, FileText,
+  HelpCircle, Sparkles
 } from 'lucide-react';
 import LegalEditor from '@/components/agency/LegalEditor';
 import LockedFeature from '@/components/LockedFeature';
@@ -303,6 +304,36 @@ export default function MarketingWebsitePage() {
   const webcallPreviewSrc = `https://${platformDomain}/webcall?embed=true&agency=${agency?.id || ''}${webcallQuery}`;
   const webcallSnippet = `<div data-voiceai-webcall data-agency="${agency?.id || ''}"${webcallIsClient ? ` data-mode="client" data-client="${webcallClientId}"` : ''}></div>\n<script src="https://${platformDomain}/embed.js" async></script>`;
   const webcallSelectedClientName = webcallClients.find((c) => c.id === webcallClientId)?.business_name || 'Select a client';
+
+  // "Add this for me" prompts: a visitor copies one into any AI assistant
+  // (ChatGPT, Claude, or their site builder's AI) and it walks them through
+  // pasting the snippet on their platform. Phrased for a non-technical agency.
+  const widgetAiPrompt = `I want to add a sign-up form to my website so local businesses can sign up for my AI receptionist service.
+
+Here is the embed code I was given. It is two parts, a container and a loader script:
+
+${iframeWidgetSnippet}
+
+Please tell me exactly where to paste this.
+- The <div> goes wherever I want the form to show up on the page.
+- The <script> tag loads a small iframe. Add it once, right before the closing </body> tag.
+- It works on any website. If you know my platform (Webflow, WordPress, Squarespace, Wix, Shopify, GoDaddy, or a plain HTML site), give me the step-by-step for that one, including which "custom code" or "embed/HTML" block to use.
+
+Ask me what platform I'm on if that helps.`;
+
+  const webcallAiPrompt = `I want to add an AI phone-call button to my website. When a visitor clicks it they can talk to my AI receptionist right in their browser.
+
+Here is the embed code I was given. It is two parts, a container and a loader script:
+
+${webcallSnippet}
+
+Please tell me exactly where to paste this.
+- The <div> goes wherever I want the call widget to show up on the page.
+- The <script> tag loads a small iframe. Add it once, right before the closing </body> tag.
+- The widget asks the visitor for microphone access when they start a call, so my page needs to be on https (a secure URL).
+- It works on any website. If you know my platform (Webflow, WordPress, Squarespace, Wix, Shopify, GoDaddy, or a plain HTML site), give me the step-by-step for that one, including which "custom code" or "embed/HTML" block to use.
+
+Ask me what platform I'm on if that helps.`;
 
   // Live-preview iframe src: the exact URL embed.js injects (see public/embed.js
   // buildIframeSrc), so the on-page preview shows the real signup form, not a
@@ -814,6 +845,14 @@ export default function MarketingWebsitePage() {
                 <div className="flex items-center justify-between mb-1.5"><label className="text-xs font-medium" style={{ color: mutedTextColor }}>Inline widget (recommended)</label><button onClick={() => copyToClipboard(iframeWidgetSnippet, 'widget-code')} className="text-xs font-medium inline-flex items-center gap-1" style={{ color: agencyPrimaryColor }}>{copied === 'widget-code' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} Copy</button></div>
                 <pre className="rounded-lg p-3 text-[10px] sm:text-xs font-mono overflow-x-auto leading-relaxed" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${inputBorder}`, color: textColor, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{iframeWidgetSnippet}</pre>
                 <details className="mt-2"><summary className="text-[10px] sm:text-xs cursor-pointer" style={{ color: mutedTextColor }}>Optional attributes</summary><div className="mt-2 space-y-1.5 text-[10px] sm:text-xs pl-2 border-l-2" style={{ borderColor: inputBorder }}><div><code className="font-mono" style={{ color: textColor }}>data-theme</code> <span style={{ color: mutedTextColor }}>sets &quot;light&quot; or &quot;dark&quot;</span></div><div><code className="font-mono" style={{ color: textColor }}>data-default-plan</code> <span style={{ color: mutedTextColor }}>pre-selects a plan</span></div><div><code className="font-mono" style={{ color: textColor }}>data-redirect-on-success</code> <span style={{ color: mutedTextColor }}>URL to send the page to after signup</span></div></div></details>
+                <details className="mt-3">
+                  <summary className="text-xs font-medium cursor-pointer inline-flex items-center gap-1.5" style={{ color: mutedTextColor }}><HelpCircle className="h-3.5 w-3.5" />Need help adding this to your site?</summary>
+                  <div className="mt-3 rounded-lg p-3" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#fafafa', border: `1px dashed ${inputBorder}` }}>
+                    <p className="text-[11px] leading-relaxed mb-2.5" style={{ color: mutedTextColor }}>Not sure where it goes? Copy the prompt below and paste it into any AI assistant (ChatGPT, Claude, or your website builder&apos;s AI). It will walk you through adding it, step by step.</p>
+                    <div className="flex items-center justify-between mb-1.5"><label className="text-xs font-medium inline-flex items-center gap-1.5" style={{ color: textColor }}><Sparkles className="h-3.5 w-3.5" style={{ color: agencyPrimaryColor }} />AI prompt</label><button onClick={() => copyToClipboard(widgetAiPrompt, 'widget-ai')} className="text-xs font-medium inline-flex items-center gap-1" style={{ color: agencyPrimaryColor }}>{copied === 'widget-ai' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} Copy prompt</button></div>
+                    <pre className="rounded-lg p-3 text-[10px] sm:text-xs font-mono leading-relaxed max-h-56 overflow-y-auto" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#ffffff', border: `1px solid ${inputBorder}`, color: textColor, whiteSpace: 'pre-wrap' }}>{widgetAiPrompt}</pre>
+                  </div>
+                </details>
               </div>
               <div>
                 <div className="flex items-center justify-between mb-1.5"><label className="text-xs font-medium" style={{ color: mutedTextColor }}>Button link (no scripts)</label><button onClick={() => copyToClipboard(embedButtonSnippet, 'embed-code')} className="text-xs font-medium inline-flex items-center gap-1" style={{ color: agencyPrimaryColor }}>{copied === 'embed-code' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} Copy</button></div>
@@ -876,6 +915,15 @@ export default function MarketingWebsitePage() {
               <div className="flex items-center justify-between mb-1.5"><label className="text-xs font-medium" style={{ color: mutedTextColor }}>Embed code</label><button onClick={() => copyToClipboard(webcallSnippet, 'webcall-code')} className="text-xs font-medium inline-flex items-center gap-1" style={{ color: agencyPrimaryColor }}>{copied === 'webcall-code' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} Copy</button></div>
               <pre className="rounded-lg p-3 text-[10px] sm:text-xs font-mono overflow-x-auto leading-relaxed" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9fafb', border: `1px solid ${inputBorder}`, color: textColor, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{webcallSnippet}</pre>
               <p className="text-[10px] mt-2" style={{ color: mutedTextColor }}>This snippet matches whatever you set on the widget above, including who visitors hear.</p>
+
+              <details className="mt-3">
+                <summary className="text-xs font-medium cursor-pointer inline-flex items-center gap-1.5" style={{ color: mutedTextColor }}><HelpCircle className="h-3.5 w-3.5" />Need help adding this to your site?</summary>
+                <div className="mt-3 rounded-lg p-3" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#fafafa', border: `1px dashed ${inputBorder}` }}>
+                  <p className="text-[11px] leading-relaxed mb-2.5" style={{ color: mutedTextColor }}>Not sure where it goes? Copy the prompt below and paste it into any AI assistant (ChatGPT, Claude, or your website builder&apos;s AI). It will walk you through adding it, step by step.</p>
+                  <div className="flex items-center justify-between mb-1.5"><label className="text-xs font-medium inline-flex items-center gap-1.5" style={{ color: textColor }}><Sparkles className="h-3.5 w-3.5" style={{ color: agencyPrimaryColor }} />AI prompt</label><button onClick={() => copyToClipboard(webcallAiPrompt, 'webcall-ai')} className="text-xs font-medium inline-flex items-center gap-1" style={{ color: agencyPrimaryColor }}>{copied === 'webcall-ai' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} Copy prompt</button></div>
+                  <pre className="rounded-lg p-3 text-[10px] sm:text-xs font-mono leading-relaxed max-h-56 overflow-y-auto" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#ffffff', border: `1px solid ${inputBorder}`, color: textColor, whiteSpace: 'pre-wrap' }}>{webcallAiPrompt}</pre>
+                </div>
+              </details>
             </div>
           </details>
         </div>
