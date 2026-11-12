@@ -11,7 +11,7 @@
 'use client';
 import { openAgencySupport, visibleFooterLinks, isSupportLink } from '@/lib/marketing-links';
 import CustomScripts from './CustomScripts';
-import { Editable } from '@/components/agency/MarketingEditable';
+import { Editable, ItemAdd, ItemRemove, useEditor } from '@/components/agency/MarketingEditable';
 import { resolveSectionOrder } from '@/lib/marketing-sections';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
@@ -341,9 +341,11 @@ function ProblemSolution({ config, textOnPrimary, mutedOnPrimary }: { config: Ma
               <div className="bsd-problem-icon">{Icons.x}</div>
               <Editable as="h3" field={`problems.${i}.title`} value={p.title}>{p.title}</Editable>
               <p>&ldquo;<Editable as="span" field={`problems.${i}.description`} value={p.description}>{p.description}</Editable>&rdquo;</p>
+              <ItemRemove path="problems" index={i} label="problem" />
             </div>
           ))}
         </div>
+        <div style={{ textAlign: 'center' }}><ItemAdd path="problems" label="problem" /></div>
         <div className="bsd-solution bsd-reveal">
           <h2 style={{ color: textOnPrimary }}>{branding.name} is <Editable as="span" field="solution.headline" value={solution.headline}>{solution.headline}</Editable></h2>
           {solution.paragraphs.map((para, i) => <Editable as="p" key={i} style={{ color: mutedOnPrimary }} field={`solution.paragraphs.${i}`} value={para}>{para}</Editable>)}
@@ -374,9 +376,11 @@ function HowItWorks({ config }: { config: MarketingConfig }) {
               <Editable as="h3" field={`steps.${i}.title`} value={step.title}>{step.title}</Editable>
               <Editable as="p" field={`steps.${i}.description`} value={step.description}>{step.description}</Editable>
               <span className="bsd-step-time">{Icons.clock}<Editable as="span" field={`steps.${i}.time`} value={step.time}>{step.time}</Editable></span>
+              <ItemRemove path="steps" index={i} label="step" />
             </div>
           ))}
         </div>
+        <div style={{ textAlign: 'center' }}><ItemAdd path="steps" label="step" /></div>
         <div className="bsd-steps-cta">
           <a href="/signup" className="bsd-btn bsd-btn-primary bsd-btn-lg">{config.signup?.trialDays === 0 ? 'Get started' : `Start your ${config.signup?.trialDays ?? 7}-day free trial`}</a>
           <p>{config.signup?.cardRequired ? '' : 'No credit card required. '}Your AI receptionist is ready{config.stats?.setupTime ? ` in ${config.stats.setupTime}` : ''}.</p>
@@ -390,12 +394,13 @@ function HowItWorks({ config }: { config: MarketingConfig }) {
 // FEATURE EXPLORER (interactive pill tabs, the second signature moment)
 // ============================================================================
 function FeatureExplorer({ config }: { config: MarketingConfig }) {
+  const { editor } = useEditor();
   const { features } = config;
   const [active, setActive] = useState(0);
   const safeActive = Math.min(active, Math.max(0, features.length - 1));
   const current = features[safeActive] || features[0];
-  if (!current) return null;
-  const iconKey = FEATURE_ICON_KEYS[current.icon] || 'zap';
+  if (!current && !editor) return null;
+  const iconKey = current ? (FEATURE_ICON_KEYS[current.icon] || 'zap') : 'zap';
   return (
     <section id="features" className="bsd-section">
       <div className="bsd-container">
@@ -411,15 +416,19 @@ function FeatureExplorer({ config }: { config: MarketingConfig }) {
                 {Icons[FEATURE_ICON_KEYS[f.icon] || 'zap']}{f.title}
               </button>
             ))}
+            <ItemAdd path="features" label="feature" />
           </div>
+          {current && (
           <div className="bsd-fx-panel">
             <div className="bsd-fx-detail">
               <div className="bsd-fx-detail-icon">{Icons[iconKey]}</div>
               <Editable as="h3" field={`features.${safeActive}.title`} value={current.title}>{current.title}</Editable>
               <Editable as="p" field={`features.${safeActive}.description`} value={current.description}>{current.description}</Editable>
+              <ItemRemove path="features" index={safeActive} label="feature" />
             </div>
             <div className="bsd-fx-visual">{Icons[iconKey]}</div>
           </div>
+          )}
         </div>
       </div>
     </section>
@@ -484,9 +493,11 @@ function CommandCenter({ config, primary, textOnPrimary }: { config: MarketingCo
                   <div>
                     <Editable as="h3" field={`benefits.${i}.title`} value={b.title}>{b.title}</Editable>
                     <Editable as="p" field={`benefits.${i}.description`} value={b.description}>{b.description}</Editable>
+                    <ItemRemove path="benefits" index={i} label="benefit" />
                   </div>
                 </div>
               ))}
+              <ItemAdd path="benefits" label="benefit" />
             </div>
             <div className="bsd-sms bsd-reveal">
               <div className="bsd-sms-head">Messages</div>
@@ -524,9 +535,11 @@ function Industries({ config }: { config: MarketingConfig }) {
               <Editable as="p" className="bsd-industry-sub" field={`industries.${i}.subtitle`} value={ind.subtitle}>{ind.subtitle}</Editable>
               <Editable as="p" field={`industries.${i}.description`} value={ind.description}>{ind.description}</Editable>
               <Editable as="div" className="bsd-industry-res" field={`industries.${i}.result`} value={ind.result}>{ind.result}</Editable>
+              <ItemRemove path="industries" index={i} label="industry" />
             </div>
           ))}
         </div>
+        <div style={{ textAlign: 'center' }}><ItemAdd path="industries" label="industry" /></div>
       </div>
     </section>
   );
@@ -746,9 +759,11 @@ function FAQ({ config }: { config: MarketingConfig }) {
                 <span className="bsd-faq-icon">+</span>
               </button>
               <div className="bsd-faq-a"><SafeFAQContent html={faq.answer} /></div>
+              <ItemRemove path="faqs" index={i} label="question" />
             </div>
           ))}
         </div>
+        <div style={{ textAlign: 'center' }}><ItemAdd path="faqs" label="question" /></div>
       </div>
     </section>
   );

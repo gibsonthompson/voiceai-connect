@@ -222,6 +222,11 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
       );
     } catch { /* ignore */ }
   };
+  // Relay add/remove of repeatable items up to the full-page editor, which owns
+  // the working config and persistence.
+  const onItem = (action: 'add' | 'remove', path: string, index?: number) => {
+    try { window.parent?.postMessage({ type: 'voiceai:edit_item', action, path, index }, '*'); } catch { /* ignore */ }
+  };
 
   // Resolve demo phone: manual override → auto-provisioned → platform fallback
   // No platform fallback: if the agency hasn't created its own demo number, we
@@ -400,7 +405,7 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
   return (
     <>
       {editorMode && <style>{`[data-vai-edit]{border-radius:4px;transition:box-shadow .12s ease,background-color .12s ease} [data-vai-edit]:hover{box-shadow:0 0 0 2px ${(agency.primary_color || '#00a19b')}66} [data-vai-edit]:focus{box-shadow:0 0 0 2px ${(agency.primary_color || '#00a19b')};background-color:${(agency.primary_color || '#00a19b')}14}`}</style>}
-      <EditorProvider value={{ editor: editorMode, onEdit }}>
+      <EditorProvider value={{ editor: editorMode, onEdit, onItem }}>
         <TemplateComponent config={marketingConfig} />
       </EditorProvider>
       <AgencySupportWidget

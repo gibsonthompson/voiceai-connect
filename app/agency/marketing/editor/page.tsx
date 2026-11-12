@@ -28,8 +28,21 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Check, Loader2, Monitor, Tablet, Smartphone, MousePointerClick, ExternalLink, AlertCircle, Layers, X, ChevronUp, ChevronDown } from 'lucide-react';
 import { useAgency } from '../../context';
 import { defaultMarketingConfig } from '@/types/marketing';
-import { setByPath, clone } from '@/lib/editable-path';
+import { setByPath, getByPath, clone } from '@/lib/editable-path';
 import { resolveSectionOrder, SECTION_LABELS } from '@/lib/marketing-sections';
+
+// Blank item used when "+ Add" is clicked for a repeatable list. Keyed by the
+// config array path the template controls point at.
+const NEW_ITEMS: Record<string, () => any> = {
+  problems: () => ({ title: 'New problem', description: 'Describe a problem your customers run into.' }),
+  steps: () => ({ title: 'New step', description: 'Explain what happens in this step.', time: '1 min' }),
+  benefits: () => ({ icon: 'phone', title: 'New benefit', description: 'Describe this benefit.' }),
+  features: () => ({ icon: 'calendar', title: 'New feature', description: 'Describe what this feature does.' }),
+  industries: () => ({ icon: 'briefcase', title: 'New industry', subtitle: '', description: 'Describe how you help this type of business.', result: '' }),
+  faqs: () => ({ question: 'New question?', answer: '<p>Add your answer here.</p>' }),
+  testimonials: () => ({ rating: 5, quote: 'Add a customer quote here.', authorName: 'Customer name', authorTitle: '', headline: '', stats: '' }),
+};
+function newItemFor(path: string): any { const f = NEW_ITEMS[path]; return f ? f() : {}; }
 
 type Device = 'desktop' | 'tablet' | 'mobile';
 type SaveState = 'idle' | 'dirty' | 'saving' | 'saved' | 'error';
@@ -242,6 +255,20 @@ export default function WebsiteEditorPage() {
         pushConfig();
       } else if (d.type === 'voiceai:edit_select' && typeof d.region === 'string') {
         setActiveRegion(d.region);
+      } else if (d.type === 'voiceai:edit_item' && typeof d.path === 'string') {
+        if (!configRef.current) return;
+        const cur = getByPath(configRef.current, d.path);
+        const arr = Array.isArray(cur) ? cur.slice() : [];
+        if (d.action === 'add') {
+          arr.push(newItemFor(d.path));
+        } else if (d.action === 'remove' && typeof d.index === 'number' && d.index >= 0 && d.index < arr.length) {
+          arr.splice(d.index, 1);
+        } else {
+          return;
+        }
+        configRef.current = setByPath(configRef.current, d.path, arr);
+        pushConfig();
+        scheduleSave();
       } else if (d.type === 'voiceai:edit_content' && typeof d.field === 'string') {
         if (!configRef.current) return;
         configRef.current = setByPath(configRef.current, d.field, typeof d.value === 'string' ? d.value : '');

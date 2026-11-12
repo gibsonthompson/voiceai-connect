@@ -2,7 +2,7 @@
 'use client';
 import { openAgencySupport, visibleFooterLinks, isSupportLink } from '@/lib/marketing-links';
 import CustomScripts from './CustomScripts';
-import { Editable } from '@/components/agency/MarketingEditable';
+import { Editable, ItemAdd, ItemRemove } from '@/components/agency/MarketingEditable';
 import { resolveSectionOrder } from '@/lib/marketing-sections';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -252,9 +252,11 @@ function ProblemSolutionSection({ config, contrastColors }: { config: MarketingC
               <div className="problem-icon">{Icons.x}</div>
               <Editable as="h3" field={`problems.${i}.title`} value={problem.title}>{problem.title}</Editable>
               <p>&quot;<Editable as="span" field={`problems.${i}.description`} value={problem.description}>{problem.description}</Editable>&quot;</p>
+              <ItemRemove path="problems" index={i} label="problem" />
             </div>
           ))}
         </div>
+        <ItemAdd path="problems" label="problem" />
         <div className="solution-box" style={{ background: `linear-gradient(135deg, ${branding.primaryColor} 0%, ${branding.primaryHoverColor} 100%)`, color: contrastColors.text }}>
           <h2 style={{ color: contrastColors.text }}>{branding.name} Is <Editable as="span" field="solution.headline" value={solution.headline}>{solution.headline}</Editable></h2>
           {solution.paragraphs.map((p, i) => (<Editable as="p" key={i} className="solution-text" style={{ color: contrastColors.textMuted }} field={`solution.paragraphs.${i}`} value={p}>{p}</Editable>))}
@@ -285,9 +287,11 @@ function HowItWorksSection({ config }: { config: MarketingConfig }) {
               <Editable as="h3" field={`steps.${i}.title`} value={step.title}>{step.title}</Editable>
               <Editable as="p" field={`steps.${i}.description`} value={step.description}>{step.description}</Editable>
               <div className="step-time"><span style={{ width: '1rem', height: '1rem', marginRight: '0.25rem' }}>{Icons.clock}</span><Editable as="span" field={`steps.${i}.time`} value={step.time}>{step.time}</Editable></div>
+              <ItemRemove path="steps" index={i} label="step" />
             </div>
           ))}
         </div>
+        <div style={{ textAlign: 'center' }}><ItemAdd path="steps" label="step" /></div>
         <div className="cta-box">
           <a href="/signup" className="btn-large btn-primary">{config.signup?.trialDays === 0 ? 'Get Started' : `Start Your ${config.signup?.trialDays ?? 7}-Day Free Trial`}</a>
           <p className="cta-subtext">{config.signup?.cardRequired ? '' : 'No credit card required. '}Your AI receptionist is ready{config.stats?.setupTime ? ` in ${config.stats.setupTime}` : ''}.</p>
@@ -376,8 +380,10 @@ function AppShowcaseSection({ config, contrastColors }: { config: MarketingConfi
                 <div className="benefit-icon">{benefitIcons[benefit.icon] || Icons.zap}</div>
                 <Editable as="h3" field={`benefits.${i}.title`} value={benefit.title}>{benefit.title}</Editable>
                 <Editable as="p" field={`benefits.${i}.description`} value={benefit.description}>{benefit.description}</Editable>
+                <ItemRemove path="benefits" index={i} label="benefit" />
               </div>
             ))}
+            <ItemAdd path="benefits" label="benefit" />
           </div>
         </div>
         <div className="sms-example">
@@ -421,9 +427,11 @@ function FeaturesSection({ config }: { config: MarketingConfig }) {
               {feature.highlight && <Editable as="p" className="feature-highlight" field={`features.${i}.highlight`} value={feature.highlight}>{feature.highlight}</Editable>}
               {feature.example && <Editable as="div" className="feature-example" field={`features.${i}.example`} value={feature.example}>{feature.example}</Editable>}
               {feature.stat && <div className="feature-stat"><strong>Real stat:</strong> {feature.stat.replace('Real stat: ', '')}</div>}
+              <ItemRemove path="features" index={i} label="feature" />
             </div>
           ))}
         </div>
+        <div style={{ textAlign: 'center' }}><ItemAdd path="features" label="feature" /></div>
       </div>
     </section>
   );
@@ -447,9 +455,11 @@ function IndustriesSection({ config }: { config: MarketingConfig }) {
               <Editable as="p" className="industry-subtitle" field={`industries.${i}.subtitle`} value={industry.subtitle}>{industry.subtitle}</Editable>
               <Editable as="p" field={`industries.${i}.description`} value={industry.description}>{industry.description}</Editable>
               <div className="industry-result"><strong><Editable as="span" field={`industries.${i}.result`} value={industry.result}>{industry.result}</Editable></strong></div>
+              <ItemRemove path="industries" index={i} label="industry" />
             </div>
           ))}
         </div>
+        <div style={{ textAlign: 'center' }}><ItemAdd path="industries" label="industry" /></div>
       </div>
     </section>
   );
@@ -681,9 +691,11 @@ function FAQSection({ config }: { config: MarketingConfig }) {
                 <Editable as="span" field={`faqs.${i}.question`} value={faq.question}>{faq.question}</Editable><span className="faq-icon">+</span>
               </button>
               <div className="faq-answer"><SafeFAQContent html={faq.answer} /></div>
+              <ItemRemove path="faqs" index={i} label="question" />
             </div>
           ))}
         </div>
+        <div style={{ textAlign: 'center' }}><ItemAdd path="faqs" label="question" /></div>
       </div>
     </section>
   );

@@ -13,7 +13,7 @@
 'use client';
 import { openAgencySupport, visibleFooterLinks, isSupportLink } from '@/lib/marketing-links';
 import CustomScripts from './CustomScripts';
-import { Editable } from '@/components/agency/MarketingEditable';
+import { Editable, ItemAdd, ItemRemove, useEditor } from '@/components/agency/MarketingEditable';
 import { resolveSectionOrder } from '@/lib/marketing-sections';
 
 import React, { useState } from 'react';
@@ -230,8 +230,9 @@ function Hero({ config }: { config: MarketingConfig }) {
 // FEATURES (balanced editorial grid, icon-forward, never a lonely row)
 // ============================================================================
 function Features({ config }: { config: MarketingConfig }) {
+  const { editor } = useEditor();
   const features = config.features || [];
-  if (features.length === 0) return null;
+  if (features.length === 0 && !editor) return null;
   const odd = features.length % 2 === 1;
   const lead = config.solution?.paragraphs?.[0];
   return (
@@ -252,10 +253,12 @@ function Features({ config }: { config: MarketingConfig }) {
                 {f.integrations && f.integrations.length > 0 && (
                   <ul className="ed-feat-tags">{f.integrations.map((t, j) => <li key={j}>{t}</li>)}</ul>
                 )}
+                <ItemRemove path="features" index={i} label="feature" />
               </div>
             </article>
           ))}
         </div>
+        <div style={{ textAlign: 'center' }}><ItemAdd path="features" label="feature" /></div>
       </div>
     </section>
   );
@@ -265,8 +268,9 @@ function Features({ config }: { config: MarketingConfig }) {
 // NUMBERED STEPS (a real sequence, so the numbers are earned)
 // ============================================================================
 function Steps({ config }: { config: MarketingConfig }) {
+  const { editor } = useEditor();
   const steps = config.steps || [];
-  if (steps.length === 0) return null;
+  if (steps.length === 0 && !editor) return null;
   return (
     <section className="ed-steps" id="how">
       <div className="ed-container">
@@ -279,10 +283,12 @@ function Steps({ config }: { config: MarketingConfig }) {
                 <Editable as="h3" className="ed-h3" field={`steps.${i}.title`} value={s.title}>{s.title}</Editable>
                 <Editable as="p" field={`steps.${i}.description`} value={s.description}>{s.description}</Editable>
                 {s.time && <Editable as="span" className="ed-step-time" field={`steps.${i}.time`} value={s.time}>{s.time}</Editable>}
+                <ItemRemove path="steps" index={i} label="step" />
               </div>
             </li>
           ))}
         </ol>
+        <div style={{ textAlign: 'center' }}><ItemAdd path="steps" label="step" /></div>
       </div>
     </section>
   );
@@ -292,8 +298,9 @@ function Steps({ config }: { config: MarketingConfig }) {
 // VALUE PROP CARDS (benefits)
 // ============================================================================
 function ValueCards({ config }: { config: MarketingConfig }) {
+  const { editor } = useEditor();
   const benefits = config.benefits || [];
-  if (benefits.length === 0) return null;
+  if (benefits.length === 0 && !editor) return null;
   const { cols, wideLast } = balancedGrid(benefits.length);
   return (
     <section className="ed-values">
@@ -304,9 +311,11 @@ function ValueCards({ config }: { config: MarketingConfig }) {
               <span className="ed-value-ico ed-accent">{benefitIcon(b.icon)}</span>
               <Editable as="h3" className="ed-h3" field={`benefits.${i}.title`} value={b.title}>{b.title}</Editable>
               <Editable as="p" field={`benefits.${i}.description`} value={b.description}>{b.description}</Editable>
+              <ItemRemove path="benefits" index={i} label="value card" />
             </article>
           ))}
         </div>
+        <div style={{ textAlign: 'center' }}><ItemAdd path="benefits" label="value card" /></div>
       </div>
     </section>
   );
@@ -316,8 +325,9 @@ function ValueCards({ config }: { config: MarketingConfig }) {
 // INDUSTRIES (balanced grid; honors the Industries section toggle)
 // ============================================================================
 function Industries({ config }: { config: MarketingConfig }) {
+  const { editor } = useEditor();
   const industries = config.industries || [];
-  if (industries.length === 0) return null;
+  if (industries.length === 0 && !editor) return null;
   const { cols, wideLast } = balancedGrid(industries.length);
   return (
     <section className="ed-industries">
@@ -331,9 +341,11 @@ function Industries({ config }: { config: MarketingConfig }) {
               {it.subtitle && <Editable as="p" className="ed-ind-sub" field={`industries.${i}.subtitle`} value={it.subtitle}>{it.subtitle}</Editable>}
               {it.description && <Editable as="p" className="ed-ind-desc" field={`industries.${i}.description`} value={it.description}>{it.description}</Editable>}
               {it.result && <Editable as="p" className="ed-ind-result" field={`industries.${i}.result`} value={it.result}>{it.result}</Editable>}
+              <ItemRemove path="industries" index={i} label="industry" />
             </article>
           ))}
         </div>
+        <div style={{ textAlign: 'center' }}><ItemAdd path="industries" label="industry" /></div>
       </div>
     </section>
   );
@@ -422,9 +434,10 @@ function Pricing({ config }: { config: MarketingConfig }) {
 // FAQ ACCORDION
 // ============================================================================
 function FAQ({ config }: { config: MarketingConfig }) {
+  const { editor } = useEditor();
   const faqs = config.faqs || [];
   const [open, setOpen] = useState<number | null>(0);
-  if (faqs.length === 0) return null;
+  if (faqs.length === 0 && !editor) return null;
   return (
     <section className="ed-faq" id="faq">
       <div className="ed-container ed-faq-inner">
@@ -437,9 +450,11 @@ function FAQ({ config }: { config: MarketingConfig }) {
                 <span className="ed-faq-mark">{open === i ? '\u2212' : '+'}</span>
               </button>
               {open === i && <div className="ed-faq-a"><SafeFAQContent html={f.answer} /></div>}
+              <ItemRemove path="faqs" index={i} label="question" />
             </div>
           ))}
         </div>
+        <div style={{ textAlign: 'center' }}><ItemAdd path="faqs" label="question" /></div>
       </div>
     </section>
   );
