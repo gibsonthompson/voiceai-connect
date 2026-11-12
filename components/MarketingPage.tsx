@@ -723,9 +723,7 @@ function AiWebCallSection({ config }: { config: MarketingConfig }) {
           <h2 style={{ textWrap: 'balance' }}>{title}</h2><p className="subtitle" style={{ textWrap: 'balance' }}>{subtitle}</p>
         </div>
         <div style={{ maxWidth: '34rem', margin: '0 auto' }}>
-          <div style={{ borderRadius: '1.25rem', overflow: 'hidden', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 24px 60px rgba(0,0,0,0.14)', background: '#f6f7f9' }}>
-            <iframe title="AI web call" src={src} loading="lazy" allow="microphone" style={{ display: 'block', width: '100%', height: '32rem', border: 0 }} />
-          </div>
+          <iframe title="AI web call" src={src} loading="lazy" allow="microphone" style={{ display: 'block', width: '100%', height: '32rem', border: 0, background: 'transparent' }} />
           <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.9rem', opacity: 0.68, whiteSpace: 'pre-line' }}>{cta}</p>
         </div>
       </div>
@@ -957,7 +955,7 @@ export default function MarketingPage({ config: partialConfig }: MarketingPagePr
           industries: config.showIndustries ? <IndustriesSection key="industries" config={config} /> : null,
           comparison: config.showComparison ? <ComparisonSection key="comparison" config={config} /> : null,
           roiCalculator: config.showROICalculator !== false ? <ROICalculatorSection key="roiCalculator" config={config} /> : null,
-          aiWebCall: config.showAiWebCall === true ? <AiWebCallSection key="aiWebCall" config={config} /> : null,
+          aiWebCall: config.showAiWebCall !== false ? <AiWebCallSection key="aiWebCall" config={config} /> : null,
           pricing: config.showPricing !== false ? <PricingSection key="pricing" config={config} /> : null,
           faq: config.showFAQ !== false ? <FAQSection key="faq" config={config} /> : null,
           finalCta: config.showFinalCTA !== false ? <FinalCTASection key="finalCta" config={config} contrastColors={contrastColors} /> : null,

@@ -121,7 +121,7 @@ const SECTIONS: SectionDef[] = [
   { key: 'comparison', label: 'Comparison table', hint: 'How you stack up vs other options', flag: 'showComparison', defaultOn: false, templates: ['classic', 'beside'] },
   { key: 'testimonials', label: 'Testimonial', hint: 'The large customer quote', flag: 'showTestimonials', defaultOn: true, templates: ['editorial'] },
   { key: 'roiCalculator', label: 'ROI calculator', hint: 'The missed-call cost slider', flag: 'showROICalculator', defaultOn: true, templates: ['classic', 'beside'] },
-  { key: 'aiWebCall', label: 'AI web call', hint: 'An in-page button to talk to your AI live', flag: 'showAiWebCall', defaultOn: false, templates: ['classic', 'beside', 'editorial'] },
+  { key: 'aiWebCall', label: 'AI web call', hint: 'An in-page button to talk to your AI live', flag: 'showAiWebCall', defaultOn: true, templates: ['classic', 'beside', 'editorial'] },
   { key: 'pricing', label: 'Pricing', hint: 'Your plan cards', flag: 'showPricing', defaultOn: true, templates: ['classic', 'beside', 'editorial'] },
   { key: 'faq', label: 'FAQ', hint: 'The questions accordion', flag: 'showFAQ', defaultOn: true, templates: ['classic', 'beside', 'editorial'] },
   { key: 'finalCta', label: 'Final call to action', hint: 'The closing sign-up push', flag: 'showFinalCTA', defaultOn: true, templates: ['classic', 'beside', 'editorial'] },

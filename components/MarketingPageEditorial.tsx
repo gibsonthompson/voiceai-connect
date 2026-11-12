@@ -485,9 +485,7 @@ function AiWebCall({ config }: { config: MarketingConfig }) {
           <h2 className="ed-h2" style={{ textWrap: 'balance' }}>{title}</h2><p style={{ marginTop: '0.6rem', opacity: 0.6, fontSize: '1.0625rem', textWrap: 'balance' }}>{subtitle}</p>
         </div>
         <div style={{ maxWidth: '34rem', margin: '0 auto' }}>
-          <div style={{ borderRadius: '1.25rem', overflow: 'hidden', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 24px 60px rgba(0,0,0,0.14)', background: '#f6f7f9' }}>
-            <iframe title="AI web call" src={src} loading="lazy" allow="microphone" style={{ display: 'block', width: '100%', height: '32rem', border: 0 }} />
-          </div>
+          <iframe title="AI web call" src={src} loading="lazy" allow="microphone" style={{ display: 'block', width: '100%', height: '32rem', border: 0, background: 'transparent' }} />
           <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.9rem', opacity: 0.6, whiteSpace: 'pre-line' }}>{cta}</p>
         </div>
       </div>
@@ -578,7 +576,7 @@ export default function MarketingPageEditorial({ config: partial }: { config: Pa
           valueCards: config.showFeatures !== false ? <ValueCards key="valueCards" config={config} /> : null,
           industries: config.showIndustries !== false ? <Industries key="industries" config={config} /> : null,
           testimonials: config.showTestimonials !== false ? <Testimonial key="testimonials" config={config} /> : null,
-          aiWebCall: config.showAiWebCall === true ? <AiWebCall key="aiWebCall" config={config} /> : null,
+          aiWebCall: config.showAiWebCall !== false ? <AiWebCall key="aiWebCall" config={config} /> : null,
           pricing: config.showPricing !== false ? <Pricing key="pricing" config={config} /> : null,
           faq: config.showFAQ !== false ? <FAQ key="faq" config={config} /> : null,
           finalCta: config.showFinalCTA !== false ? <FinalCTA key="finalCta" config={config} /> : null,

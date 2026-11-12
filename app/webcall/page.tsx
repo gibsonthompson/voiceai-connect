@@ -273,7 +273,7 @@ function WebcallInner() {
                     ))}
                   </div>
                 )}
-                <div ref={transcriptRef} style={{ minHeight: 180, maxHeight: 300, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, padding: '2px 0' }}>
+                <div ref={transcriptRef} style={{ height: 240, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, padding: '2px 0' }}>
                   {rendered.length === 0 ? (
                     <p style={{ fontSize: 13.5, color: muted2, textAlign: 'center', padding: '24px 0', margin: 0 }}>
                       {phase === 'ended' ? 'Call ended.' : 'Listening. Say hello to get started.'}
@@ -316,6 +316,7 @@ function WebcallInner() {
       </div>
       )}
       <style>{`
+        ${isEmbed ? 'html, body { background: transparent !important; }' : ''}
         @keyframes vaspin { to { transform: rotate(360deg); } }
         @keyframes vapulse { 0% { transform: scale(0.85); opacity: 0.7; } 70% { transform: scale(1.5); opacity: 0; } 100% { transform: scale(1.5); opacity: 0; } }
         @keyframes vabar { 0%, 100% { height: 8px; } 50% { height: 30px; } }

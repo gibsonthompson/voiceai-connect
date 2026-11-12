@@ -30,9 +30,9 @@ export type SectionKey =
 // Each template's default body order - the exact order these sections render in
 // today. Changing config.sectionOrder reorders against this baseline.
 export const SECTION_ORDER: Record<string, SectionKey[]> = {
-  classic: ['problemSolution', 'howItWorks', 'commandCenter', 'features', 'industries', 'comparison', 'roiCalculator', 'aiWebCall', 'pricing', 'faq', 'finalCta'],
-  beside: ['proofStrip', 'problemSolution', 'howItWorks', 'features', 'commandCenter', 'industries', 'comparison', 'roiCalculator', 'aiWebCall', 'pricing', 'faq', 'finalCta'],
-  editorial: ['features', 'howItWorks', 'valueCards', 'industries', 'testimonials', 'aiWebCall', 'pricing', 'faq', 'finalCta'],
+  classic: ['problemSolution', 'howItWorks', 'aiWebCall', 'commandCenter', 'features', 'industries', 'comparison', 'roiCalculator', 'pricing', 'faq', 'finalCta'],
+  beside: ['proofStrip', 'problemSolution', 'howItWorks', 'aiWebCall', 'features', 'commandCenter', 'industries', 'comparison', 'roiCalculator', 'pricing', 'faq', 'finalCta'],
+  editorial: ['features', 'howItWorks', 'aiWebCall', 'valueCards', 'industries', 'testimonials', 'pricing', 'faq', 'finalCta'],
 };
 
 // Short labels for the editor's reorder/toggle list.

@@ -787,7 +787,7 @@ function AiWebCall({ config }: { config: MarketingConfig }) {
     <section id="ai-web-call" className="bsd-section bsd-section-soft">
       <div className="bsd-container">
         <div className="bsd-section-head center">
-          <TEdit config={config} as="span" className="bsd-eyebrow" k="eyebrowWebcall" d="Live demo" />
+          <div style={{ marginBottom: '0.1rem' }}><TEdit config={config} as="span" className="bsd-eyebrow" k="eyebrowWebcall" d="Live demo" /></div>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.78rem', fontWeight: 600, color: primary, background: `${primary}18`, border: `1px solid ${primary}33`, borderRadius: '999px', padding: '5px 13px', margin: '0.55rem 0 0.9rem' }}>
             <span style={{ width: 7, height: 7, borderRadius: '999px', background: primary, display: 'inline-block' }} />
             Live in your browser, no app, nothing to dial
@@ -796,9 +796,7 @@ function AiWebCall({ config }: { config: MarketingConfig }) {
           <p style={{ textWrap: 'balance' }}>{subtitle}</p>
         </div>
         <div style={{ maxWidth: '34rem', margin: '0 auto' }}>
-          <div style={{ borderRadius: '1.25rem', overflow: 'hidden', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 24px 60px rgba(0,0,0,0.14)', background: '#f6f7f9' }}>
-            <iframe title="AI web call" src={src} loading="lazy" allow="microphone" style={{ display: 'block', width: '100%', height: '32rem', border: 0 }} />
-          </div>
+          <iframe title="AI web call" src={src} loading="lazy" allow="microphone" style={{ display: 'block', width: '100%', height: '32rem', border: 0, background: 'transparent' }} />
           <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.9rem', opacity: 0.68, whiteSpace: 'pre-line' }}>{cta}</p>
         </div>
       </div>
@@ -973,7 +971,7 @@ export default function MarketingPageBeside({ config: partialConfig }: Marketing
           industries: config.showIndustries ? <Industries key="industries" config={config} /> : null,
           comparison: config.showComparison ? <Comparison key="comparison" config={config} /> : null,
           roiCalculator: config.showROICalculator !== false ? <ROICalculator key="roiCalculator" config={config} /> : null,
-          aiWebCall: config.showAiWebCall === true ? <AiWebCall key="aiWebCall" config={config} /> : null,
+          aiWebCall: config.showAiWebCall !== false ? <AiWebCall key="aiWebCall" config={config} /> : null,
           pricing: config.showPricing !== false ? <Pricing key="pricing" config={config} /> : null,
           faq: config.showFAQ !== false ? <FAQ key="faq" config={config} /> : null,
           finalCta: config.showFinalCTA !== false ? <FinalCTA key="finalCta" config={config} textOnPrimary={textOnPrimary} mutedOnPrimary={mutedOnPrimary} /> : null,
