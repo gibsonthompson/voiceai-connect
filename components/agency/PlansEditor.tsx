@@ -146,18 +146,27 @@ export default function PlansEditor({ plans, setPlans, theme, featureKeys, featu
             </p>
           </div>
           {plans.map((p, idx) => (
-            <div key={p._uid} className="p-4 rounded-t-2xl"
+            <div key={p._uid} className="group p-4 rounded-t-2xl"
               style={{ backgroundColor: theme.card, borderLeft: `1px solid ${theme.cardBorder}`, borderRight: `1px solid ${theme.cardBorder}`, borderTop: `1px solid ${theme.cardBorder}`, opacity: p.visible ? 1 : 0.55 }}>
               <input value={p.name} onChange={(e) => update(p._uid, { name: e.target.value })} placeholder="Plan name"
                 className="w-full min-w-0 rounded-lg px-3 py-2.5 text-base font-semibold mb-3" style={inputStyle} />
 
               <div className="flex items-center gap-1 mb-4">
+                {/* Visible plans keep this control out of sight until you hover the
+                    plan, then it offers "Hide". Hidden plans always show "Hidden"
+                    so the state is obvious, and offer "Show" on hover. */}
                 <button type="button" onClick={() => update(p._uid, { visible: !p.visible })}
-                  title={p.visible ? 'Shown on your site' : 'Hidden from your site'}
-                  className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium"
-                  style={{ color: p.visible ? theme.primary : theme.textMuted, backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' }}>
-                  {p.visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                  {p.visible ? 'Visible' : 'Hidden'}
+                  title={p.visible ? 'Click to hide this plan from your site' : 'Click to show this plan on your site'}
+                  className={`flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-medium transition-opacity ${p.visible ? 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100' : 'opacity-100'}`}
+                  style={{ color: p.visible ? theme.textMuted : theme.primary, backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' }}>
+                  {p.visible ? (
+                    <><EyeOff className="h-4 w-4" /> Hide</>
+                  ) : (
+                    <>
+                      <span className="flex items-center gap-1.5 group-hover:hidden"><EyeOff className="h-4 w-4" /> Hidden</span>
+                      <span className="hidden items-center gap-1.5 group-hover:flex"><Eye className="h-4 w-4" /> Show</span>
+                    </>
+                  )}
                 </button>
                 <div className="flex-1" />
                 <button type="button" onClick={() => move(p._uid, -1)} disabled={idx === 0} title="Move left" className="disabled:opacity-30 p-1.5" style={{ color: theme.textMuted }}><ChevronLeft className="h-4 w-4" /></button>
