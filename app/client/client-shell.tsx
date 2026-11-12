@@ -121,11 +121,30 @@ function ClientDashboardLayout({ children, initialDark = true }: { children: Rea
   useEffect(() => { if (sidebarOpen && (isMobile || isTablet)) { document.body.style.overflow = 'hidden'; } else { document.body.style.overflow = ''; } return () => { document.body.style.overflow = ''; }; }, [sidebarOpen, isMobile, isTablet]);
   useEffect(() => { if (client?.id) setManifestLink(client.id); }, [client?.id]);
 
-  // -- Background override (useLayoutEffect runs BEFORE browser paints) --
-  // useEffect runs AFTER paint (causes flash). useLayoutEffect runs BEFORE
-  // paint, so globals.css #050505 is overridden before the user sees it.
+  // -- Background: pin <html> to the agency's REAL dashboard colors so a tab
+  // navigation never flashes the wrong color. useLayoutEffect runs BEFORE paint.
+  // Layers, in priority order:
+  //  1. The --app-shell-bg CSS var holds the agency's exact dashboard background
+  //     (theme.bg = client.page_bg / the agency's override, or the theme default
+  //     when they haven't set one). globals.css paints the app-shell from this
+  //     var, and it is kept in place across navigations (never cleared), so in
+  //     the split second a navigation isn't painting the inline style below, the
+  //     fallback is the agency's own color, never a generic light/dark or black.
+  //  2. app-shell + theme-light/dark classes select the right default. The root
+  //     layout script can only guess the theme from localStorage before branding
+  //     loads (and in preview it reads the agency's own brand), so we correct it
+  //     to the real resolved client theme here.
+  //  3. The inline background is the immediate exact color for the live frame.
   useLayoutEffect(() => {
-    document.documentElement.style.setProperty('background', theme.bg, 'important');
+    const html = document.documentElement;
+    html.classList.add('app-shell');
+    html.classList.toggle('theme-dark', theme.isDark);
+    html.classList.toggle('theme-light', !theme.isDark);
+    try { html.style.colorScheme = theme.isDark ? 'dark' : 'light'; } catch {}
+    // Persistent custom-color fallback (kept across navigations, not cleared).
+    html.style.setProperty('--app-shell-bg', theme.bg);
+    // Immediate exact color for the current frame.
+    html.style.setProperty('background', theme.bg, 'important');
     document.body.style.setProperty('background', theme.bg, 'important');
     document.body.style.setProperty('color', theme.text, 'important');
     let metaThemeColor = document.querySelector('meta[name="theme-color"]');
@@ -133,11 +152,11 @@ function ClientDashboardLayout({ children, initialDark = true }: { children: Rea
     const initStyle = document.getElementById('theme-init');
     if (initStyle) initStyle.remove();
     return () => {
-      document.documentElement.style.removeProperty('background');
+      html.style.removeProperty('background');
       document.body.style.removeProperty('background');
       document.body.style.removeProperty('color');
     };
-  }, [theme.bg, theme.text, nav.bg]);
+  }, [theme.bg, theme.text, nav.bg, theme.isDark]);
 
   // Home-screen app name is the agency's own brand (displayName), the same name
   // the browser tab shows. iOS "Add to Home Screen" reads this

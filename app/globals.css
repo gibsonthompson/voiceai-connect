@@ -62,9 +62,9 @@
    script also sets an inline html/body background that wins over these; they
    are the reliable fallback for the frame before that inline style applies. */
 html.app-shell.theme-dark,
-html.app-shell.theme-dark body { background: #050505; }
+html.app-shell.theme-dark body { background: var(--app-shell-bg, #050505); }
 html.app-shell.theme-light,
-html.app-shell.theme-light body { background: #f9fafb; }
+html.app-shell.theme-light body { background: var(--app-shell-bg, #f9fafb); }
 
 html {
   scroll-behavior: smooth;
