@@ -1064,7 +1064,16 @@ export default function AgencyClientDetailPage() {
           </div>
 
           {/* Intake Form (structured order/request capture) */}
-          {agency?.id && <IntakeManager agencyId={agency.id} clientId={clientId} />}
+          {agency?.id && (
+            <IntakeManager
+              theme={theme}
+              isAgency
+              configUrl={`${backendUrl}/api/agency/${agency.id}/clients/${clientId}/intake`}
+              recordsUrl={`${backendUrl}/api/agency/${agency.id}/clients/${clientId}/intake/records`}
+              templatesUrl={`${backendUrl}/api/agency/${agency.id}/intake/templates`}
+              templateCrudBase={`${backendUrl}/api/agency/${agency.id}/intake/templates`}
+            />
+          )}
 
           {/* Recent Calls */}
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6 flex items-center justify-between"><div className="flex items-center gap-2"><PhoneCall className="h-4 w-4" style={{ color: theme.iconColor }} /><h2 className="font-semibold text-sm sm:text-base">Recent Calls</h2></div><Link href={`/agency/clients/${clientId}/calls`} className="inline-flex items-center gap-1 text-sm font-medium hover:opacity-80 transition-colors" style={{ color: theme.primary }}>View All<ChevronRight className="h-4 w-4" /></Link></div>{recentCalls.length === 0 ? (<div className="px-4 sm:px-6 pb-6 text-center py-8"><PhoneCall className="h-8 w-8 mx-auto mb-2" style={{ color: theme.textMuted, opacity: 0.4 }} /><p className="text-sm" style={{ color: theme.cardTextMuted }}>No calls yet</p></div>) : (<div>{recentCalls.map((call) => { const statusBadges = getCallBadges(call, theme); const Lead = statusBadges[0]?.Icon || PhoneCall; const leadColor = statusBadges[0]?.color || theme.textMuted; return (<Link key={call.id} href={`/agency/clients/${clientId}/calls/${call.id}`} className="flex items-center justify-between px-4 sm:px-6 py-3 transition-colors" style={{ borderTop: `1px solid ${theme.borderSubtle}` }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hover} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}><div className="flex items-center gap-3 min-w-0"><Lead className="h-4 w-4 flex-shrink-0" style={{ color: leadColor }} /><div className="min-w-0"><p className="text-sm font-medium truncate">{call.customer_name || 'Unknown Caller'}</p><p className="text-xs" style={{ color: theme.cardTextMuted }}>{call.service_requested || 'General inquiry'}</p></div></div><div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">{statusBadges.map((b) => (<span key={b.key} className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] sm:text-xs font-semibold whitespace-nowrap" style={{ backgroundColor: b.bg, color: b.color }}><b.Icon className="h-3 w-3 flex-shrink-0" /><span className="hidden sm:inline">{b.label}</span></span>))}<span className="text-xs" style={{ color: theme.cardTextMuted }}>{new Date(call.created_at).toLocaleDateString()}</span><ChevronRight className="h-4 w-4" style={{ color: theme.cardTextMuted }} /></div></Link>); })}</div>)}</div>
