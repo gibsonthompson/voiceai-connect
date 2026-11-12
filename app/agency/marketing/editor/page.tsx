@@ -25,11 +25,35 @@
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Check, Loader2, Monitor, Tablet, Smartphone, MousePointerClick, ExternalLink, AlertCircle, Layers, X, ChevronUp, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Check, Loader2, Monitor, Tablet, Smartphone, MousePointerClick, ExternalLink, AlertCircle, Layers, X, ChevronUp, ChevronDown, FileText } from 'lucide-react';
 import { useAgency } from '../../context';
 import { defaultMarketingConfig } from '@/types/marketing';
 import { setByPath, getByPath, clone } from '@/lib/editable-path';
 import { resolveSectionOrder, SECTION_LABELS } from '@/lib/marketing-sections';
+import { getIndustryPage, INDUSTRY_PAGE_LIST } from '@/lib/industry-pages';
+
+// When editing an industry landing page, these fields are the ones the page
+// overlays; everything else (features, steps, pricing, section order) is shared
+// with the homepage and keeps writing the homepage config.
+type OverlayKey = 'headline' | 'subheadline' | 'problems' | 'sampleCall' | 'faqs';
+function industryOverlayKey(field: string): OverlayKey | null {
+  if (field === 'hero.headline') return 'headline';
+  if (field === 'hero.description') return 'subheadline';
+  const seg = field.split('.')[0];
+  if (seg === 'problems') return 'problems';
+  if (seg === 'sampleCall') return 'sampleCall';
+  if (seg === 'faqs') return 'faqs';
+  return null;
+}
+// Remap a homepage field path to its industryPages[slug] address, or null when
+// the field is shared with the homepage.
+function remapIndustryField(field: string, slug: string): string | null {
+  const key = industryOverlayKey(field);
+  if (!key) return null;
+  if (key === 'headline') return `industryPages.${slug}.headline`;
+  if (key === 'subheadline') return `industryPages.${slug}.subheadline`;
+  return `industryPages.${slug}.${field}`; // problems / sampleCall / faqs keep their sub-path
+}
 
 // Blank item used when "+ Add" is clicked for a repeatable list. Keyed by the
 // config array path the template controls point at.
@@ -117,6 +141,10 @@ export default function WebsiteEditorPage() {
   const [activeRegion, setActiveRegion] = useState<string>('');
   const [iframeReady, setIframeReady] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
+  // Which page is being edited: '' = homepage, otherwise an industry page slug.
+  const [currentPage, setCurrentPage] = useState<string>('');
+  const currentPageRef = useRef<string>('');
+  const [pageMenuOpen, setPageMenuOpen] = useState(false);
   // Section on/off state, mirrored in React so the panel re-renders. The source
   // of truth for saving is still configRef; toggles write to both.
   const [flags, setFlags] = useState<Record<string, boolean>>({});
@@ -244,6 +272,29 @@ export default function WebsiteEditorPage() {
     scheduleSave();
   }, [order, pushConfig, scheduleSave]);
 
+  // Before the first edit to an overlaid industry field, copy that field's
+  // current value from the static lib page into industryPages[slug] so arrays
+  // are complete (no sparse writes) and the override is self-contained.
+  const ensureIndustrySeed = useCallback((slug: string, field: string) => {
+    const key = industryOverlayKey(field);
+    if (!key || !configRef.current) return;
+    const path = `industryPages.${slug}.${key}`;
+    if (getByPath(configRef.current, path) !== undefined) return;
+    const sp = getIndustryPage(slug);
+    if (!sp) return;
+    const val = key === 'headline' ? sp.headline : key === 'subheadline' ? sp.subheadline : key === 'problems' ? sp.problems : key === 'sampleCall' ? sp.sampleCall : sp.faqs;
+    configRef.current = setByPath(configRef.current, path, clone(val));
+  }, []);
+
+  // Switch the editor to a different page (homepage or an industry slug). The
+  // iframe remounts via its key and re-pushes the current config on load.
+  const switchPage = useCallback((slug: string) => {
+    currentPageRef.current = slug;
+    setCurrentPage(slug);
+    setActiveRegion('');
+    setPageMenuOpen(false);
+  }, []);
+
   // Inbound bridge from the iframe (Editable regions on the agency site).
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -257,7 +308,14 @@ export default function WebsiteEditorPage() {
         setActiveRegion(d.region);
       } else if (d.type === 'voiceai:edit_item' && typeof d.path === 'string') {
         if (!configRef.current) return;
-        const cur = getByPath(configRef.current, d.path);
+        const slug = currentPageRef.current;
+        let arrPath = d.path;
+        // problems/faqs are overlaid per industry page; features/steps/etc stay shared.
+        if (slug && (d.path === 'problems' || d.path === 'faqs')) {
+          ensureIndustrySeed(slug, d.path);
+          arrPath = `industryPages.${slug}.${d.path}`;
+        }
+        const cur = getByPath(configRef.current, arrPath);
         const arr = Array.isArray(cur) ? cur.slice() : [];
         if (d.action === 'add') {
           arr.push(newItemFor(d.path));
@@ -266,13 +324,20 @@ export default function WebsiteEditorPage() {
         } else {
           return;
         }
-        configRef.current = setByPath(configRef.current, d.path, arr);
+        configRef.current = setByPath(configRef.current, arrPath, arr);
         pushConfig();
         scheduleSave();
       } else if (d.type === 'voiceai:edit_content' && typeof d.field === 'string') {
         if (!configRef.current) return;
-        configRef.current = setByPath(configRef.current, d.field, typeof d.value === 'string' ? d.value : '');
-        if (d.field.split('.')[0] === 'hero') heroTouchedRef.current = true;
+        const slug = currentPageRef.current;
+        let field = d.field;
+        if (slug) {
+          const remapped = remapIndustryField(field, slug);
+          if (remapped) { ensureIndustrySeed(slug, field); field = remapped; }
+        }
+        configRef.current = setByPath(configRef.current, field, typeof d.value === 'string' ? d.value : '');
+        // Only homepage hero edits mirror into the website_headline/tagline columns.
+        if (field.split('.')[0] === 'hero') heroTouchedRef.current = true;
         scheduleSave();
         // Re-push (debounced) so regions that share state with the edited one
         // keep the new value when their section re-renders (FAQ accordion,
@@ -285,7 +350,7 @@ export default function WebsiteEditorPage() {
     };
     window.addEventListener('message', onMsg);
     return () => window.removeEventListener('message', onMsg);
-  }, [pushConfig, scheduleSave]);
+  }, [pushConfig, scheduleSave, ensureIndustrySeed]);
 
   // Flush a pending save when leaving.
   const exit = useCallback(() => {
@@ -318,6 +383,35 @@ export default function WebsiteEditorPage() {
           <ArrowLeft className="h-4 w-4" />
           <span className="hidden sm:inline">Done</span>
         </button>
+
+        {/* Page switcher: homepage or an industry landing page */}
+        {INDUSTRY_PAGE_LIST.length > 0 && (
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setPageMenuOpen((o) => !o)}
+              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors"
+              style={{ color: '#e5e7eb', backgroundColor: 'rgba(255,255,255,0.06)' }}
+            >
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">{currentPage ? (INDUSTRY_PAGE_LIST.find((p) => p.slug === currentPage)?.label || currentPage) : 'Homepage'}</span>
+              <ChevronDown className="h-3.5 w-3.5" />
+            </button>
+            {pageMenuOpen && (
+              <div className="absolute left-0 mt-1 rounded-lg py-1 z-20" style={{ minWidth: 190, backgroundColor: '#15171c', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 12px 34px rgba(0,0,0,0.55)' }}>
+                {[{ slug: '', label: 'Homepage' }, ...INDUSTRY_PAGE_LIST].map((p) => (
+                  <button
+                    key={p.slug || 'home'}
+                    onClick={() => switchPage(p.slug)}
+                    className="w-full text-left px-3 py-2 text-sm transition-colors"
+                    style={{ color: currentPage === p.slug ? '#fff' : 'rgba(255,255,255,0.7)', backgroundColor: currentPage === p.slug ? 'rgba(255,255,255,0.08)' : 'transparent' }}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="hidden md:flex items-center gap-1.5 text-xs" style={{ color: 'rgba(255,255,255,0.55)' }}>
           <MousePointerClick className="h-3.5 w-3.5" />
@@ -405,10 +499,11 @@ export default function WebsiteEditorPage() {
           >
             {configReady && (
               <iframe
+                key={currentPage || 'home'}
                 ref={iframeRef}
                 title="Your website"
-                src={editorSrc}
-                onLoad={() => { if (!iframeReady) pushConfig(); }}
+                src={subdomainUrl ? `${subdomainUrl}${currentPage ? '/' + currentPage : '/'}?preview=1&editor=1` : ''}
+                onLoad={() => pushConfig()}
                 style={{ width: '100%', height: device === 'desktop' ? '100%' : '100%', minHeight: device === 'desktop' ? 'calc(100vh - 56px)' : 'calc(100vh - 56px - 40px)', border: 0, display: 'block', backgroundColor: '#ffffff' }}
               />
             )}

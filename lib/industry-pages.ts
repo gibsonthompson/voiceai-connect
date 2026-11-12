@@ -143,3 +143,6 @@ export function getIndustryPage(slug: string): IndustryPage | null {
 
 // Slugs the middleware recognizes so it can route them to the industry page.
 export const INDUSTRY_PAGE_SLUGS: string[] = Object.keys(PAGES);
+
+// Slug + label pairs for UI pickers (e.g. the in-context editor's page switcher).
+export const INDUSTRY_PAGE_LIST: { slug: string; label: string }[] = Object.values(PAGES).map((p) => ({ slug: p.slug, label: p.label }));
