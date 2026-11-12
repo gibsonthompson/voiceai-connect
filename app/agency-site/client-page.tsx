@@ -8,7 +8,7 @@ import MarketingPageEditorial from '@/components/MarketingPageEditorial';
 import AgencySupportWidget from '@/components/AgencySupportWidget';
 import { EditorProvider } from '@/components/agency/MarketingEditable';
 import { MarketingConfig, defaultMarketingConfig } from '@/types/marketing';
-import type { IndustryPage } from '@/lib/industry-pages';
+import type { IndustryPageData } from '@/lib/industry-pages';
 import { getCurrencySymbol } from '@/lib/currency-symbols';
 import { getCurrencyForCountry, currencies } from '@/lib/currency';
 import { FEATURE_LABELS, FEATURE_ORDER } from '@/lib/plan-features-meta';
@@ -175,7 +175,7 @@ const TEMPLATES: Record<string, React.ComponentType<{ config: Partial<MarketingC
 // Receives agency data as prop (fetched server-side by page.tsx)
 // Builds MarketingConfig and renders the correct template
 // ============================================================================
-export default function AgencySiteClient({ agency, industry }: { agency: Agency; industry?: IndustryPage }) {
+export default function AgencySiteClient({ agency, industry }: { agency: Agency; industry?: IndustryPageData }) {
   // Client-side branding (favicon, title, theme cache)
   useEffect(() => {
     if (agency.logo_url) setFavicon(agency.logo_url);
@@ -190,12 +190,18 @@ export default function AgencySiteClient({ agency, industry }: { agency: Agency;
   // real public site (previewMode is false there), so nothing changes live.
   const [previewMode] = useState(() => typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('preview') === '1');
   const [livePreview, setLivePreview] = useState<any | null>(null);
+  // Template chosen live in the editor's template switcher. Only ever set while
+  // previewing; the public site always renders the saved marketing_template.
+  const [templateOverride, setTemplateOverride] = useState<string | null>(null);
   useEffect(() => {
     if (!previewMode || typeof window === 'undefined') return;
     const onMsg = (e: MessageEvent) => {
       const d = e.data;
       if (d && typeof d === 'object' && d.type === 'voiceai:preview_content') {
         setLivePreview(d.config && typeof d.config === 'object' ? d.config : null);
+      }
+      if (d && typeof d === 'object' && d.type === 'voiceai:preview_template' && typeof d.template === 'string') {
+        setTemplateOverride(d.template);
       }
     };
     window.addEventListener('message', onMsg);
@@ -433,8 +439,9 @@ export default function AgencySiteClient({ agency, industry }: { agency: Agency;
     faqs: Array.isArray(industryOverride.faqs) && industryOverride.faqs.length ? industryOverride.faqs : industry.faqs,
   } : marketingConfig;
 
-  // Route to the correct template
-  const templateKey = agency.marketing_template || 'classic';
+  // Route to the correct template. In the editor, a live template switch
+  // (templateOverride) wins so the preview reflects the pick before saving.
+  const templateKey = (previewMode && templateOverride) ? templateOverride : (agency.marketing_template || 'classic');
   const TemplateComponent = TEMPLATES[templateKey] || TEMPLATES.classic;
 
   return (
@@ -443,7 +450,10 @@ export default function AgencySiteClient({ agency, industry }: { agency: Agency;
       <EditorProvider value={{ editor: editorMode, onEdit, onItem }}>
         <TemplateComponent config={renderConfig} />
       </EditorProvider>
-      <AgencySupportWidget
+      {/* The floating FAQ/support bubble is hidden inside the website editor so
+          it does not cover the content being edited. It still shows on the
+          live public site and the plain (non-editor) preview. */}
+      {!editorMode && <AgencySupportWidget
         agencyId={agency.id}
         agencyName={agency.name}
         agencyLogo={agency.logo_url}
@@ -453,7 +463,7 @@ export default function AgencySiteClient({ agency, industry }: { agency: Agency;
         pricing={(marketingConfig.pricing && marketingConfig.pricing.length > 0) ? marketingConfig.pricing : defaultMarketingConfig.pricing}
         currencySymbol={currencySymbol}
         trialDays={_trialDays}
-      />
+      />}
     </>
   );
 }

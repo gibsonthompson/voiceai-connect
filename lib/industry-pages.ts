@@ -53,6 +53,13 @@ export interface IndustryPage {
   faqs: IndustryPageFaq[];
 }
 
+// Serializable subset of IndustryPage safe to pass from a Server Component to a
+// Client Component. The metaTitle/metaDescription members are functions (used
+// only server-side in generateMetadata) and CANNOT cross the RSC boundary, so
+// they are omitted here. Passing them would throw a Server Components render
+// error at runtime.
+export type IndustryPageData = Omit<IndustryPage, 'metaTitle' | 'metaDescription'>;
+
 const PAGES: Record<string, IndustryPage> = {
   auto: {
     slug: 'auto',

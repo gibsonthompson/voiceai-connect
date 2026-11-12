@@ -70,5 +70,20 @@ export default async function AgencyIndustryPage({ params }: { params: Promise<{
   const agency = await getAgencyByHost(host);
   if (!agency || agency.marketing_site_enabled === false || !hasMarketingSiteAccess(agency)) notFound();
 
-  return <AgencySiteClient agency={agency} industry={page} />;
+  // Only serializable data may cross into the Client Component. page.metaTitle /
+  // page.metaDescription are functions (used above in generateMetadata) and
+  // would throw a Server Components render error if passed through, so build an
+  // explicit plain object with just the fields the renderer reads.
+  const industryData = {
+    slug: page.slug,
+    industryValue: page.industryValue,
+    label: page.label,
+    headline: page.headline,
+    subheadline: page.subheadline,
+    problems: page.problems,
+    sampleCall: page.sampleCall,
+    faqs: page.faqs,
+  };
+
+  return <AgencySiteClient agency={agency} industry={industryData} />;
 }

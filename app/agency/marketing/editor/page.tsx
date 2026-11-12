@@ -25,7 +25,7 @@
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Check, Loader2, Monitor, Tablet, Smartphone, MousePointerClick, ExternalLink, AlertCircle, Layers, X, ChevronUp, ChevronDown, FileText, Undo2, Save } from 'lucide-react';
+import { ArrowLeft, Check, Loader2, Monitor, Tablet, Smartphone, MousePointerClick, ExternalLink, AlertCircle, Layers, X, ChevronUp, ChevronDown, FileText, Undo2, Save, LayoutTemplate } from 'lucide-react';
 import { useAgency } from '../../context';
 import { defaultMarketingConfig } from '@/types/marketing';
 import { setByPath, getByPath, clone } from '@/lib/editable-path';
@@ -136,6 +136,15 @@ function sectionIsOn(def: SectionDef, source: any, template: string): boolean {
   return sectionDefaultOn(def, template);
 }
 
+// Templates the agency can switch between, shown in the editor's template menu.
+// IDs match the keys in TEMPLATES in app/agency-site/client-page.tsx and the
+// values the backend stores in marketing_template.
+const TEMPLATE_OPTIONS: { id: string; name: string; style: string }[] = [
+  { id: 'classic', name: 'Classic', style: 'Professional & Versatile' },
+  { id: 'beside', name: 'Spotlight', style: 'Modern & Story-Driven' },
+  { id: 'editorial', name: 'Editorial', style: 'Premium & Editorial' },
+];
+
 export default function WebsiteEditorPage() {
   const router = useRouter();
   const { agency, loading, refreshAgency, demoMode } = useAgency();
@@ -164,12 +173,28 @@ export default function WebsiteEditorPage() {
   const [currentPage, setCurrentPage] = useState<string>('');
   const currentPageRef = useRef<string>('');
   const [pageMenuOpen, setPageMenuOpen] = useState(false);
+  const [templateMenuOpen, setTemplateMenuOpen] = useState(false);
   // Section on/off state, mirrored in React so the panel re-renders. The source
   // of truth for saving is still configRef; toggles write to both.
   const [flags, setFlags] = useState<Record<string, boolean>>({});
   const [order, setOrder] = useState<string[]>([]);
-  const template = (agency as any)?.marketing_template || 'classic';
-  const templateSections = useMemo(() => SECTIONS.filter((s) => s.templates.includes(template)), [template]);
+  // Which marketing template is active. Seeded from the agency once (the
+  // init ref keeps a later refreshAgency from clobbering an in-editor switch),
+  // then switchable live from the toolbar; the chosen value is persisted on
+  // save. A ref mirrors it so pushConfig (bound once) always sees the latest.
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('classic');
+  const selectedTemplateRef = useRef<string>('classic');
+  const templateInitRef = useRef(false);
+  const pendingTemplateRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (agency && !templateInitRef.current) {
+      const t = (agency as any).marketing_template || 'classic';
+      selectedTemplateRef.current = t;
+      setSelectedTemplate(t);
+      templateInitRef.current = true;
+    }
+  }, [agency]);
+  const templateSections = useMemo(() => SECTIONS.filter((s) => s.templates.includes(selectedTemplate)), [selectedTemplate]);
   const defByKey = useMemo(() => Object.fromEntries(SECTIONS.map((s) => [s.key, s])) as Record<string, SectionDef>, []);
 
   // The working copy of marketing_config. Mutated by edits, pushed to the
@@ -227,22 +252,25 @@ export default function WebsiteEditorPage() {
     if (seed && !configReady) {
       configRef.current = seed;
       const initial: Record<string, boolean> = {};
-      for (const def of templateSections) initial[def.flag] = sectionIsOn(def, seed, template);
+      for (const def of templateSections) initial[def.flag] = sectionIsOn(def, seed, selectedTemplate);
       setFlags(initial);
-      setOrder(resolveSectionOrder((seed as any).sectionOrder, template));
+      setOrder(resolveSectionOrder((seed as any).sectionOrder, selectedTemplate));
       setConfigReady(true);
     }
-  }, [seed, configReady, templateSections, template]);
+  }, [seed, configReady, templateSections, selectedTemplate]);
 
   // Push the working config into the iframe so it renders the editable baseline.
+  // Also re-asserts the selected template so the preview swaps layouts live
+  // (the copy in the config carries over unchanged across templates).
   const pushConfig = useCallback(() => {
     const win = iframeRef.current?.contentWindow;
     if (win && configRef.current) {
       try { win.postMessage({ type: 'voiceai:preview_content', config: configRef.current }, '*'); } catch { /* ignore */ }
+      try { win.postMessage({ type: 'voiceai:preview_template', template: selectedTemplateRef.current }, '*'); } catch { /* ignore */ }
     }
   }, []);
 
-  const hasUnsaved = useCallback(() => configDirtyRef.current || Object.keys(pendingCols.current).length > 0, []);
+  const hasUnsaved = useCallback(() => configDirtyRef.current || Object.keys(pendingCols.current).length > 0 || pendingTemplateRef.current !== null, []);
   const markConfigDirty = useCallback(() => { configDirtyRef.current = true; setSaveState('dirty'); }, []);
   const markColsDirty = useCallback(() => { setSaveState('dirty'); }, []);
 
@@ -288,6 +316,18 @@ export default function WebsiteEditorPage() {
     pendingCols.current = {};
   }, [agency, backendUrl]);
 
+  // One PUT for a pending template switch (marketing_template). Throws on failure.
+  const putTemplate = useCallback(async () => {
+    const t = pendingTemplateRef.current;
+    if (!t) return;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    const res = await fetch(`${backendUrl}/api/agency/${agency!.id}/settings`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ marketing_template: t }),
+    });
+    if (!res.ok) throw new Error(String(res.status));
+    pendingTemplateRef.current = null;
+  }, [agency, backendUrl]);
+
   // Manual save (the Save button / exit prompt). Saves whatever is dirty.
   const save = useCallback(async (): Promise<boolean> => {
     if (!hasUnsaved()) return true;
@@ -297,6 +337,7 @@ export default function WebsiteEditorPage() {
       const tasks: Promise<void>[] = [];
       if (configDirtyRef.current) tasks.push(putConfig());
       if (Object.keys(pendingCols.current).length) tasks.push(putCols());
+      if (pendingTemplateRef.current) tasks.push(putTemplate());
       await Promise.all(tasks);
       configDirtyRef.current = false;
       setSaveState('saved');
@@ -306,7 +347,7 @@ export default function WebsiteEditorPage() {
       setSaveState('error');
       return false;
     }
-  }, [agency, demoMode, hasUnsaved, putConfig, putCols, refreshAgency]);
+  }, [agency, demoMode, hasUnsaved, putConfig, putCols, putTemplate, refreshAgency]);
 
   // Undo the last change: restore the snapshot and re-derive the panel state
   // (show flags + order live in the config), then re-push to the preview.
@@ -315,15 +356,15 @@ export default function WebsiteEditorPage() {
     const prev = undoStack.current.pop();
     configRef.current = prev;
     const nf: Record<string, boolean> = {};
-    for (const def of templateSections) nf[def.flag] = sectionIsOn(def, prev, template);
+    for (const def of templateSections) nf[def.flag] = sectionIsOn(def, prev, selectedTemplate);
     setFlags(nf);
-    setOrder(resolveSectionOrder(prev?.sectionOrder, template));
+    setOrder(resolveSectionOrder(prev?.sectionOrder, selectedTemplate));
     setUndoDepth(undoStack.current.length);
     lastEditFieldRef.current = null;
     configDirtyRef.current = true;
     setSaveState('dirty');
     pushConfig();
-  }, [templateSections, template, pushConfig]);
+  }, [templateSections, selectedTemplate, pushConfig]);
 
   // Flip a section on/off: update the panel state, the working config, the live
   // preview, and queue a save. Writes the explicit boolean the templates read.
@@ -336,6 +377,28 @@ export default function WebsiteEditorPage() {
     pushConfig();
     markConfigDirty();
   }, [flags, pushConfig, pushUndo, markConfigDirty]);
+
+  // Switch the marketing template live. The copy in configRef is template-
+  // independent, so every edit made so far carries straight over; we only
+  // re-derive the section panel (each template renders a different set) and
+  // tell the preview to swap layouts. Persisted on save via marketing_template.
+  const changeTemplate = useCallback((next: string) => {
+    setTemplateMenuOpen(false);
+    if (next === selectedTemplateRef.current) return;
+    selectedTemplateRef.current = next;
+    setSelectedTemplate(next);
+    pendingTemplateRef.current = next;
+    // Re-derive the section flags/order for the new template from the current
+    // config, so the Sections panel matches what the new layout shows.
+    const cfg = configRef.current || {};
+    const nextSections = SECTIONS.filter((s) => s.templates.includes(next));
+    const nf: Record<string, boolean> = {};
+    for (const def of nextSections) nf[def.flag] = sectionIsOn(def, cfg, next);
+    setFlags(nf);
+    setOrder(resolveSectionOrder(cfg.sectionOrder, next));
+    setSaveState('dirty');
+    pushConfig();
+  }, [pushConfig]);
 
   // Move a section up (-1) or down (+1) in the render order.
   const moveSection = useCallback((index: number, dir: -1 | 1) => {
@@ -545,6 +608,42 @@ export default function WebsiteEditorPage() {
           </div>
         )}
 
+        {/* Template switcher (only for the marketing template pages). Copy
+            edits carry over; the preview swaps layouts live. */}
+        {!isColumnPage(currentPage) && (
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setTemplateMenuOpen((o) => !o)}
+              title="Change template"
+              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors"
+              style={{ color: templateMenuOpen ? '#0b0c0f' : '#e5e7eb', backgroundColor: templateMenuOpen ? '#ffffff' : 'rgba(255,255,255,0.06)' }}
+            >
+              <LayoutTemplate className="h-4 w-4" />
+              <span className="hidden sm:inline">{TEMPLATE_OPTIONS.find((t) => t.id === selectedTemplate)?.name || 'Template'}</span>
+              <ChevronDown className="h-3.5 w-3.5" />
+            </button>
+            {templateMenuOpen && (
+              <div className="absolute right-0 mt-1 rounded-lg py-1 z-20" style={{ minWidth: 230, backgroundColor: '#15171c', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 12px 34px rgba(0,0,0,0.55)' }}>
+                <div className="px-3 py-1.5 text-[10px] uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em' }}>Template</div>
+                {TEMPLATE_OPTIONS.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => changeTemplate(t.id)}
+                    className="w-full text-left px-3 py-2 transition-colors"
+                    style={{ backgroundColor: selectedTemplate === t.id ? 'rgba(255,255,255,0.08)' : 'transparent' }}
+                  >
+                    <div className="flex items-center justify-between gap-2 text-sm font-medium" style={{ color: selectedTemplate === t.id ? '#fff' : 'rgba(255,255,255,0.82)' }}>
+                      {t.name}
+                      {selectedTemplate === t.id && <Check className="h-3.5 w-3.5" style={{ color: accent }} />}
+                    </div>
+                    <div className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>{t.style}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Sections panel toggle (only for the marketing template pages) */}
         {!isColumnPage(currentPage) && (
           <button
@@ -659,7 +758,7 @@ export default function WebsiteEditorPage() {
               {order.map((key, i) => {
                 const def = defByKey[key];
                 // valueCards (Editorial) has no flag of its own; it follows Features.
-                const on = def ? (flags[def.flag] ?? sectionDefaultOn(def, template)) : (flags.showFeatures ?? true);
+                const on = def ? (flags[def.flag] ?? sectionDefaultOn(def, selectedTemplate)) : (flags.showFeatures ?? true);
                 const label = def ? def.label : (SECTION_LABELS[key as keyof typeof SECTION_LABELS] || key);
                 const hint = def ? def.hint : 'Shown with the Features section';
                 return (
