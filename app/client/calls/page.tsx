@@ -37,6 +37,16 @@ function formatRelativeDate(dateStr: string): string {
   return `${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${timeStr}`;
 }
 
+// Call length as a compact label, e.g. "2m 34s" or "45s". Matches the
+// call detail page's formatting so durations read the same app-wide.
+function formatDuration(seconds: number): string {
+  const s = Math.max(0, Math.round(seconds));
+  const m = Math.floor(s / 60);
+  const rem = s % 60;
+  if (m === 0) return `${rem}s`;
+  return `${m}m ${rem}s`;
+}
+
 // Language code → display label
 const LANGUAGE_LABELS: Record<string, string> = {
   es: 'ES', fr: 'FR', de: 'DE', pt: 'PT', ja: 'JA', ko: 'KO', zh: 'ZH', it: 'IT',
@@ -301,6 +311,9 @@ export default function ClientCallsPage() {
             const { Icon, bg: iconBg, color: iconColor } = getCallIcon(call);
             const badge = getBadgeStyle(call);
             const date = formatRelativeDate(call.created_at);
+            const dur = typeof call.duration_seconds === 'number' && call.duration_seconds > 0
+              ? formatDuration(call.duration_seconds)
+              : null;
             const langCode = call.call_language;
             const showLangBadge = langCode && langCode !== 'en';
 
@@ -321,8 +334,11 @@ export default function ClientCallsPage() {
                   <p className="text-[11px] sm:text-xs truncate mt-0.5" style={{ color: theme.textMuted }}>
                     {formatPhoneNumber(call.customer_phone || call.caller_phone)}
                     <span className="hidden sm:inline"> · {date}</span>
+                    {dur && <span className="hidden sm:inline"> · {dur}</span>}
                   </p>
-                  <p className="text-[10px] sm:hidden mt-0.5" style={{ color: theme.textMuted4 }}>{date}</p>
+                  <p className="text-[10px] sm:hidden mt-0.5" style={{ color: theme.textMuted4 }}>
+                    {date}{dur ? ` · ${dur}` : ''}
+                  </p>
                 </div>
 
                 <div className="flex items-center gap-1.5 flex-shrink-0">
