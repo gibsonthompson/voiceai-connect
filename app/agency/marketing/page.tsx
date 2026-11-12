@@ -992,6 +992,28 @@ Ask me what platform I'm on if that helps.`;
 
       {/* ══════════════ CONTENT ══════════════ */}
       {activeTab === 'content' && (
+        <div className="space-y-5">
+        {/* Full-page visual editor entry point */}
+        <button
+          type="button"
+          onClick={() => router.push('/agency/marketing/editor')}
+          className="group w-full text-left rounded-2xl p-4 sm:p-5 flex items-center gap-4 transition-all"
+          style={{ background: `linear-gradient(135deg, ${agencyPrimaryColor}14 0%, ${agencyPrimaryColor}06 100%)`, border: `1px solid ${agencyPrimaryColor}2e` }}
+        >
+          <div className="shrink-0 flex items-center justify-center rounded-xl" style={{ width: 44, height: 44, background: agencyPrimaryColor, color: '#fff' }}>
+            <Wand2 className="h-5 w-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-semibold text-sm sm:text-base" style={{ color: textColor }}>Edit your whole site visually</span>
+              <span className="text-[10px] font-bold uppercase tracking-wide rounded-full px-2 py-0.5" style={{ background: agencyPrimaryColor, color: '#fff' }}>New</span>
+            </div>
+            <p className="text-xs sm:text-sm mt-0.5" style={{ color: mutedTextColor }}>Open the full-page editor to scroll your live site and click any text to change it. Edits save as you go.</p>
+          </div>
+          <span className="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold transition-transform group-hover:translate-x-0.5" style={{ background: agencyPrimaryColor, color: '#fff' }}>
+            Open editor <ExternalLink className="h-3.5 w-3.5" />
+          </span>
+        </button>
         <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,560px)] gap-5 items-start">
           <div className="min-w-0">
             <MarketingContentEditor agency={agency} demoMode={demoMode} refreshAgency={refreshAgency} isDark={isDark} textColor={textColor} mutedTextColor={mutedTextColor} borderColor={borderColor} cardBg={cardBg} inputBg={inputBg} inputBorder={inputBorder} agencyPrimaryColor={agencyPrimaryColor} backendUrl={backendUrl} scrollToSection={contentScrollTarget} onScrolled={() => setContentScrollTarget(null)} onPreview={pushContentPreview} inboundEdit={inboundContentEdit} />
@@ -1012,6 +1034,7 @@ Ask me what platform I'm on if that helps.`;
               )}
             </div>
           </div>
+        </div>
         </div>
       )}
 

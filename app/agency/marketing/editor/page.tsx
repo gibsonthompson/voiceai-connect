@@ -1,0 +1,314 @@
+'use client';
+
+// app/agency/marketing/editor/page.tsx
+// -----------------------------------------------------------------------------
+// Full-page, in-context website editor.
+//
+// Opens the agency's REAL marketing site full-screen (in an iframe at
+// ?preview=1&editor=1) and lets the agency owner scroll their live site and
+// click any text to edit it in place. Edits stream back over postMessage, land
+// in a working marketing_config, and autosave to the backend. No form, no
+// field hunting - you edit the page you ship.
+//
+// This route lives under /agency/marketing so it inherits the AgencyProvider
+// and the "marketing" permission gate from app/agency/layout.tsx, but it paints
+// a fixed full-viewport surface over the dashboard chrome so it reads as its
+// own tab.
+//
+// SAFETY: the working config is the stored marketing_config JSONB overlaid with
+// COMPLETE copy sections (so editing one item in an array never writes a sparse
+// array). It deliberately never contains branding / footer / analytics, because
+// client-page.tsx applies those from dedicated agency columns BEFORE the
+// marketing_config spread - persisting them here would clobber the agency's
+// real colors, support contact, and tracking IDs with template defaults.
+// -----------------------------------------------------------------------------
+
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, Check, Loader2, Monitor, Tablet, Smartphone, MousePointerClick, ExternalLink, AlertCircle } from 'lucide-react';
+import { useAgency } from '../../context';
+import { defaultMarketingConfig } from '@/types/marketing';
+import { setByPath, clone } from '@/lib/editable-path';
+
+type Device = 'desktop' | 'tablet' | 'mobile';
+type SaveState = 'idle' | 'dirty' | 'saving' | 'saved' | 'error';
+
+const DEVICE_WIDTH: Record<Device, number | null> = { desktop: null, tablet: 834, mobile: 390 };
+
+// Copy sections that legitimately live in marketing_config and are safe to
+// materialize + persist. Column-sourced keys (branding, footer, analytics,
+// pricing, aiWebCall, customNavLinks) are intentionally excluded - see the
+// safety note above.
+const COPY_OBJECT_KEYS = ['hero', 'stats', 'solution', 'sampleCall', 'roi', 'finalCta'] as const;
+const COPY_ARRAY_KEYS = ['problems', 'steps', 'benefits', 'features', 'industries', 'testimonials', 'faqs'] as const;
+const COPY_SCALAR_KEYS = ['stepsHeading', 'stepsSubheading'] as const;
+
+// Human label for the region currently being edited (shown in the toolbar).
+function regionLabel(field: string): string {
+  if (!field) return '';
+  const top = field.split('.')[0];
+  const map: Record<string, string> = {
+    hero: 'Hero', stats: 'Stats', problems: 'Problem', solution: 'Solution',
+    steps: 'How it works', stepsHeading: 'How it works', stepsSubheading: 'How it works',
+    benefits: 'Benefit', features: 'Feature', industries: 'Industry',
+    testimonials: 'Testimonial', faqs: 'FAQ', finalCta: 'Final CTA',
+    sampleCall: 'Sample call', roi: 'ROI calculator',
+  };
+  return map[top] || top.charAt(0).toUpperCase() + top.slice(1);
+}
+
+export default function WebsiteEditorPage() {
+  const router = useRouter();
+  const { agency, loading, refreshAgency, demoMode } = useAgency();
+
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.myvoiceaiconnect.com';
+  const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
+  const subdomainUrl = agency?.slug ? `https://${agency.slug}.${platformDomain}` : '';
+  const editorSrc = subdomainUrl ? `${subdomainUrl}/?preview=1&editor=1` : '';
+
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [device, setDevice] = useState<Device>('desktop');
+  const [saveState, setSaveState] = useState<SaveState>('idle');
+  const [activeRegion, setActiveRegion] = useState<string>('');
+  const [iframeReady, setIframeReady] = useState(false);
+
+  // The working copy of marketing_config. Mutated by edits, pushed to the
+  // iframe, and autosaved. Held in a ref so the message handler (bound once)
+  // always sees the latest without re-subscribing on every keystroke.
+  const configRef = useRef<any>(null);
+  const heroTouchedRef = useRef(false);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [configReady, setConfigReady] = useState(false);
+
+  // Build the seed once the agency is loaded.
+  const seed = useMemo(() => {
+    if (!agency) return null;
+    const stored = (agency.marketing_config && typeof agency.marketing_config === 'object')
+      ? clone(agency.marketing_config as any)
+      : {};
+    const d: any = defaultMarketingConfig;
+
+    // Copy objects: stored value if present, else a clone of the default.
+    for (const k of COPY_OBJECT_KEYS) {
+      if (stored[k] === undefined && d[k] !== undefined) stored[k] = clone(d[k]);
+    }
+    // Copy arrays: same rule, so array items are always complete.
+    for (const k of COPY_ARRAY_KEYS) {
+      if (!Array.isArray(stored[k]) && Array.isArray(d[k])) stored[k] = clone(d[k]);
+    }
+    for (const k of COPY_SCALAR_KEYS) {
+      if (stored[k] === undefined && d[k] !== undefined) stored[k] = d[k];
+    }
+
+    // Hero follows the live site's column precedence so the editor opens on the
+    // exact text the public site shows (website_headline / company_tagline win).
+    const hero = { ...clone(d.hero), ...(stored.hero || {}) };
+    if ((agency as any).website_headline) {
+      const h = String((agency as any).website_headline);
+      hero.headline = h.split('\n').length > 1 ? h.split('\n') : [h];
+    }
+    if ((agency as any).company_tagline) hero.badge = String((agency as any).company_tagline);
+    stored.hero = hero;
+
+    return stored;
+  }, [agency]);
+
+  useEffect(() => {
+    if (seed && !configReady) {
+      configRef.current = seed;
+      setConfigReady(true);
+    }
+  }, [seed, configReady]);
+
+  // Push the working config into the iframe so it renders the editable baseline.
+  const pushConfig = useCallback(() => {
+    const win = iframeRef.current?.contentWindow;
+    if (win && configRef.current) {
+      try { win.postMessage({ type: 'voiceai:preview_content', config: configRef.current }, '*'); } catch { /* ignore */ }
+    }
+  }, []);
+
+  const doSave = useCallback(async () => {
+    if (!agency || demoMode) { setSaveState(demoMode ? 'idle' : 'error'); return; }
+    setSaveState('saving');
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      const body: any = { marketing_config: configRef.current };
+      // Hero copy also lives in dedicated columns that win on the live site, so
+      // mirror edited hero text there - otherwise a saved hero wouldn't show.
+      if (heroTouchedRef.current) {
+        const hero = configRef.current?.hero || {};
+        const headline = Array.isArray(hero.headline) ? hero.headline.join('\n') : (hero.headline || '');
+        body.website_headline = headline.trim() || null;
+        body.company_tagline = (hero.badge || '').trim() || null;
+      }
+      const res = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      setSaveState('saved');
+      // Keep the dashboard's copy of marketing_config fresh for other savers.
+      refreshAgency().catch(() => {});
+    } catch {
+      setSaveState('error');
+    }
+  }, [agency, demoMode, backendUrl, refreshAgency]);
+
+  const scheduleSave = useCallback(() => {
+    setSaveState('dirty');
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => { doSave(); }, 900);
+  }, [doSave]);
+
+  // Inbound bridge from the iframe (Editable regions on the agency site).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onMsg = (e: MessageEvent) => {
+      const d = e.data;
+      if (!d || typeof d !== 'object') return;
+      if (d.type === 'voiceai:cpreview_ready') {
+        setIframeReady(true);
+        pushConfig();
+      } else if (d.type === 'voiceai:edit_select' && typeof d.region === 'string') {
+        setActiveRegion(d.region);
+      } else if (d.type === 'voiceai:edit_content' && typeof d.field === 'string') {
+        if (!configRef.current) return;
+        configRef.current = setByPath(configRef.current, d.field, typeof d.value === 'string' ? d.value : '');
+        if (d.field.split('.')[0] === 'hero') heroTouchedRef.current = true;
+        scheduleSave();
+        // Re-push (debounced) so regions that share state with the edited one
+        // keep the new value when their section re-renders (FAQ accordion,
+        // pricing toggle, etc.). The region being typed in is the iframe
+        // document's activeElement, which Editable's effect skips, so the
+        // caret is never disturbed.
+        if (pushTimer.current) clearTimeout(pushTimer.current);
+        pushTimer.current = setTimeout(() => pushConfig(), 160);
+      }
+    };
+    window.addEventListener('message', onMsg);
+    return () => window.removeEventListener('message', onMsg);
+  }, [pushConfig, scheduleSave]);
+
+  // Flush a pending save when leaving.
+  const exit = useCallback(() => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    const go = () => router.push('/agency/marketing');
+    if (saveState === 'dirty' || saveState === 'saving') { doSave().finally(go); } else { go(); }
+  }, [router, saveState, doSave]);
+
+  useEffect(() => () => { if (saveTimer.current) clearTimeout(saveTimer.current); if (pushTimer.current) clearTimeout(pushTimer.current); }, []);
+
+  const width = DEVICE_WIDTH[device];
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 z-[90] flex items-center justify-center" style={{ backgroundColor: '#0b0c0f' }}>
+        <Loader2 className="h-6 w-6 animate-spin text-white/70" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-[90] flex flex-col" style={{ backgroundColor: '#15171c', fontFamily: 'var(--font-jakarta, system-ui, sans-serif)' }}>
+      {/* Toolbar */}
+      <div className="flex items-center gap-3 px-3 sm:px-4 shrink-0" style={{ height: 56, backgroundColor: '#0b0c0f', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+        <button
+          onClick={exit}
+          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 sm:px-3 py-1.5 text-sm font-medium transition-colors"
+          style={{ color: '#e5e7eb', backgroundColor: 'rgba(255,255,255,0.06)' }}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span className="hidden sm:inline">Done</span>
+        </button>
+
+        <div className="hidden md:flex items-center gap-1.5 text-xs" style={{ color: 'rgba(255,255,255,0.55)' }}>
+          <MousePointerClick className="h-3.5 w-3.5" />
+          Click any text on your site to edit it
+        </div>
+
+        <div className="flex-1" />
+
+        {/* Active region chip */}
+        {activeRegion && (
+          <div className="hidden sm:flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium" style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.75)' }}>
+            Editing: {regionLabel(activeRegion)}
+          </div>
+        )}
+
+        {/* Device toggle */}
+        <div className="flex items-center rounded-lg p-0.5" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
+          {([['desktop', Monitor], ['tablet', Tablet], ['mobile', Smartphone]] as [Device, any][]).map(([d, Icon]) => (
+            <button
+              key={d}
+              onClick={() => setDevice(d)}
+              title={d.charAt(0).toUpperCase() + d.slice(1)}
+              className="inline-flex items-center justify-center rounded-md transition-colors"
+              style={{ width: 32, height: 28, color: device === d ? '#0b0c0f' : 'rgba(255,255,255,0.6)', backgroundColor: device === d ? '#ffffff' : 'transparent' }}
+            >
+              <Icon className="h-4 w-4" />
+            </button>
+          ))}
+        </div>
+
+        {/* Save status */}
+        <div className="flex items-center gap-1.5 min-w-[96px] justify-end text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>
+          {demoMode ? (
+            <span style={{ color: 'rgba(255,255,255,0.4)' }}>Preview only</span>
+          ) : saveState === 'saving' ? (
+            <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving</>
+          ) : saveState === 'saved' ? (
+            <><Check className="h-3.5 w-3.5" style={{ color: '#34d399' }} /> Saved</>
+          ) : saveState === 'dirty' ? (
+            <span style={{ color: 'rgba(255,255,255,0.45)' }}>Unsaved changes</span>
+          ) : saveState === 'error' ? (
+            <><AlertCircle className="h-3.5 w-3.5" style={{ color: '#f87171' }} /> Save failed</>
+          ) : (
+            <span style={{ color: 'rgba(255,255,255,0.35)' }}>All changes saved</span>
+          )}
+        </div>
+
+        {subdomainUrl && (
+          <a href={subdomainUrl} target="_blank" rel="noopener noreferrer" title="Open live site in a new tab"
+            className="hidden sm:inline-flex items-center justify-center rounded-lg" style={{ width: 32, height: 28, color: 'rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.06)' }}>
+            <ExternalLink className="h-4 w-4" />
+          </a>
+        )}
+      </div>
+
+      {/* Canvas */}
+      <div className="flex-1 overflow-auto" style={{ padding: device === 'desktop' ? 0 : '20px 12px' }}>
+        {!editorSrc ? (
+          <div className="h-full flex items-center justify-center text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            Your site isn&apos;t ready yet. Finish setting up your agency to edit it.
+          </div>
+        ) : (
+          <div
+            className="mx-auto bg-white transition-[max-width] duration-300"
+            style={{
+              width: '100%',
+              maxWidth: width ? width : '100%',
+              height: device === 'desktop' ? '100%' : undefined,
+              minHeight: device === 'desktop' ? '100%' : 'calc(100vh - 56px - 40px)',
+              borderRadius: device === 'desktop' ? 0 : 14,
+              overflow: 'hidden',
+              boxShadow: device === 'desktop' ? 'none' : '0 20px 60px rgba(0,0,0,0.45)',
+            }}
+          >
+            {configReady && (
+              <iframe
+                ref={iframeRef}
+                title="Your website"
+                src={editorSrc}
+                onLoad={() => { if (!iframeReady) pushConfig(); }}
+                style={{ width: '100%', height: device === 'desktop' ? '100%' : '100%', minHeight: device === 'desktop' ? 'calc(100vh - 56px)' : 'calc(100vh - 56px - 40px)', border: 0, display: 'block', backgroundColor: '#ffffff' }}
+              />
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

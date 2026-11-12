@@ -1,7 +1,7 @@
 'use client';
 
 // ============================================================================
-// Editable — click-to-type text for the agency marketing site, active ONLY when
+// Editable - click-to-type text for the agency marketing site, active ONLY when
 // the site is rendered inside the dashboard Content-tab preview in editor mode
 // (?preview=1&editor=1). On the real public site the context's `editor` is
 // false, so Editable renders its children exactly as before: zero change to what
@@ -33,7 +33,7 @@ function escapeHtml(s: string) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-type AsTag = 'h1' | 'h2' | 'p' | 'span' | 'div';
+type AsTag = 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'span' | 'div';
 
 export function Editable({
   as = 'span', field, value, multiline = false, className, style, children,

@@ -208,7 +208,7 @@ function HeroSection({ config, contrastColors }: { config: MarketingConfig; cont
             ) : (config.showHowItWorks !== false ? <a href="#how-it-works" className="btn-large btn-ghost">See How It Works</a> : null)}
           </div>
           <div className="trust-bar">
-            {hero.trustItems.map((item, i) => (<div key={i} className="trust-item">✓ {item}</div>))}
+            {hero.trustItems.map((item, i) => (<div key={i} className="trust-item">✓ <Editable as="span" field={`hero.trustItems.${i}`} value={item}>{item}</Editable></div>))}
           </div>
           {hero.videoUrl && (
             <div className="hero-video"><div className="hero-video-wrapper">
@@ -224,7 +224,7 @@ function HeroSection({ config, contrastColors }: { config: MarketingConfig; cont
                   <a href={telHref(hero.demoPhone)} className="demo-phone" style={{ color: contrastColors.text, background: contrastColors.buttonBg }}>
                     <span style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.5rem' }}>{Icons.phone}</span>{hero.demoPhone}
                   </a>
-                  {hero.demoInstructions && <p className="demo-instructions" style={{ color: contrastColors.textMuted }}>{hero.demoInstructions}</p>}
+                  {hero.demoInstructions && <Editable as="p" className="demo-instructions" style={{ color: contrastColors.textMuted }} field="hero.demoInstructions" value={hero.demoInstructions}>{hero.demoInstructions}</Editable>}
                 </div>
               </div>
             </div>
@@ -244,21 +244,21 @@ function ProblemSolutionSection({ config, contrastColors }: { config: MarketingC
   return (
     <section className="problem-solution">
       <div className="container">
-        <div className="section-header"><h2>You&apos;re Losing Customers Every Time Your Phone Rings</h2></div>
+        <div className="section-header"><Editable as="h2" field="sectionHeadings.problemHeadline" value={config.sectionHeadings?.problemHeadline ?? "You're Losing Customers Every Time Your Phone Rings"}>{config.sectionHeadings?.problemHeadline ?? "You're Losing Customers Every Time Your Phone Rings"}</Editable></div>
         <div className="problems-grid">
           {problems.map((problem, i) => (
             <div key={i} className="problem-card">
               <div className="problem-icon">{Icons.x}</div>
-              <h3>{problem.title}</h3>
-              <p>&quot;{problem.description}&quot;</p>
+              <Editable as="h3" field={`problems.${i}.title`} value={problem.title}>{problem.title}</Editable>
+              <p>&quot;<Editable as="span" field={`problems.${i}.description`} value={problem.description}>{problem.description}</Editable>&quot;</p>
             </div>
           ))}
         </div>
         <div className="solution-box" style={{ background: `linear-gradient(135deg, ${branding.primaryColor} 0%, ${branding.primaryHoverColor} 100%)`, color: contrastColors.text }}>
-          <h2 style={{ color: contrastColors.text }}>{branding.name} Is {solution.headline}</h2>
-          {solution.paragraphs.map((p, i) => (<p key={i} className="solution-text" style={{ color: contrastColors.textMuted }}>{p}</p>))}
+          <h2 style={{ color: contrastColors.text }}>{branding.name} Is <Editable as="span" field="solution.headline" value={solution.headline}>{solution.headline}</Editable></h2>
+          {solution.paragraphs.map((p, i) => (<Editable as="p" key={i} className="solution-text" style={{ color: contrastColors.textMuted }} field={`solution.paragraphs.${i}`} value={p}>{p}</Editable>))}
           <p className="solution-highlight" style={{ background: contrastColors.buttonBg, color: contrastColors.text }}>
-            <strong style={{ color: contrastColors.isLight ? branding.primaryHoverColor : branding.accentColor }}>And here&apos;s the best part:</strong>{' '}{solution.highlight}
+            <strong style={{ color: contrastColors.isLight ? branding.primaryHoverColor : branding.accentColor }}>And here&apos;s the best part:</strong>{' '}<Editable as="span" field="solution.highlight" value={solution.highlight}>{solution.highlight}</Editable>
           </p>
         </div>
       </div>
@@ -275,15 +275,15 @@ function HowItWorksSection({ config }: { config: MarketingConfig }) {
   return (
     <section id="how-it-works" className="how-it-works">
       <div className="container">
-        <div className="section-header"><h2>{config.stepsHeading || 'From signup to your first answered call'}</h2><p className="subtitle">{config.stepsSubheading || 'A few simple steps, no tech skills required.'}</p></div>
+        <div className="section-header"><Editable as="h2" field="stepsHeading" value={config.stepsHeading || 'From signup to your first answered call'}>{config.stepsHeading || 'From signup to your first answered call'}</Editable><Editable as="p" className="subtitle" field="stepsSubheading" value={config.stepsSubheading || 'A few simple steps, no tech skills required.'}>{config.stepsSubheading || 'A few simple steps, no tech skills required.'}</Editable></div>
         <div className="steps-grid">
           {steps.map((step, i) => (
             <div key={i} className="step-card">
               <div className="step-number">{i + 1}</div>
               <div className="step-icon">{stepIcons[i] || Icons.zap}</div>
-              <h3>{step.title}</h3>
-              <p>{step.description}</p>
-              <div className="step-time"><span style={{ width: '1rem', height: '1rem', marginRight: '0.25rem' }}>{Icons.clock}</span>{step.time}</div>
+              <Editable as="h3" field={`steps.${i}.title`} value={step.title}>{step.title}</Editable>
+              <Editable as="p" field={`steps.${i}.description`} value={step.description}>{step.description}</Editable>
+              <div className="step-time"><span style={{ width: '1rem', height: '1rem', marginRight: '0.25rem' }}>{Icons.clock}</span><Editable as="span" field={`steps.${i}.time`} value={step.time}>{step.time}</Editable></div>
             </div>
           ))}
         </div>
@@ -310,7 +310,7 @@ function AppShowcaseSection({ config, contrastColors }: { config: MarketingConfi
     <section className="app-showcase">
       <div className="container">
         <div className="section-header">
-          <h2>See Every Conversation. Manage Everything from Your Phone.</h2>
+          <Editable as="h2" field="sectionHeadings.commandCenterHeadline" value={config.sectionHeadings?.commandCenterHeadline ?? 'See Every Conversation. Manage Everything from Your Phone.'}>{config.sectionHeadings?.commandCenterHeadline ?? 'See Every Conversation. Manage Everything from Your Phone.'}</Editable>
           <p>Unlike old-school answering services that just take messages, {branding.name} gives you a complete command center for every customer interaction.</p>
         </div>
         <div className="app-features">
@@ -373,8 +373,8 @@ function AppShowcaseSection({ config, contrastColors }: { config: MarketingConfi
             {benefits.map((benefit, i) => (
               <div key={i} className="benefit-item">
                 <div className="benefit-icon">{benefitIcons[benefit.icon] || Icons.zap}</div>
-                <h3>{benefit.title}</h3>
-                <p>{benefit.description}</p>
+                <Editable as="h3" field={`benefits.${i}.title`} value={benefit.title}>{benefit.title}</Editable>
+                <Editable as="p" field={`benefits.${i}.description`} value={benefit.description}>{benefit.description}</Editable>
               </div>
             ))}
           </div>
@@ -409,16 +409,16 @@ function FeaturesSection({ config }: { config: MarketingConfig }) {
   return (
     <section id="features" className="features">
       <div className="container">
-        <div className="section-header"><h2>Everything You Need. Nothing You Don&apos;t.</h2></div>
+        <div className="section-header"><Editable as="h2" field="sectionHeadings.featuresHeadline" value={config.sectionHeadings?.featuresHeadline ?? "Everything You Need. Nothing You Don't."}>{config.sectionHeadings?.featuresHeadline ?? "Everything You Need. Nothing You Don't."}</Editable></div>
         <div className="features-grid">
           {features.map((feature, i) => (
             <div key={i} className="feature-card">
               <div className="feature-icon">{featureIcons[feature.icon] || Icons.zap}</div>
-              <h3>{feature.title}</h3>
-              <p>{feature.description}</p>
+              <Editable as="h3" field={`features.${i}.title`} value={feature.title}>{feature.title}</Editable>
+              <Editable as="p" field={`features.${i}.description`} value={feature.description}>{feature.description}</Editable>
               {feature.integrations && <div className="feature-integrations">{feature.integrations.map((int, j) => <span key={j}>✓ {int}</span>)}</div>}
-              {feature.highlight && <p className="feature-highlight">{feature.highlight}</p>}
-              {feature.example && <div className="feature-example">{feature.example}</div>}
+              {feature.highlight && <Editable as="p" className="feature-highlight" field={`features.${i}.highlight`} value={feature.highlight}>{feature.highlight}</Editable>}
+              {feature.example && <Editable as="div" className="feature-example" field={`features.${i}.example`} value={feature.example}>{feature.example}</Editable>}
               {feature.stat && <div className="feature-stat"><strong>Real stat:</strong> {feature.stat.replace('Real stat: ', '')}</div>}
             </div>
           ))}
@@ -437,15 +437,15 @@ function IndustriesSection({ config }: { config: MarketingConfig }) {
   return (
     <section className="industries">
       <div className="container">
-        <div className="section-header"><h2>Built for Small Businesses Who Can&apos;t Afford to Miss Calls</h2></div>
+        <div className="section-header"><Editable as="h2" field="sectionHeadings.industriesHeadline" value={config.sectionHeadings?.industriesHeadline ?? "Built for Small Businesses Who Can't Afford to Miss Calls"}>{config.sectionHeadings?.industriesHeadline ?? "Built for Small Businesses Who Can't Afford to Miss Calls"}</Editable></div>
         <div className="industries-grid">
           {industries.map((industry, i) => (
             <div key={i} className="industry-card">
               <div className="industry-icon">{industryIcons[industry.icon] || Icons.briefcase}</div>
-              <h3>{industry.title}</h3>
-              <p className="industry-subtitle">{industry.subtitle}</p>
-              <p>{industry.description}</p>
-              <div className="industry-result"><strong>{industry.result}</strong></div>
+              <Editable as="h3" field={`industries.${i}.title`} value={industry.title}>{industry.title}</Editable>
+              <Editable as="p" className="industry-subtitle" field={`industries.${i}.subtitle`} value={industry.subtitle}>{industry.subtitle}</Editable>
+              <Editable as="p" field={`industries.${i}.description`} value={industry.description}>{industry.description}</Editable>
+              <div className="industry-result"><strong><Editable as="span" field={`industries.${i}.result`} value={industry.result}>{industry.result}</Editable></strong></div>
             </div>
           ))}
         </div>
@@ -562,7 +562,7 @@ function ROICalculatorSection({ config }: { config: MarketingConfig }) {
     <section className="stats-section" style={{ scrollMarginTop: '6rem' }}>
       <div className="container">
         <div className="section-header">
-          <h2>What Are Missed Calls Costing You?</h2>
+          <Editable as="h2" field="sectionHeadings.roiHeadline" value={config.sectionHeadings?.roiHeadline ?? 'What Are Missed Calls Costing You?'}>{config.sectionHeadings?.roiHeadline ?? 'What Are Missed Calls Costing You?'}</Editable>
           <p>Industry research shows the average missed call costs a small business <strong>{cs}{COST_PER_MISSED.toLocaleString()}</strong> in lost revenue. Use the slider to see your potential losses.</p>
         </div>
         <div className="live-stats" style={{ display: 'block', padding: '2rem' }}>
@@ -617,7 +617,7 @@ function PricingSection({ config }: { config: MarketingConfig }) {
     <section id="pricing" className="pricing">
       <div className="container">
         <div className="section-header">
-          <h2>Simple Pricing. No Hidden Fees.</h2>
+          <Editable as="h2" field="sectionHeadings.pricingHeadline" value={config.sectionHeadings?.pricingHeadline ?? 'Simple Pricing. No Hidden Fees.'}>{config.sectionHeadings?.pricingHeadline ?? 'Simple Pricing. No Hidden Fees.'}</Editable>
           <p>All plans include the {branding.name} app, text summaries, call recordings{config.signup?.trialDays !== 0 ? `, and a ${config.signup?.trialDays ?? 7}-day free trial` : ''}.</p>
         </div>
         {annualAvailable && (
@@ -672,12 +672,12 @@ function FAQSection({ config }: { config: MarketingConfig }) {
   return (
     <section id="faq" className="faq">
       <div className="container">
-        <div className="section-header"><h2>Questions? We&apos;ve Got Answers.</h2></div>
+        <div className="section-header"><Editable as="h2" field="sectionHeadings.faqHeadline" value={config.sectionHeadings?.faqHeadline ?? "Questions? We've Got Answers."}>{config.sectionHeadings?.faqHeadline ?? "Questions? We've Got Answers."}</Editable></div>
         <div className="faq-grid">
           {faqs.map((faq, i) => (
             <div key={i} className={`faq-item ${activeIndex === i ? 'active' : ''}`}>
               <button className="faq-question" onClick={() => setActiveIndex(activeIndex === i ? null : i)}>
-                <span>{faq.question}</span><span className="faq-icon">+</span>
+                <Editable as="span" field={`faqs.${i}.question`} value={faq.question}>{faq.question}</Editable><span className="faq-icon">+</span>
               </button>
               <div className="faq-answer"><SafeFAQContent html={faq.answer} /></div>
             </div>
@@ -732,10 +732,10 @@ function FinalCTASection({ config, contrastColors }: { config: MarketingConfig; 
     <section className="final-cta" style={{ background: `linear-gradient(135deg, ${branding.primaryColor} 0%, ${branding.primaryHoverColor} 100%)` }}>
       <div className="container">
         <div className="final-cta-content">
-          <h2 style={{ color: contrastColors.text }}>{config.finalCta?.heading || 'Stop Losing Customers to Voicemail'}</h2>
-          <p className="final-cta-text" style={{ color: contrastColors.textMuted }}>
+          <Editable as="h2" style={{ color: contrastColors.text }} field="finalCta.heading" value={config.finalCta?.heading || 'Stop Losing Customers to Voicemail'}>{config.finalCta?.heading || 'Stop Losing Customers to Voicemail'}</Editable>
+          <Editable as="p" className="final-cta-text" style={{ color: contrastColors.textMuted }} field="finalCta.body" value={config.finalCta?.body || 'Every missed call is money out the door. While you are busy or closed, your competitors are answering their phones.'}>
             {config.finalCta?.body || 'Every missed call is money out the door. While you are busy or closed, your competitors are answering their phones.'}
-          </p>
+          </Editable>
           <div className="final-cta-boxes">
             {hero.demoPhone && (
               <>

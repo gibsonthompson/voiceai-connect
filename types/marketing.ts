@@ -130,6 +130,22 @@ export interface OGConfig {
   imageUrl?: string;
 }
 
+// Static (non-interpolated) section headlines. These are the copy that used to
+// be hard-coded inside the templates. They are OVERRIDES only: when a key is
+// unset, each template falls back to its own built-in default, so templates can
+// share this map without their different default wording colliding. Only pure
+// static headlines live here - headlines that interpolate the agency name,
+// price, or trial length stay templated and are not editable as plain text.
+export interface SectionHeadings {
+  problemHeadline?: string;
+  commandCenterHeadline?: string;
+  featuresHeadline?: string;
+  industriesHeadline?: string;
+  roiHeadline?: string;
+  pricingHeadline?: string;
+  faqHeadline?: string;
+}
+
 export interface MarketingConfig {
   theme?: 'auto' | 'light' | 'dark';
   currencySymbol?: string;
@@ -164,6 +180,7 @@ export interface MarketingConfig {
   footer: FooterConfig;
   analytics?: AnalyticsConfig;
   og?: OGConfig;
+  sectionHeadings?: SectionHeadings;
   showIndustries?: boolean;
   showComparison?: boolean;
   showTestimonials?: boolean;
