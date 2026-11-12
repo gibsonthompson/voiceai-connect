@@ -154,6 +154,30 @@ export default function WebsiteEditorPage() {
   const subdomainUrl = agency?.slug ? `https://${agency.slug}.${platformDomain}` : '';
   const editorSrc = subdomainUrl ? `${subdomainUrl}/?preview=1&editor=1` : '';
   const accent = (agency as any)?.primary_color || '#00a19b';
+  // Editor chrome palette. Light by default so the editor reads as the agency's
+  // own white-labeled tool, not a generic dark dashboard; follows the agency's
+  // website theme when that is set to dark. One object so every surface stays
+  // consistent and recolors in one place.
+  const chromeDark = (agency as any)?.website_theme === 'dark';
+  const ui = chromeDark
+    ? {
+        bg: '#15171c', bar: '#0b0c0f', panel: '#0b0c0f', menu: '#15171c',
+        border: 'rgba(255,255,255,0.08)', menuBorder: 'rgba(255,255,255,0.1)',
+        text: '#e5e7eb', dim: 'rgba(255,255,255,0.6)', dimmer: 'rgba(255,255,255,0.4)', faint: 'rgba(255,255,255,0.25)',
+        ctl: 'rgba(255,255,255,0.06)', ctl2: 'rgba(255,255,255,0.08)', track: 'rgba(255,255,255,0.18)',
+        activeBg: '#ffffff', activeText: '#0b0c0f', onAccent: '#0b0c0f',
+        menuShadow: '0 12px 34px rgba(0,0,0,0.55)', modalShadow: '0 24px 60px rgba(0,0,0,0.6)',
+        spinner: 'rgba(255,255,255,0.7)',
+      }
+    : {
+        bg: '#eef0f3', bar: '#ffffff', panel: '#ffffff', menu: '#ffffff',
+        border: 'rgba(0,0,0,0.08)', menuBorder: 'rgba(0,0,0,0.1)',
+        text: '#1f2937', dim: 'rgba(0,0,0,0.6)', dimmer: 'rgba(0,0,0,0.42)', faint: 'rgba(0,0,0,0.25)',
+        ctl: 'rgba(0,0,0,0.05)', ctl2: 'rgba(0,0,0,0.06)', track: 'rgba(0,0,0,0.16)',
+        activeBg: accent, activeText: '#ffffff', onAccent: '#ffffff',
+        menuShadow: '0 12px 34px rgba(0,0,0,0.16)', modalShadow: '0 24px 60px rgba(0,0,0,0.22)',
+        spinner: 'rgba(0,0,0,0.5)',
+      };
   // URL the preview iframe loads for a given page id.
   const pageUrl = (id: string) => {
     if (!subdomainUrl) return '';
@@ -546,20 +570,20 @@ export default function WebsiteEditorPage() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 z-[90] flex items-center justify-center" style={{ backgroundColor: '#0b0c0f' }}>
-        <Loader2 className="h-6 w-6 animate-spin text-white/70" />
+      <div className="fixed inset-0 z-[90] flex items-center justify-center" style={{ backgroundColor: ui.bg }}>
+        <Loader2 className="h-6 w-6 animate-spin" style={{ color: ui.spinner }} />
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 z-[90] flex flex-col" style={{ backgroundColor: '#15171c', fontFamily: 'var(--font-jakarta, system-ui, sans-serif)' }}>
+    <div className="fixed inset-0 z-[90] flex flex-col" style={{ backgroundColor: ui.bg, fontFamily: 'var(--font-jakarta, system-ui, sans-serif)' }}>
       {/* Toolbar */}
-      <div className="flex items-center gap-3 px-3 sm:px-4 shrink-0" style={{ height: 56, backgroundColor: '#0b0c0f', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+      <div className="flex items-center gap-3 px-3 sm:px-4 shrink-0" style={{ height: 56, backgroundColor: ui.bar, borderBottom: `1px solid ${ui.border}` }}>
         <button
           onClick={exit}
           className="inline-flex items-center gap-1.5 rounded-lg px-2.5 sm:px-3 py-1.5 text-sm font-medium transition-colors"
-          style={{ color: '#e5e7eb', backgroundColor: 'rgba(255,255,255,0.06)' }}
+          style={{ color: ui.text, backgroundColor: ui.ctl }}
         >
           <ArrowLeft className="h-4 w-4" />
           <span className="hidden sm:inline">Done</span>
@@ -571,20 +595,20 @@ export default function WebsiteEditorPage() {
             <button
               onClick={() => setPageMenuOpen((o) => !o)}
               className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors"
-              style={{ color: '#e5e7eb', backgroundColor: 'rgba(255,255,255,0.06)' }}
+              style={{ color: ui.text, backgroundColor: ui.ctl }}
             >
               <FileText className="h-4 w-4" />
               <span className="hidden sm:inline">{currentPage ? (INDUSTRY_PAGE_LIST.find((p) => p.slug === currentPage)?.label || currentPage) : 'Homepage'}</span>
               <ChevronDown className="h-3.5 w-3.5" />
             </button>
             {pageMenuOpen && (
-              <div className="absolute left-0 mt-1 rounded-lg py-1 z-20" style={{ minWidth: 190, backgroundColor: '#15171c', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 12px 34px rgba(0,0,0,0.55)' }}>
+              <div className="absolute left-0 mt-1 rounded-lg py-1 z-20" style={{ minWidth: 190, backgroundColor: ui.menu, border: `1px solid ${ui.menuBorder}`, boxShadow: ui.menuShadow }}>
                 {[{ slug: '', label: 'Homepage' }, ...INDUSTRY_PAGE_LIST, { slug: 'signup', label: 'Signup page' }, { slug: 'webcall', label: 'Web call widget' }].map((p) => (
                   <button
                     key={p.slug || 'home'}
                     onClick={() => switchPage(p.slug)}
                     className="w-full text-left px-3 py-2 text-sm transition-colors"
-                    style={{ color: currentPage === p.slug ? '#fff' : 'rgba(255,255,255,0.7)', backgroundColor: currentPage === p.slug ? 'rgba(255,255,255,0.08)' : 'transparent' }}
+                    style={{ color: currentPage === p.slug ? ui.text : ui.dim, backgroundColor: currentPage === p.slug ? ui.ctl2 : 'transparent' }}
                   >
                     {p.label}
                   </button>
@@ -594,7 +618,7 @@ export default function WebsiteEditorPage() {
           </div>
         )}
 
-        <div className="hidden md:flex items-center gap-1.5 text-xs" style={{ color: 'rgba(255,255,255,0.55)' }}>
+        <div className="hidden md:flex items-center gap-1.5 text-xs" style={{ color: ui.dim }}>
           <MousePointerClick className="h-3.5 w-3.5" />
           Click any text on your site to edit it
         </div>
@@ -603,7 +627,7 @@ export default function WebsiteEditorPage() {
 
         {/* Active region chip */}
         {activeRegion && (
-          <div className="hidden sm:flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium" style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.75)' }}>
+          <div className="hidden sm:flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium" style={{ backgroundColor: ui.ctl2, color: ui.dim }}>
             Editing: {regionLabel(activeRegion)}
           </div>
         )}
@@ -616,27 +640,27 @@ export default function WebsiteEditorPage() {
               onClick={() => setTemplateMenuOpen((o) => !o)}
               title="Change template"
               className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors"
-              style={{ color: templateMenuOpen ? '#0b0c0f' : '#e5e7eb', backgroundColor: templateMenuOpen ? '#ffffff' : 'rgba(255,255,255,0.06)' }}
+              style={{ color: templateMenuOpen ? ui.activeText : ui.text, backgroundColor: templateMenuOpen ? ui.activeBg : ui.ctl }}
             >
               <LayoutTemplate className="h-4 w-4" />
               <span className="hidden sm:inline">{TEMPLATE_OPTIONS.find((t) => t.id === selectedTemplate)?.name || 'Template'}</span>
               <ChevronDown className="h-3.5 w-3.5" />
             </button>
             {templateMenuOpen && (
-              <div className="absolute right-0 mt-1 rounded-lg py-1 z-20" style={{ minWidth: 230, backgroundColor: '#15171c', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 12px 34px rgba(0,0,0,0.55)' }}>
-                <div className="px-3 py-1.5 text-[10px] uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em' }}>Template</div>
+              <div className="absolute right-0 mt-1 rounded-lg py-1 z-20" style={{ minWidth: 230, backgroundColor: ui.menu, border: `1px solid ${ui.menuBorder}`, boxShadow: ui.menuShadow }}>
+                <div className="px-3 py-1.5 text-[10px] uppercase tracking-wide" style={{ color: ui.dimmer, letterSpacing: '0.06em' }}>Template</div>
                 {TEMPLATE_OPTIONS.map((t) => (
                   <button
                     key={t.id}
                     onClick={() => changeTemplate(t.id)}
                     className="w-full text-left px-3 py-2 transition-colors"
-                    style={{ backgroundColor: selectedTemplate === t.id ? 'rgba(255,255,255,0.08)' : 'transparent' }}
+                    style={{ backgroundColor: selectedTemplate === t.id ? ui.ctl2 : 'transparent' }}
                   >
-                    <div className="flex items-center justify-between gap-2 text-sm font-medium" style={{ color: selectedTemplate === t.id ? '#fff' : 'rgba(255,255,255,0.82)' }}>
+                    <div className="flex items-center justify-between gap-2 text-sm font-medium" style={{ color: selectedTemplate === t.id ? ui.text : ui.dim }}>
                       {t.name}
                       {selectedTemplate === t.id && <Check className="h-3.5 w-3.5" style={{ color: accent }} />}
                     </div>
-                    <div className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>{t.style}</div>
+                    <div className="text-[11px] mt-0.5" style={{ color: ui.dimmer }}>{t.style}</div>
                   </button>
                 ))}
               </div>
@@ -650,21 +674,21 @@ export default function WebsiteEditorPage() {
             onClick={() => setPanelOpen((o) => !o)}
             title="Show or hide sections"
             className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors"
-            style={{ color: panelOpen ? '#0b0c0f' : '#e5e7eb', backgroundColor: panelOpen ? '#ffffff' : 'rgba(255,255,255,0.06)' }}
+            style={{ color: panelOpen ? ui.activeText : ui.text, backgroundColor: panelOpen ? ui.activeBg : ui.ctl }}
           >
             <Layers className="h-4 w-4" /><span className="hidden sm:inline">Sections</span>
           </button>
         )}
 
         {/* Device toggle */}
-        <div className="flex items-center rounded-lg p-0.5" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
+        <div className="flex items-center rounded-lg p-0.5" style={{ backgroundColor: ui.ctl }}>
           {([['desktop', Monitor], ['tablet', Tablet], ['mobile', Smartphone]] as [Device, any][]).map(([d, Icon]) => (
             <button
               key={d}
               onClick={() => setDevice(d)}
               title={d.charAt(0).toUpperCase() + d.slice(1)}
               className="inline-flex items-center justify-center rounded-md transition-colors"
-              style={{ width: 32, height: 28, color: device === d ? '#0b0c0f' : 'rgba(255,255,255,0.6)', backgroundColor: device === d ? '#ffffff' : 'transparent' }}
+              style={{ width: 32, height: 28, color: device === d ? ui.activeText : ui.dim, backgroundColor: device === d ? ui.activeBg : 'transparent' }}
             >
               <Icon className="h-4 w-4" />
             </button>
@@ -677,15 +701,15 @@ export default function WebsiteEditorPage() {
           disabled={undoDepth === 0}
           title="Undo (Cmd/Ctrl+Z)"
           className="inline-flex items-center justify-center rounded-lg transition-colors"
-          style={{ width: 32, height: 28, color: undoDepth === 0 ? 'rgba(255,255,255,0.25)' : '#e5e7eb', backgroundColor: 'rgba(255,255,255,0.06)', cursor: undoDepth === 0 ? 'default' : 'pointer' }}
+          style={{ width: 32, height: 28, color: undoDepth === 0 ? ui.faint : ui.text, backgroundColor: ui.ctl, cursor: undoDepth === 0 ? 'default' : 'pointer' }}
         >
           <Undo2 className="h-4 w-4" />
         </button>
 
         {/* Save status */}
-        <div className="hidden sm:flex items-center gap-1.5 min-w-[92px] justify-end text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>
+        <div className="hidden sm:flex items-center gap-1.5 min-w-[92px] justify-end text-xs" style={{ color: ui.dim }}>
           {demoMode ? (
-            <span style={{ color: 'rgba(255,255,255,0.4)' }}>Preview only</span>
+            <span style={{ color: ui.dimmer }}>Preview only</span>
           ) : saveState === 'saving' ? (
             <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving</>
           ) : saveState === 'saved' ? (
@@ -703,7 +727,7 @@ export default function WebsiteEditorPage() {
           disabled={demoMode || saveState !== 'dirty'}
           title="Save changes"
           className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors"
-          style={{ color: saveState === 'dirty' && !demoMode ? '#0b0c0f' : 'rgba(255,255,255,0.4)', backgroundColor: saveState === 'dirty' && !demoMode ? accent : 'rgba(255,255,255,0.08)', cursor: saveState === 'dirty' && !demoMode ? 'pointer' : 'default' }}
+          style={{ color: saveState === 'dirty' && !demoMode ? ui.onAccent : ui.dimmer, backgroundColor: saveState === 'dirty' && !demoMode ? accent : ui.ctl2, cursor: saveState === 'dirty' && !demoMode ? 'pointer' : 'default' }}
         >
           <Save className="h-4 w-4" /> Save
         </button>
@@ -713,7 +737,7 @@ export default function WebsiteEditorPage() {
       <div className="flex-1 flex min-h-0">
       <div className="flex-1 overflow-auto" style={{ padding: device === 'desktop' ? 0 : '20px 12px' }}>
         {!editorSrc ? (
-          <div className="h-full flex items-center justify-center text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
+          <div className="h-full flex items-center justify-center text-sm" style={{ color: ui.dim }}>
             Your site isn&apos;t ready yet. Finish setting up your agency to edit it.
           </div>
         ) : (
@@ -745,15 +769,15 @@ export default function WebsiteEditorPage() {
 
       {/* Sections panel */}
       {panelOpen && !isColumnPage(currentPage) && (
-        <aside className="shrink-0 overflow-y-auto" style={{ width: 300, backgroundColor: '#0b0c0f', borderLeft: '1px solid rgba(255,255,255,0.08)' }}>
+        <aside className="shrink-0 overflow-y-auto" style={{ width: 300, backgroundColor: ui.panel, borderLeft: `1px solid ${ui.border}` }}>
           <div className="p-4">
             <div className="flex items-center justify-between mb-1">
               <h3 className="text-sm font-semibold" style={{ color: '#fff' }}>Sections</h3>
-              <button onClick={() => setPanelOpen(false)} className="inline-flex items-center justify-center rounded-md" style={{ width: 26, height: 26, color: 'rgba(255,255,255,0.6)', backgroundColor: 'rgba(255,255,255,0.06)' }} aria-label="Close sections">
+              <button onClick={() => setPanelOpen(false)} className="inline-flex items-center justify-center rounded-md" style={{ width: 26, height: 26, color: ui.dim, backgroundColor: ui.ctl }} aria-label="Close sections">
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <p className="text-xs mb-4" style={{ color: 'rgba(255,255,255,0.5)' }}>Reorder with the arrows, and turn sections on or off. Your header, hero and footer always stay. Use Save when you&apos;re done.</p>
+            <p className="text-xs mb-4" style={{ color: ui.dim }}>Reorder with the arrows, and turn sections on or off. Your header, hero and footer always stay. Use Save when you&apos;re done.</p>
             <div className="space-y-1">
               {order.map((key, i) => {
                 const def = defByKey[key];
@@ -762,21 +786,21 @@ export default function WebsiteEditorPage() {
                 const label = def ? def.label : (SECTION_LABELS[key as keyof typeof SECTION_LABELS] || key);
                 const hint = def ? def.hint : 'Shown with the Features section';
                 return (
-                  <div key={key} className="rounded-lg p-2 flex items-start gap-2 transition-colors" style={{ backgroundColor: on ? 'rgba(255,255,255,0.06)' : 'transparent' }}>
+                  <div key={key} className="rounded-lg p-2 flex items-start gap-2 transition-colors" style={{ backgroundColor: on ? ui.ctl : 'transparent' }}>
                     <span className="flex flex-col shrink-0">
-                      <button type="button" onClick={() => moveSection(i, -1)} disabled={i === 0} title="Move up" className="inline-flex items-center justify-center rounded" style={{ width: 22, height: 16, color: i === 0 ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.65)', cursor: i === 0 ? 'default' : 'pointer' }}>
+                      <button type="button" onClick={() => moveSection(i, -1)} disabled={i === 0} title="Move up" className="inline-flex items-center justify-center rounded" style={{ width: 22, height: 16, color: i === 0 ? ui.faint : ui.dim, cursor: i === 0 ? 'default' : 'pointer' }}>
                         <ChevronUp className="h-3.5 w-3.5" />
                       </button>
-                      <button type="button" onClick={() => moveSection(i, 1)} disabled={i === order.length - 1} title="Move down" className="inline-flex items-center justify-center rounded" style={{ width: 22, height: 16, color: i === order.length - 1 ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.65)', cursor: i === order.length - 1 ? 'default' : 'pointer' }}>
+                      <button type="button" onClick={() => moveSection(i, 1)} disabled={i === order.length - 1} title="Move down" className="inline-flex items-center justify-center rounded" style={{ width: 22, height: 16, color: i === order.length - 1 ? ui.faint : ui.dim, cursor: i === order.length - 1 ? 'default' : 'pointer' }}>
                         <ChevronDown className="h-3.5 w-3.5" />
                       </button>
                     </span>
                     <span className="min-w-0 flex-1 pt-0.5">
-                      <span className="block text-sm font-medium" style={{ color: on ? '#fff' : 'rgba(255,255,255,0.55)' }}>{label}</span>
-                      <span className="block text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>{hint}</span>
+                      <span className="block text-sm font-medium" style={{ color: on ? ui.text : ui.dim }}>{label}</span>
+                      <span className="block text-[11px] mt-0.5" style={{ color: ui.dimmer }}>{hint}</span>
                     </span>
                     {def ? (
-                      <button type="button" onClick={() => toggleSection(def.flag)} title={on ? 'Hide section' : 'Show section'} className="shrink-0 mt-1 inline-flex items-center rounded-full transition-all" style={{ width: 34, height: 20, padding: 2, backgroundColor: on ? accent : 'rgba(255,255,255,0.18)', justifyContent: on ? 'flex-end' : 'flex-start' }}>
+                      <button type="button" onClick={() => toggleSection(def.flag)} title={on ? 'Hide section' : 'Show section'} className="shrink-0 mt-1 inline-flex items-center rounded-full transition-all" style={{ width: 34, height: 20, padding: 2, backgroundColor: on ? accent : ui.track, justifyContent: on ? 'flex-end' : 'flex-start' }}>
                         <span style={{ width: 16, height: 16, borderRadius: '999px', backgroundColor: '#fff', display: 'block' }} />
                       </button>
                     ) : (
@@ -794,15 +818,15 @@ export default function WebsiteEditorPage() {
       {/* Unsaved-changes prompt on exit */}
       {showExitPrompt && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }} onClick={() => setShowExitPrompt(false)}>
-          <div onClick={(e) => e.stopPropagation()} className="rounded-2xl p-6 mx-4" style={{ width: 400, maxWidth: '100%', backgroundColor: '#15171c', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 24px 60px rgba(0,0,0,0.6)' }}>
+          <div onClick={(e) => e.stopPropagation()} className="rounded-2xl p-6 mx-4" style={{ width: 400, maxWidth: '100%', backgroundColor: ui.menu, border: `1px solid ${ui.menuBorder}`, boxShadow: ui.modalShadow }}>
             <h3 className="text-base font-semibold" style={{ color: '#fff' }}>Save your changes?</h3>
-            <p className="text-sm mt-1.5" style={{ color: 'rgba(255,255,255,0.6)' }}>You have unsaved changes. Save them before leaving the editor?</p>
+            <p className="text-sm mt-1.5" style={{ color: ui.dim }}>You have unsaved changes. Save them before leaving the editor?</p>
             <div className="flex items-center gap-2 mt-5">
-              <button onClick={saveAndExit} disabled={saveState === 'saving'} className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-semibold" style={{ backgroundColor: accent, color: '#0b0c0f' }}>
+              <button onClick={saveAndExit} disabled={saveState === 'saving'} className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-semibold" style={{ backgroundColor: accent, color: ui.onAccent }}>
                 {saveState === 'saving' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save &amp; exit
               </button>
-              <button onClick={leave} className="inline-flex items-center justify-center rounded-lg px-3 py-2.5 text-sm font-medium" style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: '#e5e7eb' }}>Discard</button>
-              <button onClick={() => setShowExitPrompt(false)} className="inline-flex items-center justify-center rounded-lg px-3 py-2.5 text-sm font-medium" style={{ backgroundColor: 'transparent', color: 'rgba(255,255,255,0.5)' }}>Cancel</button>
+              <button onClick={leave} className="inline-flex items-center justify-center rounded-lg px-3 py-2.5 text-sm font-medium" style={{ backgroundColor: ui.ctl, color: ui.text }}>Discard</button>
+              <button onClick={() => setShowExitPrompt(false)} className="inline-flex items-center justify-center rounded-lg px-3 py-2.5 text-sm font-medium" style={{ backgroundColor: 'transparent', color: ui.dim }}>Cancel</button>
             </div>
             {saveState === 'error' && <p className="text-xs mt-3" style={{ color: '#f87171' }}>Couldn&apos;t save. Check your connection and try again.</p>}
           </div>

@@ -13,7 +13,7 @@
 'use client';
 import { openAgencySupport, visibleFooterLinks, isSupportLink } from '@/lib/marketing-links';
 import CustomScripts from './CustomScripts';
-import { Editable, ItemAdd, ItemRemove, useEditor, TEdit } from '@/components/agency/MarketingEditable';
+import { Editable, EditableHTML, IconPicker, ItemAdd, ItemRemove, useEditor, TEdit } from '@/components/agency/MarketingEditable';
 import { resolveSectionOrder } from '@/lib/marketing-sections';
 
 import React, { useState } from 'react';
@@ -247,6 +247,7 @@ function Features({ config }: { config: MarketingConfig }) {
             <article className={`ed-feat ${odd && i === features.length - 1 ? 'ed-cell-wide' : ''}`} key={i}>
               <span className="ed-feat-ico">{featureIcon(f.icon)}</span>
               <div className="ed-feat-body">
+                <IconPicker field={`features.${i}.icon`} value={f.icon} options={Object.keys(FEATURE_ICON_KEYS).map((k) => ({ key: k, node: featureIcon(k) }))} />
                 <Editable as="h3" className="ed-feat-title" field={`features.${i}.title`} value={f.title}>{f.title}</Editable>
                 <Editable as="p" className="ed-feat-desc" field={`features.${i}.description`} value={f.description}>{f.description}</Editable>
                 {f.example && <Editable as="p" className="ed-feat-eg" field={`features.${i}.example`} value={f.example}>{f.example}</Editable>}
@@ -445,11 +446,11 @@ function FAQ({ config }: { config: MarketingConfig }) {
         <div className="ed-faq-list">
           {faqs.map((f, i) => (
             <div className={`ed-faq-item ${open === i ? 'ed-open' : ''}`} key={i}>
-              <button type="button" className="ed-faq-q" aria-expanded={open === i} onClick={() => setOpen(open === i ? null : i)}>
+              <button type="button" className="ed-faq-q" style={editor ? { cursor: 'text' } : undefined} aria-expanded={editor || open === i} onClick={() => { if (!editor) setOpen(open === i ? null : i); }}>
                 <Editable as="span" field={`faqs.${i}.question`} value={f.question}>{f.question}</Editable>
-                <span className="ed-faq-mark">{open === i ? '\u2212' : '+'}</span>
+                {!editor && <span className="ed-faq-mark">{open === i ? '\u2212' : '+'}</span>}
               </button>
-              {open === i && <div className="ed-faq-a"><SafeFAQContent html={f.answer} /></div>}
+              {(editor || open === i) && <div className="ed-faq-a"><EditableHTML field={`faqs.${i}.answer`} html={f.answer}><SafeFAQContent html={f.answer} /></EditableHTML></div>}
               <ItemRemove path="faqs" index={i} label="question" />
             </div>
           ))}

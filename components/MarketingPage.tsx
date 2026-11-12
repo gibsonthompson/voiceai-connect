@@ -2,7 +2,7 @@
 'use client';
 import { openAgencySupport, visibleFooterLinks, isSupportLink } from '@/lib/marketing-links';
 import CustomScripts from './CustomScripts';
-import { Editable, ItemAdd, ItemRemove, TEdit } from '@/components/agency/MarketingEditable';
+import { Editable, EditableHTML, IconPicker, ItemAdd, ItemRemove, TEdit, useEditor } from '@/components/agency/MarketingEditable';
 import { resolveSectionOrder } from '@/lib/marketing-sections';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -415,6 +415,7 @@ function FeaturesSection({ config }: { config: MarketingConfig }) {
           {features.map((feature, i) => (
             <div key={i} className="feature-card">
               <div className="feature-icon">{featureIcons[feature.icon] || Icons.zap}</div>
+              <IconPicker field={`features.${i}.icon`} value={feature.icon} options={Object.keys(featureIcons).map((k) => ({ key: k, node: featureIcons[k] }))} />
               <Editable as="h3" field={`features.${i}.title`} value={feature.title}>{feature.title}</Editable>
               <Editable as="p" field={`features.${i}.description`} value={feature.description}>{feature.description}</Editable>
               {feature.integrations && <div className="feature-integrations">{feature.integrations.map((int, j) => <span key={j}>✓ {int}</span>)}</div>}
@@ -673,21 +674,30 @@ function PricingSection({ config }: { config: MarketingConfig }) {
 // ============================================================================
 function FAQSection({ config }: { config: MarketingConfig }) {
   const { faqs } = config;
+  const { editor } = useEditor();
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   return (
     <section id="faq" className="faq">
       <div className="container">
         <div className="section-header"><Editable as="h2" field="sectionHeadings.faqHeadline" value={config.sectionHeadings?.faqHeadline ?? "Questions? We've Got Answers."}>{config.sectionHeadings?.faqHeadline ?? "Questions? We've Got Answers."}</Editable></div>
         <div className="faq-grid">
-          {faqs.map((faq, i) => (
-            <div key={i} className={`faq-item ${activeIndex === i ? 'active' : ''}`}>
-              <button className="faq-question" onClick={() => setActiveIndex(activeIndex === i ? null : i)}>
-                <Editable as="span" field={`faqs.${i}.question`} value={faq.question}>{faq.question}</Editable><span className="faq-icon">+</span>
+          {faqs.map((faq, i) => {
+            // In the editor every item is expanded so both the question and the
+            // answer are visible and editable; clicking a question edits it
+            // instead of collapsing the card.
+            const expanded = editor || activeIndex === i;
+            return (
+            <div key={i} className={`faq-item ${expanded ? 'active' : ''}`}>
+              <button className="faq-question" style={editor ? { cursor: 'text' } : undefined} onClick={() => { if (!editor) setActiveIndex(activeIndex === i ? null : i); }}>
+                <Editable as="span" field={`faqs.${i}.question`} value={faq.question}>{faq.question}</Editable>{!editor && <span className="faq-icon">+</span>}
               </button>
-              <div className="faq-answer"><SafeFAQContent html={faq.answer} /></div>
+              <div className="faq-answer">
+                <EditableHTML field={`faqs.${i}.answer`} html={faq.answer} className="faq-answer-content"><SafeFAQContent html={faq.answer} /></EditableHTML>
+              </div>
               <ItemRemove path="faqs" index={i} label="question" />
             </div>
-          ))}
+            );
+          })}
         </div>
         <div style={{ textAlign: 'center' }}><ItemAdd path="faqs" label="question" /></div>
       </div>

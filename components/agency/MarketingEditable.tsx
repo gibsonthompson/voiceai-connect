@@ -14,7 +14,7 @@
 // focused, so the agency's cursor is never reset by the config echoing back.
 // ============================================================================
 
-import React, { createContext, useContext, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 
 export interface EditorCtx {
   editor: boolean;
@@ -88,6 +88,106 @@ export function Editable({
       onInput={() => onEdit(field, multiline ? (ref.current?.innerText || '') : (ref.current?.textContent || ''))}
       onKeyDown={(e: React.KeyboardEvent) => { if (!multiline && e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur(); } }}
     />
+  );
+}
+
+// Editable rich-text block for content that is stored as HTML (e.g. a FAQ
+// answer with <p>/<ul>). On the public site it renders `children` (the template's
+// own safe HTML renderer) unchanged. In editor mode it becomes a contentEditable
+// region seeded with the HTML, and each change posts the element's innerHTML up
+// so lists and paragraphs survive editing. Like Editable, the DOM is only
+// re-synced from `html` while NOT focused, so the caret is never reset mid-type.
+export function EditableHTML({
+  field, html, className, style, children,
+}: {
+  field: string;
+  html: string;
+  className?: string;
+  style?: React.CSSProperties;
+  children: React.ReactNode;
+}) {
+  const { editor, onEdit } = useEditor();
+  const ref = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!editor) return;
+    const el = ref.current;
+    if (!el || (typeof document !== 'undefined' && document.activeElement === el)) return;
+    if (el.innerHTML !== (html || '')) el.innerHTML = html || '';
+  }, [editor, html]);
+
+  if (!editor) return <>{children}</>;
+
+  return (
+    <div
+      ref={ref}
+      className={className}
+      style={{ ...style, cursor: 'text', outline: 'none' }}
+      contentEditable
+      suppressContentEditableWarning
+      spellCheck={false}
+      data-vai-edit
+      title="Click to edit"
+      onFocus={() => onEdit('__select__', field)}
+      onInput={() => onEdit(field, ref.current?.innerHTML || '')}
+    />
+  );
+}
+
+// Inline icon chooser shown in editor mode next to a repeatable item's icon
+// (e.g. a feature). Renders nothing on the public site. Each option carries a
+// key (the value stored in config) and the rendered icon node for that key.
+// Picking one posts the new key through the normal edit channel (setByPath),
+// so it persists and re-renders exactly like a text edit.
+export function IconPicker({ field, value, options }: {
+  field: string;
+  value: string;
+  options: { key: string; node: React.ReactNode }[];
+}) {
+  const { editor, onEdit } = useEditor();
+  const [open, setOpen] = useState(false);
+  if (!editor) return null;
+  return (
+    <div data-vai-ctl style={{ position: 'relative', display: 'inline-block', marginTop: 8 }}>
+      <button
+        type="button"
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen((o) => !o); }}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600,
+          padding: '4px 10px', borderRadius: 999, border: '1px solid rgba(127,127,127,0.4)',
+          background: 'rgba(127,127,127,0.08)', color: 'inherit', cursor: 'pointer',
+        }}
+      >
+        <span style={{ width: 13, height: 13, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{options.find((o) => o.key === value)?.node}</span>
+        Change icon
+      </button>
+      {open && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: 'absolute', zIndex: 40, top: 'calc(100% + 6px)', left: 0,
+            display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, padding: 8,
+            background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 12,
+            boxShadow: '0 14px 34px rgba(0,0,0,0.2)',
+          }}
+        >
+          {options.map((opt) => (
+            <button
+              key={opt.key}
+              type="button"
+              title={opt.key}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(field, opt.key); setOpen(false); }}
+              style={{
+                width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                borderRadius: 9, cursor: 'pointer', color: '#111827', background: '#fff',
+                border: value === opt.key ? '2px solid #111827' : '1px solid rgba(0,0,0,0.12)',
+              }}
+            >
+              <span style={{ width: 18, height: 18, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{opt.node}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

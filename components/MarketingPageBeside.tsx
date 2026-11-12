@@ -11,7 +11,7 @@
 'use client';
 import { openAgencySupport, visibleFooterLinks, isSupportLink } from '@/lib/marketing-links';
 import CustomScripts from './CustomScripts';
-import { Editable, ItemAdd, ItemRemove, useEditor, TEdit } from '@/components/agency/MarketingEditable';
+import { Editable, EditableHTML, IconPicker, ItemAdd, ItemRemove, useEditor, TEdit } from '@/components/agency/MarketingEditable';
 import { resolveSectionOrder } from '@/lib/marketing-sections';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
@@ -422,6 +422,7 @@ function FeatureExplorer({ config }: { config: MarketingConfig }) {
           <div className="bsd-fx-panel">
             <div className="bsd-fx-detail">
               <div className="bsd-fx-detail-icon">{Icons[iconKey]}</div>
+              <IconPicker field={`features.${safeActive}.icon`} value={current.icon} options={Object.keys(FEATURE_ICON_KEYS).map((k) => ({ key: k, node: Icons[FEATURE_ICON_KEYS[k] || 'zap'] }))} />
               <Editable as="h3" field={`features.${safeActive}.title`} value={current.title}>{current.title}</Editable>
               <Editable as="p" field={`features.${safeActive}.description`} value={current.description}>{current.description}</Editable>
               <ItemRemove path="features" index={safeActive} label="feature" />
@@ -743,6 +744,7 @@ function Pricing({ config }: { config: MarketingConfig }) {
 // ============================================================================
 function FAQ({ config }: { config: MarketingConfig }) {
   const { faqs } = config;
+  const { editor } = useEditor();
   const [open, setOpen] = useState<number | null>(0);
   return (
     <section id="faq" className="bsd-section">
@@ -752,16 +754,21 @@ function FAQ({ config }: { config: MarketingConfig }) {
           <Editable as="h2" field="sectionHeadings.faqHeadline" value={config.sectionHeadings?.faqHeadline ?? 'Questions? We’ve got answers.'}>{config.sectionHeadings?.faqHeadline ?? 'Questions? We’ve got answers.'}</Editable>
         </div>
         <div className="bsd-faq-list">
-          {faqs.map((faq, i) => (
-            <div key={i} className={`bsd-faq-item${open === i ? ' open' : ''}`}>
-              <button type="button" className="bsd-faq-q" onClick={() => setOpen(open === i ? null : i)} aria-expanded={open === i}>
+          {faqs.map((faq, i) => {
+            const expanded = editor || open === i;
+            return (
+            <div key={i} className={`bsd-faq-item${expanded ? ' open' : ''}`}>
+              <button type="button" className="bsd-faq-q" style={editor ? { cursor: 'text' } : undefined} onClick={() => { if (!editor) setOpen(open === i ? null : i); }} aria-expanded={expanded}>
                 <Editable as="span" field={`faqs.${i}.question`} value={faq.question}>{faq.question}</Editable>
-                <span className="bsd-faq-icon">+</span>
+                {!editor && <span className="bsd-faq-icon">+</span>}
               </button>
-              <div className="bsd-faq-a"><SafeFAQContent html={faq.answer} /></div>
+              <div className="bsd-faq-a">
+                <EditableHTML field={`faqs.${i}.answer`} html={faq.answer}><SafeFAQContent html={faq.answer} /></EditableHTML>
+              </div>
               <ItemRemove path="faqs" index={i} label="question" />
             </div>
-          ))}
+            );
+          })}
         </div>
         <div style={{ textAlign: 'center' }}><ItemAdd path="faqs" label="question" /></div>
       </div>
