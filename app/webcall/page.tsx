@@ -53,6 +53,9 @@ function WebcallInner() {
   const mode = params.get('mode') || 'demo';
   const clientId = params.get('client') || '';
   const isEmbed = params.get('embed') === 'true';
+  // Loaded by the dashboard full-page editor with ?editor=true: the widget's
+  // title/subtitle/cta become click-to-type and post edits to the parent.
+  const editorMode = params.get('editor') === 'true';
 
   const [phase, setPhase] = useState<Phase>('loading');
   const [config, setConfig] = useState<WebcallConfig | null>(null);
@@ -66,6 +69,10 @@ function WebcallInner() {
   const timerRef = useRef<any>(null);
   const transcriptRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+  const edTitleRef = useRef<HTMLSpanElement>(null);
+  const edSubtitleRef = useRef<HTMLSpanElement>(null);
+  const edCtaRef = useRef<HTMLSpanElement>(null);
+  const postParent = (msg: any) => { try { window.parent?.postMessage(msg, '*'); } catch { /* ignore */ } };
 
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.myvoiceaiconnect.com';
   const vapiKey = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY || '';
@@ -178,6 +185,18 @@ function WebcallInner() {
   const subtitleText = config?.subtitle || 'AI receptionist';
   const ctaText = config?.cta || 'Talk to the AI right in your browser.\nAllow your mic when asked.';
 
+  // Keep the editable DOM in step with the resolved text while not being typed in.
+  useEffect(() => { if (!editorMode) return; const el = edTitleRef.current; if (el && document.activeElement !== el && el.textContent !== titleText) el.textContent = titleText; }, [editorMode, titleText]);
+  useEffect(() => { if (!editorMode) return; const el = edSubtitleRef.current; if (el && document.activeElement !== el && el.textContent !== subtitleText) el.textContent = subtitleText; }, [editorMode, subtitleText]);
+  useEffect(() => { if (!editorMode) return; const el = edCtaRef.current; if (el && document.activeElement !== el && el.innerText !== ctaText) el.innerText = ctaText; }, [editorMode, ctaText]);
+  const mkEditable = (field: string, ref: { current: HTMLSpanElement | null }, multiline?: boolean) => (
+    <span ref={ref} contentEditable suppressContentEditableWarning spellCheck={false} data-vai-edit title="Click to edit"
+      style={{ outline: 'none', cursor: 'text', whiteSpace: multiline ? 'pre-line' : undefined, display: 'inline-block', minWidth: 20 }}
+      onFocus={() => postParent({ type: 'voiceai:select', region: field })}
+      onInput={() => postParent({ type: 'voiceai:edit_text', field, value: (multiline ? ref.current?.innerText : ref.current?.textContent) || '' })}
+      onKeyDown={(e) => { if (!multiline && e.key === 'Enter') { e.preventDefault(); (e.target as HTMLElement).blur(); } }} />
+  );
+
   return (
     <div
       ref={rootRef}
@@ -197,12 +216,12 @@ function WebcallInner() {
           <WebCallShell
             palette={palette}
             fonts={fonts}
-            title={titleText}
-            subtitle={subtitleText}
+            title={editorMode ? mkEditable('title', edTitleRef) : titleText}
+            subtitle={editorMode ? mkEditable('subtitle', edSubtitleRef) : subtitleText}
             phone={(() => { const pt = config?.style?.phoneText?.trim(); return pt ? pt : (config?.phoneNumber ? formatPhone(config.phoneNumber) : undefined); })()}
-            cta={ctaText}
+            cta={editorMode ? mkEditable('cta', edCtaRef, true) : ctaText}
             connecting={phase === 'connecting'}
-            interactive
+            interactive={!editorMode}
             onCall={startCall}
           />
           {!isEmbed && config?.agencyName && (

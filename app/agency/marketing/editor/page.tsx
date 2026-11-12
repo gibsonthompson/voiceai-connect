@@ -91,9 +91,20 @@ function regionLabel(field: string): string {
     benefits: 'Benefit', features: 'Feature', industries: 'Industry',
     testimonials: 'Testimonial', faqs: 'FAQ', finalCta: 'Final CTA',
     sampleCall: 'Sample call', roi: 'ROI calculator',
+    headline: 'Headline', subtitle: 'Subtitle', title: 'Title', cta: 'Call to action', button: 'Button',
   };
   return map[top] || top.charAt(0).toUpperCase() + top.slice(1);
 }
+
+// Column-backed pages (signup, web call) store their copy in dedicated agency
+// columns, not marketing_config. This maps the field a page posts to the column
+// it saves to. A page listed here is edited via columns, not the config bridge.
+function columnForField(pageId: string, field: string): string | null {
+  if (pageId === 'signup') return field === 'headline' ? 'signup_headline' : field === 'subtitle' ? 'signup_subtitle' : null;
+  if (pageId === 'webcall') return field === 'title' ? 'webcall_title' : field === 'subtitle' ? 'webcall_subtitle' : field === 'cta' ? 'webcall_cta' : null;
+  return null;
+}
+function isColumnPage(pageId: string): boolean { return pageId === 'signup' || pageId === 'webcall'; }
 
 // Toggleable sections per template, in render order. `flag` is the
 // marketing_config key the templates already read. `defaultOn` is what the
@@ -134,6 +145,14 @@ export default function WebsiteEditorPage() {
   const subdomainUrl = agency?.slug ? `https://${agency.slug}.${platformDomain}` : '';
   const editorSrc = subdomainUrl ? `${subdomainUrl}/?preview=1&editor=1` : '';
   const accent = (agency as any)?.primary_color || '#00a19b';
+  // URL the preview iframe loads for a given page id.
+  const pageUrl = (id: string) => {
+    if (!subdomainUrl) return '';
+    if (id === 'signup') return `${subdomainUrl}/signup?embed=true&editor=true`;
+    if (id === 'webcall') return `${subdomainUrl}/webcall?agency=${encodeURIComponent((agency as any)?.id || '')}&mode=demo&embed=true&editor=true`;
+    if (id) return `${subdomainUrl}/${id}?preview=1&editor=1`;
+    return `${subdomainUrl}/?preview=1&editor=1`;
+  };
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [device, setDevice] = useState<Device>('desktop');
@@ -160,6 +179,9 @@ export default function WebsiteEditorPage() {
   const heroTouchedRef = useRef(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Pending agency-column edits (signup/webcall), flushed together in one PUT.
+  const pendingCols = useRef<Record<string, string>>({});
+  const colSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [configReady, setConfigReady] = useState(false);
 
   // Build the seed once the agency is loaded.
@@ -248,6 +270,37 @@ export default function WebsiteEditorPage() {
     saveTimer.current = setTimeout(() => { doSave(); }, 900);
   }, [doSave]);
 
+  // Flush pending agency-column edits (signup/webcall copy) in one PUT.
+  const flushCols = useCallback(async () => {
+    const cols = pendingCols.current;
+    pendingCols.current = {};
+    const keys = Object.keys(cols);
+    if (keys.length === 0) return;
+    if (!agency || demoMode) { setSaveState(demoMode ? 'idle' : 'error'); return; }
+    setSaveState('saving');
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      const body: any = {};
+      for (const k of keys) { const v = cols[k]; body[k] = (typeof v === 'string' && v.trim()) ? v : null; }
+      const res = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      setSaveState('saved');
+      refreshAgency().catch(() => {});
+    } catch {
+      setSaveState('error');
+    }
+  }, [agency, demoMode, backendUrl, refreshAgency]);
+
+  const scheduleColSave = useCallback(() => {
+    setSaveState('dirty');
+    if (colSaveTimer.current) clearTimeout(colSaveTimer.current);
+    colSaveTimer.current = setTimeout(() => { flushCols(); }, 900);
+  }, [flushCols]);
+
   // Flip a section on/off: update the panel state, the working config, the live
   // preview, and queue a save. Writes the explicit boolean the templates read.
   const toggleSection = useCallback((flag: string) => {
@@ -306,6 +359,15 @@ export default function WebsiteEditorPage() {
         pushConfig();
       } else if (d.type === 'voiceai:edit_select' && typeof d.region === 'string') {
         setActiveRegion(d.region);
+      } else if (d.type === 'voiceai:select' && typeof d.region === 'string') {
+        // Column-backed pages (signup/webcall) use this select message.
+        setActiveRegion(d.region);
+      } else if (d.type === 'voiceai:edit_text' && typeof d.field === 'string') {
+        // Column-backed page edit: save to the mapped agency column.
+        const col = columnForField(currentPageRef.current, d.field);
+        if (!col) return;
+        pendingCols.current[col] = typeof d.value === 'string' ? d.value : '';
+        scheduleColSave();
       } else if (d.type === 'voiceai:edit_item' && typeof d.path === 'string') {
         if (!configRef.current) return;
         const slug = currentPageRef.current;
@@ -350,16 +412,20 @@ export default function WebsiteEditorPage() {
     };
     window.addEventListener('message', onMsg);
     return () => window.removeEventListener('message', onMsg);
-  }, [pushConfig, scheduleSave, ensureIndustrySeed]);
+  }, [pushConfig, scheduleSave, ensureIndustrySeed, scheduleColSave]);
 
   // Flush a pending save when leaving.
   const exit = useCallback(() => {
     if (saveTimer.current) clearTimeout(saveTimer.current);
+    if (colSaveTimer.current) clearTimeout(colSaveTimer.current);
     const go = () => router.push('/agency/marketing');
-    if (saveState === 'dirty' || saveState === 'saving') { doSave().finally(go); } else { go(); }
-  }, [router, saveState, doSave]);
+    // A page is edited either via config or via columns, never both at once.
+    if (Object.keys(pendingCols.current).length) { flushCols().finally(go); }
+    else if (saveState === 'dirty' || saveState === 'saving') { doSave().finally(go); }
+    else { go(); }
+  }, [router, saveState, doSave, flushCols]);
 
-  useEffect(() => () => { if (saveTimer.current) clearTimeout(saveTimer.current); if (pushTimer.current) clearTimeout(pushTimer.current); }, []);
+  useEffect(() => () => { if (saveTimer.current) clearTimeout(saveTimer.current); if (pushTimer.current) clearTimeout(pushTimer.current); if (colSaveTimer.current) clearTimeout(colSaveTimer.current); }, []);
 
   const width = DEVICE_WIDTH[device];
 
@@ -398,7 +464,7 @@ export default function WebsiteEditorPage() {
             </button>
             {pageMenuOpen && (
               <div className="absolute left-0 mt-1 rounded-lg py-1 z-20" style={{ minWidth: 190, backgroundColor: '#15171c', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 12px 34px rgba(0,0,0,0.55)' }}>
-                {[{ slug: '', label: 'Homepage' }, ...INDUSTRY_PAGE_LIST].map((p) => (
+                {[{ slug: '', label: 'Homepage' }, ...INDUSTRY_PAGE_LIST, { slug: 'signup', label: 'Signup page' }, { slug: 'webcall', label: 'Web call widget' }].map((p) => (
                   <button
                     key={p.slug || 'home'}
                     onClick={() => switchPage(p.slug)}
@@ -427,15 +493,17 @@ export default function WebsiteEditorPage() {
           </div>
         )}
 
-        {/* Sections panel toggle */}
-        <button
-          onClick={() => setPanelOpen((o) => !o)}
-          title="Show or hide sections"
-          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors"
-          style={{ color: panelOpen ? '#0b0c0f' : '#e5e7eb', backgroundColor: panelOpen ? '#ffffff' : 'rgba(255,255,255,0.06)' }}
-        >
-          <Layers className="h-4 w-4" /><span className="hidden sm:inline">Sections</span>
-        </button>
+        {/* Sections panel toggle (only for the marketing template pages) */}
+        {!isColumnPage(currentPage) && (
+          <button
+            onClick={() => setPanelOpen((o) => !o)}
+            title="Show or hide sections"
+            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors"
+            style={{ color: panelOpen ? '#0b0c0f' : '#e5e7eb', backgroundColor: panelOpen ? '#ffffff' : 'rgba(255,255,255,0.06)' }}
+          >
+            <Layers className="h-4 w-4" /><span className="hidden sm:inline">Sections</span>
+          </button>
+        )}
 
         {/* Device toggle */}
         <div className="flex items-center rounded-lg p-0.5" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
@@ -502,8 +570,8 @@ export default function WebsiteEditorPage() {
                 key={currentPage || 'home'}
                 ref={iframeRef}
                 title="Your website"
-                src={subdomainUrl ? `${subdomainUrl}${currentPage ? '/' + currentPage : '/'}?preview=1&editor=1` : ''}
-                onLoad={() => pushConfig()}
+                src={pageUrl(currentPage)}
+                onLoad={() => { if (!isColumnPage(currentPage)) pushConfig(); }}
                 style={{ width: '100%', height: device === 'desktop' ? '100%' : '100%', minHeight: device === 'desktop' ? 'calc(100vh - 56px)' : 'calc(100vh - 56px - 40px)', border: 0, display: 'block', backgroundColor: '#ffffff' }}
               />
             )}
@@ -512,7 +580,7 @@ export default function WebsiteEditorPage() {
       </div>
 
       {/* Sections panel */}
-      {panelOpen && (
+      {panelOpen && !isColumnPage(currentPage) && (
         <aside className="shrink-0 overflow-y-auto" style={{ width: 300, backgroundColor: '#0b0c0f', borderLeft: '1px solid rgba(255,255,255,0.08)' }}>
           <div className="p-4">
             <div className="flex items-center justify-between mb-1">
