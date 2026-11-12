@@ -8,6 +8,7 @@ import MarketingPageEditorial from '@/components/MarketingPageEditorial';
 import AgencySupportWidget from '@/components/AgencySupportWidget';
 import { EditorProvider } from '@/components/agency/MarketingEditable';
 import { MarketingConfig, defaultMarketingConfig } from '@/types/marketing';
+import type { IndustryPage } from '@/lib/industry-pages';
 import { getCurrencySymbol } from '@/lib/currency-symbols';
 import { getCurrencyForCountry, currencies } from '@/lib/currency';
 import { FEATURE_LABELS, FEATURE_ORDER } from '@/lib/plan-features-meta';
@@ -174,7 +175,7 @@ const TEMPLATES: Record<string, React.ComponentType<{ config: Partial<MarketingC
 // Receives agency data as prop (fetched server-side by page.tsx)
 // Builds MarketingConfig and renders the correct template
 // ============================================================================
-export default function AgencySiteClient({ agency }: { agency: Agency }) {
+export default function AgencySiteClient({ agency, industry }: { agency: Agency; industry?: IndustryPage }) {
   // Client-side branding (favicon, title, theme cache)
   useEffect(() => {
     if (agency.logo_url) setFavicon(agency.logo_url);
@@ -398,6 +399,26 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
   // Resolve theme
   const isDark = (agency.website_theme || 'light') === 'dark';
 
+  // Industry landing pages overlay vertical-specific copy on the agency's own
+  // branded template. Per-agency overrides (marketing_config.industryPages[slug])
+  // win over the static lib defaults, so each agency can tailor its own pages;
+  // everything the overlay doesn't touch (features, steps, pricing) stays shared
+  // with the homepage.
+  const industryOverride: any = industry && (mc?.industryPages && typeof mc.industryPages === 'object')
+    ? (mc.industryPages[industry.slug] || {})
+    : {};
+  const renderConfig: Partial<MarketingConfig> = industry ? {
+    ...marketingConfig,
+    hero: {
+      ...(marketingConfig.hero as MarketingConfig['hero']),
+      headline: Array.isArray(industryOverride.headline) && industryOverride.headline.length ? industryOverride.headline : industry.headline,
+      description: typeof industryOverride.subheadline === 'string' && industryOverride.subheadline ? industryOverride.subheadline : industry.subheadline,
+    },
+    problems: Array.isArray(industryOverride.problems) && industryOverride.problems.length ? industryOverride.problems : industry.problems,
+    sampleCall: (industryOverride.sampleCall && typeof industryOverride.sampleCall === 'object') ? industryOverride.sampleCall : industry.sampleCall,
+    faqs: Array.isArray(industryOverride.faqs) && industryOverride.faqs.length ? industryOverride.faqs : industry.faqs,
+  } : marketingConfig;
+
   // Route to the correct template
   const templateKey = agency.marketing_template || 'classic';
   const TemplateComponent = TEMPLATES[templateKey] || TEMPLATES.classic;
@@ -406,7 +427,7 @@ export default function AgencySiteClient({ agency }: { agency: Agency }) {
     <>
       {editorMode && <style>{`[data-vai-edit]{border-radius:4px;transition:box-shadow .12s ease,background-color .12s ease} [data-vai-edit]:hover{box-shadow:0 0 0 2px ${(agency.primary_color || '#00a19b')}66} [data-vai-edit]:focus{box-shadow:0 0 0 2px ${(agency.primary_color || '#00a19b')};background-color:${(agency.primary_color || '#00a19b')}14}`}</style>}
       <EditorProvider value={{ editor: editorMode, onEdit, onItem }}>
-        <TemplateComponent config={marketingConfig} />
+        <TemplateComponent config={renderConfig} />
       </EditorProvider>
       <AgencySupportWidget
         agencyId={agency.id}

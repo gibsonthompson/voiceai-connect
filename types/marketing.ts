@@ -181,6 +181,17 @@ export interface MarketingConfig {
   analytics?: AnalyticsConfig;
   og?: OGConfig;
   sectionHeadings?: SectionHeadings;
+  // Per-agency overrides for industry landing pages, keyed by page slug (e.g.
+  // 'auto'). Each value may override that page's headline, subheadline,
+  // problems, sampleCall and faqs; anything omitted falls back to the static
+  // lib/industry-pages default. Written by the in-context editor.
+  industryPages?: Record<string, {
+    headline?: string[];
+    subheadline?: string;
+    problems?: ProblemItem[];
+    sampleCall?: { customerName?: string; service?: string; summary?: string };
+    faqs?: FAQItem[];
+  }>;
   // Order of the body sections (keys from lib/marketing-sections). Unset = each
   // template's built-in default order. Set by the in-context editor's reorder
   // controls. Unknown keys are ignored per template.

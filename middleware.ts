@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { INDUSTRY_PAGE_SLUGS } from '@/lib/industry-pages';
 
 // Platform domain configuration
 const PLATFORM_DOMAIN = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
@@ -90,7 +91,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // =========================================================================
-  // Skip /client/* and /cc/* routes entirely — these dashboard pages don't
+  // Skip /client/* and /cc/* routes entirely - these dashboard pages don't
   // need subdomain context. They get all data from localStorage + backend API.
   // This prevents middleware from modifying headers/cookies on these page
   // requests (including RSC navigation fetches), which was corrupting
@@ -122,7 +123,7 @@ export async function middleware(request: NextRequest) {
   const existingCountryCookie = request.cookies.get('vc_country')?.value;
 
   // =========================================================================
-  // PLATFORM DOMAIN — return immediately, no Supabase needed
+  // PLATFORM DOMAIN - return immediately, no Supabase needed
   // =========================================================================
   if (PLATFORM_DOMAINS.includes(hostname)) {
     if (!existingCountryCookie) {
@@ -140,7 +141,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // =========================================================================
-  // SUBDOMAIN / CUSTOM DOMAIN — Supabase needed for agency lookup
+  // SUBDOMAIN / CUSTOM DOMAIN - Supabase needed for agency lookup
   // =========================================================================
 
   // Create a response that we can modify
@@ -184,6 +185,29 @@ export async function middleware(request: NextRequest) {
     // layout can emit a per-page canonical on the agency's own host instead of
     // the platform's. Without this the layout only knows the rewritten path.
     requestHeaders.set('x-pathname', pathname);
+
+    // Industry landing pages: /auto, /medspa, /law, etc. on the agency host
+    // rewrite to the shared industry route, which overlays the vertical's copy
+    // on the agency's own branded template. Checked before the static list so a
+    // slug is routed as an industry page rather than passing through.
+    const firstSeg = pathname.split('/')[1];
+    if (firstSeg && pathname === `/${firstSeg}` && INDUSTRY_PAGE_SLUGS.includes(firstSeg)) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/agency-site/industry/${firstSeg}`;
+      const rewriteResponse = NextResponse.rewrite(url, { request: { headers: requestHeaders } });
+      if (!existingCountryCookie) {
+        const detectedCountry = request.headers.get('x-vercel-ip-country') || 'US';
+        const validCountry = SUPPORTED_COUNTRIES.has(detectedCountry) ? detectedCountry : 'US';
+        rewriteResponse.cookies.set('vc_country', validCountry, { path: '/', maxAge: 60 * 60 * 24 * 30, sameSite: 'lax' });
+      }
+      rewriteResponse.cookies.set('agency_id', agency.id, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+      });
+      return rewriteResponse;
+    }
 
     // Static marketing routes that live under /agency-site/.
     //
@@ -255,7 +279,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // =========================================================================
-  // ROUTING LOGIC — subdomain and custom domain handling
+  // ROUTING LOGIC - subdomain and custom domain handling
   // (Platform domain already returned above before Supabase client creation)
   // =========================================================================
 
@@ -281,7 +305,7 @@ export async function middleware(request: NextRequest) {
       return rewriteToAgencySite(agency);
     }
 
-    // Agency exists but not active — check if suspended/canceled
+    // Agency exists but not active - check if suspended/canceled
     const { data: inactiveAgency } = await supabase
       .from('agencies')
       .select('id, status')
@@ -308,7 +332,7 @@ export async function middleware(request: NextRequest) {
     return rewriteToAgencySite(customDomainAgency);
   }
 
-  // Agency exists with this domain but not active — show unavailable
+  // Agency exists with this domain but not active - show unavailable
   const { data: inactiveCustomDomain } = await supabase
     .from('agencies')
     .select('id, status')
