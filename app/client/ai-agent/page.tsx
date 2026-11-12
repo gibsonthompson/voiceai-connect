@@ -12,6 +12,7 @@ import { SectionCard as SharedSectionCard } from '@/components/client/SectionCar
 import AISettingsSection from '@/components/client/AISettingsSection';
 import ToolConfigSection from '@/components/client/ToolConfigSection';
 import NativeCalendarSection from '@/components/client/NativeCalendarSection';
+import WebCallModal from '@/components/agency/WebCallModal';
 
 interface VoiceOption { id: string; name: string; gender: 'male' | 'female'; accent: string; style: string; description: string; previewUrl: string; recommended?: boolean; }
 interface CalendarStatus { connected: boolean; token_valid: boolean; calendar_access?: boolean; plan_allowed: boolean; plan_message: string | null; email?: string | null; }
@@ -99,6 +100,7 @@ export default function ClientAIAgentPage() {
   const theme = useClientTheme();
   const [message, setMessage] = useState('');
   const [messageError, setMessageError] = useState(false);
+  const [testCallOpen, setTestCallOpen] = useState(false);
   const primaryColor = theme.primary;
 
   const [voices, setVoices] = useState<{ female: VoiceOption[]; male: VoiceOption[] }>({ female: [], male: [] });
@@ -365,7 +367,10 @@ export default function ClientAIAgentPage() {
   const handleSaveVoice = async () => { if (selectedVoiceId === currentVoiceId || !client) return; setSavingVoice(true); setVoiceSaved(false); try { const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/voice`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` }, body: JSON.stringify({ voice_id: selectedVoiceId }) }); const d = await r.json(); if (d.success) { setCurrentVoiceId(selectedVoiceId); setVoiceSaved(true); setTimeout(() => setVoiceSaved(false), 6000); showMessage('Voice saved. Callers will hear it on the next call.'); } else { showMessage('Failed to save voice. Please try again.', true); setSelectedVoiceId(currentVoiceId); } } catch { showMessage('Error saving voice. Please try again.', true); setSelectedVoiceId(currentVoiceId); } finally { setSavingVoice(false); } };
   const handleSaveGreeting = async () => { if (greetingMessage === originalGreeting || !client) return; setSavingGreeting(true); setGreetingSaved(false); try { const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/greeting`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` }, body: JSON.stringify({ greeting_message: greetingMessage }) }); const d = await r.json(); if (d.success) { setOriginalGreeting(greetingMessage); setGreetingSaved(true); setTimeout(() => setGreetingSaved(false), 6000); showMessage('Greeting saved. Callers will hear it on the next call.'); } else { showMessage(d.error || 'Failed to save greeting. Please try again.', true); } } catch { showMessage('Error saving greeting. Please try again.', true); } finally { setSavingGreeting(false); } };
   const handleResetGreeting = () => { if (!client?.business_name) return; setGreetingMessage(`Hey, thanks for calling ${client.business_name}. This call may be recorded. How can we help you today?`); };
-  const handleTestCall = () => { if (client?.vapi_phone_number) window.location.href = `tel:${client.vapi_phone_number}`; };
+  // Test the assistant with a browser web call (mic in the browser), not by
+  // dialing the number. The modal builds a fresh assistant from the client's
+  // current settings, so the test reflects exactly what callers would hear.
+  const handleTestCall = () => setTestCallOpen(true);
   const showMessage = (text: string, isError = false) => { setMessage(text); setMessageError(isError); setTimeout(() => setMessage(''), 5000); };
 
   const getAllVoices = (): VoiceOption[] => [...(voices.female || []), ...(voices.male || [])];
@@ -437,13 +442,13 @@ export default function ClientAIAgentPage() {
 
         {/* Test Call */}
         <section className="mb-4 sm:mb-5 fu fu1">
-          <button onClick={handleTestCall} disabled={!client?.vapi_phone_number}
+          <button onClick={handleTestCall} disabled={!client}
             className="w-full rounded-2xl p-3.5 sm:p-4 flex items-center justify-center gap-2.5 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
             style={{ backgroundColor: primaryColor, color: theme.primaryText }}>
             <Phone className="w-4 h-4 sm:w-5 sm:h-5" />
             <span className="font-semibold text-sm sm:text-base">Test Your AI Agent</span>
           </button>
-          <p className="text-center text-[11px] mt-1.5" style={{ color: theme.textMuted4 }}>Call your AI number to hear your settings in action</p>
+          <p className="text-center text-[11px] mt-1.5" style={{ color: theme.textMuted4 }}>Talk to your AI right here in your browser to hear your settings in action</p>
         </section>
 
         {showCalendar && (<>
@@ -723,6 +728,10 @@ export default function ClientAIAgentPage() {
           </div>
         </div>
       </div>
+
+      {client && (
+        <WebCallModal clientId={client.id} open={testCallOpen} onClose={() => setTestCallOpen(false)} theme={theme} />
+      )}
     </div>
   );
 }
