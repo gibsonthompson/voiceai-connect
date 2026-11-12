@@ -14,6 +14,7 @@
 import { openAgencySupport, visibleFooterLinks, isSupportLink } from '@/lib/marketing-links';
 import CustomScripts from './CustomScripts';
 import { Editable } from '@/components/agency/MarketingEditable';
+import { resolveSectionOrder } from '@/lib/marketing-sections';
 
 import React, { useState } from 'react';
 import { MarketingConfig, defaultMarketingConfig } from '@/types/marketing';
@@ -555,15 +556,20 @@ export default function MarketingPageEditorial({ config: partial }: { config: Pa
       <AnalyticsScripts analytics={config.analytics} />
       <Nav config={config} />
       <Hero config={config} />
-      {config.showFeatures !== false && <Features config={config} />}
-      {config.showHowItWorks !== false && <Steps config={config} />}
-      {config.showFeatures !== false && <ValueCards config={config} />}
-      {config.showIndustries !== false && <Industries config={config} />}
-      {config.showTestimonials !== false && <Testimonial config={config} />}
-      {config.showAiWebCall === true && <AiWebCall config={config} />}
-      {config.showPricing !== false && <Pricing config={config} />}
-      {config.showFAQ !== false && <FAQ config={config} />}
-      {config.showFinalCTA !== false && <FinalCTA config={config} />}
+      {(() => {
+        const nodes: Record<string, React.ReactNode> = {
+          features: config.showFeatures !== false ? <Features key="features" config={config} /> : null,
+          howItWorks: config.showHowItWorks !== false ? <Steps key="howItWorks" config={config} /> : null,
+          valueCards: config.showFeatures !== false ? <ValueCards key="valueCards" config={config} /> : null,
+          industries: config.showIndustries !== false ? <Industries key="industries" config={config} /> : null,
+          testimonials: config.showTestimonials !== false ? <Testimonial key="testimonials" config={config} /> : null,
+          aiWebCall: config.showAiWebCall === true ? <AiWebCall key="aiWebCall" config={config} /> : null,
+          pricing: config.showPricing !== false ? <Pricing key="pricing" config={config} /> : null,
+          faq: config.showFAQ !== false ? <FAQ key="faq" config={config} /> : null,
+          finalCta: config.showFinalCTA !== false ? <FinalCTA key="finalCta" config={config} /> : null,
+        };
+        return resolveSectionOrder(config.sectionOrder, 'editorial').map((k) => nodes[k] || null);
+      })()}
       <Footer config={config} />
       <CustomScripts html={config.analytics?.customBodyScripts} target="body" />
     </div>

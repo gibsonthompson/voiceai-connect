@@ -3,6 +3,7 @@
 import { openAgencySupport, visibleFooterLinks, isSupportLink } from '@/lib/marketing-links';
 import CustomScripts from './CustomScripts';
 import { Editable } from '@/components/agency/MarketingEditable';
+import { resolveSectionOrder } from '@/lib/marketing-sections';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { MarketingConfig, defaultMarketingConfig } from '@/types/marketing';
@@ -941,17 +942,22 @@ export default function MarketingPage({ config: partialConfig }: MarketingPagePr
       <AnalyticsScripts analytics={config.analytics} />
       <Navigation config={config} />
       <HeroSection config={config} contrastColors={contrastColors} />
-      {config.showProblemSolution !== false && <ProblemSolutionSection config={config} contrastColors={contrastColors} />}
-      {config.showHowItWorks !== false && <HowItWorksSection config={config} />}
-      {config.showCommandCenter !== false && <AppShowcaseSection config={config} contrastColors={contrastColors} />}
-      {config.showFeatures !== false && <FeaturesSection config={config} />}
-      {config.showIndustries && <IndustriesSection config={config} />}
-      {config.showComparison && <ComparisonSection config={config} />}
-      {config.showROICalculator !== false && <ROICalculatorSection config={config} />}
-      {config.showAiWebCall === true && <AiWebCallSection config={config} />}
-      {config.showPricing !== false && <PricingSection config={config} />}
-      {config.showFAQ !== false && <FAQSection config={config} />}
-      {config.showFinalCTA !== false && <FinalCTASection config={config} contrastColors={contrastColors} />}
+      {(() => {
+        const nodes: Record<string, React.ReactNode> = {
+          problemSolution: config.showProblemSolution !== false ? <ProblemSolutionSection key="problemSolution" config={config} contrastColors={contrastColors} /> : null,
+          howItWorks: config.showHowItWorks !== false ? <HowItWorksSection key="howItWorks" config={config} /> : null,
+          commandCenter: config.showCommandCenter !== false ? <AppShowcaseSection key="commandCenter" config={config} contrastColors={contrastColors} /> : null,
+          features: config.showFeatures !== false ? <FeaturesSection key="features" config={config} /> : null,
+          industries: config.showIndustries ? <IndustriesSection key="industries" config={config} /> : null,
+          comparison: config.showComparison ? <ComparisonSection key="comparison" config={config} /> : null,
+          roiCalculator: config.showROICalculator !== false ? <ROICalculatorSection key="roiCalculator" config={config} /> : null,
+          aiWebCall: config.showAiWebCall === true ? <AiWebCallSection key="aiWebCall" config={config} /> : null,
+          pricing: config.showPricing !== false ? <PricingSection key="pricing" config={config} /> : null,
+          faq: config.showFAQ !== false ? <FAQSection key="faq" config={config} /> : null,
+          finalCta: config.showFinalCTA !== false ? <FinalCTASection key="finalCta" config={config} contrastColors={contrastColors} /> : null,
+        };
+        return resolveSectionOrder(config.sectionOrder, 'classic').map((k) => nodes[k] || null);
+      })()}
       <Footer config={config} />
       <StickyCTA config={config} />
       {showExitModal && <ExitIntentModal config={config} onClose={() => setShowExitModal(false)} />}

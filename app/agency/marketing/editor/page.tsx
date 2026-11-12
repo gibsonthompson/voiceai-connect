@@ -25,10 +25,11 @@
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Check, Loader2, Monitor, Tablet, Smartphone, MousePointerClick, ExternalLink, AlertCircle, Layers, X } from 'lucide-react';
+import { ArrowLeft, Check, Loader2, Monitor, Tablet, Smartphone, MousePointerClick, ExternalLink, AlertCircle, Layers, X, ChevronUp, ChevronDown } from 'lucide-react';
 import { useAgency } from '../../context';
 import { defaultMarketingConfig } from '@/types/marketing';
 import { setByPath, clone } from '@/lib/editable-path';
+import { resolveSectionOrder, SECTION_LABELS } from '@/lib/marketing-sections';
 
 type Device = 'desktop' | 'tablet' | 'mobile';
 type SaveState = 'idle' | 'dirty' | 'saving' | 'saved' | 'error';
@@ -106,8 +107,10 @@ export default function WebsiteEditorPage() {
   // Section on/off state, mirrored in React so the panel re-renders. The source
   // of truth for saving is still configRef; toggles write to both.
   const [flags, setFlags] = useState<Record<string, boolean>>({});
+  const [order, setOrder] = useState<string[]>([]);
   const template = (agency as any)?.marketing_template || 'classic';
   const templateSections = useMemo(() => SECTIONS.filter((s) => s.templates.includes(template)), [template]);
+  const defByKey = useMemo(() => Object.fromEntries(SECTIONS.map((s) => [s.key, s])) as Record<string, SectionDef>, []);
 
   // The working copy of marketing_config. Mutated by edits, pushed to the
   // iframe, and autosaved. Held in a ref so the message handler (bound once)
@@ -157,6 +160,7 @@ export default function WebsiteEditorPage() {
       const initial: Record<string, boolean> = {};
       for (const def of templateSections) initial[def.flag] = sectionIsOn(def, seed, template);
       setFlags(initial);
+      setOrder(resolveSectionOrder((seed as any).sectionOrder, template));
       setConfigReady(true);
     }
   }, [seed, configReady, templateSections, template]);
@@ -213,6 +217,19 @@ export default function WebsiteEditorPage() {
     pushConfig();
     scheduleSave();
   }, [flags, pushConfig, scheduleSave]);
+
+  // Move a section up (-1) or down (+1) in the render order.
+  const moveSection = useCallback((index: number, dir: -1 | 1) => {
+    const j = index + dir;
+    if (j < 0 || j >= order.length || !configRef.current) return;
+    const next = order.slice();
+    const [moved] = next.splice(index, 1);
+    next.splice(j, 0, moved);
+    setOrder(next);
+    configRef.current = setByPath(configRef.current, 'sectionOrder', next);
+    pushConfig();
+    scheduleSave();
+  }, [order, pushConfig, scheduleSave]);
 
   // Inbound bridge from the iframe (Editable regions on the agency site).
   useEffect(() => {
@@ -382,20 +399,36 @@ export default function WebsiteEditorPage() {
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <p className="text-xs mb-4" style={{ color: 'rgba(255,255,255,0.5)' }}>Turn sections on or off. Your header, hero and footer always stay. Changes save as you go.</p>
+            <p className="text-xs mb-4" style={{ color: 'rgba(255,255,255,0.5)' }}>Reorder with the arrows, and turn sections on or off. Your header, hero and footer always stay. Changes save as you go.</p>
             <div className="space-y-1">
-              {templateSections.map((def) => {
-                const on = flags[def.flag] ?? sectionDefaultOn(def, template);
+              {order.map((key, i) => {
+                const def = defByKey[key];
+                // valueCards (Editorial) has no flag of its own; it follows Features.
+                const on = def ? (flags[def.flag] ?? sectionDefaultOn(def, template)) : (flags.showFeatures ?? true);
+                const label = def ? def.label : (SECTION_LABELS[key as keyof typeof SECTION_LABELS] || key);
+                const hint = def ? def.hint : 'Shown with the Features section';
                 return (
-                  <button key={def.key} type="button" onClick={() => toggleSection(def.flag)} className="w-full text-left rounded-lg p-2.5 flex items-start gap-3 transition-colors" style={{ backgroundColor: on ? 'rgba(255,255,255,0.06)' : 'transparent' }}>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-medium" style={{ color: on ? '#fff' : 'rgba(255,255,255,0.55)' }}>{def.label}</span>
-                      <span className="block text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>{def.hint}</span>
+                  <div key={key} className="rounded-lg p-2 flex items-start gap-2 transition-colors" style={{ backgroundColor: on ? 'rgba(255,255,255,0.06)' : 'transparent' }}>
+                    <span className="flex flex-col shrink-0">
+                      <button type="button" onClick={() => moveSection(i, -1)} disabled={i === 0} title="Move up" className="inline-flex items-center justify-center rounded" style={{ width: 22, height: 16, color: i === 0 ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.65)', cursor: i === 0 ? 'default' : 'pointer' }}>
+                        <ChevronUp className="h-3.5 w-3.5" />
+                      </button>
+                      <button type="button" onClick={() => moveSection(i, 1)} disabled={i === order.length - 1} title="Move down" className="inline-flex items-center justify-center rounded" style={{ width: 22, height: 16, color: i === order.length - 1 ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.65)', cursor: i === order.length - 1 ? 'default' : 'pointer' }}>
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      </button>
                     </span>
-                    <span className="shrink-0 mt-0.5 inline-flex items-center rounded-full transition-all" style={{ width: 34, height: 20, padding: 2, backgroundColor: on ? accent : 'rgba(255,255,255,0.18)', justifyContent: on ? 'flex-end' : 'flex-start' }}>
-                      <span style={{ width: 16, height: 16, borderRadius: '999px', backgroundColor: '#fff', display: 'block' }} />
+                    <span className="min-w-0 flex-1 pt-0.5">
+                      <span className="block text-sm font-medium" style={{ color: on ? '#fff' : 'rgba(255,255,255,0.55)' }}>{label}</span>
+                      <span className="block text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>{hint}</span>
                     </span>
-                  </button>
+                    {def ? (
+                      <button type="button" onClick={() => toggleSection(def.flag)} title={on ? 'Hide section' : 'Show section'} className="shrink-0 mt-1 inline-flex items-center rounded-full transition-all" style={{ width: 34, height: 20, padding: 2, backgroundColor: on ? accent : 'rgba(255,255,255,0.18)', justifyContent: on ? 'flex-end' : 'flex-start' }}>
+                        <span style={{ width: 16, height: 16, borderRadius: '999px', backgroundColor: '#fff', display: 'block' }} />
+                      </button>
+                    ) : (
+                      <span className="shrink-0" style={{ width: 34 }} />
+                    )}
+                  </div>
                 );
               })}
             </div>

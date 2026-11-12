@@ -181,6 +181,10 @@ export interface MarketingConfig {
   analytics?: AnalyticsConfig;
   og?: OGConfig;
   sectionHeadings?: SectionHeadings;
+  // Order of the body sections (keys from lib/marketing-sections). Unset = each
+  // template's built-in default order. Set by the in-context editor's reorder
+  // controls. Unknown keys are ignored per template.
+  sectionOrder?: string[];
   showIndustries?: boolean;
   showComparison?: boolean;
   showTestimonials?: boolean;

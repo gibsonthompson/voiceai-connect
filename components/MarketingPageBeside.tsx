@@ -12,6 +12,7 @@
 import { openAgencySupport, visibleFooterLinks, isSupportLink } from '@/lib/marketing-links';
 import CustomScripts from './CustomScripts';
 import { Editable } from '@/components/agency/MarketingEditable';
+import { resolveSectionOrder } from '@/lib/marketing-sections';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MarketingConfig, defaultMarketingConfig } from '@/types/marketing';
@@ -947,18 +948,23 @@ export default function MarketingPageBeside({ config: partialConfig }: Marketing
       <AnalyticsScripts analytics={config.analytics} />
       <Nav config={config} />
       <Hero config={config} />
-      {config.showProofStrip !== false && <ProofStrip config={config} />}
-      {config.showProblemSolution !== false && <ProblemSolution config={config} textOnPrimary={textOnPrimary} mutedOnPrimary={mutedOnPrimary} />}
-      {config.showHowItWorks !== false && <HowItWorks config={config} />}
-      {config.showFeatures !== false && <FeatureExplorer config={config} />}
-      {config.showCommandCenter !== false && <CommandCenter config={config} primary={primary} textOnPrimary={textOnPrimary} />}
-      {config.showIndustries && <Industries config={config} />}
-      {config.showComparison && <Comparison config={config} />}
-      {config.showROICalculator !== false && <ROICalculator config={config} />}
-      {config.showAiWebCall === true && <AiWebCall config={config} />}
-      {config.showPricing !== false && <Pricing config={config} />}
-      {config.showFAQ !== false && <FAQ config={config} />}
-      {config.showFinalCTA !== false && <FinalCTA config={config} textOnPrimary={textOnPrimary} mutedOnPrimary={mutedOnPrimary} />}
+      {(() => {
+        const nodes: Record<string, React.ReactNode> = {
+          proofStrip: config.showProofStrip !== false ? <ProofStrip key="proofStrip" config={config} /> : null,
+          problemSolution: config.showProblemSolution !== false ? <ProblemSolution key="problemSolution" config={config} textOnPrimary={textOnPrimary} mutedOnPrimary={mutedOnPrimary} /> : null,
+          howItWorks: config.showHowItWorks !== false ? <HowItWorks key="howItWorks" config={config} /> : null,
+          features: config.showFeatures !== false ? <FeatureExplorer key="features" config={config} /> : null,
+          commandCenter: config.showCommandCenter !== false ? <CommandCenter key="commandCenter" config={config} primary={primary} textOnPrimary={textOnPrimary} /> : null,
+          industries: config.showIndustries ? <Industries key="industries" config={config} /> : null,
+          comparison: config.showComparison ? <Comparison key="comparison" config={config} /> : null,
+          roiCalculator: config.showROICalculator !== false ? <ROICalculator key="roiCalculator" config={config} /> : null,
+          aiWebCall: config.showAiWebCall === true ? <AiWebCall key="aiWebCall" config={config} /> : null,
+          pricing: config.showPricing !== false ? <Pricing key="pricing" config={config} /> : null,
+          faq: config.showFAQ !== false ? <FAQ key="faq" config={config} /> : null,
+          finalCta: config.showFinalCTA !== false ? <FinalCTA key="finalCta" config={config} textOnPrimary={textOnPrimary} mutedOnPrimary={mutedOnPrimary} /> : null,
+        };
+        return resolveSectionOrder(config.sectionOrder, 'beside').map((k) => nodes[k] || null);
+      })()}
       <Footer config={config} />
       <StickyCTA config={config} />
       <ExitIntentModal config={config} />
