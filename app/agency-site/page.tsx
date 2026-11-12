@@ -7,10 +7,23 @@
 // ============================================================================
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import type { Metadata } from 'next';
 import AgencySiteClient from './client-page';
 
 // Force dynamic rendering: this page depends on the hostname to resolve the agency
 export const dynamic = 'force-dynamic';
+
+// Browser tab / document title. Uses the agency's link-preview (OG) title when
+// set so the tab matches their branding on first paint and for crawlers; only
+// the title is returned here, so any OG tags set elsewhere are left untouched.
+export async function generateMetadata(): Promise<Metadata> {
+  const headersList = await headers();
+  const host = headersList.get('host') || headersList.get('x-forwarded-host') || '';
+  const agency = await getAgencyByHost(host);
+  if (!agency) return {};
+  const ogT = (agency.og_title || '').trim();
+  return { title: ogT || `${agency.name} - AI Phone Answering` };
+}
 
 // ============================================================================
 // SERVER-SIDE AGENCY FETCH

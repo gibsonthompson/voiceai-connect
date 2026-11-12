@@ -180,7 +180,10 @@ export default function AgencySiteClient({ agency, industry }: { agency: Agency;
   // Client-side branding (favicon, title, theme cache)
   useEffect(() => {
     if (agency.logo_url) setFavicon(agency.logo_url);
-    setPageTitle(`${agency.name} - AI Phone Answering`);
+    // Use the agency's link-preview (OG) title for the browser tab when they've
+    // set one, so the tab matches their branding instead of the generic default.
+    const ogT = (agency.og_title || '').trim();
+    setPageTitle(ogT || `${agency.name} - AI Phone Answering`);
     setCachedTheme(agency.website_theme);
   }, [agency]);
 

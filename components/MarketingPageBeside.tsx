@@ -618,7 +618,7 @@ function ROICalculator({ config }: { config: MarketingConfig }) {
   const pos = config.currencySymbolPosition || 'before';
   const lowest = pricing.length > 0 ? pricing[0].price : 49;
   const [missed, setMissed] = useState(5);
-  const COST = config.roi?.missedCallCost ?? 500;
+  const COST = Number(String(config.roi?.missedCallCost ?? 500).replace(/[^0-9.]/g, '')) || 500;
   const monthlyMissed = Math.round(missed * 4.33);
   const monthlyLost = monthlyMissed * COST;
   const annualLost = monthlyLost * 12;
@@ -633,7 +633,7 @@ function ROICalculator({ config }: { config: MarketingConfig }) {
         <div className="bsd-section-head center">
           <TEdit config={config} as="span" className="bsd-eyebrow" k="eyebrowRoi" d="Do the math" />
           <Editable as="h2" field="sectionHeadings.roiHeadline" value={config.sectionHeadings?.roiHeadline ?? 'What are missed calls costing you?'}>{config.sectionHeadings?.roiHeadline ?? 'What are missed calls costing you?'}</Editable>
-          <p>The average missed call costs a small business about {m(COST)} in lost revenue. Move the slider to see yours.</p>
+          <p>The average missed call costs a small business about {pos === 'after' ? '' : cs}<Editable as="span" field="roi.missedCallCost" value={String(COST)}>{COST.toLocaleString()}</Editable>{pos === 'after' ? ` ${cs}` : ''} in lost revenue. Move the slider to see yours.</p>
         </div>
         <div className="bsd-roi bsd-reveal">
           <div className="bsd-roi-top">

@@ -554,7 +554,9 @@ function ROICalculatorSection({ config }: { config: MarketingConfig }) {
   const cs = config.currencySymbol || '$';
   const lowestPrice = pricing.length > 0 ? pricing[0].price : 49;
   const [missedPerWeek, setMissedPerWeek] = useState(5);
-  const COST_PER_MISSED = config.roi?.missedCallCost ?? 500;
+  // Editable per-missed-call value. Coerced to a number so the editor can store
+  // whatever the agency types while the math and formatting stay safe.
+  const COST_PER_MISSED = Number(String(config.roi?.missedCallCost ?? 500).replace(/[^0-9.]/g, '')) || 500;
   const monthlyMissed = Math.round(missedPerWeek * 4.33);
   const monthlyLost = monthlyMissed * COST_PER_MISSED;
   const annualLost = monthlyLost * 12;
@@ -569,7 +571,7 @@ function ROICalculatorSection({ config }: { config: MarketingConfig }) {
       <div className="container">
         <div className="section-header">
           <Editable as="h2" field="sectionHeadings.roiHeadline" value={config.sectionHeadings?.roiHeadline ?? 'What Are Missed Calls Costing You?'}>{config.sectionHeadings?.roiHeadline ?? 'What Are Missed Calls Costing You?'}</Editable>
-          <p>Industry research shows the average missed call costs a small business <strong>{cs}{COST_PER_MISSED.toLocaleString()}</strong> in lost revenue. Use the slider to see your potential losses.</p>
+          <p>Industry research shows the average missed call costs a small business <strong>{cs}<Editable as="span" field="roi.missedCallCost" value={String(COST_PER_MISSED)}>{COST_PER_MISSED.toLocaleString()}</Editable></strong> in lost revenue. Use the slider to see your potential losses.</p>
         </div>
         <div className="live-stats" style={{ display: 'block', padding: '2rem' }}>
           <div style={{ marginBottom: '2rem' }}>
