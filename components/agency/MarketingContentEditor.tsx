@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  ChevronDown, ChevronRight, Save, Loader2, Check, Plus, Trash2,
+  ChevronDown, ChevronRight, ChevronUp, Save, Loader2, Check, Plus, Trash2,
   Phone, Type, AlertTriangle, BarChart3, Lightbulb, ListOrdered,
   LayoutGrid, DollarSign, HelpCircle, FileText, Star, Building2
 } from 'lucide-react';
@@ -181,6 +181,9 @@ const INDUSTRY_ICON_OPTIONS = [
   { value: 'briefcase', label: 'Briefcase (Professional)' },
   { value: 'store', label: 'Store / Retail' },
   { value: 'pet', label: 'Pet Services' },
+  { value: 'car', label: 'Car (Automotive)' },
+  { value: 'medspa', label: 'Med Spa / Aesthetics' },
+  { value: 'legal', label: 'Scales (Legal)' },
 ];
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -650,10 +653,16 @@ export default function MarketingContentEditor({
           <div key={i} className="rounded-lg p-3 space-y-2" style={subCardStyle}>
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium" style={{ color: mutedTextColor }}>Industry {i + 1}</span>
-              {config.industries.length > 1 && (
-                <button onClick={() => update(p => ({ ...p, industries: p.industries.filter((_, j) => j !== i) }))}
-                  className="p-1 rounded" style={{ color: '#ef4444' }}><Trash2 className="h-3.5 w-3.5" /></button>
-              )}
+              <div className="flex items-center gap-1">
+                <button onClick={() => update(p => { if (i === 0) return p; const n = [...p.industries]; [n[i - 1], n[i]] = [n[i], n[i - 1]]; return { ...p, industries: n }; })}
+                  disabled={i === 0} title="Move up" className="p-1 rounded disabled:opacity-30" style={{ color: mutedTextColor }}><ChevronUp className="h-3.5 w-3.5" /></button>
+                <button onClick={() => update(p => { if (i === p.industries.length - 1) return p; const n = [...p.industries]; [n[i + 1], n[i]] = [n[i], n[i + 1]]; return { ...p, industries: n }; })}
+                  disabled={i === config.industries.length - 1} title="Move down" className="p-1 rounded disabled:opacity-30" style={{ color: mutedTextColor }}><ChevronDown className="h-3.5 w-3.5" /></button>
+                {config.industries.length > 1 && (
+                  <button onClick={() => update(p => ({ ...p, industries: p.industries.filter((_, j) => j !== i) }))}
+                    className="p-1 rounded" style={{ color: '#ef4444' }}><Trash2 className="h-3.5 w-3.5" /></button>
+                )}
+              </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-[1fr_150px] gap-2">
               <input type="text" value={ind.title} placeholder="Industry name (e.g. Home Services)"
