@@ -259,7 +259,7 @@ function Hero({ config }: { config: MarketingConfig }) {
               <div className="bsd-card-caller">
                 <div className="bsd-card-avatar">{initialsOf(config.sampleCall?.customerName)}</div>
                 <div>
-                  <div className="bsd-card-name">{config.sampleCall?.customerName || 'Jordan Blake'}</div>
+                  <Editable as="div" className="bsd-card-name" field="sampleCall.customerName" value={config.sampleCall?.customerName || 'Jordan Blake'}>{config.sampleCall?.customerName || 'Jordan Blake'}</Editable>
                   <div className="bsd-card-time">Today, 2:34 PM, 3m 42s</div>
                 </div>
               </div>
@@ -267,10 +267,10 @@ function Hero({ config }: { config: MarketingConfig }) {
             </div>
             <div className="bsd-card-block">
               <h5>{Icons.zap}AI summary</h5>
-              <p>{config.sampleCall?.summary || 'Caller wanted to book an appointment and asked for the next available time.'}</p>
+              <Editable as="p" field="sampleCall.summary" value={config.sampleCall?.summary || 'Caller wanted to book an appointment and asked for the next available time.'}>{config.sampleCall?.summary || 'Caller wanted to book an appointment and asked for the next available time.'}</Editable>
             </div>
             <div className="bsd-card-block">
-              <div className="bsd-card-row"><span>Service</span><span>{config.sampleCall?.service || 'Appointment booking'}</span></div>
+              <div className="bsd-card-row"><span>Service</span><Editable as="span" field="sampleCall.service" value={config.sampleCall?.service || 'Appointment booking'}>{config.sampleCall?.service || 'Appointment booking'}</Editable></div>
               <div className="bsd-card-row"><span>Appointment</span><span>Thu, 10:00 AM</span></div>
               <div className="bsd-card-row"><span>Callback number</span><span>{branding.name ? '(555) 123-4567' : ''}</span></div>
             </div>
@@ -304,17 +304,17 @@ function Hero({ config }: { config: MarketingConfig }) {
 function ProofStrip({ config }: { config: MarketingConfig }) {
   const s = config.stats;
   const items = [
-    { value: s.setupTime, label: 'Setup time' },
-    { value: s.responseTime, label: 'Response time' },
-    { value: s.businessesServed, label: 'Availability' },
-    { value: s.satisfaction, label: 'Calls answered' },
+    { value: s.setupTime, label: 'Setup time', field: 'stats.setupTime' },
+    { value: s.responseTime, label: 'Response time', field: 'stats.responseTime' },
+    { value: s.businessesServed, label: 'Availability', field: 'stats.businessesServed' },
+    { value: s.satisfaction, label: 'Calls answered', field: 'stats.satisfaction' },
   ];
   return (
     <section className="bsd-proof">
       <div className="bsd-container bsd-proof-grid bsd-stagger">
         {items.map((it, i) => (
           <div key={i} className="bsd-proof-item bsd-reveal">
-            <div className="bsd-proof-value">{it.value}</div>
+            <Editable as="div" className="bsd-proof-value" field={it.field} value={it.value}>{it.value}</Editable>
             <div className="bsd-proof-label">{it.label}</div>
           </div>
         ))}

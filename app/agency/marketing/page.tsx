@@ -20,7 +20,7 @@ import { WebCallStyle } from '@/lib/webcall-style';
 import { ColorField, SegmentField, EditorTheme } from '@/components/dashboard/inline-editor';
 import { SignupStyle, resolveSignupPalette } from '@/lib/signup-style';
 
-type ActiveTab = 'overview' | 'template' | 'sections' | 'content' | 'colors' | 'domain' | 'tracking' | 'seo' | 'navigation' | 'legal' | 'embed';
+type ActiveTab = 'overview' | 'template' | 'content' | 'colors' | 'domain' | 'tracking' | 'seo' | 'navigation' | 'legal' | 'embed';
 
 function isLightColor(hex: string): boolean {
   const c = hex.replace('#', '');
@@ -649,7 +649,6 @@ Ask me what platform I'm on if that helps.`;
     { id: 'overview' as ActiveTab, label: 'Overview', icon: Globe },
     { id: 'embed' as ActiveTab, label: 'Embed', icon: Code },
     { id: 'template' as ActiveTab, label: 'Template', icon: Layout },
-    { id: 'sections' as ActiveTab, label: 'Sections', icon: Eye },
     { id: 'content' as ActiveTab, label: 'Content', icon: Type },
     { id: 'navigation' as ActiveTab, label: 'Navigation', icon: ExternalLink },
     { id: 'colors' as ActiveTab, label: 'Colors', icon: Palette },
@@ -686,6 +685,17 @@ Ask me what platform I'm on if that helps.`;
 
       {/* ══════════════ OVERVIEW ══════════════ */}
       {activeTab === 'overview' && (<div className="space-y-4 sm:space-y-6">
+        <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h3 className="text-sm sm:text-base font-semibold mb-1 flex items-center gap-2" style={{ color: isDark ? '#fafaf9' : '#111827' }}>Public marketing site{savingSite && <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: agencyPrimaryColor }} />}</h3>
+              <p className="text-xs sm:text-sm" style={{ color: isDark ? 'rgba(250,250,249,0.6)' : '#6b7280' }}>When off, your site address becomes a client login page, no public marketing and no pricing on show. Use this if you onboard every client yourself (white-glove).</p>
+            </div>
+            <button onClick={toggleSiteEnabled} disabled={savingSite || demoMode} className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 shrink-0 mt-0.5" style={{ backgroundColor: siteEnabled ? agencyPrimaryColor : (isDark ? 'rgba(255,255,255,0.15)' : '#d1d5db') }} aria-pressed={siteEnabled} aria-label="Toggle public marketing site">
+              <span className="inline-block h-4 w-4 rounded-full bg-white transition-transform" style={{ transform: siteEnabled ? 'translateX(22px)' : 'translateX(4px)' }} />
+            </button>
+          </div>
+        </div>
         <div className="rounded-2xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
           <div className="flex items-center justify-between mb-1 gap-3">
             <h3 className="text-base font-medium" style={{ color: textColor }}>Plans shown on your site</h3>
@@ -958,38 +968,6 @@ Ask me what platform I'm on if that helps.`;
         {selectedTemplate !== (agency?.marketing_template || 'classic') && (<div className="rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-3 sticky bottom-4" style={{ backgroundColor: cardBg, border: `1px solid ${agencyPrimaryColor}`, boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}><p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>You've selected <strong style={{ color: textColor }}>{TEMPLATES.find(t => t.id === selectedTemplate)?.name}</strong>. Save to apply it to your marketing website.</p><div className="flex items-center gap-3 w-full sm:w-auto">{templateSaved && (<span className="flex items-center gap-1.5 text-xs" style={{ color: agencyPrimaryColor }}><Check className="h-4 w-4" />Saved!</span>)}<button onClick={handleSaveTemplate} disabled={savingTemplate} className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 sm:py-2.5 text-sm font-medium text-white disabled:opacity-50 transition-colors w-full sm:w-auto" style={{ backgroundColor: agencyPrimaryColor }}>{savingTemplate ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Save Template</button></div></div>)}
       </div>)}
 
-      {/* ══════════════ SECTIONS ══════════════ */}
-      {activeTab === 'sections' && (<div className="space-y-4 sm:space-y-6">
-        <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h3 className="text-sm sm:text-base font-semibold mb-1 flex items-center gap-2" style={{ color: isDark ? '#fafaf9' : '#111827' }}>Public marketing site{savingSite && <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: agencyPrimaryColor }} />}</h3>
-              <p className="text-xs sm:text-sm" style={{ color: isDark ? 'rgba(250,250,249,0.6)' : '#6b7280' }}>When off, your site address becomes a client login page, no public marketing and no pricing on show. Use this if you onboard every client yourself (white-glove).</p>
-            </div>
-            <button onClick={toggleSiteEnabled} disabled={savingSite || demoMode} className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 shrink-0 mt-0.5" style={{ backgroundColor: siteEnabled ? agencyPrimaryColor : (isDark ? 'rgba(255,255,255,0.15)' : '#d1d5db') }} aria-pressed={siteEnabled} aria-label="Toggle public marketing site">
-              <span className="inline-block h-4 w-4 rounded-full bg-white transition-transform" style={{ transform: siteEnabled ? 'translateX(22px)' : 'translateX(4px)' }} />
-            </button>
-          </div>
-        </div>
-        <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}`, opacity: siteEnabled ? 1 : 0.5, pointerEvents: siteEnabled ? 'auto' : 'none' }}>
-          <h3 className="text-sm sm:text-base font-semibold mb-1" style={{ color: isDark ? '#fafaf9' : '#111827' }}>Website sections</h3>
-          <p className="text-xs sm:text-sm mb-4" style={{ color: isDark ? 'rgba(250,250,249,0.6)' : '#6b7280' }}>Turn sections of your marketing site on or off. Changes save instantly and go live on your site.</p>
-          <div className="space-y-2">
-            {SECTIONS.filter((sec) => (TEMPLATE_SECTIONS[agency?.marketing_template || 'classic'] || []).includes(sec.key)).map((sec) => { const on = sectionIsOn(sec.key, sec.defaultOff); const saving = savingSection === sec.key; return (
-              <div key={sec.key} className="flex items-center justify-between rounded-lg px-3 py-2.5" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
-                <span className="text-sm flex items-center gap-2" style={{ color: isDark ? '#fafaf9' : '#111827' }}>{sec.label}{saving && <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: agencyPrimaryColor }} />}</span>
-                <div className="flex items-center gap-3 shrink-0">
-                {(sec.editKey || sec.editTab) && (<button type="button" onClick={() => { if (sec.editTab) { setActiveTab(sec.editTab); } else { setContentScrollTarget(sec.editKey!); setActiveTab('content'); } }} className="text-xs font-medium whitespace-nowrap hover:underline" style={{ color: agencyPrimaryColor }}>Edit content</button>)}
-                <button onClick={() => toggleSection(sec.key, sec.defaultOff)} disabled={saving || demoMode} className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 shrink-0" style={{ backgroundColor: on ? agencyPrimaryColor : (isDark ? 'rgba(255,255,255,0.15)' : '#d1d5db') }} aria-pressed={on} aria-label={`Toggle ${sec.label}`}>
-                  <span className="inline-block h-4 w-4 rounded-full bg-white transition-transform" style={{ transform: on ? 'translateX(22px)' : 'translateX(4px)' }} />
-                </button>
-                </div>
-              </div>
-            ); })}
-          </div>
-        </div>
-      </div>)}
-
       {/* ══════════════ CONTENT ══════════════ */}
       {activeTab === 'content' && (
         <div className="space-y-5">
@@ -1008,7 +986,7 @@ Ask me what platform I'm on if that helps.`;
               <span className="font-semibold text-sm sm:text-base" style={{ color: textColor }}>Edit your whole site visually</span>
               <span className="text-[10px] font-bold uppercase tracking-wide rounded-full px-2 py-0.5" style={{ background: agencyPrimaryColor, color: '#fff' }}>New</span>
             </div>
-            <p className="text-xs sm:text-sm mt-0.5" style={{ color: mutedTextColor }}>Open the full-page editor to scroll your live site and click any text to change it. Edits save as you go.</p>
+            <p className="text-xs sm:text-sm mt-0.5" style={{ color: mutedTextColor }}>Open the full-page editor to scroll your live site and click any text to change it. Turn sections on or off, reorder them, and add or remove items.</p>
           </div>
           <span className="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold transition-transform group-hover:translate-x-0.5" style={{ background: agencyPrimaryColor, color: '#fff' }}>
             Open editor <ExternalLink className="h-3.5 w-3.5" />

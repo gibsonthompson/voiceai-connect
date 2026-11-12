@@ -25,7 +25,7 @@
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Check, Loader2, Monitor, Tablet, Smartphone, MousePointerClick, ExternalLink, AlertCircle, Layers, X, ChevronUp, ChevronDown, FileText } from 'lucide-react';
+import { ArrowLeft, Check, Loader2, Monitor, Tablet, Smartphone, MousePointerClick, ExternalLink, AlertCircle, Layers, X, ChevronUp, ChevronDown, FileText, Undo2, Save } from 'lucide-react';
 import { useAgency } from '../../context';
 import { defaultMarketingConfig } from '@/types/marketing';
 import { setByPath, getByPath, clone } from '@/lib/editable-path';
@@ -177,11 +177,17 @@ export default function WebsiteEditorPage() {
   // always sees the latest without re-subscribing on every keystroke.
   const configRef = useRef<any>(null);
   const heroTouchedRef = useRef(false);
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const configDirtyRef = useRef(false);
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Pending agency-column edits (signup/webcall), flushed together in one PUT.
   const pendingCols = useRef<Record<string, string>>({});
-  const colSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Undo history of whole-config snapshots (show flags + section order live in
+  // the config too, so one snapshot captures everything). Text edits to the same
+  // field coalesce into one step.
+  const undoStack = useRef<any[]>([]);
+  const lastEditFieldRef = useRef<string | null>(null);
+  const [undoDepth, setUndoDepth] = useState(0);
+  const [showExitPrompt, setShowExitPrompt] = useState(false);
   const [configReady, setConfigReady] = useState(false);
 
   // Build the seed once the agency is loaded.
@@ -236,94 +242,114 @@ export default function WebsiteEditorPage() {
     }
   }, []);
 
-  const doSave = useCallback(async () => {
-    if (!agency || demoMode) { setSaveState(demoMode ? 'idle' : 'error'); return; }
-    setSaveState('saving');
-    try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
-      const body: any = { marketing_config: configRef.current };
-      // Hero copy also lives in dedicated columns that win on the live site, so
-      // mirror edited hero text there - otherwise a saved hero wouldn't show.
-      if (heroTouchedRef.current) {
-        const hero = configRef.current?.hero || {};
-        const headline = Array.isArray(hero.headline) ? hero.headline.join('\n') : (hero.headline || '');
-        body.website_headline = headline.trim() || null;
-        body.company_tagline = (hero.badge || '').trim() || null;
-      }
-      const res = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) throw new Error(String(res.status));
-      setSaveState('saved');
-      // Keep the dashboard's copy of marketing_config fresh for other savers.
-      refreshAgency().catch(() => {});
-    } catch {
-      setSaveState('error');
+  const hasUnsaved = useCallback(() => configDirtyRef.current || Object.keys(pendingCols.current).length > 0, []);
+  const markConfigDirty = useCallback(() => { configDirtyRef.current = true; setSaveState('dirty'); }, []);
+  const markColsDirty = useCallback(() => { setSaveState('dirty'); }, []);
+
+  // Record a snapshot before a change so it can be undone. Text edits pass the
+  // field being edited so consecutive edits to it collapse into one undo step;
+  // structural changes pass nothing and always push a step.
+  const pushUndo = useCallback((coalesceField?: string | null) => {
+    if (coalesceField !== undefined && coalesceField !== null && coalesceField === lastEditFieldRef.current) return;
+    undoStack.current.push(clone(configRef.current));
+    if (undoStack.current.length > 60) undoStack.current.shift();
+    setUndoDepth(undoStack.current.length);
+    lastEditFieldRef.current = coalesceField ?? null;
+  }, []);
+
+  // One PUT for marketing_config (+ mirrored hero columns). Throws on failure.
+  const putConfig = useCallback(async () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    const body: any = { marketing_config: configRef.current };
+    if (heroTouchedRef.current) {
+      const hero = configRef.current?.hero || {};
+      const headline = Array.isArray(hero.headline) ? hero.headline.join('\n') : (hero.headline || '');
+      body.website_headline = headline.trim() || null;
+      body.company_tagline = (hero.badge || '').trim() || null;
     }
-  }, [agency, demoMode, backendUrl, refreshAgency]);
+    const res = await fetch(`${backendUrl}/api/agency/${agency!.id}/settings`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(String(res.status));
+  }, [agency, backendUrl]);
 
-  const scheduleSave = useCallback(() => {
-    setSaveState('dirty');
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => { doSave(); }, 900);
-  }, [doSave]);
-
-  // Flush pending agency-column edits (signup/webcall copy) in one PUT.
-  const flushCols = useCallback(async () => {
+  // One PUT for pending agency-column edits (signup/webcall). Throws on failure.
+  const putCols = useCallback(async () => {
     const cols = pendingCols.current;
-    pendingCols.current = {};
     const keys = Object.keys(cols);
     if (keys.length === 0) return;
-    if (!agency || demoMode) { setSaveState(demoMode ? 'idle' : 'error'); return; }
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    const body: any = {};
+    for (const k of keys) { const v = cols[k]; body[k] = (typeof v === 'string' && v.trim()) ? v : null; }
+    const res = await fetch(`${backendUrl}/api/agency/${agency!.id}/settings`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(String(res.status));
+    pendingCols.current = {};
+  }, [agency, backendUrl]);
+
+  // Manual save (the Save button / exit prompt). Saves whatever is dirty.
+  const save = useCallback(async (): Promise<boolean> => {
+    if (!hasUnsaved()) return true;
+    if (!agency || demoMode) { if (demoMode) setSaveState('idle'); return demoMode; }
     setSaveState('saving');
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
-      const body: any = {};
-      for (const k of keys) { const v = cols[k]; body[k] = (typeof v === 'string' && v.trim()) ? v : null; }
-      const res = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) throw new Error(String(res.status));
+      const tasks: Promise<void>[] = [];
+      if (configDirtyRef.current) tasks.push(putConfig());
+      if (Object.keys(pendingCols.current).length) tasks.push(putCols());
+      await Promise.all(tasks);
+      configDirtyRef.current = false;
       setSaveState('saved');
       refreshAgency().catch(() => {});
+      return true;
     } catch {
       setSaveState('error');
+      return false;
     }
-  }, [agency, demoMode, backendUrl, refreshAgency]);
+  }, [agency, demoMode, hasUnsaved, putConfig, putCols, refreshAgency]);
 
-  const scheduleColSave = useCallback(() => {
+  // Undo the last change: restore the snapshot and re-derive the panel state
+  // (show flags + order live in the config), then re-push to the preview.
+  const undo = useCallback(() => {
+    if (undoStack.current.length === 0) return;
+    const prev = undoStack.current.pop();
+    configRef.current = prev;
+    const nf: Record<string, boolean> = {};
+    for (const def of templateSections) nf[def.flag] = sectionIsOn(def, prev, template);
+    setFlags(nf);
+    setOrder(resolveSectionOrder(prev?.sectionOrder, template));
+    setUndoDepth(undoStack.current.length);
+    lastEditFieldRef.current = null;
+    configDirtyRef.current = true;
     setSaveState('dirty');
-    if (colSaveTimer.current) clearTimeout(colSaveTimer.current);
-    colSaveTimer.current = setTimeout(() => { flushCols(); }, 900);
-  }, [flushCols]);
+    pushConfig();
+  }, [templateSections, template, pushConfig]);
 
   // Flip a section on/off: update the panel state, the working config, the live
   // preview, and queue a save. Writes the explicit boolean the templates read.
   const toggleSection = useCallback((flag: string) => {
     if (!configRef.current) return;
+    pushUndo();
     const next = !flags[flag];
     setFlags((f) => ({ ...f, [flag]: next }));
     configRef.current = setByPath(configRef.current, flag, next);
     pushConfig();
-    scheduleSave();
-  }, [flags, pushConfig, scheduleSave]);
+    markConfigDirty();
+  }, [flags, pushConfig, pushUndo, markConfigDirty]);
 
   // Move a section up (-1) or down (+1) in the render order.
   const moveSection = useCallback((index: number, dir: -1 | 1) => {
     const j = index + dir;
     if (j < 0 || j >= order.length || !configRef.current) return;
+    pushUndo();
     const next = order.slice();
     const [moved] = next.splice(index, 1);
     next.splice(j, 0, moved);
     setOrder(next);
     configRef.current = setByPath(configRef.current, 'sectionOrder', next);
     pushConfig();
-    scheduleSave();
-  }, [order, pushConfig, scheduleSave]);
+    markConfigDirty();
+  }, [order, pushConfig, pushUndo, markConfigDirty]);
 
   // Before the first edit to an overlaid industry field, copy that field's
   // current value from the static lib page into industryPages[slug] so arrays
@@ -346,6 +372,10 @@ export default function WebsiteEditorPage() {
     setCurrentPage(slug);
     setActiveRegion('');
     setPageMenuOpen(false);
+    // Undo history is scoped to the page you are on.
+    undoStack.current = [];
+    lastEditFieldRef.current = null;
+    setUndoDepth(0);
   }, []);
 
   // Inbound bridge from the iframe (Editable regions on the agency site).
@@ -357,6 +387,8 @@ export default function WebsiteEditorPage() {
       if (d.type === 'voiceai:cpreview_ready') {
         setIframeReady(true);
         pushConfig();
+      } else if (d.type === 'voiceai:undo') {
+        undo();
       } else if (d.type === 'voiceai:edit_select' && typeof d.region === 'string') {
         setActiveRegion(d.region);
       } else if (d.type === 'voiceai:select' && typeof d.region === 'string') {
@@ -367,7 +399,7 @@ export default function WebsiteEditorPage() {
         const col = columnForField(currentPageRef.current, d.field);
         if (!col) return;
         pendingCols.current[col] = typeof d.value === 'string' ? d.value : '';
-        scheduleColSave();
+        markColsDirty();
       } else if (d.type === 'voiceai:edit_item' && typeof d.path === 'string') {
         if (!configRef.current) return;
         const slug = currentPageRef.current;
@@ -380,15 +412,17 @@ export default function WebsiteEditorPage() {
         const cur = getByPath(configRef.current, arrPath);
         const arr = Array.isArray(cur) ? cur.slice() : [];
         if (d.action === 'add') {
+          pushUndo();
           arr.push(newItemFor(d.path));
         } else if (d.action === 'remove' && typeof d.index === 'number' && d.index >= 0 && d.index < arr.length) {
+          pushUndo();
           arr.splice(d.index, 1);
         } else {
           return;
         }
         configRef.current = setByPath(configRef.current, arrPath, arr);
         pushConfig();
-        scheduleSave();
+        markConfigDirty();
       } else if (d.type === 'voiceai:edit_content' && typeof d.field === 'string') {
         if (!configRef.current) return;
         const slug = currentPageRef.current;
@@ -397,10 +431,11 @@ export default function WebsiteEditorPage() {
           const remapped = remapIndustryField(field, slug);
           if (remapped) { ensureIndustrySeed(slug, field); field = remapped; }
         }
+        pushUndo(field); // snapshot before the first edit to this field (coalesced)
         configRef.current = setByPath(configRef.current, field, typeof d.value === 'string' ? d.value : '');
         // Only homepage hero edits mirror into the website_headline/tagline columns.
         if (field.split('.')[0] === 'hero') heroTouchedRef.current = true;
-        scheduleSave();
+        markConfigDirty();
         // Re-push (debounced) so regions that share state with the edited one
         // keep the new value when their section re-renders (FAQ accordion,
         // pricing toggle, etc.). The region being typed in is the iframe
@@ -412,20 +447,37 @@ export default function WebsiteEditorPage() {
     };
     window.addEventListener('message', onMsg);
     return () => window.removeEventListener('message', onMsg);
-  }, [pushConfig, scheduleSave, ensureIndustrySeed, scheduleColSave]);
+  }, [pushConfig, ensureIndustrySeed, pushUndo, markConfigDirty, markColsDirty, undo]);
 
-  // Flush a pending save when leaving.
+  // Leaving prompts to save when there are unsaved changes.
+  const leave = useCallback(() => router.push('/agency/marketing'), [router]);
   const exit = useCallback(() => {
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    if (colSaveTimer.current) clearTimeout(colSaveTimer.current);
-    const go = () => router.push('/agency/marketing');
-    // A page is edited either via config or via columns, never both at once.
-    if (Object.keys(pendingCols.current).length) { flushCols().finally(go); }
-    else if (saveState === 'dirty' || saveState === 'saving') { doSave().finally(go); }
-    else { go(); }
-  }, [router, saveState, doSave, flushCols]);
+    if (hasUnsaved()) setShowExitPrompt(true);
+    else leave();
+  }, [hasUnsaved, leave]);
+  const saveAndExit = useCallback(async () => {
+    const ok = await save();
+    if (ok) leave();
+  }, [save, leave]);
 
-  useEffect(() => () => { if (saveTimer.current) clearTimeout(saveTimer.current); if (pushTimer.current) clearTimeout(pushTimer.current); if (colSaveTimer.current) clearTimeout(colSaveTimer.current); }, []);
+  // Parent-level Cmd/Ctrl+Z (when focus is in the editor chrome, not the iframe).
+  // Edits inside the iframe forward their own voiceai:undo message.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) { e.preventDefault(); undo(); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [undo]);
+
+  // Warn on browser tab close / refresh with unsaved changes.
+  useEffect(() => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => { if (hasUnsaved()) { e.preventDefault(); e.returnValue = ''; } };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [hasUnsaved]);
+
+  useEffect(() => () => { if (pushTimer.current) clearTimeout(pushTimer.current); }, []);
 
   const width = DEVICE_WIDTH[device];
 
@@ -520,8 +572,19 @@ export default function WebsiteEditorPage() {
           ))}
         </div>
 
+        {/* Undo */}
+        <button
+          onClick={undo}
+          disabled={undoDepth === 0}
+          title="Undo (Cmd/Ctrl+Z)"
+          className="inline-flex items-center justify-center rounded-lg transition-colors"
+          style={{ width: 32, height: 28, color: undoDepth === 0 ? 'rgba(255,255,255,0.25)' : '#e5e7eb', backgroundColor: 'rgba(255,255,255,0.06)', cursor: undoDepth === 0 ? 'default' : 'pointer' }}
+        >
+          <Undo2 className="h-4 w-4" />
+        </button>
+
         {/* Save status */}
-        <div className="flex items-center gap-1.5 min-w-[96px] justify-end text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>
+        <div className="hidden sm:flex items-center gap-1.5 min-w-[92px] justify-end text-xs" style={{ color: 'rgba(255,255,255,0.6)' }}>
           {demoMode ? (
             <span style={{ color: 'rgba(255,255,255,0.4)' }}>Preview only</span>
           ) : saveState === 'saving' ? (
@@ -529,20 +592,22 @@ export default function WebsiteEditorPage() {
           ) : saveState === 'saved' ? (
             <><Check className="h-3.5 w-3.5" style={{ color: '#34d399' }} /> Saved</>
           ) : saveState === 'dirty' ? (
-            <span style={{ color: 'rgba(255,255,255,0.45)' }}>Unsaved changes</span>
+            <span style={{ color: '#fbbf24' }}>Unsaved</span>
           ) : saveState === 'error' ? (
             <><AlertCircle className="h-3.5 w-3.5" style={{ color: '#f87171' }} /> Save failed</>
-          ) : (
-            <span style={{ color: 'rgba(255,255,255,0.35)' }}>All changes saved</span>
-          )}
+          ) : null}
         </div>
 
-        {subdomainUrl && (
-          <a href={subdomainUrl} target="_blank" rel="noopener noreferrer" title="Open live site in a new tab"
-            className="hidden sm:inline-flex items-center justify-center rounded-lg" style={{ width: 32, height: 28, color: 'rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.06)' }}>
-            <ExternalLink className="h-4 w-4" />
-          </a>
-        )}
+        {/* Save */}
+        <button
+          onClick={() => save()}
+          disabled={demoMode || saveState !== 'dirty'}
+          title="Save changes"
+          className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors"
+          style={{ color: saveState === 'dirty' && !demoMode ? '#0b0c0f' : 'rgba(255,255,255,0.4)', backgroundColor: saveState === 'dirty' && !demoMode ? accent : 'rgba(255,255,255,0.08)', cursor: saveState === 'dirty' && !demoMode ? 'pointer' : 'default' }}
+        >
+          <Save className="h-4 w-4" /> Save
+        </button>
       </div>
 
       {/* Canvas + sections panel */}
@@ -589,7 +654,7 @@ export default function WebsiteEditorPage() {
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <p className="text-xs mb-4" style={{ color: 'rgba(255,255,255,0.5)' }}>Reorder with the arrows, and turn sections on or off. Your header, hero and footer always stay. Changes save as you go.</p>
+            <p className="text-xs mb-4" style={{ color: 'rgba(255,255,255,0.5)' }}>Reorder with the arrows, and turn sections on or off. Your header, hero and footer always stay. Use Save when you&apos;re done.</p>
             <div className="space-y-1">
               {order.map((key, i) => {
                 const def = defByKey[key];
@@ -626,6 +691,24 @@ export default function WebsiteEditorPage() {
         </aside>
       )}
       </div>
+
+      {/* Unsaved-changes prompt on exit */}
+      {showExitPrompt && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }} onClick={() => setShowExitPrompt(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="rounded-2xl p-6 mx-4" style={{ width: 400, maxWidth: '100%', backgroundColor: '#15171c', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 24px 60px rgba(0,0,0,0.6)' }}>
+            <h3 className="text-base font-semibold" style={{ color: '#fff' }}>Save your changes?</h3>
+            <p className="text-sm mt-1.5" style={{ color: 'rgba(255,255,255,0.6)' }}>You have unsaved changes. Save them before leaving the editor?</p>
+            <div className="flex items-center gap-2 mt-5">
+              <button onClick={saveAndExit} disabled={saveState === 'saving'} className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-semibold" style={{ backgroundColor: accent, color: '#0b0c0f' }}>
+                {saveState === 'saving' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save &amp; exit
+              </button>
+              <button onClick={leave} className="inline-flex items-center justify-center rounded-lg px-3 py-2.5 text-sm font-medium" style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: '#e5e7eb' }}>Discard</button>
+              <button onClick={() => setShowExitPrompt(false)} className="inline-flex items-center justify-center rounded-lg px-3 py-2.5 text-sm font-medium" style={{ backgroundColor: 'transparent', color: 'rgba(255,255,255,0.5)' }}>Cancel</button>
+            </div>
+            {saveState === 'error' && <p className="text-xs mt-3" style={{ color: '#f87171' }}>Couldn&apos;t save. Check your connection and try again.</p>}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

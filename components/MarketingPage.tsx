@@ -392,8 +392,8 @@ function AppShowcaseSection({ config, contrastColors }: { config: MarketingConfi
             <div className="sms-content">
               <div className="sms-message">
                 <strong>{branding.name}</strong>
-                <p>New call from {config.sampleCall?.customerName || 'Jordan Blake'} at 2:47pm</p>
-                <p><strong>Requested:</strong> {config.sampleCall?.service || 'Appointment booking'}<br/><strong>Phone:</strong> (555) 123-4567<br/><strong>Appointment booked:</strong> Thursday at 10am</p>
+                <p>New call from <Editable as="span" field="sampleCall.customerName" value={config.sampleCall?.customerName || 'Jordan Blake'}>{config.sampleCall?.customerName || 'Jordan Blake'}</Editable> at 2:47pm</p>
+                <p><strong>Requested:</strong> <Editable as="span" field="sampleCall.service" value={config.sampleCall?.service || 'Appointment booking'}>{config.sampleCall?.service || 'Appointment booking'}</Editable><br/><strong>Phone:</strong> (555) 123-4567<br/><strong>Appointment booked:</strong> Thursday at 10am</p>
                 <span className="sms-link">View Full Call in App</span>
               </div>
             </div>

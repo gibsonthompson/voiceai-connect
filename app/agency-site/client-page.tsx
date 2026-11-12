@@ -229,6 +229,20 @@ export default function AgencySiteClient({ agency, industry }: { agency: Agency;
     try { window.parent?.postMessage({ type: 'voiceai:edit_item', action, path, index }, '*'); } catch { /* ignore */ }
   };
 
+  // In editor mode, forward Cmd/Ctrl+Z to the editor so undo reverts the config
+  // step (the editor owns history), instead of the browser's per-character undo.
+  useEffect(() => {
+    if (!editorMode || typeof window === 'undefined') return;
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
+        e.preventDefault();
+        try { window.parent?.postMessage({ type: 'voiceai:undo' }, '*'); } catch { /* ignore */ }
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [editorMode]);
+
   // Resolve demo phone: manual override → auto-provisioned → platform fallback
   // No platform fallback: if the agency hasn't created its own demo number, we
   // show nothing (the templates hide the demo CTA), rather than leaking the
