@@ -668,18 +668,29 @@ Ask me what platform I'm on if that helps.`;
       <div className="flex items-center gap-3 mb-6 sm:mb-8"><div className="flex h-10 w-10 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: agencyPrimaryColor + '15' }}><Globe className="h-5 w-5" style={{ color: agencyPrimaryColor }} /></div><div><h1 data-tour="tour-marketing" className="text-xl sm:text-2xl font-semibold">Marketing Website</h1><p className="mt-0.5 text-sm" style={{ color: mutedTextColor }}>Your public website where clients learn about your service</p></div></div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
-        <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8 items-stretch">
+        {/* Your live website */}
+        <div className="rounded-xl p-4 sm:p-5 flex flex-col" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
           <div className="flex items-start justify-between mb-3"><div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg" style={{ backgroundColor: `${agencyPrimaryColor}15`, color: agencyPrimaryColor }}><Globe className="h-4 w-4 sm:h-5 sm:w-5" /></div><span className="flex items-center gap-1.5 text-[10px] sm:text-xs font-medium px-2 py-0.5 sm:py-1 rounded-full" style={{ backgroundColor: `${agencyPrimaryColor}15`, color: agencyPrimaryColor }}><span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ backgroundColor: agencyPrimaryColor }} />Live</span></div>
-          <h3 className="font-medium text-sm sm:text-base mb-1">Your Website</h3><p className="text-xs sm:text-sm mb-3 sm:mb-4 truncate" style={{ color: mutedTextColor }}>{subdomainUrl}</p>
-          <div className="flex gap-2"><a href={demoMode ? '#' : subdomainUrl} target={demoMode ? undefined : '_blank'} rel="noopener noreferrer" onClick={demoMode ? (e) => e.preventDefault() : undefined} className="flex-1 flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium text-white transition-colors" style={{ backgroundColor: agencyPrimaryColor }}><Eye className="h-4 w-4" />View</a><button onClick={() => copyToClipboard(subdomainUrl, 'subdomain')} className={`flex items-center justify-center rounded-lg px-3 py-2 transition-colors ${isDark ? 'hover:bg-white/[0.1]' : 'hover:bg-black/[0.05]'}`} style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: inputMuted }}>{copied === 'subdomain' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}</button></div>
+          <h3 className="font-medium text-sm sm:text-base mb-1">Your Website</h3>
+          <p className="text-xs sm:text-sm mb-3 sm:mb-4 truncate" style={{ color: mutedTextColor }}>{subdomainUrl}</p>
+          <div className="mt-auto flex gap-2"><a href={demoMode ? '#' : subdomainUrl} target={demoMode ? undefined : '_blank'} rel="noopener noreferrer" onClick={demoMode ? (e) => e.preventDefault() : undefined} className="flex-1 flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs sm:text-sm font-semibold text-white transition-opacity hover:opacity-90" style={{ backgroundColor: agencyPrimaryColor }}><Eye className="h-4 w-4" />View Site</a><button onClick={() => copyToClipboard(subdomainUrl, 'subdomain')} className={`flex items-center justify-center rounded-lg px-3 py-2.5 transition-colors ${isDark ? 'hover:bg-white/[0.1]' : 'hover:bg-black/[0.05]'}`} style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: inputMuted }}>{copied === 'subdomain' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}</button></div>
         </div>
-        <div className="rounded-xl p-4 sm:p-5" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
-          <div className="flex items-start justify-between mb-3"><div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg" style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}><Globe className="h-4 w-4 sm:h-5 sm:w-5" /></div></div>
-          <h3 className="font-medium text-sm sm:text-base mb-1">Use your own domain</h3>
-          <p className="text-xs sm:text-sm mb-2" style={{ color: mutedTextColor }}>Put your site on a domain you own, or add a subdomain like <strong style={{ color: textColor }}>app.yourbrand.com</strong>, so clients see your brand, not ours.</p>
-          <p className="text-xs sm:text-sm mb-3 sm:mb-4" style={{ color: mutedTextColor }}>No domain yet? <a href="https://www.namecheap.com/domains/domain-name-search/" target="_blank" rel="noopener noreferrer" className="font-medium underline" style={{ color: agencyPrimaryColor }}>Grab one on Namecheap</a> and point it here in a couple of minutes.</p>
-          <button onClick={() => setActiveTab('domain')} className={`w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium transition-colors ${isDark ? 'hover:bg-white/[0.1]' : 'hover:bg-black/[0.05]'}`} style={{ backgroundColor: agencyPrimaryColor, color: '#fff' }}><Globe className="h-4 w-4" />Connect a domain</button>
+        {/* Use your own domain */}
+        <div className="rounded-xl p-4 sm:p-5 flex flex-col" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
+          <div className="flex items-start justify-between mb-3"><div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg" style={{ backgroundColor: `${agencyPrimaryColor}15`, color: agencyPrimaryColor }}><Globe className="h-4 w-4 sm:h-5 sm:w-5" /></div><span className="text-[10px] sm:text-xs font-medium px-2 py-0.5 sm:py-1 rounded-full" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', color: mutedTextColor }}>Recommended</span></div>
+          <h3 className="font-medium text-sm sm:text-base mb-1">Use Your Own Domain</h3>
+          <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>Put your site on a domain you own, or a subdomain like <strong style={{ color: textColor }}>app.yourbrand.com</strong>, so clients see your brand, not ours.</p>
+          <div className="mt-auto pt-3 sm:pt-4 space-y-2.5">
+            <button onClick={() => setActiveTab('domain')} className="w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs sm:text-sm font-semibold text-white transition-opacity hover:opacity-90" style={{ backgroundColor: agencyPrimaryColor }}><Globe className="h-4 w-4" />Connect a Domain</button>
+            <div className="flex items-center gap-2.5"><span className="h-px flex-1" style={{ backgroundColor: borderColor }} /><span className="text-[10px] sm:text-xs whitespace-nowrap" style={{ color: mutedTextColor }}>No domain yet?</span><span className="h-px flex-1" style={{ backgroundColor: borderColor }} /></div>
+            <a href="https://www.namecheap.com/domains/domain-name-search/" target="_blank" rel="noopener noreferrer" className="group w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs sm:text-sm transition-shadow hover:shadow-md" style={{ backgroundColor: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }}>
+              <span className="flex items-baseline" style={{ fontWeight: 800, letterSpacing: '-0.02em', fontSize: '15px' }}><span style={{ color: '#2b2b2b' }}>name</span><span style={{ color: '#ff5000' }}>cheap</span></span>
+              <span style={{ color: '#9ca3af' }}>·</span>
+              <span className="font-medium" style={{ color: '#4b5563' }}>Find a Domain</span>
+              <ExternalLink className="h-3.5 w-3.5" style={{ color: '#9ca3af' }} />
+            </a>
+          </div>
         </div>
       </div>
 
