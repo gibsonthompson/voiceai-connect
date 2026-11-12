@@ -161,7 +161,7 @@ export default function MarketingWebsitePage() {
   // AI web-call embed config
   const [webcallMode, setWebcallMode] = useState<'demo' | 'client'>('demo');
   const [webcallClientId, setWebcallClientId] = useState<string>('');
-  const [webcallClients, setWebcallClients] = useState<{ id: string; business_name: string }[]>([]);
+  const [webcallClients, setWebcallClients] = useState<{ id: string; business_name: string; phone: string }[]>([]);
   const [webcallClientOpen, setWebcallClientOpen] = useState(false);
   const [contentScrollTarget, setContentScrollTarget] = useState<string | null>(null);
 
@@ -304,6 +304,11 @@ export default function MarketingWebsitePage() {
   const webcallPreviewSrc = `https://${platformDomain}/webcall?embed=true&agency=${agency?.id || ''}${webcallQuery}`;
   const webcallSnippet = `<div data-voiceai-webcall data-agency="${agency?.id || ''}"${webcallIsClient ? ` data-mode="client" data-client="${webcallClientId}"` : ''}></div>\n<script src="https://${platformDomain}/embed.js" async></script>`;
   const webcallSelectedClientName = webcallClients.find((c) => c.id === webcallClientId)?.business_name || 'Select a client';
+  // The number shown on the widget follows who visitors hear: the chosen test
+  // client's own AI number in client mode, otherwise the agency's demo number.
+  const webcallDisplayNumber = webcallIsClient
+    ? (webcallClients.find((c) => c.id === webcallClientId)?.phone || '')
+    : ((agency as any)?.demo_phone_number || '');
 
   // "Add this for me" prompts: a visitor copies one into any AI assistant
   // (ChatGPT, Claude, or their site builder's AI) and it walks them through
@@ -492,7 +497,7 @@ Ask me what platform I'm on if that helps.`;
         if (!res.ok) return;
         const d = await res.json();
         if (cancelled) return;
-        setWebcallClients((d.clients || []).map((c: any) => ({ id: c.id, business_name: c.business_name })));
+        setWebcallClients((d.clients || []).map((c: any) => ({ id: c.id, business_name: c.business_name, phone: c.vapi_phone_number || '' })));
       } catch { /* non-fatal */ }
     })();
     return () => { cancelled = true; };
@@ -880,7 +885,7 @@ Ask me what platform I'm on if that helps.`;
             onChangeStyle={handleChangeWebcallStyle}
             primaryColor={agencyPrimaryColor}
             websiteTheme={(agency as any)?.website_theme || 'dark'}
-            phoneNumber={(agency as any)?.demo_phone_number || ''}
+            phoneNumber={webcallDisplayNumber}
             agencyName={agency?.name || ''}
             editorTheme={webcallEditorTheme}
             brand={{ primary: agencyPrimaryColor, secondary: secondaryColor, accent: accentColor }}

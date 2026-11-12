@@ -24,6 +24,24 @@ function formatPhone(raw?: string): string {
   return raw || '';
 }
 
+// Small uppercase group heading inside the editor panel.
+function SectionLabel({ theme, children }: { theme: EditorTheme; children: React.ReactNode }) {
+  return <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: theme.muted, marginBottom: 10 }}>{children}</div>;
+}
+
+// A plain labeled text input styled to match the panel (the number field).
+function PanelInput({ theme, label, value, placeholder, onChange }: {
+  theme: EditorTheme; label: string; value: string; placeholder?: string; onChange: (v: string) => void;
+}) {
+  return (
+    <div>
+      <label style={{ fontSize: 12, fontWeight: 600, color: theme.text, marginBottom: 6, display: 'block' }}>{label}</label>
+      <input value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)}
+        style={{ width: '100%', borderRadius: 10, padding: '8px 12px', fontSize: 14, backgroundColor: theme.inputBg, border: `1px solid ${theme.inputBorder}`, color: theme.inputText, outline: 'none' }} />
+    </div>
+  );
+}
+
 export interface WebCallWidgetEditorProps {
   title: string;
   subtitle: string;
@@ -78,9 +96,50 @@ export default function WebCallWidgetEditor(props: WebCallWidgetEditorProps) {
         />
       </div>
 
-      {/* Property panel for the selected part */}
-      <PropertyPanel title={selected ? regionLabel(selected) : 'Widget style'} theme={t} onClose={selected ? () => setSelected(null) : undefined}>
-        {renderControls(selected, style, palette, set, t, props.brand, props.modeControl)}
+      {/* Editor panel: everything is here from the start, no click-to-reveal.
+          You can still click text on the preview to edit it in place. */}
+      <PropertyPanel title="Edit widget" theme={t}>
+        {props.modeControl ? (
+          <div style={{ paddingBottom: 14, borderBottom: `1px solid ${t.inputBorder}` }}>{props.modeControl}</div>
+        ) : null}
+
+        <div>
+          <SectionLabel theme={t}>Content</SectionLabel>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div>
+              <PanelInput theme={t} label="Phone number shown" value={style.phoneText || ''} placeholder={phoneDisplay} onChange={(v) => set({ phoneText: v })} />
+              {style.phoneText ? (
+                <button type="button" onClick={() => set({ phoneText: '' })} style={{ marginTop: 6, fontSize: 12, fontWeight: 500, color: t.primary, background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>Use the real number</button>
+              ) : (
+                <p style={{ marginTop: 6, fontSize: 11.5, color: t.muted, lineHeight: 1.5 }}>Leave blank to show {props.modeControl ? 'the number for who visitors hear' : 'your real number'}. Type here for a custom one.</p>
+              )}
+            </div>
+            <ToggleField label="Show phone number" checked={palette.showPhone} onChange={(v) => set({ showPhone: v })} theme={t} />
+            <ToggleField label="Show icon" checked={palette.showIcon} onChange={(v) => set({ showIcon: v })} theme={t} />
+          </div>
+        </div>
+
+        <div>
+          <SectionLabel theme={t}>Colors</SectionLabel>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <ColorField label="Heading & number" value={style.headingColor} fallback={palette.heading} onChange={(v) => set({ headingColor: v })} theme={t} brand={props.brand} />
+            <ColorField label="Subtitle & prompt" value={style.subTextColor} fallback={palette.muted} onChange={(v) => set({ subTextColor: v })} theme={t} brand={props.brand} />
+            <ColorField label="Accent (icon + ring)" value={style.accentColor} fallback={palette.accent} onChange={(v) => set({ accentColor: v })} theme={t} brand={props.brand} />
+            <ColorField label="Call button" value={style.buttonColor} fallback={palette.buttonColor} onChange={(v) => set({ buttonColor: v })} theme={t} brand={props.brand} />
+            <ColorField label="Button icon" value={style.buttonIconColor} fallback={palette.buttonIcon} onChange={(v) => set({ buttonIconColor: v })} theme={t} brand={props.brand} />
+            <ColorField label="Card background" value={style.cardBg} fallback={palette.cardBg} onChange={(v) => set({ cardBg: v })} theme={t} brand={props.brand} />
+          </div>
+        </div>
+
+        <div>
+          <SectionLabel theme={t}>Layout</SectionLabel>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <SegmentField label="Theme" value={style.theme || 'auto'} options={[{ value: 'auto', label: 'Auto' }, { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }]} onChange={(v) => set({ theme: v })} theme={t} />
+            <SegmentField label="Corners" value={style.radius || 'md'} options={[{ value: 'sm', label: 'Sharp' }, { value: 'md', label: 'Round' }, { value: 'lg', label: 'Soft' }]} onChange={(v) => set({ radius: v })} theme={t} />
+            <SegmentField label="Size" value={style.size || 'md'} options={[{ value: 'sm', label: 'S' }, { value: 'md', label: 'M' }, { value: 'lg', label: 'L' }]} onChange={(v) => set({ size: v })} theme={t} />
+            <ReorderField label="Body order (drag to reorder)" items={palette.order.map((b: WebCallBlock) => ({ id: b, label: WEBCALL_BLOCK_LABELS[b] }))} onChange={(ids) => set({ order: ids as WebCallBlock[] })} theme={t} />
+          </div>
+        </div>
       </PropertyPanel>
 
       <style>{`@media (min-width: 900px){ .wce-grid{ grid-template-columns: minmax(0,1fr) 300px !important; align-items: start; } }`}</style>
@@ -97,56 +156,5 @@ function regionLabel(r: WebCallRegion): string {
     case 'button': return 'Call button';
     case 'phone': return 'Phone number';
     case 'cta': return 'Prompt';
-  }
-}
-
-function renderControls(
-  region: WebCallRegion | null,
-  style: WebCallStyle,
-  palette: ReturnType<typeof resolveWebCallPalette>,
-  set: (patch: Partial<WebCallStyle>) => void,
-  t: EditorTheme,
-  brand?: BrandColors,
-  modeControl?: React.ReactNode,
-): React.ReactNode {
-  const orderItems = palette.order.map((b: WebCallBlock) => ({ id: b, label: WEBCALL_BLOCK_LABELS[b] }));
-
-  switch (region) {
-    case 'icon':
-      return (<>
-        <ToggleField label="Show icon" checked={palette.showIcon} onChange={(v) => set({ showIcon: v })} theme={t} />
-        <ColorField label="Accent (icon + ring)" value={style.accentColor} fallback={palette.accent} onChange={(v) => set({ accentColor: v })} theme={t} brand={brand} />
-      </>);
-    case 'title':
-      return <ColorField label="Title color" value={style.headingColor} fallback={palette.heading} onChange={(v) => set({ headingColor: v })} theme={t} brand={brand} />;
-    case 'subtitle':
-      return <ColorField label="Subtitle color" value={style.subTextColor} fallback={palette.muted} onChange={(v) => set({ subTextColor: v })} theme={t} brand={brand} />;
-    case 'button':
-      return (<>
-        <ColorField label="Button color" value={style.buttonColor} fallback={palette.buttonColor} onChange={(v) => set({ buttonColor: v })} theme={t} brand={brand} />
-        <ColorField label="Button icon color" value={style.buttonIconColor} fallback={palette.buttonIcon} onChange={(v) => set({ buttonIconColor: v })} theme={t} brand={brand} />
-      </>);
-    case 'phone':
-      return (<>
-        <ToggleField label="Show phone number" checked={palette.showPhone} onChange={(v) => set({ showPhone: v })} theme={t} />
-        <ColorField label="Number color" value={style.headingColor} fallback={palette.heading} onChange={(v) => set({ headingColor: v })} theme={t} brand={brand} />
-        {style.phoneText ? (
-          <button type="button" onClick={() => set({ phoneText: '' })} style={{ fontSize: 12, fontWeight: 500, color: t.primary, textAlign: 'left', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>Use my real demo number</button>
-        ) : (
-          <p style={{ fontSize: 11.5, color: t.muted, lineHeight: 1.5 }}>Click the number on the widget to type a custom one.</p>
-        )}
-      </>);
-    case 'cta':
-      return <ColorField label="Prompt color" value={style.subTextColor} fallback={palette.muted} onChange={(v) => set({ subTextColor: v })} theme={t} brand={brand} />;
-    case 'card':
-    default:
-      return (<>
-        {modeControl ? (<div style={{ paddingBottom: 14, marginBottom: 2, borderBottom: `1px solid ${t.inputBorder}` }}>{modeControl}</div>) : null}
-        <SegmentField label="Theme" value={style.theme || 'auto'} options={[{ value: 'auto', label: 'Auto' }, { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }]} onChange={(v) => set({ theme: v })} theme={t} />
-        <ColorField label="Card background" value={style.cardBg} fallback={palette.cardBg} onChange={(v) => set({ cardBg: v })} theme={t} brand={brand} />
-        <SegmentField label="Corners" value={style.radius || 'md'} options={[{ value: 'sm', label: 'Sharp' }, { value: 'md', label: 'Round' }, { value: 'lg', label: 'Soft' }]} onChange={(v) => set({ radius: v })} theme={t} />
-        <SegmentField label="Size" value={style.size || 'md'} options={[{ value: 'sm', label: 'S' }, { value: 'md', label: 'M' }, { value: 'lg', label: 'L' }]} onChange={(v) => set({ size: v })} theme={t} />
-        <ReorderField label="Body order (drag to reorder)" items={orderItems} onChange={(ids) => set({ order: ids as WebCallBlock[] })} theme={t} />
-      </>);
   }
 }
