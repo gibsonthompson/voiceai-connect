@@ -373,7 +373,7 @@ export default function AgencyClientCallsPage() {
                           {call.service_requested || 'General inquiry'}
                         </p>
                         <p className="text-[10px] flex-shrink-0" style={{ color: theme.textSubtle }}>
-                          {new Date(call.created_at).toLocaleDateString()}
+                          {new Date(call.created_at).toLocaleDateString()} · {new Date(call.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
                         </p>
                       </div>
                     </div>
@@ -460,7 +460,7 @@ export default function AgencyClientCallsPage() {
                         )}
                       </div>
                       <p className="mt-1 text-[10px] lg:text-xs" style={{ color: theme.textSubtle }}>
-                        {new Date(call.created_at).toLocaleDateString()}
+                        {new Date(call.created_at).toLocaleDateString()} · {new Date(call.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
                       </p>
                     </div>
                     
