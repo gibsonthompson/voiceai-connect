@@ -32,6 +32,7 @@ interface IntakeManagerProps {
   templatesUrl: string;      // GET templates (platform + agency)
   isAgency?: boolean;        // agency capabilities
   templateCrudBase?: string; // agency only: POST / DELETE :id for reusable templates
+  enableControl?: boolean;   // show the on/off toggle. false on the client Orders tab, where the toggle lives on My Business and the tab only renders when already on.
 }
 
 const TYPE_OPTIONS: { value: FieldType; label: string }[] = [
@@ -96,7 +97,7 @@ function ThemedDropdown<T extends string>({ value, options, onChange, t, placeho
   );
 }
 
-export default function IntakeManager({ theme, configUrl, recordsUrl, templatesUrl, isAgency = false, templateCrudBase }: IntakeManagerProps) {
+export default function IntakeManager({ theme, configUrl, recordsUrl, templatesUrl, isAgency = false, templateCrudBase, enableControl = true }: IntakeManagerProps) {
   const t = tokens(theme);
   const token = () => (typeof window !== 'undefined' ? localStorage.getItem('auth_token') : '');
 
@@ -178,7 +179,9 @@ export default function IntakeManager({ theme, configUrl, recordsUrl, templatesU
     setSaving(true); setSaved(false);
     try {
       const config = { key: templateKey || 'intake', intro, fields: cleanFields() };
-      const body: any = { enabled, template_key: templateKey || null, config, sms_enabled: smsEnabled, sms_number: smsNumber };
+      // When the on/off control is hidden (client Orders tab) the form is already
+      // on, and enabling lives on My Business, so never let a save here flip it off.
+      const body: any = { enabled: enableControl ? enabled : true, template_key: templateKey || null, config, sms_enabled: smsEnabled, sms_number: smsNumber };
       if (isAgency) body.locked = locked;
       const res = await fetch(configUrl, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` }, body: JSON.stringify(body) });
       if (res.ok) { setSaved(true); setTimeout(() => setSaved(false), 2500); }
@@ -229,14 +232,14 @@ export default function IntakeManager({ theme, configUrl, recordsUrl, templatesU
               <p className="text-xs mt-0.5" style={{ color: t.muted }}>Capture structured orders and requests on each call, one question at a time.</p>
             </div>
           </div>
-          {(isAgency || !locked) ? (
+          {enableControl && ((isAgency || !locked) ? (
             <button type="button" role="switch" aria-checked={enabled} onClick={() => setEnabled((v) => !v)}
               className="relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors" style={{ backgroundColor: enabled ? t.primary : t.inputBorder }}>
               <span className="inline-block h-5 w-5 rounded-full bg-white transition-transform" style={{ transform: enabled ? 'translateX(22px)' : 'translateX(2px)' }} />
             </button>
           ) : (
             <span className="text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: t.primary15, color: t.primary }}>{enabled ? 'On' : 'Off'}</span>
-          )}
+          ))}
         </div>
 
         {!isAgency && locked && (
@@ -245,7 +248,7 @@ export default function IntakeManager({ theme, configUrl, recordsUrl, templatesU
           </div>
         )}
 
-        {enabled && (
+        {(enabled || !enableControl) && (
           <div className="mt-5 space-y-5">
             {/* Template picker (hidden for a locked client) */}
             {editable && (

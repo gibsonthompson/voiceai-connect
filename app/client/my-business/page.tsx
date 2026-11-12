@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import {
   Building2, Clock, BookOpen, Globe, HelpCircle, FileText, MapPin,
-  Loader2, ChevronDown, Plus, Trash2, Check, Edit3, X, Sparkles, Briefcase, Users
+  Loader2, ChevronDown, Plus, Trash2, Check, Edit3, X, Sparkles, Briefcase, Users, ClipboardList
 } from 'lucide-react';
 import { useClient } from '@/lib/client-context';
 import { CustomSelect } from '@/components/ui/custom-select';
@@ -106,9 +106,12 @@ function SaveButton({ onClick, disabled, loading: btnLoading, label, theme, prim
 }
 
 export default function MyBusinessPage() {
-  const { client, branding, loading, hasPermission } = useClient();
+  const { client, branding, loading, hasPermission, refreshClient } = useClient();
   const theme = useClientTheme();
   const primaryColor = theme.primary;
+
+  const [intakeEnabled, setIntakeEnabled] = useState(false);
+  const [savingIntake, setSavingIntake] = useState(false);
 
   const [message, setMessage] = useState('');
   const [messageIsError, setMessageIsError] = useState(false);
@@ -165,6 +168,7 @@ export default function MyBusinessPage() {
   useEffect(() => {
     if (client) {
       setNameValue(client.business_name || '');
+      setIntakeEnabled(!!(client as any).intake_enabled);
       fetchKnowledgeBase();
       fetchServiceAreas();
       fetchAiKnowledge();
@@ -390,6 +394,28 @@ export default function MyBusinessPage() {
       else { let e = 'Failed'; try { e = (await r.json()).error || e; } catch {} showMsg(e, true); }
     } catch { showMsg('Error', true); }
     finally { setSavingAreas(false); }
+  };
+
+  // Flip the AI order form on or off for this business. Turning it on reveals the
+  // Orders tab (gated on intake_enabled) and makes the AI capture a structured
+  // order on every call; off hides the tab and the AI goes back to plain
+  // message-taking. The form fields themselves are managed on the Orders tab.
+  const handleToggleIntake = async (next: boolean) => {
+    if (!client || savingIntake) return;
+    setSavingIntake(true);
+    setIntakeEnabled(next); // optimistic
+    try {
+      const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/intake`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` }, body: JSON.stringify({ enabled: next }) });
+      if (r.ok) {
+        showMsg(next ? 'Order form turned on. Set up your fields on the Orders tab.' : 'Order form turned off.');
+        try { await refreshClient?.(); } catch {}
+      } else {
+        setIntakeEnabled(!next); // revert
+        let e = 'Failed to update order form'; try { e = (await r.json()).error || e; } catch {}
+        showMsg(e, true);
+      }
+    } catch { setIntakeEnabled(!next); showMsg('Error updating order form', true); }
+    finally { setSavingIntake(false); }
   };
 
   const updateBusinessHoursField = (day: keyof BusinessHours, field: 'open' | 'close' | 'closed', value: string | boolean) => { setBusinessHours(p => ({ ...p, [day]: { ...p[day], [field]: value, ...((field === 'open' || field === 'close') ? { open24: false } : {}) } })); };
@@ -659,6 +685,26 @@ export default function MyBusinessPage() {
               </div>
             )}
             {hasAreaChanges && <SaveButton theme={theme} primaryColor={primaryColor} onClick={handleSaveServiceAreas} disabled={savingAreas} loading={savingAreas} label="Save Service Areas" />}
+          </SectionCard>
+        </div>
+
+        {/* AI Order Form */}
+        <div className="fu fu2">
+          <SectionCard theme={theme} primaryColor={primaryColor} icon={ClipboardList} title="AI Order Form" subtitle="Have your AI capture a structured order or request on every call.">
+            <div className="flex items-start justify-between gap-4">
+              <p className="text-[11px] leading-relaxed" style={{ color: theme.textMuted4 }}>
+                When this is on, your AI walks callers through your order form one question at a time and saves each call as a clean, organized record. You will see a new <span style={{ color: theme.text, fontWeight: 600 }}>Orders</span> tab where you can set up the questions and review what comes in. When it is off, your AI just takes a message like normal.
+              </p>
+              <button type="button" role="switch" aria-checked={intakeEnabled} disabled={savingIntake} onClick={() => handleToggleIntake(!intakeEnabled)}
+                className="relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors disabled:opacity-60" style={{ backgroundColor: intakeEnabled ? primaryColor : (theme.isDark ? 'rgba(255,255,255,0.15)' : '#d1d5db') }}>
+                <span className="inline-block h-5 w-5 rounded-full bg-white transition-transform" style={{ transform: intakeEnabled ? 'translateX(22px)' : 'translateX(2px)' }} />
+              </button>
+            </div>
+            {intakeEnabled && (
+              <div className="mt-3 flex items-center gap-2 text-[11px] rounded-lg px-3 py-2" style={{ backgroundColor: hexToRgba(primaryColor, theme.isDark ? 0.08 : 0.05), color: primaryColor }}>
+                <Check className="w-3.5 h-3.5 flex-shrink-0" /> Order form is on. Head to the Orders tab to set up your questions.
+              </div>
+            )}
           </SectionCard>
         </div>
 

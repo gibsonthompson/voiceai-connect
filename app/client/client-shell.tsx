@@ -152,7 +152,6 @@ function ClientDashboardLayout({ children, initialDark = true }: { children: Rea
   const navItems: NavItem[] = [
     { href: '/client/dashboard', label: 'Dashboard', icon: TrendingUp, permissionKey: 'dashboard' },
     { href: '/client/calls', label: 'Calls', icon: PhoneCall, permissionKey: 'calls' },
-    { href: '/client/intake', label: 'Orders', icon: ClipboardList, permissionKey: 'calls' },
     { href: '/client/contacts', label: 'Contacts', icon: Users, permissionKey: 'contacts' },
     { href: '/client/messages', label: 'Messages', icon: MessageSquare, permissionKey: 'messages' },
     { href: '/client/my-business', label: 'My Business', icon: Building2, permissionKey: 'my_business' },
@@ -166,6 +165,15 @@ function ClientDashboardLayout({ children, initialDark = true }: { children: Rea
   if ((client as any)?.show_client_calendar === true) {
     const insertAt = navItems.findIndex(i => i.href === '/client/settings');
     navItems.splice(insertAt < 0 ? navItems.length : insertAt, 0, { href: '/client/calendar', label: 'Calendar', icon: CalendarDays });
+  }
+
+  // The Orders tab appears only when the AI order form is turned on for this
+  // client (intake_enabled, toggled from My Business or by the agency). When a
+  // business does not use the intake form the tab stays hidden so the sidebar
+  // never carries a dead page. Inserted just before Settings alongside Calendar.
+  if ((client as any)?.intake_enabled === true) {
+    const insertAt = navItems.findIndex(i => i.href === '/client/settings');
+    navItems.splice(insertAt < 0 ? navItems.length : insertAt, 0, { href: '/client/intake', label: 'Orders', icon: ClipboardList, permissionKey: 'calls' });
   }
 
   const filteredNavItems = navItems.filter(item => { if (!item.permissionKey) return true; return hasPermission(item.permissionKey); });

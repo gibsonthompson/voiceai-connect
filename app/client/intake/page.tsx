@@ -20,6 +20,7 @@ export default function ClientIntakePage() {
       <p className="text-sm mb-6" style={{ color: (theme as any).cardTextMuted || (theme as any).textMuted }}>What your AI receptionist captures from calls, and the form it follows.</p>
       <IntakeManager
         theme={theme}
+        enableControl={false}
         configUrl={`${backendUrl}/api/client/${client.id}/intake`}
         recordsUrl={`${backendUrl}/api/client/${client.id}/intake/records`}
         templatesUrl={`${backendUrl}/api/client/${client.id}/intake/templates`}

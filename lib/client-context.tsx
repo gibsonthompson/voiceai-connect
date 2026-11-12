@@ -34,6 +34,7 @@ interface Client {
   google_calendar_connected: boolean;
   call_mode?: string;
   hipaa_mode?: boolean;
+  intake_enabled?: boolean;
   onboarding_completed?: boolean;
   forwarding_confirmed?: boolean;
   forwarding_confirmed_at?: string | null;
