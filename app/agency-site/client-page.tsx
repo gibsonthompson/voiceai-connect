@@ -10,6 +10,7 @@ import { EditorProvider } from '@/components/agency/MarketingEditable';
 import { googleFontsHref, fontStack } from '@/lib/brandFonts';
 import { MarketingConfig, defaultMarketingConfig } from '@/types/marketing';
 import type { IndustryPageData } from '@/lib/industry-pages';
+import { INDUSTRY_PAGE_LIST } from '@/lib/industry-pages';
 import { getCurrencySymbol } from '@/lib/currency-symbols';
 import { getCurrencyForCountry, currencies } from '@/lib/currency';
 import { FEATURE_LABELS, FEATURE_ORDER } from '@/lib/plan-features-meta';
@@ -387,16 +388,6 @@ export default function AgencySiteClient({ agency, industry }: { agency: Agency;
       primaryHoverColor: agency.secondary_color || adjustColor(agency.primary_color || '#00a19b', -15),
       accentColor: agency.accent_color || '#01f5d1',
     },
-    footer: {
-      ...defaultMarketingConfig.footer,
-      phone: agency.support_phone || '',
-      email: agency.support_email || '',
-      companyLinks: [
-        ...(agency.support_email ? [{ label: 'Contact', href: `mailto:${agency.support_email}` }] : [{ label: 'Contact', href: '#' }]),
-        { label: 'Privacy Policy', href: '/privacy' },
-        { label: 'Terms & Conditions', href: '/terms' },
-      ],
-    },
     analytics: {
       gtmId: agency.gtm_id || undefined,
       fbPixelId: agency.fb_pixel_id || undefined,
@@ -407,6 +398,23 @@ export default function AgencySiteClient({ agency, industry }: { agency: Agency;
     // Merge any advanced config the agency has set via marketing_config JSONB
     // (or the live-edited config while previewing). This is where unique copy lives.
     ...(mc || {}),
+    // Footer resolved AFTER the marketing_config spread so it always wins over any
+    // stale footer baked into marketing_config. The "Industries" column is derived
+    // from the real industry landing pages (lib/industry-pages) and linked to their
+    // live routes, so every agency and template shows real, in-sync links instead
+    // of dead placeholder anchors.
+    footer: {
+      ...defaultMarketingConfig.footer,
+      ...((mc as any)?.footer || {}),
+      phone: agency.support_phone || '',
+      email: agency.support_email || '',
+      companyLinks: [
+        ...(agency.support_email ? [{ label: 'Contact', href: `mailto:${agency.support_email}` }] : [{ label: 'Contact', href: '#' }]),
+        { label: 'Privacy Policy', href: '/privacy' },
+        { label: 'Terms & Conditions', href: '/terms' },
+      ],
+      industryLinks: INDUSTRY_PAGE_LIST.map((p) => ({ label: p.label, href: `/${p.slug}` })),
+    },
     // Login URL last so the custom-domain/subdomain resolution always wins
     clientLoginPath: loginUrl,
     // After the marketing_config spread so the dedicated column always wins
