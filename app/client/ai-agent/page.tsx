@@ -105,6 +105,10 @@ export default function ClientAIAgentPage() {
   const [voicesError, setVoicesError] = useState<string | null>(null);
   const [currentVoiceId, setCurrentVoiceId] = useState('');
   const [selectedVoiceId, setSelectedVoiceId] = useState('');
+  // Metadata (name/accent/gender) for the saved voice, so a voice set on the
+  // assistant but absent from the fetched list still shows its real name rather
+  // than a generic "Current voice" placeholder.
+  const [currentVoiceMeta, setCurrentVoiceMeta] = useState<any>(null);
   const [savingVoice, setSavingVoice] = useState(false);
   const [voiceSaved, setVoiceSaved] = useState(false);
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
@@ -206,7 +210,7 @@ export default function ClientAIAgentPage() {
   const getBackendUrl = () => process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
 
   const fetchVoices = async () => { if (!client) return; setVoicesLoading(true); setVoicesError(null); try { const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/voices`, { headers: { Authorization: `Bearer ${getAuthToken()}` } }); if (!r.ok) throw new Error('Failed'); const d = await r.json(); if (d.success && d.grouped) setVoices(d.grouped); else throw new Error('Invalid'); } catch (e: any) { setVoicesError(e.message); } finally { setVoicesLoading(false); } };
-  const fetchCurrentVoice = async () => { if (!client) return; try { const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/voice`, { headers: { Authorization: `Bearer ${getAuthToken()}` } }); if (r.ok) { const d = await r.json(); if (d.success) { setCurrentVoiceId(d.voice_id); setSelectedVoiceId(d.voice_id); } } } catch {} };
+  const fetchCurrentVoice = async () => { if (!client) return; try { const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/voice`, { headers: { Authorization: `Bearer ${getAuthToken()}` } }); if (r.ok) { const d = await r.json(); if (d.success) { setCurrentVoiceId(d.voice_id); setSelectedVoiceId(d.voice_id); setCurrentVoiceMeta(d.voice || null); } } } catch {} };
   const fetchGreeting = async () => { if (!client) return; setGreetingLoading(true); try { const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/greeting`, { headers: { Authorization: `Bearer ${getAuthToken()}` } }); if (r.ok) { const d = await r.json(); if (d.success) { setGreetingMessage(d.greeting_message); setOriginalGreeting(d.greeting_message); } } } catch {} finally { setGreetingLoading(false); } };
 
   // Which calendar provider this client is on, for this section (Google or
@@ -248,21 +252,6 @@ export default function ClientAIAgentPage() {
   const handleConnectMicrosoft = () => {
     const ret = encodeURIComponent(`${window.location.origin}/client/ai-agent`);
     window.location.href = `${getBackendUrl()}/api/auth/microsoft-calendar/connect?clientId=${client?.id}&return=${ret}`;
-  };
-
-  // Reconnect fully revokes/clears the existing grant first, so the provider
-  // re-shows the complete consent screen (including the calendar permission). A
-  // plain re-connect can skip the granular checkboxes when a partial grant
-  // already exists on the account. Targets whichever provider is connected.
-  const handleReconnectCalendar = async () => {
-    const provider = calendarProvider();
-    try {
-      await fetch(`${getBackendUrl()}/api/auth/${provider}-calendar/disconnect`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` },
-        body: JSON.stringify({ clientId: client?.id }),
-      });
-    } catch { /* non-fatal: still start a fresh connect */ }
-    if (provider === 'microsoft') handleConnectMicrosoft(); else handleConnectCalendar();
   };
 
   const handleDisconnectCalendar = async () => {
@@ -468,7 +457,7 @@ export default function ClientAIAgentPage() {
   const filteredVoices = getFilteredVoices();
   const activeVoiceId = selectedVoiceId || currentVoiceId;
   const shownVoices: VoiceOption[] = (activeVoiceId && !getAllVoices().some(v => v.id === activeVoiceId))
-    ? ([{ id: activeVoiceId, name: 'Current voice', gender: 'female', accent: 'Active', style: '', description: 'Set on this assistant but not in the standard list \u2014 pick one below to change it.', recommended: false } as any, ...filteredVoices])
+    ? ([{ id: activeVoiceId, name: currentVoiceMeta?.name || 'Current voice', gender: currentVoiceMeta?.gender || 'female', accent: currentVoiceMeta?.accent || 'Active', style: currentVoiceMeta?.style || '', description: currentVoiceMeta?.description || 'Currently set on your assistant \u2014 pick one below to change it.', recommended: false } as any, ...filteredVoices])
     : filteredVoices;
   const availableAccents = getAvailableAccents();
   const isNativeActive = (client as any)?.calendar_provider === 'native' || !!nativeSettings?.is_native;
@@ -492,9 +481,19 @@ export default function ClientAIAgentPage() {
           whenever the user saved a section lower down (voice, greeting), making
           every save look like it did nothing. */}
       {message && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] toast-in px-4 py-3 rounded-xl text-center font-semibold text-sm shadow-lg w-[calc(100vw-2rem)] max-w-sm"
-          style={{ ...(messageError ? { backgroundColor: theme.errorBg, color: theme.errorText, border: `1px solid ${theme.errorBorder}` } : { backgroundColor: theme.successBg, color: theme.successText, border: `1px solid ${theme.successBorder}` }), top: 'calc(env(safe-area-inset-top) + 1rem)' }}>
-          {message}
+        // Centered on the CONTENT column, not the whole window. The client portal
+        // has a fixed 16rem (w-64) sidebar on lg screens and the main pane is
+        // lg:pl-64, so content-center sits at 50% + 8rem. On mobile there is no
+        // in-flow sidebar, so plain 50% is already centered.
+        <div className="fixed left-1/2 lg:left-[calc(50%+8rem)] -translate-x-1/2 z-[100] toast-in w-[calc(100vw-2rem)] max-w-sm px-1"
+          style={{ top: 'calc(env(safe-area-inset-top) + 1rem)' }}>
+          <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg"
+            style={messageError
+              ? { backgroundColor: theme.errorBg, color: theme.errorText, border: `1px solid ${theme.errorBorder}` }
+              : { backgroundColor: theme.successBg, color: theme.successText, border: `1px solid ${theme.successBorder}` }}>
+            {messageError ? <AlertCircle className="w-4 h-4 flex-shrink-0" /> : <Check className="w-4 h-4 flex-shrink-0" />}
+            <p className="text-sm font-semibold leading-snug">{message}</p>
+          </div>
         </div>
       )}
 
@@ -575,27 +574,34 @@ export default function ClientAIAgentPage() {
               </div>
             ) : isExternalConnected ? (
               <div className="space-y-3">
-                {/* Connected: quiet success banner with a live pulse, no extra logo */}
                 {calendarStatus?.calendar_access === false ? (
                   <div className="flex items-start gap-2.5 rounded-xl p-3 sm:p-3.5" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
                     <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: theme.warning }} />
                     <div className="min-w-0">
                       <p className="text-sm font-semibold leading-tight" style={{ color: theme.warningText }}>Connected, but no calendar access</p>
-                      <p className="text-[11px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>The calendar permission was left unchecked, so the AI can&apos;t book yet. Reconnect and allow access to view and edit your calendar events.</p>
+                      <p className="text-[11px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>The calendar permission was left unchecked, so the AI can&apos;t book yet. Disconnect, then connect again and allow access to view and edit your calendar events.</p>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-3 rounded-xl p-3 sm:p-3.5" style={{ backgroundColor: theme.successBg, border: `1px solid ${theme.successBorder}` }}>
-                    <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ backgroundColor: theme.success }} />
-                      <span className="relative inline-flex rounded-full h-2.5 w-2.5" style={{ backgroundColor: theme.success }} />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold leading-tight" style={{ color: theme.successText }}>Calendar connected</p>
+                  <div className="flex items-center gap-3.5 rounded-2xl p-3.5 sm:p-4" style={{ backgroundColor: theme.successBg, border: `1px solid ${theme.successBorder}` }}>
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+                      {calendarProvider() === 'microsoft' ? <OutlookIcon className="w-6 h-6" /> : <GoogleGIcon className="w-6 h-6" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-semibold leading-tight" style={{ color: theme.successText }}>{calendarProvider() === 'microsoft' ? 'Outlook' : 'Google Calendar'}</p>
+                        <span className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5" style={{ backgroundColor: theme.card, border: `1px solid ${theme.successBorder}` }}>
+                          <span className="relative flex h-1.5 w-1.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ backgroundColor: theme.success }} />
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ backgroundColor: theme.success }} />
+                          </span>
+                          <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: theme.success }}>Connected</span>
+                        </span>
+                      </div>
                       {calendarStatus?.email ? (
-                        <p className="text-[11px] sm:text-xs mt-0.5 truncate" style={{ color: theme.textMuted }} title={calendarStatus.email}>Booking into {calendarStatus.email}</p>
+                        <p className="text-[11px] sm:text-xs mt-1 truncate" style={{ color: theme.textMuted }} title={calendarStatus.email}>Booking into {calendarStatus.email}</p>
                       ) : (
-                        <p className="text-[11px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>Your AI books appointments straight into your calendar.</p>
+                        <p className="text-[11px] sm:text-xs mt-1" style={{ color: theme.textMuted }}>Your AI books appointments straight into your calendar.</p>
                       )}
                     </div>
                   </div>
@@ -604,16 +610,13 @@ export default function ClientAIAgentPage() {
                 {calendarStatus && !calendarStatus.token_valid && (
                   <div className="p-2.5 sm:p-3 rounded-lg flex items-start gap-2" style={{ backgroundColor: theme.warningBg, border: `1px solid ${theme.warningBorder}` }}>
                     <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: theme.warning }} />
-                    <p className="text-xs sm:text-sm font-medium" style={{ color: theme.warningText }}>Calendar connection may have expired. Reconnect to keep bookings flowing.</p>
+                    <p className="text-xs sm:text-sm font-medium" style={{ color: theme.warningText }}>Calendar connection may have expired. Disconnect and connect again to keep bookings flowing.</p>
                   </div>
                 )}
 
-                <div className="flex gap-2">
-                  <button onClick={handleReconnectCalendar} className="flex-1 flex items-center justify-center gap-1.5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition hover:opacity-90" style={{ backgroundColor: theme.bg, color: theme.textMuted, border: `1px solid ${theme.border}` }}><RotateCcw className="w-3.5 h-3.5" /> Reconnect</button>
-                  <button onClick={handleDisconnectCalendar} disabled={disconnectingCalendar} className="flex-1 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: theme.errorBg, color: theme.error, border: `1px solid ${theme.errorBorder}` }}>
-                    {disconnectingCalendar ? (<span className="flex items-center justify-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Disconnecting...</span>) : 'Disconnect'}
-                  </button>
-                </div>
+                <button onClick={handleDisconnectCalendar} disabled={disconnectingCalendar} className="w-full py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: theme.bg, color: theme.textMuted, border: `1px solid ${theme.border}` }}>
+                  {disconnectingCalendar ? (<span className="flex items-center justify-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Disconnecting...</span>) : 'Disconnect calendar'}
+                </button>
               </div>
             ) : (
               <div className="space-y-4">

@@ -68,6 +68,16 @@ function formatRelativeDate(dateStr: string): string {
   return `${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${timeStr}`;
 }
 
+// Call length as m:ss (e.g. "1:22"), or "0:45" for under a minute. Returns an
+// empty string when there is no usable duration so the row just omits it.
+function formatCallDuration(seconds: any): string {
+  const s = Math.round(Number(seconds));
+  if (!isFinite(s) || s <= 0) return '';
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${m}:${String(sec).padStart(2, '0')}`;
+}
+
 // Format the charge date for the card-required trial banner. Shows the
 // calendar date the stored card is first charged (client.trial_ends_at).
 function formatChargeDate(dateStr: string): string {
@@ -638,6 +648,7 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
               const wasTransferred = call.call_status === 'transferred' || call.transfer_status === 'transferred';
               const wasBooked = !!call.appointment_booked;
               const statusBadges = getCallBadges(call, theme);
+              const dur = formatCallDuration(call.duration_seconds);
 
               const badgeStyle =
                 isSpam ? { backgroundColor: theme.errorBg, color: theme.error }
@@ -666,9 +677,9 @@ export function ClientDashboardClient({ client, branding, recentCalls, stats }: 
                     </p>
                     <p className="text-[11px] sm:text-xs truncate mt-0.5" style={{ color: theme.textMuted }}>
                       {formatPhoneNumber(call.customer_phone || call.caller_phone)}
-                      <span className="hidden sm:inline"> · {formatRelativeDate(call.created_at)}</span>
+                      <span className="hidden sm:inline"> · {formatRelativeDate(call.created_at)}{dur ? ` · ${dur}` : ''}</span>
                     </p>
-                    <p className="text-[10px] sm:hidden mt-0.5" style={{ color: theme.textMuted4 }}>{formatRelativeDate(call.created_at)}</p>
+                    <p className="text-[10px] sm:hidden mt-0.5" style={{ color: theme.textMuted4 }}>{formatRelativeDate(call.created_at)}{dur ? ` · ${dur}` : ''}</p>
                   </div>
 
                   {statusBadges.length > 0 ? (
