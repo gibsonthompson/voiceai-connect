@@ -20,7 +20,7 @@ import Link from 'next/link';
 import {
   Code, Key, Webhook, ShieldCheck, AlertTriangle, ListTree, Gauge, Layers,
   Phone, CalendarClock, BookOpen, Database, Radio, Copy, Check, ChevronRight,
-  Terminal, ArrowLeft, Lock,
+  Terminal, ArrowLeft, Lock, Download,
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { useTheme } from '@/hooks/useTheme';
@@ -216,6 +216,95 @@ function EventCard({ ev, theme }: { ev: EventDef; theme: any }) {
 }
 
 // ---------------------------------------------------------------------------
+// Markdown export
+// ---------------------------------------------------------------------------
+// Builds the entire reference as a single Markdown document from the same
+// structured data the page renders, so the export never drifts from the UI.
+// Markdown is the most useful format to paste or upload into an AI assistant:
+// it's plain text, keeps the endpoint/field/example structure, and carries no
+// binary overhead.
+function referenceMarkdown(
+  groups: Array<{ id: string; title: string; sub?: string; endpoints: EndpointDef[] }>,
+  events: EventDef[],
+): string {
+  const H = 'Authorization: Bearer YOUR_API_KEY';
+  const out: string[] = [];
+  const p = (s = '') => out.push(s);
+
+  p('# VoiceAI Connect - API & Webhooks Reference');
+  p('');
+  p('The complete REST API and webhooks reference for VoiceAI Connect, exported as plain Markdown so it can be uploaded into an AI assistant as context.');
+  p('');
+  p('## Basics');
+  p('');
+  p(`- Base URL: \`${BASE}\` - every path below is relative to this. The current version is v1 and stays stable; breaking changes ship under a new version prefix.`);
+  p(`- Authentication: send \`${H}\` on every request. Create and manage keys under Settings > API.`);
+  p('- Scopes: a `read` key can call every GET endpoint; a `read_write` key can also create and change data. Calling a write endpoint with a read-only key returns `403 insufficient_scope`.');
+  p('- Pagination: list endpoints are cursor-paginated. Pass `limit` (1 to 100) and `cursor` (the `next_cursor` from the previous page).');
+  p('- Rate limits: responses carry rate-limit headers; a `429` means you have hit the limit, retry after the window resets.');
+  p('');
+
+  for (const g of groups) {
+    p(`## ${g.title}`);
+    if (g.sub) { p(''); p(g.sub); }
+    p('');
+    for (const ep of g.endpoints) {
+      p(`### ${ep.method} ${ep.path}  (${ep.scope})`);
+      p('');
+      p(ep.summary);
+      p('');
+      if (ep.query && ep.query.length) {
+        p('Query parameters:');
+        for (const f of ep.query) p(`- \`${f.name}\` (${f.type}): ${f.note}`);
+        p('');
+      }
+      if (ep.body && ep.body.length) {
+        p('Body fields:');
+        for (const f of ep.body) p(`- \`${f.name}\` (${f.type}): ${f.note}`);
+        p('');
+      }
+      p('Example:');
+      p('');
+      p('```bash');
+      p(ep.example);
+      p('```');
+      p('');
+      if (ep.response) {
+        p('Response:');
+        p('');
+        p('```json');
+        p(ep.response);
+        p('```');
+        p('');
+      }
+      if (ep.notes && ep.notes.length) {
+        p('Notes:');
+        for (const n of ep.notes) p(`- ${n}`);
+        p('');
+      }
+    }
+  }
+
+  p('## Webhook Events');
+  p('');
+  p('Events are delivered as JSON POSTs to the endpoints you configure under Settings > Webhooks. Every event has an `id`, a `type`, a `created_at`, and a `data` object.');
+  p('');
+  for (const ev of events) {
+    p(`### ${ev.type}`);
+    p('');
+    p(ev.when);
+    p('');
+    p('Payload:');
+    p('');
+    p('```json');
+    p(ev.payload);
+    p('```');
+    p('');
+  }
+
+  return out.join('\n');
+}
+
 // Page
 // ---------------------------------------------------------------------------
 export default function DeveloperReferencePage() {
@@ -230,6 +319,21 @@ export default function DeveloperReferencePage() {
   // -------------------------------------------------------------------------
   const groups = useMemo(() => buildGroups(theme), [theme]);
   const events = useMemo(() => buildEvents(), []);
+
+  // Download the whole reference as a single Markdown file, ready to upload into
+  // an AI assistant.
+  const exportReference = () => {
+    const md = referenceMarkdown(groups, events);
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'voiceai-connect-api-reference.md';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
 
   const nav = [
     { id: 'overview', label: 'Overview', icon: BookOpen },
@@ -265,14 +369,27 @@ export default function DeveloperReferencePage() {
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Back to Settings
           </Link>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center h-11 w-11 rounded-2xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>
-              <Terminal className="h-6 w-6" style={{ color: theme.primary }} />
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center h-11 w-11 rounded-2xl flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>
+                <Terminal className="h-6 w-6" style={{ color: theme.primary }} />
+              </div>
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold" style={{ color: theme.text }}>Developer Reference</h1>
+                <p className="text-[13px] mt-0.5" style={{ color: theme.textMuted }}>The complete API and webhooks reference for VoiceAI Connect.</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold" style={{ color: theme.text }}>Developer Reference</h1>
-              <p className="text-[13px] mt-0.5" style={{ color: theme.textMuted }}>The complete API and webhooks reference for VoiceAI Connect.</p>
-            </div>
+            {isScale && (
+              <button
+                onClick={exportReference}
+                title="Download the full reference as Markdown, ready to upload into an AI assistant"
+                className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-[13px] font-semibold flex-shrink-0 transition-colors"
+                style={{ backgroundColor: theme.primary15, color: theme.primary, border: `1px solid ${theme.primary}` }}
+              >
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">Export for AI</span>
+              </button>
+            )}
           </div>
         </div>
 
