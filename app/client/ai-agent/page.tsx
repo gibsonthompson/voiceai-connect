@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   Phone, Loader2, Bot, Mic, MessageSquare, Calendar, Shield,
-  Play, Pause, Check, RotateCcw, AlertCircle
+  Play, Pause, Check, RotateCcw, AlertCircle, ArrowRight
 } from 'lucide-react';
 import { useClient } from '@/lib/client-context';
 import { useClientTheme } from '@/hooks/useClientTheme';
@@ -11,7 +11,6 @@ import UpgradePrompt from '@/components/client/UpgradePrompt';
 import { SectionCard as SharedSectionCard } from '@/components/client/SectionCard';
 import AISettingsSection from '@/components/client/AISettingsSection';
 import ToolConfigSection from '@/components/client/ToolConfigSection';
-import NativeCalendarSection from '@/components/client/NativeCalendarSection';
 import WebCallModal from '@/components/agency/WebCallModal';
 
 interface VoiceOption { id: string; name: string; gender: 'male' | 'female'; accent: string; style: string; description: string; previewUrl: string; recommended?: boolean; }
@@ -31,21 +30,6 @@ const ANIM_CSS = `@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to
 // stable across renders. Defining them inside the component recreates them on
 // every keystroke, which remounts their children (e.g. the greeting textarea)
 // and drops focus after each character typed.
-const GoogleCalendarIcon = ({ className = '' }: { className?: string }) => (
-  <svg viewBox="0 0 48 48" className={className} xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <rect width="22" height="22" x="13" y="13" fill="#fff" />
-    <polygon fill="#1e88e5" points="25.68,20.92 26.688,22.36 28.272,21.208 28.272,29.56 30,29.56 30,18.616 28.56,18.616" />
-    <path fill="#1e88e5" d="M22.943,23.745c0.625-0.574,1.013-1.37,1.013-2.249c0-1.747-1.533-3.168-3.417-3.168c-1.602,0-2.972,1.009-3.33,2.453l1.657,0.421c0.165-0.664,0.868-1.146,1.673-1.146c0.942,0,1.709,0.646,1.709,1.44c0,0.794-0.767,1.44-1.709,1.44h-0.997v1.728h0.997c1.081,0,1.993,0.751,1.993,1.64c0,0.905-0.918,1.64-2.046,1.64c-1.024,0-1.878-0.61-1.986-1.418l-1.713,0.233c0.22,1.65,1.771,2.914,3.7,2.914c2.07,0,3.754-1.51,3.754-3.368C25.207,25.529,24.319,24.409,22.943,23.745z" />
-    <polygon fill="#fbc02d" points="34,42 14,42 13,38 14,34 34,34 35,38" />
-    <polygon fill="#4caf50" points="38,35 42,34 42,14 38,13 34,14 34,34" />
-    <path fill="#1e88e5" d="M34,14l1-4l-1-4H9C7.343,6,6,7.343,6,9v25l4,1l4-1V14H34z" />
-    <polygon fill="#e53935" points="34,34 34,42 42,34" />
-    <path fill="#1565c0" d="M39,6h-5v8h8V9C42,7.343,40.657,6,39,6z" />
-    <path fill="#e53935" d="M9,6h5v8H6V9C6,7.343,7.343,6,9,6z" />
-    <path fill="#43a047" d="M42,34v5c0,1.657-1.343,3-3,3h-5v-8H42z" />
-  </svg>
-);
-
 // The real multi-color Google "G" mark, used on the Connect button.
 const GoogleGIcon = ({ className = '' }: { className?: string }) => (
   <svg viewBox="0 0 48 48" className={className} xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -67,16 +51,19 @@ const OutlookIcon = ({ className = '' }: { className?: string }) => (
   </svg>
 );
 
-// The Google Calendar logo sized to nearly fill the section's icon bubble. The
-// shared card renders icons small with padding; the calendar mark reads better
-// larger and tighter, so this ignores the card's size class and sets its own.
-const SectionCalendarIcon = () => (
-  <GoogleCalendarIcon className="w-7 h-7 sm:w-8 sm:h-8" />
+// Neutral calendar mark for the section icon. The section now covers several
+// providers (built-in, Google, Outlook), so the icon is provider-neutral rather
+// than any one brand's logo. SectionCard sizes it like every other section icon.
+const SectionCalendarIcon = (props: { className?: string }) => (
+  <Calendar {...props} />
 );
 
 const SectionCard = ({ icon, title, subtitle, live, children, theme, primaryColor }: { icon: any; title: string; subtitle?: string; live?: boolean; children: React.ReactNode; theme: any; primaryColor: string; glass?: any }) => (
   <SharedSectionCard icon={icon} title={title} subtitle={subtitle} live={live} theme={theme} primaryColor={primaryColor}>{children}</SharedSectionCard>
 );
+
+// Appointment-length options for the built-in calendar.
+const DURATIONS = [15, 30, 45, 60, 90, 120];
 
 const SaveButton = ({ onClick, disabled, loading: btnLoading, label, primaryColor, theme }: { onClick: () => void; disabled: boolean; loading: boolean; label: string; primaryColor: string; theme: any }) => (
   <button onClick={onClick} disabled={disabled} className="w-full mt-3 py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2" style={{ backgroundColor: primaryColor, color: theme.primaryText }}>
@@ -104,7 +91,6 @@ export default function ClientAIAgentPage() {
   // Calendar is shown only when the agency has turned it on for this client
   // (same flag that gates the Calendar tab and page). When the agency hides it,
   // none of the calendar connect options below appear.
-  const showCalendar = (client as any)?.show_client_calendar === true;
   // CRM (GoHighLevel) calendar is held back until the GoHighLevel app is approved.
   // Flip this to true to bring the Connect-your-CRM-calendar option back.
   const CRM_CALENDAR_ENABLED = false;
@@ -145,13 +131,19 @@ export default function ClientAIAgentPage() {
   const [calendarStatus, setCalendarStatus] = useState<CalendarStatus | null>(null);
   const [calendarLoading, setCalendarLoading] = useState(true);
   const [disconnectingCalendar, setDisconnectingCalendar] = useState(false);
+  // Built-in (native) calendar state
+  const [nativeSettings, setNativeSettings] = useState<any>(null);
+  const [nativeBusy, setNativeBusy] = useState(false);
+  const [savingDuration, setSavingDuration] = useState(false);
+  const [durationSaved, setDurationSaved] = useState(false);
+  const [nativeErr, setNativeErr] = useState<string | null>(null);
 
   // GoHighLevel state
   const [ghlStatus, setGhlStatus] = useState<GhlStatus | null>(null);
   const [ghlLoading, setGhlLoading] = useState(true);
   const [disconnectingGhl, setDisconnectingGhl] = useState(false);
 
-  useEffect(() => { if (client) { fetchVoices(); fetchCurrentVoice(); fetchGreeting(); fetchCalendarStatus(); fetchGhlStatus(); } }, [client]);
+  useEffect(() => { if (client) { fetchVoices(); fetchCurrentVoice(); fetchGreeting(); fetchCalendarStatus(); fetchNativeSettings(); fetchGhlStatus(); } }, [client]);
 
   // Once voices load, make sure the Female/American defaults actually have
   // voices for this client; if not, fall back to All so the panel never opens
@@ -298,6 +290,51 @@ export default function ClientAIAgentPage() {
     }
   };
 
+  // ── Built-in (native) calendar: enable / disable / default length ──────────
+  const fetchNativeSettings = async () => {
+    if (!client) return;
+    try {
+      const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/calendar/settings`, { headers: { Authorization: `Bearer ${getAuthToken()}` } });
+      if (r.ok) { const d = await r.json(); if (d.success) setNativeSettings(d); }
+    } catch { /* leave null; the options view still renders */ }
+  };
+
+  const enableNative = async () => {
+    if (!client) return;
+    setNativeBusy(true); setNativeErr(null);
+    try {
+      const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/calendar/native/enable`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` }, body: JSON.stringify({}) });
+      const d = await r.json();
+      if (!r.ok || !d.success) throw new Error(d.error || 'Could not turn on the calendar');
+      await fetchNativeSettings();
+      showMessage('Built-in calendar turned on.');
+    } catch (e: any) { setNativeErr(e.message); } finally { setNativeBusy(false); }
+  };
+
+  const disableNative = async () => {
+    if (!client) return;
+    if (!confirm('Turn off the built-in calendar? Your AI will stop booking here. Existing appointments are kept.')) return;
+    setNativeBusy(true); setNativeErr(null);
+    try {
+      const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/calendar/native/disable`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` }, body: JSON.stringify({}) });
+      const d = await r.json();
+      if (!r.ok || !d.success) throw new Error(d.error || 'Could not turn off the calendar');
+      await fetchNativeSettings();
+    } catch (e: any) { setNativeErr(e.message); } finally { setNativeBusy(false); }
+  };
+
+  const saveDuration = async (minutes: number) => {
+    if (!client) return;
+    setNativeSettings((s: any) => (s ? { ...s, appointment_duration: minutes } : s));
+    setSavingDuration(true); setDurationSaved(false); setNativeErr(null);
+    try {
+      const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/calendar/native/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` }, body: JSON.stringify({ appointment_duration: minutes }) });
+      const d = await r.json();
+      if (!r.ok || !d.success) throw new Error(d.error || 'Could not save');
+      setDurationSaved(true); setTimeout(() => setDurationSaved(false), 2200);
+    } catch (e: any) { setNativeErr(e.message); } finally { setSavingDuration(false); }
+  };
+
   // GoHighLevel: status is public (no auth header), same pattern as the calendar
   // status check. Connect/disconnect mirror the Google flow.
   const fetchGhlStatus = async () => {
@@ -434,7 +471,9 @@ export default function ClientAIAgentPage() {
     ? ([{ id: activeVoiceId, name: 'Current voice', gender: 'female', accent: 'Active', style: '', description: 'Set on this assistant but not in the standard list \u2014 pick one below to change it.', recommended: false } as any, ...filteredVoices])
     : filteredVoices;
   const availableAccents = getAvailableAccents();
-  const isCalendarConnected = calendarStatus?.connected || client?.google_calendar_connected || (client as any)?.microsoft_calendar_connected;
+  const isNativeActive = (client as any)?.calendar_provider === 'native' || !!nativeSettings?.is_native;
+  const isExternalConnected = !!(calendarStatus?.connected || client?.google_calendar_connected || (client as any)?.microsoft_calendar_connected);
+  const isCalendarLive = isNativeActive || isExternalConnected;
   const isCalendarPlanAllowed = (client as any)?.is_test_client || calendarStatus?.plan_allowed !== false;
   const isGhlConnected = ghlStatus?.connected || (client as any)?.ghl_connected;
 
@@ -481,10 +520,9 @@ export default function ClientAIAgentPage() {
           <p className="text-center text-[11px] mt-1.5" style={{ color: theme.textMuted4 }}>Talk to your AI right here in your browser to hear your settings in action</p>
         </section>
 
-        {showCalendar && (<>
-        {/* Google Calendar Integration */}
+        {/* Calendar: built-in, Google, and Outlook, all in one section */}
         <div id="calendar-section" className="fu fu2 scroll-mt-6">
-          <SectionCard icon={SectionCalendarIcon} title="Calendar" subtitle={isCalendarConnected ? 'Your AI can book appointments to your calendar' : 'Let your AI book appointments to your calendar'} live={!!isCalendarConnected} theme={theme} primaryColor={primaryColor} glass={glass}>
+          <SectionCard icon={SectionCalendarIcon} title="Calendar" subtitle={isNativeActive ? 'Your AI books into the built-in calendar' : isExternalConnected ? 'Your AI can book appointments to your calendar' : 'Let your AI book appointments to your calendar'} live={isCalendarLive} theme={theme} primaryColor={primaryColor} glass={glass}>
             {calendarLoading ? (
               <div className="flex items-center justify-center py-3"><Loader2 className="w-4 h-4 animate-spin" style={{ color: theme.textMuted4 }} /></div>
             ) : !isCalendarPlanAllowed ? (
@@ -497,7 +535,45 @@ export default function ClientAIAgentPage() {
                   <Calendar className="w-4 h-4 inline mr-1.5" />Upgrade to Connect Calendar
                 </button>
               </div>
-            ) : isCalendarConnected ? (
+            ) : isNativeActive ? (
+              <div className="space-y-3">
+                {/* Built-in calendar active */}
+                <div className="flex items-center gap-3 rounded-xl p-3 sm:p-3.5" style={{ backgroundColor: theme.successBg, border: `1px solid ${theme.successBorder}` }}>
+                  <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ backgroundColor: theme.success }} />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5" style={{ backgroundColor: theme.success }} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold leading-tight" style={{ color: theme.successText }}>Built-in calendar active</p>
+                    <p className="text-[11px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>The AI books on the call and every booking triggers your automations.</p>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-xs font-semibold" style={{ color: theme.text }}>Default appointment length</p>
+                    {savingDuration ? (<span className="text-[11px] flex items-center gap-1" style={{ color: theme.textMuted }}><Loader2 className="w-3 h-3 animate-spin" /> Saving</span>) : durationSaved ? (<span className="text-[11px] flex items-center gap-1" style={{ color: theme.successText }}><Check className="w-3 h-3" /> Saved</span>) : null}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {DURATIONS.map((m) => {
+                      const active = (((nativeSettings?.appointment_duration) || (client as any)?.appointment_duration || 30) === m);
+                      return (
+                        <button key={m} onClick={() => saveDuration(m)} disabled={savingDuration} className="px-3 py-1.5 rounded-lg text-[11px] font-semibold transition disabled:opacity-60" style={{ backgroundColor: active ? primaryColor : (theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6'), color: active ? theme.primaryText : theme.textMuted }}>{m} min</button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="p-2.5 sm:p-3 rounded-lg text-[11px] sm:text-xs leading-relaxed" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}`, color: theme.textMuted }}>
+                  Your open times come from the business hours on your <a href="/client/my-business" className="font-semibold underline" style={{ color: primaryColor }}>My Business</a> page. See and manage every booking on the <a href="/client/calendar" className="font-semibold underline" style={{ color: primaryColor }}>Calendar</a> tab.
+                </div>
+
+                <button onClick={disableNative} disabled={nativeBusy} className="w-full py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: theme.errorBg, color: theme.error, border: `1px solid ${theme.errorBorder}` }}>
+                  {nativeBusy ? (<span className="flex items-center justify-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Turning off...</span>) : 'Turn off built-in calendar'}
+                </button>
+                {nativeErr && <p className="text-[11px] font-medium text-center" style={{ color: theme.error }}>{nativeErr}</p>}
+              </div>
+            ) : isExternalConnected ? (
               <div className="space-y-3">
                 {/* Connected: quiet success banner with a live pulse, no extra logo */}
                 {calendarStatus?.calendar_access === false ? (
@@ -542,8 +618,18 @@ export default function ClientAIAgentPage() {
             ) : (
               <div className="space-y-4">
                 <p className="text-sm leading-relaxed" style={{ color: theme.textMuted }}>
-                  Connect your calendar and the AI books appointments right on the call, 24/7, then texts you the details.
+                  Your AI can book appointments right on the call, then text you the details. Use the built-in calendar, or connect the account you already use.
                 </p>
+
+                <button onClick={enableNative} disabled={nativeBusy} className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition hover:shadow-sm disabled:opacity-50" style={{ backgroundColor: primaryColor, color: theme.primaryText }}>
+                  {nativeBusy ? (<><Loader2 className="w-4 h-4 animate-spin" /> Turning on...</>) : (<>Use the built-in calendar <ArrowRight className="w-4 h-4" /></>)}
+                </button>
+
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-px" style={{ backgroundColor: theme.border }} />
+                  <span className="text-[11px] font-medium" style={{ color: theme.textMuted4 }}>or connect an account</span>
+                  <div className="flex-1 h-px" style={{ backgroundColor: theme.border }} />
+                </div>
 
                 <div className="space-y-2.5">
                   <button onClick={handleConnectCalendar} className="w-full flex items-center justify-center gap-2.5 py-3 rounded-xl text-sm font-semibold transition hover:shadow-sm" style={{ backgroundColor: theme.card, color: theme.text, border: `1px solid ${theme.border}` }}>
@@ -553,6 +639,8 @@ export default function ClientAIAgentPage() {
                     <OutlookIcon className="w-[18px] h-[18px]" /> Connect Outlook / Microsoft 365
                   </button>
                 </div>
+
+                {nativeErr && <p className="text-[11px] font-medium text-center" style={{ color: theme.error }}>{nativeErr}</p>}
 
                 <p className="text-[11px] leading-relaxed" style={{ color: theme.textMuted4 }}>
                   Powered by our scheduling partner, VoiceAI Connect, so Google or Microsoft shows their name when you approve. Your calendar stays private.
@@ -620,12 +708,6 @@ export default function ClientAIAgentPage() {
           </SectionCard>
         </div>
         )}
-
-        {/* VoiceAI Connect native calendar */}
-        <div id="native-calendar-section" className="fu fu2 scroll-mt-6">
-          <NativeCalendarSection client={client} theme={theme} primaryColor={primaryColor} />
-        </div>
-        </>)}
 
         {/* Voice Selection */}
         <div className="fu fu2">
