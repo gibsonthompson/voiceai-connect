@@ -421,6 +421,7 @@ export default function AgencyLeadsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('priority');
+  const [hasEmailFirst, setHasEmailFirst] = useState(false);
   const [showCSVImport, setShowCSVImport] = useState(false);
   const [showManage, setShowManage] = useState(false);
 
@@ -537,11 +538,14 @@ export default function AgencyLeadsPage() {
   });
   const scoped = base.filter((l) => !skippedIds.has(l.id));
   const workQueue = [...scoped].sort((a, b) => {
-    if (sortBy === 'email') {
+    // "Has email" toggle: leads with a real email float to the top, applied
+    // before the chosen sort so it combines with any of them.
+    if (hasEmailFirst) {
       const ea = a.email && a.email.includes('@') ? 0 : 1;
       const eb = b.email && b.email.includes('@') ? 0 : 1;
-      if (ea !== eb) return ea - eb; // leads with an email first, junk sinks
-    } else if (sortBy === 'industry') {
+      if (ea !== eb) return ea - eb;
+    }
+    if (sortBy === 'industry') {
       const ia = (a.industry || '').toLowerCase(), ib = (b.industry || '').toLowerCase();
       if (ia !== ib) { if (!ia) return 1; if (!ib) return -1; return ia.localeCompare(ib); }
     } else if (sortBy === 'name') {
@@ -715,13 +719,24 @@ export default function AgencyLeadsPage() {
           />
         </div>
         <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setHasEmailFirst((v) => !v)}
+            aria-pressed={hasEmailFirst}
+            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors whitespace-nowrap"
+            style={hasEmailFirst
+              ? { backgroundColor: 'var(--lp-primary-15)', border: '1px solid var(--lp-primary-30)', color: 'var(--lp-primary)' }
+              : { backgroundColor: 'var(--lp-input)', border: '1px solid var(--lp-input-border)', color: 'var(--lp-muted)' }}
+          >
+            <Mail className="h-4 w-4" />
+            Has email
+          </button>
           <div className="flex-1 sm:flex-none sm:w-44">
             <CustomSelect
               value={sortBy}
               onChange={(v) => setSortBy(v || 'priority')}
               options={[
                 { value: 'priority', label: 'Sort: Priority' },
-                { value: 'email', label: 'Sort: Has email' },
                 { value: 'industry', label: 'Sort: Industry' },
                 { value: 'name', label: 'Sort: Name (A to Z)' },
                 { value: 'newest', label: 'Sort: Newest' },
