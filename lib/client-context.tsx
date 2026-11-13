@@ -32,6 +32,10 @@ interface Client {
   monthly_call_limit: number;
   calls_this_month: number;
   google_calendar_connected: boolean;
+  google_calendar_email?: string | null;
+  microsoft_calendar_connected?: boolean;
+  microsoft_calendar_email?: string | null;
+  calendar_provider?: string | null;
   call_mode?: string;
   hipaa_mode?: boolean;
   intake_enabled?: boolean;

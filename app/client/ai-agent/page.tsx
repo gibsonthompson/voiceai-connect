@@ -56,6 +56,17 @@ const GoogleGIcon = ({ className = '' }: { className?: string }) => (
   </svg>
 );
 
+// The Microsoft four-square mark, used on the Connect Outlook / Microsoft 365
+// button (recognizable for both work Microsoft 365 and personal Outlook accounts).
+const OutlookIcon = ({ className = '' }: { className?: string }) => (
+  <svg viewBox="0 0 48 48" className={className} xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <rect x="6" y="6" width="16" height="16" fill="#F25022" />
+    <rect x="26" y="6" width="16" height="16" fill="#7FBA00" />
+    <rect x="6" y="26" width="16" height="16" fill="#00A4EF" />
+    <rect x="26" y="26" width="16" height="16" fill="#FFB900" />
+  </svg>
+);
+
 // The Google Calendar logo sized to nearly fill the section's icon bubble. The
 // shared card renders icons small with padding; the calendar mark reads better
 // larger and tighter, so this ignores the card's size class and sets its own.
@@ -168,7 +179,7 @@ export default function ClientAIAgentPage() {
       setTimeout(() => document.getElementById('calendar-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
     }
     if (params.get('success') === 'calendar_connected') {
-      showMessage('Google Calendar connected successfully!');
+      showMessage('Calendar connected successfully!');
       setCalendarStatus(prev => prev ? { ...prev, connected: true, token_valid: true } : null);
       window.history.replaceState({}, '', window.location.pathname);
     }
@@ -177,13 +188,13 @@ export default function ClientAIAgentPage() {
       showMessage('Calendar integration requires a higher plan. Please contact your provider to upgrade.', true);
       window.history.replaceState({}, '', window.location.pathname);
     } else if (error === 'calendar_denied') {
-      showMessage('Google Calendar access was denied. Please try again and grant calendar permissions.', true);
+      showMessage('Calendar access was denied. Please try again and grant calendar permissions.', true);
       window.history.replaceState({}, '', window.location.pathname);
     } else if (error === 'calendar_scope_missing') {
-      showMessage('The calendar permission box was left unchecked, so bookings will not work. Please reconnect and check "View and edit events on all your calendars".', true);
+      showMessage('The calendar permission was left unchecked, so bookings will not work. Please reconnect and allow access to view and edit your calendar events.', true);
       window.history.replaceState({}, '', window.location.pathname);
     } else if (error?.startsWith('calendar_')) {
-      showMessage('Failed to connect Google Calendar. Please try again.', true);
+      showMessage('Failed to connect the calendar. Please try again.', true);
       window.history.replaceState({}, '', window.location.pathname);
     }
     // GoHighLevel round-trip result
@@ -206,17 +217,26 @@ export default function ClientAIAgentPage() {
   const fetchCurrentVoice = async () => { if (!client) return; try { const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/voice`, { headers: { Authorization: `Bearer ${getAuthToken()}` } }); if (r.ok) { const d = await r.json(); if (d.success) { setCurrentVoiceId(d.voice_id); setSelectedVoiceId(d.voice_id); } } } catch {} };
   const fetchGreeting = async () => { if (!client) return; setGreetingLoading(true); try { const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/greeting`, { headers: { Authorization: `Bearer ${getAuthToken()}` } }); if (r.ok) { const d = await r.json(); if (d.success) { setGreetingMessage(d.greeting_message); setOriginalGreeting(d.greeting_message); } } } catch {} finally { setGreetingLoading(false); } };
 
+  // Which calendar provider this client is on, for this section (Google or
+  // Microsoft). Microsoft wins when it is the selected provider or already
+  // connected; otherwise Google (the default). GHL/native have their own sections.
+  const calendarProvider = (): 'google' | 'microsoft' =>
+    (((client as any)?.calendar_provider === 'microsoft') || (client as any)?.microsoft_calendar_connected) ? 'microsoft' : 'google';
+
   const fetchCalendarStatus = async () => {
     if (!client) return;
+    const provider = calendarProvider();
     try {
-      const response = await fetch(`${getBackendUrl()}/api/auth/google-calendar/status/${client.id}`);
+      const response = await fetch(`${getBackendUrl()}/api/auth/${provider}-calendar/status/${client.id}`);
       if (response.ok) {
         const data = await response.json();
         setCalendarStatus(data);
       }
     } catch (err) {
       console.error('Failed to fetch calendar status:', err);
-      setCalendarStatus({ connected: client.google_calendar_connected || false, token_valid: false, plan_allowed: true, plan_message: null });
+      const connected = provider === 'microsoft' ? ((client as any).microsoft_calendar_connected || false) : (client.google_calendar_connected || false);
+      const email = provider === 'microsoft' ? ((client as any).microsoft_calendar_email || null) : ((client as any).google_calendar_email || null);
+      setCalendarStatus({ connected, token_valid: connected, calendar_access: connected, plan_allowed: true, plan_message: null, email });
     } finally {
       setCalendarLoading(false);
     }
@@ -231,32 +251,42 @@ export default function ClientAIAgentPage() {
     window.location.href = `${getBackendUrl()}/api/auth/google-calendar/connect?clientId=${client?.id}&return=${ret}`;
   };
 
-  // Reconnect fully revokes the existing grant first, so Google re-shows the
-  // complete consent screen (including the calendar permission checkbox). A
+  // Connect Outlook / Microsoft 365. Same return-origin handling as Google so
+  // the client lands back on the exact host their session lives on.
+  const handleConnectMicrosoft = () => {
+    const ret = encodeURIComponent(`${window.location.origin}/client/ai-agent`);
+    window.location.href = `${getBackendUrl()}/api/auth/microsoft-calendar/connect?clientId=${client?.id}&return=${ret}`;
+  };
+
+  // Reconnect fully revokes/clears the existing grant first, so the provider
+  // re-shows the complete consent screen (including the calendar permission). A
   // plain re-connect can skip the granular checkboxes when a partial grant
-  // already exists on the account.
+  // already exists on the account. Targets whichever provider is connected.
   const handleReconnectCalendar = async () => {
+    const provider = calendarProvider();
     try {
-      await fetch(`${getBackendUrl()}/api/auth/google-calendar/disconnect`, {
+      await fetch(`${getBackendUrl()}/api/auth/${provider}-calendar/disconnect`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` },
         body: JSON.stringify({ clientId: client?.id }),
       });
     } catch { /* non-fatal: still start a fresh connect */ }
-    handleConnectCalendar();
+    if (provider === 'microsoft') handleConnectMicrosoft(); else handleConnectCalendar();
   };
 
   const handleDisconnectCalendar = async () => {
-    if (!confirm('Are you sure you want to disconnect Google Calendar? Your AI receptionist will no longer be able to book appointments.')) return;
+    const provider = calendarProvider();
+    const label = provider === 'microsoft' ? 'Outlook / Microsoft 365' : 'Google Calendar';
+    if (!confirm(`Are you sure you want to disconnect ${label}? Your AI receptionist will no longer be able to book appointments.`)) return;
     setDisconnectingCalendar(true);
     try {
-      const response = await fetch(`${getBackendUrl()}/api/auth/google-calendar/disconnect`, {
+      const response = await fetch(`${getBackendUrl()}/api/auth/${provider}-calendar/disconnect`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` },
         body: JSON.stringify({ clientId: client?.id }),
       });
       const data = await response.json();
       if (data.success) {
-        showMessage('Google Calendar disconnected');
+        showMessage(`${label} disconnected`);
         setCalendarStatus(prev => prev ? { ...prev, connected: false, token_valid: false } : null);
       } else {
         showMessage(data.error || 'Failed to disconnect calendar', true);
@@ -404,7 +434,7 @@ export default function ClientAIAgentPage() {
     ? ([{ id: activeVoiceId, name: 'Current voice', gender: 'female', accent: 'Active', style: '', description: 'Set on this assistant but not in the standard list \u2014 pick one below to change it.', recommended: false } as any, ...filteredVoices])
     : filteredVoices;
   const availableAccents = getAvailableAccents();
-  const isCalendarConnected = calendarStatus?.connected || client?.google_calendar_connected;
+  const isCalendarConnected = calendarStatus?.connected || client?.google_calendar_connected || (client as any)?.microsoft_calendar_connected;
   const isCalendarPlanAllowed = (client as any)?.is_test_client || calendarStatus?.plan_allowed !== false;
   const isGhlConnected = ghlStatus?.connected || (client as any)?.ghl_connected;
 
@@ -454,7 +484,7 @@ export default function ClientAIAgentPage() {
         {showCalendar && (<>
         {/* Google Calendar Integration */}
         <div id="calendar-section" className="fu fu2 scroll-mt-6">
-          <SectionCard icon={SectionCalendarIcon} title="Google Calendar" subtitle={isCalendarConnected ? 'Your AI can book appointments to your calendar' : 'Let your AI book appointments to your calendar'} live={!!isCalendarConnected} theme={theme} primaryColor={primaryColor} glass={glass}>
+          <SectionCard icon={SectionCalendarIcon} title="Calendar" subtitle={isCalendarConnected ? 'Your AI can book appointments to your calendar' : 'Let your AI book appointments to your calendar'} live={!!isCalendarConnected} theme={theme} primaryColor={primaryColor} glass={glass}>
             {calendarLoading ? (
               <div className="flex items-center justify-center py-3"><Loader2 className="w-4 h-4 animate-spin" style={{ color: theme.textMuted4 }} /></div>
             ) : !isCalendarPlanAllowed ? (
@@ -475,7 +505,7 @@ export default function ClientAIAgentPage() {
                     <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: theme.warning }} />
                     <div className="min-w-0">
                       <p className="text-sm font-semibold leading-tight" style={{ color: theme.warningText }}>Connected, but no calendar access</p>
-                      <p className="text-[11px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>The &quot;View and edit events on all your calendars&quot; box was left unchecked, so the AI can&apos;t book yet. Reconnect and check it.</p>
+                      <p className="text-[11px] sm:text-xs mt-0.5" style={{ color: theme.textMuted }}>The calendar permission was left unchecked, so the AI can&apos;t book yet. Reconnect and allow access to view and edit your calendar events.</p>
                     </div>
                   </div>
                 ) : (
@@ -515,12 +545,17 @@ export default function ClientAIAgentPage() {
                   Connect your calendar and the AI books appointments right on the call, 24/7, then texts you the details.
                 </p>
 
-                <button onClick={handleConnectCalendar} className="w-full flex items-center justify-center gap-2.5 py-3 rounded-xl text-sm font-semibold transition hover:shadow-sm" style={{ backgroundColor: theme.card, color: theme.text, border: `1px solid ${theme.border}` }}>
-                  <GoogleGIcon className="w-[18px] h-[18px]" /> Connect Google Calendar
-                </button>
+                <div className="space-y-2.5">
+                  <button onClick={handleConnectCalendar} className="w-full flex items-center justify-center gap-2.5 py-3 rounded-xl text-sm font-semibold transition hover:shadow-sm" style={{ backgroundColor: theme.card, color: theme.text, border: `1px solid ${theme.border}` }}>
+                    <GoogleGIcon className="w-[18px] h-[18px]" /> Connect Google Calendar
+                  </button>
+                  <button onClick={handleConnectMicrosoft} className="w-full flex items-center justify-center gap-2.5 py-3 rounded-xl text-sm font-semibold transition hover:shadow-sm" style={{ backgroundColor: theme.card, color: theme.text, border: `1px solid ${theme.border}` }}>
+                    <OutlookIcon className="w-[18px] h-[18px]" /> Connect Outlook / Microsoft 365
+                  </button>
+                </div>
 
                 <p className="text-[11px] leading-relaxed" style={{ color: theme.textMuted4 }}>
-                  Powered by our scheduling partner, VoiceAI Connect, so Google shows their name when you approve. Your calendar stays private.
+                  Powered by our scheduling partner, VoiceAI Connect, so Google or Microsoft shows their name when you approve. Your calendar stays private.
                 </p>
               </div>
             )}
