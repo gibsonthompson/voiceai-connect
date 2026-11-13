@@ -15,6 +15,7 @@ import SignatureEditor from '@/components/agency/SignatureEditor';
 import { buildDefaultSignatureHtml } from '@/lib/default-signature';
 import { formatPhoneNumber } from '@/lib/utils';
 import { EMAIL_PROVIDERS, normalizeProvider } from '@/lib/email-providers';
+import { OUTLOOK_LOGO, YAHOO_LOGO } from '@/lib/provider-logos';
 
 const PLATFORM_DOMAIN = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
 
@@ -36,7 +37,7 @@ interface Template {
 // Compact, self-contained brand marks for the email-provider tiles. Clean
 // recognizable glyphs in each brand's color (no external assets / network).
 function ProviderLogo({ id }: { id: string }) {
-  const common = { width: 22, height: 22, 'aria-hidden': true } as const;
+  const common = { width: 18, height: 18, 'aria-hidden': true } as const;
   if (id === 'gmail') {
     return (
       <svg viewBox="0 0 48 48" {...common}>
@@ -49,20 +50,10 @@ function ProviderLogo({ id }: { id: string }) {
     );
   }
   if (id === 'outlook365' || id === 'outlookcom') {
-    return (
-      <svg viewBox="0 0 24 24" {...common}>
-        <rect x="2" y="2" width="20" height="20" rx="4" fill="#0F6CBD" />
-        <ellipse cx="12" cy="12" rx="5" ry="6" fill="none" stroke="#fff" strokeWidth="2.4" />
-      </svg>
-    );
+    return <img src={OUTLOOK_LOGO} alt="" aria-hidden style={{ height: 18, width: 'auto', display: 'block' }} />;
   }
   if (id === 'yahoo') {
-    return (
-      <svg viewBox="0 0 24 24" {...common}>
-        <rect x="2" y="2" width="20" height="20" rx="4" fill="#5F01D1" />
-        <text x="12" y="16.5" textAnchor="middle" fontFamily="Arial, Helvetica, sans-serif" fontSize="13" fontWeight="700" fill="#fff">y!</text>
-      </svg>
-    );
+    return <img src={YAHOO_LOGO} alt="" aria-hidden style={{ height: 15, width: 'auto', display: 'block' }} />;
   }
   // default: a neutral mail-app envelope
   return (
@@ -812,7 +803,7 @@ export default function OutreachPage() {
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold" style={{ color: theme.text }}>Send Emails From</p>
             <p className="mt-1 mb-3 text-xs leading-relaxed" style={{ color: theme.cardTextMuted }}>
-              Pick the app you send from. The composer&apos;s one-click button opens it with the recipient and subject ready, and copies your full message (logo and all) so you paste it in and send. You always send the email yourself, VoiceAI Connect doesn&apos;t send it for you.
+              Pick the app you send from. One click opens it ready and copies your message to paste, you always send the email yourself, not VoiceAI Connect.
             </p>
             {/* Online webmail providers span the full row; the desktop mail app gets its own row below. */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
@@ -831,7 +822,7 @@ export default function OutreachPage() {
                       color: active ? theme.text : theme.cardTextMuted,
                     }}
                   >
-                    <span className="shrink-0 inline-flex items-center justify-center rounded-md" style={{ width: 24, height: 24, backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : '#ffffff', border: `1px solid ${theme.border}` }}>
+                    <span className="shrink-0 inline-flex items-center justify-center rounded-md" style={{ height: 24, padding: '0 3px', backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : '#ffffff', border: `1px solid ${theme.border}` }}>
                       <ProviderLogo id={pv.id} />
                     </span>
                     <span className="whitespace-nowrap">{pv.label}</span>
@@ -858,7 +849,7 @@ export default function OutreachPage() {
                     color: active ? theme.text : theme.cardTextMuted,
                   }}
                 >
-                  <span className="shrink-0 inline-flex items-center justify-center rounded-md" style={{ width: 24, height: 24, backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : '#ffffff', border: `1px solid ${theme.border}` }}>
+                  <span className="shrink-0 inline-flex items-center justify-center rounded-md" style={{ height: 24, padding: '0 3px', backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : '#ffffff', border: `1px solid ${theme.border}` }}>
                     <ProviderLogo id={pv.id} />
                   </span>
                   <span className="min-w-0">
