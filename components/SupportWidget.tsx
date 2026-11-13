@@ -245,22 +245,26 @@ export default function SupportWidget({ theme, userType = 'agency', openSignal, 
 
   if (!open) {
     if (hideLauncher) return null;
+    const launcherClass = "fixed bottom-6 right-6 z-[90] w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95";
+    const launcherStyle = { backgroundColor: theme.primary, color: theme.primaryText, boxShadow: `0 4px 20px ${theme.primary}40` } as const;
+    const launcherIcon = (
+      <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M16.1 20A9 9 0 1 1 20 16.1L22 22Z" />
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+        <path d="M12 17h.01" />
+      </svg>
+    );
+    // Agency users go to the full support page; clients keep the inline help popup.
+    if (userType === 'agency') {
+      return (
+        <Link href="/agency/support" className={launcherClass} style={launcherStyle} aria-label="Help">
+          {launcherIcon}
+        </Link>
+      );
+    }
     return (
-      <button
-        onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-[90] w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95"
-        style={{
-          backgroundColor: theme.primary,
-          color: theme.primaryText,
-          boxShadow: `0 4px 20px ${theme.primary}40`,
-        }}
-        aria-label="Help"
-      >
-        <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M16.1 20A9 9 0 1 1 20 16.1L22 22Z" />
-          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-          <path d="M12 17h.01" />
-        </svg>
+      <button onClick={() => setOpen(true)} className={launcherClass} style={launcherStyle} aria-label="Help">
+        {launcherIcon}
       </button>
     );
   }

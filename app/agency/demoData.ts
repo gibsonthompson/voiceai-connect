@@ -91,6 +91,13 @@ export const DEMO_DASHBOARD = {
       subscription_status: 'active',
     },
   ],
+  recentCalls: [
+    { id: 'demo-call-1', client_id: 'demo-client-1', business_name: 'Pristine Plumbing Co.', customer_name: 'Marcus Reed', caller_phone: '+14705551021', duration_seconds: 184, call_status: 'completed', urgency_level: 'high', is_spam: false, created_at: hoursAgo(1) },
+    { id: 'demo-call-2', client_id: 'demo-client-2', business_name: 'Summit Roofing & Repairs', customer_name: 'Dana Whitfield', caller_phone: '+14705550199', duration_seconds: 92, call_status: 'completed', urgency_level: 'routine', is_spam: false, created_at: hoursAgo(3) },
+    { id: 'demo-call-3', client_id: 'demo-client-3', business_name: 'GreenScape Lawn Care', customer_name: null, caller_phone: '+16785552244', duration_seconds: 0, call_status: 'transferred', urgency_level: 'medium', is_spam: false, created_at: hoursAgo(5) },
+    { id: 'demo-call-4', client_id: 'demo-client-4', business_name: 'BrightStar Electric', customer_name: 'Priya Nair', caller_phone: '+14045550167', duration_seconds: 311, call_status: 'completed', urgency_level: 'emergency', is_spam: false, created_at: hoursAgo(8) },
+    { id: 'demo-call-5', client_id: 'demo-client-30', business_name: 'PrismShine Detailing', customer_name: 'Alex Monroe', caller_phone: '+17705550123', duration_seconds: 140, call_status: 'completed', urgency_level: 'routine', is_spam: false, created_at: hoursAgo(26) },
+  ],
 };
 
 // ============================================================================

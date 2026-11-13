@@ -23,11 +23,25 @@ interface RecentClient {
   is_test_client?: boolean;
 }
 
+interface RecentCall {
+  id: string;
+  client_id: string;
+  business_name: string;
+  customer_name: string | null;
+  caller_phone: string | null;
+  duration_seconds: number;
+  call_status: string | null;
+  urgency_level: string | null;
+  is_spam: boolean;
+  created_at: string;
+}
+
 interface DashboardStats {
   clientCount: number;
   mrr: number;
   totalCalls: number;
   recentClients: RecentClient[];
+  recentCalls: RecentCall[];
 }
 
 function formatCurrency(cents: number): string {
@@ -40,6 +54,25 @@ function formatDemoPhone(phone: string): string {
   const ten = digits.length === 11 && digits.startsWith('1') ? digits.slice(1) : digits;
   if (ten.length === 10) return `(${ten.slice(0, 3)}) ${ten.slice(3, 6)}-${ten.slice(6)}`;
   return phone;
+}
+
+// Actual clock time of the call (in the viewer's local time zone). Today shows
+// just the time; any earlier day prefixes the date.
+function formatCallTime(iso: string): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const isToday = d.toDateString() === new Date().toDateString();
+  return isToday ? time : `${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${time}`;
+}
+
+// Call length as m:ss (dash when there is no measured duration).
+function formatCallDuration(seconds: number): string {
+  if (!seconds || seconds <= 0) return '—';
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
 export default function AgencyDashboardPage() {
@@ -94,7 +127,7 @@ export default function AgencyDashboardPage() {
       const response = await fetch(`${backendUrl}/api/agency/${agency.id}/dashboard`, { headers: { 'Authorization': `Bearer ${token}` } });
       if (response.ok) {
         const data = await response.json();
-        setStats({ clientCount: data.clientCount || 0, mrr: data.mrr || 0, totalCalls: data.totalCalls || 0, recentClients: data.recentClients || [] });
+        setStats({ clientCount: data.clientCount || 0, mrr: data.mrr || 0, totalCalls: data.totalCalls || 0, recentClients: data.recentClients || [], recentCalls: data.recentCalls || [] });
       }
     } catch (error) { console.error('Failed to fetch dashboard data:', error); }
     finally { setLoading(false); }
@@ -380,6 +413,10 @@ export default function AgencyDashboardPage() {
         ))}
       </div>
 
+      {/* Recent Clients + Recent Calls, side by side so the dashboard surfaces
+          both new signups and live call activity agency-wide at a glance. */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+
       {/* Recent Clients */}
       <div className="rounded-xl" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, boxShadow: theme.isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)' }}>
         <div className="flex items-center justify-between p-4 sm:p-5" style={{ borderBottom: `1px solid ${theme.border}` }}>
@@ -429,6 +466,55 @@ export default function AgencyDashboardPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Recent Calls (agency-wide) */}
+      <div className="rounded-xl" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, boxShadow: theme.isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)' }}>
+        <div className="flex items-center justify-between p-4 sm:p-5" style={{ borderBottom: `1px solid ${theme.border}` }}>
+          <h2 className="font-medium text-sm sm:text-base" style={{ color: theme.text }}>Recent Calls</h2>
+          <span className="text-xs sm:text-sm" style={{ color: theme.cardTextMuted }}>Across all clients</span>
+        </div>
+        <div className="p-4 sm:p-5">
+          {!stats?.recentCalls || stats.recentCalls.length === 0 ? (
+            <div className="py-8 sm:py-12 text-center">
+              <div className="mx-auto flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full" style={{ backgroundColor: theme.primary15 }}><PhoneCall className="h-6 w-6 sm:h-8 sm:w-8" style={{ color: theme.cardTextMuted }} /></div>
+              <p className="mt-4 font-medium text-sm sm:text-base" style={{ color: theme.text, opacity: 0.7 }}>No calls yet</p>
+              <p className="text-xs sm:text-sm" style={{ color: theme.cardTextMuted }}>Calls answered across all your clients will show up here.</p>
+            </div>
+          ) : (
+            <div className="space-y-2 sm:space-y-3">
+              {stats.recentCalls.map((call) => {
+                const urgencyColor = call.urgency_level === 'emergency' ? '#ef4444' : call.urgency_level === 'high' ? '#f59e0b' : null;
+                const subtitle = call.customer_name || (call.caller_phone ? formatDemoPhone(call.caller_phone) : 'Unknown caller');
+                return (
+                  <a key={call.id} href={`/agency/clients/${call.client_id}`} className="flex items-center justify-between rounded-xl p-3 sm:p-4 transition-colors" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hover} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.card}>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>
+                        <PhoneCall className="h-4 w-4" style={{ color: theme.primary }} />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          {urgencyColor && <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: urgencyColor }} title={call.urgency_level || ''} />}
+                          <p className="font-medium text-sm sm:text-base truncate" style={{ color: theme.text }}>{call.business_name}</p>
+                          {call.is_spam && (<span className="flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ backgroundColor: theme.hover, color: theme.textMuted }}>Spam</span>)}
+                        </div>
+                        <p className="text-xs sm:text-sm truncate" style={{ color: theme.cardTextMuted }}>{subtitle}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                      <div className="text-right">
+                        <p className="text-[11px] sm:text-xs whitespace-nowrap" style={{ color: theme.cardTextMuted }}>{formatCallTime(call.created_at)}</p>
+                        <p className="text-[11px] sm:text-xs whitespace-nowrap" style={{ color: theme.textMuted }}>{call.call_status === 'transferred' ? 'Transferred' : formatCallDuration(call.duration_seconds)}</p>
+                      </div>
+                      <ArrowUpRight className="h-4 w-4 hidden sm:block" style={{ color: theme.cardTextMuted }} />
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
       </div>
     </div>
   );
