@@ -1255,6 +1255,7 @@ function AgencySettingsContent() {
 
             {activeTab === 'pricing' && (
               <div className="space-y-4 sm:space-y-6">
+                <IndustryGating />
                 <div>
                   <h3 className="text-base sm:text-lg font-medium mb-1">Client Plans</h3>
                   <p className="text-xs sm:text-sm" style={{ color: theme.cardTextMuted }}>Set pricing, call limits, and features for each plan your clients can choose.</p>
@@ -1467,8 +1468,6 @@ function AgencySettingsContent() {
                     </button>
                   </div>
                 </div>
-
-                <div className="mt-4"><IndustryGating /></div>
 
                 <div className="rounded-xl p-3 sm:p-4" style={{ backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}` }}>
                   <div className="flex items-center gap-2 mb-1"><Sparkles className="h-4 w-4" style={{ color: theme.iconColor }} /><h4 className="font-medium text-sm sm:text-base">Features</h4></div>
