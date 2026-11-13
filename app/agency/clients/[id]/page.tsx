@@ -9,7 +9,7 @@ import {
   Copy, Check, ExternalLink, Save, RotateCcw, AlertCircle, Bot,
   X, Paintbrush, Lock, ChevronDown, Users, Shield, Trash2, Ban,
   PhoneForwarded, CalendarCheck, AlertTriangle, ShieldX, Radio, Bell,
-  CheckCircle2, Circle, Briefcase, HelpCircle, Mic, ClipboardList, UserCheck
+  CheckCircle2, Circle, Briefcase, HelpCircle, Mic, ClipboardList, UserCheck, MessageSquare
 } from 'lucide-react';
 import { getCallBadges } from '@/lib/call-badges';
 import { useAgency } from '../../context';
@@ -28,6 +28,7 @@ interface OnboardingSection { label: string; done: boolean; optional: boolean; c
 interface OnboardingStatus { sections: Record<string, OnboardingSection>; completed_count: number; total: number; percent: number; onboarding_completed: boolean; }
 interface Client { id: string; onboarding_status?: OnboardingStatus; business_name: string; email: string; owner_name: string; owner_phone: string; business_city?: string; business_state?: string; business_website?: string; industry?: string; is_test_client?: boolean; plan_type: string; subscription_status: string; status: string; calls_this_month: number; monthly_call_limit?: number; minutes_this_period?: number; created_at: string; vapi_phone_number: string; vapi_assistant_id?: string; trial_ends_at?: string; logo_url?: string | null; primary_color?: string | null; secondary_color?: string | null; accent_color?: string | null; theme_mode?: string | null; login_email?: string | null; login_password?: string | null; signup_discount_code?: string | null; post_call_sms_enabled?: boolean | null; notification_phone?: string | null; awaiting_manual_provision?: boolean | null; show_client_calendar?: boolean | null; }
 interface Call { id: string; customer_name: string; caller_phone: string; customer_phone?: string; created_at: string; urgency_level: string; call_status: string; duration_seconds?: number; duration?: number; service_requested?: string; transfer_status?: string; appointment_booked?: boolean; is_spam?: boolean; }
+interface SentText { id: string; body: string; at: string; kind: string; to: string; business?: string | null; }
 
 // Logo color extraction (ported from agency branding so client logos auto-derive
 // a palette the same way). Runs client-side on the uploaded logo's data URL, so
@@ -278,6 +279,8 @@ export default function AgencyClientDetailPage() {
   const [convertingTestClient, setConvertingTestClient] = useState(false);
   const [convertError, setConvertError] = useState<string | null>(null);
   const [recentCalls, setRecentCalls] = useState<Call[]>([]);
+  const [sentTexts, setSentTexts] = useState<SentText[]>([]);
+  const [sentTextsLoading, setSentTextsLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -626,9 +629,9 @@ export default function AgencyClientDetailPage() {
     }
   };
 
-  useEffect(() => { if (!agency || !clientId) return; if (demoMode) { const demoData = getDemoClientDetail(clientId); setClient(demoData.client as Client); setRecentCalls(demoData.calls as Call[]); setLoading(false); return; } fetchClientData(); }, [agency, clientId, demoMode]);
+  useEffect(() => { if (!agency || !clientId) return; if (demoMode) { const demoData = getDemoClientDetail(clientId); setClient(demoData.client as Client); setRecentCalls(demoData.calls as Call[]); setSentTexts([]); setSentTextsLoading(false); setLoading(false); return; } fetchClientData(); }, [agency, clientId, demoMode]);
 
-  const fetchClientData = async () => { if (!agency || !clientId) return; try { const token = localStorage.getItem('auth_token'); const clientRes = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}`, { headers: { 'Authorization': `Bearer ${token}` } }); if (!clientRes.ok) { setError('Client not found'); return; } const clientData = await clientRes.json(); setClient(clientData.client); const callsRes = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}/calls`, { headers: { 'Authorization': `Bearer ${token}` } }); if (callsRes.ok) { const callsData = await callsRes.json(); setRecentCalls((callsData.calls || []).slice(0, 5)); } } catch (e) { console.error('Failed to fetch client:', e); setError('Failed to load client'); } finally { setLoading(false); } };
+  const fetchClientData = async () => { if (!agency || !clientId) return; try { const token = localStorage.getItem('auth_token'); const clientRes = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}`, { headers: { 'Authorization': `Bearer ${token}` } }); if (!clientRes.ok) { setError('Client not found'); return; } const clientData = await clientRes.json(); setClient(clientData.client); const callsRes = await fetch(`${backendUrl}/api/agency/${agency.id}/clients/${clientId}/calls`, { headers: { 'Authorization': `Bearer ${token}` } }); if (callsRes.ok) { const callsData = await callsRes.json(); setRecentCalls((callsData.calls || []).slice(0, 5)); } try { const sres = await fetch(`${backendUrl}/api/agency/${agency.id}/sent-sms?clientId=${clientId}`, { headers: { 'Authorization': `Bearer ${token}` } }); if (sres.ok) { const sdata = await sres.json(); setSentTexts(sdata.messages || []); } } catch { /* non-blocking */ } finally { setSentTextsLoading(false); } } catch (e) { console.error('Failed to fetch client:', e); setError('Failed to load client'); } finally { setLoading(false); } };
   const copyPhoneNumber = () => { if (!client?.vapi_phone_number) return; navigator.clipboard.writeText(client.vapi_phone_number); setCopied(true); setTimeout(() => setCopied(false), 2000); };
 
   // Manual provision (self-signup clients are created without a number). Attaches
@@ -1077,6 +1080,30 @@ export default function AgencyClientDetailPage() {
 
           {/* Recent Calls */}
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}><div className="p-4 sm:p-6 flex items-center justify-between"><div className="flex items-center gap-2"><PhoneCall className="h-4 w-4" style={{ color: theme.iconColor }} /><h2 className="font-semibold text-sm sm:text-base">Recent Calls</h2></div><Link href={`/agency/clients/${clientId}/calls`} className="inline-flex items-center gap-1 text-sm font-medium hover:opacity-80 transition-colors" style={{ color: theme.primary }}>View All<ChevronRight className="h-4 w-4" /></Link></div>{recentCalls.length === 0 ? (<div className="px-4 sm:px-6 pb-6 text-center py-8"><PhoneCall className="h-8 w-8 mx-auto mb-2" style={{ color: theme.textMuted, opacity: 0.4 }} /><p className="text-sm" style={{ color: theme.cardTextMuted }}>No calls yet</p></div>) : (<div>{recentCalls.map((call) => { const statusBadges = getCallBadges(call, theme); const Lead = statusBadges[0]?.Icon || PhoneCall; const leadColor = statusBadges[0]?.color || theme.textMuted; return (<Link key={call.id} href={`/agency/clients/${clientId}/calls/${call.id}`} className="flex items-center justify-between px-4 sm:px-6 py-3 transition-colors" style={{ borderTop: `1px solid ${theme.borderSubtle}` }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.hover} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}><div className="flex items-center gap-3 min-w-0"><Lead className="h-4 w-4 flex-shrink-0" style={{ color: leadColor }} /><div className="min-w-0"><p className="text-sm font-medium truncate">{call.customer_name || 'Unknown Caller'}</p><p className="text-xs" style={{ color: theme.cardTextMuted }}>{call.service_requested || 'General inquiry'}</p></div></div><div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">{statusBadges.map((b) => (<span key={b.key} className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] sm:text-xs font-semibold whitespace-nowrap" style={{ backgroundColor: b.bg, color: b.color }}><b.Icon className="h-3 w-3 flex-shrink-0" /><span className="hidden sm:inline">{b.label}</span></span>))}<span className="text-xs" style={{ color: theme.cardTextMuted }}>{new Date(call.created_at).toLocaleDateString()}</span><ChevronRight className="h-4 w-4" style={{ color: theme.cardTextMuted }} /></div></Link>); })}</div>)}</div>
+          {/* Texts Sent from this client's AI number */}
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+            <div className="p-4 sm:p-6 flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" style={{ color: theme.iconColor }} />
+              <h2 className="font-semibold text-sm sm:text-base">Texts Sent</h2>
+            </div>
+            {sentTextsLoading ? (
+              <div className="px-4 sm:px-6 pb-6 flex items-center justify-center py-6"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.textMuted }} /></div>
+            ) : sentTexts.length === 0 ? (
+              <div className="px-4 sm:px-6 pb-6 text-center py-8"><MessageSquare className="h-8 w-8 mx-auto mb-2" style={{ color: theme.textMuted, opacity: 0.4 }} /><p className="text-sm" style={{ color: theme.cardTextMuted }}>No texts sent yet. When the AI texts a caller or sends a call recap, it shows up here.</p></div>
+            ) : (
+              <div>{sentTexts.map((t) => (
+                <div key={t.id} className="px-4 sm:px-6 py-3" style={{ borderTop: `1px solid ${theme.borderSubtle}` }}>
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap" style={{ backgroundColor: theme.hover, color: theme.primary }}>{t.kind}</span>
+                    <span className="text-xs whitespace-nowrap" style={{ color: theme.cardTextMuted }}>{new Date(t.at).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
+                  </div>
+                  <p className="text-sm whitespace-pre-wrap break-words">{t.body}</p>
+                  <p className="text-xs mt-1" style={{ color: theme.cardTextMuted }}>To {t.to}</p>
+                </div>
+              ))}</div>
+            )}
+          </div>
+
         </div>
 
         {/* Right Column */}
