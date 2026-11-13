@@ -9,6 +9,7 @@ import {
 import { useAgency } from '@/app/agency/context';
 import { getDemoTemplates, composeDemoMessage, logDemoOutreach } from '@/app/agency/demoData';
 import { normalizeIndustry, getIndustryLabel } from '@/lib/industries';
+import { normalizeProvider, providerLabel, providerAction, buildComposeUrl, providerOpensMailto } from '@/lib/email-providers';
 
 // Safe wrapper, allows ComposerModal to work outside AgencyProvider (admin mode)
 function useSafeAgency(adminMode: boolean) {
@@ -108,6 +109,8 @@ export default function ComposerModal({
   adminMode = false,
 }: ComposerModalProps) {
   const { agency, branding, demoMode } = useSafeAgency(adminMode);
+  // Which email app the one-click opens, set by the agency on the Outreach page.
+  const emailProvider = normalizeProvider((agency as any)?.outreach_email_provider);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [subject, setSubject] = useState('');
@@ -482,35 +485,32 @@ export default function ComposerModal({
     await handleLogAsSent();
   };
 
-  // Open Gmail's STANDALONE compose (view=cm&tf=1) as a sized popup window,
-  // not a full browser tab. In this mode Gmail closes the window itself once
-  // the message is sent, so the user isn't left with a stray tab. A fixed
-  // window name makes repeat sends reuse the same popup instead of stacking
-  // up. It opens in whatever Google account the agency is signed into, and
-  // nothing sends until they hit send.
-  const openGmailCompose = () => {
+  // Open the agency's chosen email app's compose window (recipient + subject
+  // only). The body is NOT prefilled on purpose: a compose URL can carry only
+  // plain text and would strip the signature's logo/HTML, so the formatted body
+  // + signature go on the clipboard (handleOpenEmailAndLog) for one paste. Web
+  // providers open as a sized popup; the "mail app" option hands off via mailto.
+  const openEmailCompose = () => {
     const to = lead.email || recipientOverride.trim();
-    const params = new URLSearchParams({ view: 'cm', fs: '1', tf: '1' });
-    if (to) params.set('to', to);
-    if (subject) params.set('su', subject);
-    // Body intentionally NOT prefilled: Gmail's compose URL only accepts plain
-    // text and strips the signature's HTML/logo. The formatted body + signature
-    // are placed on the clipboard (handleOpenGmailAndLog), so one paste into the
-    // compose body drops in the full message with the logo intact.
-    const url = `https://mail.google.com/mail/?${params.toString()}`;
+    const url = buildComposeUrl(emailProvider, to, subject);
+    if (providerOpensMailto(emailProvider)) {
+      window.location.href = url; // mailto: OS mail client, no stray tab
+      return;
+    }
     const width = 680, height = 820;
     const left = Math.max(0, Math.round(((window.screen?.width || width) - width) / 2));
     const top = Math.max(0, Math.round(((window.screen?.height || height) - height) / 2));
-    const win = window.open(url, 'vac_gmail_compose', `popup=yes,width=${width},height=${height},left=${left},top=${top}`);
+    const win = window.open(url, 'vac_mail_compose', `popup=yes,width=${width},height=${height},left=${left},top=${top}`);
     if (win) { try { win.focus(); } catch { /* cross-origin focus can throw, ignore */ } }
     else { window.open(url, '_blank'); } // popup blocked: fall back to a tab
   };
 
-  // Email one-click. Open Gmail FIRST, synchronously inside the click, so the
-  // browser treats the popup as user-initiated (an await beforehand can get it
-  // blocked). Then copy as a backup and log + advance.
-  const handleOpenGmailAndLog = async () => {
-    openGmailCompose();
+  // Email one-click. Open the compose window FIRST, synchronously inside the
+  // click, so the browser treats the popup as user-initiated (an await first can
+  // get it blocked). Then put the rich body + signature on the clipboard to
+  // paste, and log + advance.
+  const handleOpenEmailAndLog = async () => {
+    openEmailCompose();
     await handleCopyAll();
     await handleLogAsSent();
   };
@@ -1175,7 +1175,7 @@ export default function ComposerModal({
                   {type === 'linkedin' ? (
                     <>Copy the message, then open their LinkedIn profile to paste it as a direct message. Use "Copy, Open &amp; Log" to do it all in one click.</>
                   ) : type === 'email' ? (
-                    <><strong>Paste into the compose window to keep your logo.</strong> "Open Gmail &amp; Log" opens a Gmail compose addressed to them with the subject filled in, and puts the full message (logo and formatting included) on your clipboard. Press Cmd or Ctrl + V in the body, then send, and Gmail closes the window for you. The body isn&apos;t pre-filled on purpose: Gmail&apos;s link can only carry plain text, so pasting is what brings the logo through. On Outlook or another email? Hit "Copy &amp; Log" and paste into your own compose window. Either way VoiceAI Connect doesn&apos;t send it, you do.</>
+                    <><strong>{providerAction(emailProvider)} &amp; Log</strong> opens a {providerLabel(emailProvider)} compose window with the recipient and subject ready, and copies the full message (logo and formatting) to your clipboard. Paste it into the body with Cmd or Ctrl + V, then send. The logo can&apos;t travel through an email link, so pasting is what carries it over. On a different app? "Copy &amp; Log" copies the same message to paste anywhere. VoiceAI Connect never sends it, you do.</>
                   ) : (
                     <>Copy the message, then send it from your own phone. "Copy &amp; Log" copies it and records that you reached out, so your follow-up queue stays accurate. It does not send the text.</>
                   )}
@@ -1259,7 +1259,7 @@ export default function ComposerModal({
                     </button>
 
                     <button
-                      onClick={handleOpenGmailAndLog}
+                      onClick={handleOpenEmailAndLog}
                       disabled={!body || loggedSuccess}
                       className="flex-[1.4] sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-3 sm:py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
                       style={{
@@ -1270,7 +1270,7 @@ export default function ComposerModal({
                       {loggedSuccess ? (
                         <><Check className="h-4 w-4 shrink-0" /><span>Logged!</span></>
                       ) : (
-                        <><ExternalLink className="h-4 w-4 shrink-0" /><span className="whitespace-nowrap">Open Gmail &amp; Log</span></>
+                        <><ExternalLink className="h-4 w-4 shrink-0" /><span className="whitespace-nowrap">{providerAction(emailProvider)} &amp; Log</span></>
                       )}
                     </button>
                   </>

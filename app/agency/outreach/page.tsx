@@ -14,6 +14,8 @@ import FirstClientBanner from '@/components/agency/FirstClientBanner';
 import SignatureEditor from '@/components/agency/SignatureEditor';
 import { buildDefaultSignatureHtml } from '@/lib/default-signature';
 import { formatPhoneNumber } from '@/lib/utils';
+import { CustomSelect } from '@/components/ui/custom-select';
+import { EMAIL_PROVIDERS, normalizeProvider } from '@/lib/email-providers';
 
 const PLATFORM_DOMAIN = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
 
@@ -57,6 +59,9 @@ export default function OutreachPage() {
   const [signature, setSignature] = useState('');
   const [signatureSaving, setSignatureSaving] = useState(false);
   const [signatureSaved, setSignatureSaved] = useState(false);
+  // Which email app the composer's one-click opens (agency-level, persisted).
+  const [emailProvider, setEmailProviderVal] = useState('gmail');
+  const [emailProviderSaved, setEmailProviderSaved] = useState(false);
 
   const sigHydrated = useRef(false);
   // Build the branded default signature with this agency's own real info (name,
@@ -87,6 +92,7 @@ export default function OutreachPage() {
     if (!agency) return;
     setPlEnabled((agency as any).personalized_line_enabled !== false);
     setPlInstructions((agency as any).personalized_line_instructions || '');
+    setEmailProviderVal(normalizeProvider((agency as any).outreach_email_provider));
     if (!sigHydrated.current) {
       sigHydrated.current = true;
       const stored = (agency as any).outreach_signature;
@@ -117,6 +123,23 @@ export default function OutreachPage() {
     } finally {
       setSignatureSaving(false);
     }
+  };
+
+  const saveEmailProvider = async (id: string) => {
+    if (!agency) return;
+    const prov = normalizeProvider(id);
+    setEmailProviderVal(prov);
+    setEmailProviderSaved(false);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const res = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ outreach_email_provider: prov }),
+      });
+      if (res.ok) { await refreshAgency(); setEmailProviderSaved(true); setTimeout(() => setEmailProviderSaved(false), 2500); }
+    } catch (err) { console.error('Failed to save email provider:', err); }
   };
 
   const savePersonalizedLine = async (next?: { enabled?: boolean; instructions?: string }) => {
@@ -735,6 +758,23 @@ export default function OutreachPage() {
                 Reset to default
               </button>
               {signatureSaved && <span className="text-xs" style={{ color: theme.primary }}>Saved</span>}
+            </div>
+
+            {/* Which email app the composer's one-click opens */}
+            <div className="mt-5 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
+              <label className="block text-sm font-semibold mb-1" style={{ color: theme.text }}>Send emails from</label>
+              <p className="mb-2 text-[11px] leading-relaxed" style={{ color: theme.cardTextMuted }}>
+                The composer&apos;s one-click button opens this app with the recipient and subject ready, and copies the message so you paste it in with your logo. Pick whichever you send from.
+              </p>
+              <div className="sm:max-w-xs">
+                <CustomSelect
+                  value={emailProvider}
+                  onChange={(v) => saveEmailProvider(v || 'gmail')}
+                  options={EMAIL_PROVIDERS.map((pv) => ({ value: pv.id, label: pv.label }))}
+                  ui={{ inputStyle: { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }, text: theme.text, muted: theme.cardTextMuted, panelBg: theme.card, panelBorder: theme.inputBorder, hover: theme.primary15, accent: theme.primary, isDark: theme.isDark }}
+                />
+              </div>
+              {emailProviderSaved && <span className="mt-2 inline-block text-xs" style={{ color: theme.primary }}>Saved</span>}
             </div>
           </div>
         </div>
