@@ -369,11 +369,19 @@ export default function ComposerModal({
   };
 
   const handleCopyAll = async () => {
-    const textToCopy = type === 'email' 
-      ? `Subject: ${subject}\n\n${body}`
-      : body;
-
-    await navigator.clipboard.writeText(textToCopy);
+    // For email, copy RICH content so the signature's logo and formatting
+    // survive the paste into Gmail/Outlook. Plain text is the fallback for
+    // plain-text targets. (handleCopyAll feeds Copy & Log and the Gmail flow.)
+    if (type === 'email' && signatureHtml) {
+      let bodyNoSig = body;
+      if (signatureText && body.endsWith(signatureText)) {
+        bodyNoSig = body.slice(0, body.length - signatureText.length).replace(/\s+$/, '');
+      }
+      const html = `<div>${textToHtml(bodyNoSig)}</div><br>${signatureHtml}`;
+      await richCopy(`Subject: ${subject}\n\n${body}`, html);
+    } else {
+      await navigator.clipboard.writeText(type === 'email' ? `Subject: ${subject}\n\n${body}` : body);
+    }
     setCopied('all');
     setTimeout(() => setCopied('none'), 2000);
   };
@@ -485,7 +493,10 @@ export default function ComposerModal({
     const params = new URLSearchParams({ view: 'cm', fs: '1', tf: '1' });
     if (to) params.set('to', to);
     if (subject) params.set('su', subject);
-    if (body) params.set('body', body);
+    // Body intentionally NOT prefilled: Gmail's compose URL only accepts plain
+    // text and strips the signature's HTML/logo. The formatted body + signature
+    // are placed on the clipboard (handleOpenGmailAndLog), so one paste into the
+    // compose body drops in the full message with the logo intact.
     const url = `https://mail.google.com/mail/?${params.toString()}`;
     const width = 680, height = 820;
     const left = Math.max(0, Math.round(((window.screen?.width || width) - width) / 2));
@@ -1164,7 +1175,7 @@ export default function ComposerModal({
                   {type === 'linkedin' ? (
                     <>Copy the message, then open their LinkedIn profile to paste it as a direct message. Use "Copy, Open &amp; Log" to do it all in one click.</>
                   ) : type === 'email' ? (
-                    <>"Open Gmail &amp; Log" pops open a Gmail compose window with the email filled in and logs the touch so your follow-up queue stays accurate. Send from that window and Gmail closes it for you. On Outlook or another email? Hit "Copy &amp; Log" instead, then paste it into your own email. Either way VoiceAI Connect doesn&apos;t send it, you do.</>
+                    <>"Open Gmail &amp; Log" opens a Gmail compose window addressed to them with the subject filled in, and puts the full message plus your signature (logo and all) on your clipboard. Paste it into the body with Cmd or Ctrl + V, then send, and Gmail closes the window for you. On Outlook or another email? Hit "Copy &amp; Log" instead, then paste it into your own email. Either way VoiceAI Connect doesn&apos;t send it, you do.</>
                   ) : (
                     <>Copy the message, then send it from your own phone. "Copy &amp; Log" copies it and records that you reached out, so your follow-up queue stays accurate. It does not send the text.</>
                   )}
