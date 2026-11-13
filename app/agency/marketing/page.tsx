@@ -7,7 +7,7 @@ import {
   AlertCircle, CheckCircle2, Loader2, RefreshCw, Palette, Type, Save, Upload,
   Wand2, BarChart3, Share2, Layout, DollarSign, Code,
   ChevronUp, ChevronDown, Trash2, Plus, LayoutDashboard, FileText,
-  HelpCircle, Sparkles, Lock
+  HelpCircle, Sparkles, Lock, Pencil
 } from 'lucide-react';
 import LegalEditor from '@/components/agency/LegalEditor';
 import LockedFeature from '@/components/LockedFeature';
@@ -17,6 +17,9 @@ import { useTheme } from '../../../hooks/useTheme';
 import MarketingContentEditor from '@/components/agency/MarketingContentEditor';
 import WebCallWidgetEditor from '@/components/dashboard/WebCallWidgetEditor';
 import { WebCallStyle } from '@/lib/webcall-style';
+import { CustomPage } from '@/types/marketing';
+import { INDUSTRY_PAGE_LIST } from '@/lib/industry-pages';
+import { PAGE_TEMPLATES, createCustomPage, normalizePageSlug, isReservedSlug } from '@/lib/page-templates';
 import { ColorField, SegmentField, EditorTheme } from '@/components/dashboard/inline-editor';
 import { SignupStyle, resolveSignupPalette } from '@/lib/signup-style';
 import { NAMECHEAP_LOGO } from '@/lib/namecheap-logo';
@@ -271,6 +274,88 @@ export default function MarketingWebsitePage() {
   const inputBorder = isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb';
   const platformDomain = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.myvoiceaiconnect.com';
+
+  // ── Custom landing pages (agency-created) ─────────────────────────────────
+  // Stored in marketing_config.customPages; created from a Lorem-filled template
+  // and edited in the in-context editor, then published. CRUD persists through
+  // the same settings endpoint every other marketing_config saver uses.
+  const customPagesMap: Record<string, CustomPage> =
+    ((agency as any)?.marketing_config?.customPages && typeof (agency as any).marketing_config.customPages === 'object')
+      ? (agency as any).marketing_config.customPages
+      : {};
+  const customPagesList = (Object.values(customPagesMap) as CustomPage[]).filter((p) => p && p.slug);
+  const hiddenFooterPages: string[] = Array.isArray((agency as any)?.marketing_config?.hiddenFooterPages) ? (agency as any).marketing_config.hiddenFooterPages : [];
+  const pageInFooter = (slug: string, published: boolean) => published && !hiddenFooterPages.includes(slug);
+  const [pageModalOpen, setPageModalOpen] = useState(false);
+  const [newPageTemplate, setNewPageTemplate] = useState<CustomPage['template']>('industry');
+  const [newPageLabel, setNewPageLabel] = useState('');
+  const [newPageSlug, setNewPageSlug] = useState('');
+  const [slugEditedManually, setSlugEditedManually] = useState(false);
+  const [newPageError, setNewPageError] = useState('');
+  const [creatingPage, setCreatingPage] = useState(false);
+  const [pageBusySlug, setPageBusySlug] = useState<string | null>(null);
+
+  const persistCustomPages = async (nextPages: Record<string, CustomPage>): Promise<boolean> => {
+    if (!agency) return false;
+    const token = localStorage.getItem('auth_token');
+    const current = (agency.marketing_config || {}) as any;
+    const updated = { ...current, customPages: nextPages };
+    const res = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ marketing_config: updated }) });
+    if (!res.ok) return false;
+    await refreshAgency();
+    return true;
+  };
+
+  const handleCreatePage = async () => {
+    const slug = normalizePageSlug(newPageSlug || newPageLabel);
+    if (!slug) { setNewPageError('Enter a page name.'); return; }
+    if (isReservedSlug(slug)) { setNewPageError(`"/${slug}" is reserved. Pick another address.`); return; }
+    if (customPagesMap[slug]) { setNewPageError(`You already have a page at /${slug}.`); return; }
+    if (demoMode) { setPageModalOpen(false); return; }
+    setCreatingPage(true); setNewPageError('');
+    try {
+      const page = createCustomPage(newPageTemplate, slug, newPageLabel.trim() || slug);
+      const ok = await persistCustomPages({ ...customPagesMap, [slug]: page });
+      if (!ok) { setNewPageError('Could not save. Try again.'); setCreatingPage(false); return; }
+      setPageModalOpen(false); setNewPageLabel(''); setNewPageSlug('');
+      router.push(`/agency/marketing/editor?page=${encodeURIComponent(slug)}`);
+    } catch { setNewPageError('Could not create the page.'); }
+    finally { setCreatingPage(false); }
+  };
+
+  const handleDeletePage = async (slug: string) => {
+    const page = customPagesMap[slug];
+    if (demoMode || !page) return;
+    if (!window.confirm(`Delete the "${page.label}" page? This can't be undone.`)) return;
+    setPageBusySlug(slug);
+    const next = { ...customPagesMap }; delete next[slug];
+    await persistCustomPages(next);
+    setPageBusySlug(null);
+  };
+
+  const handleTogglePublish = async (slug: string) => {
+    const page = customPagesMap[slug];
+    if (demoMode || !page) return;
+    setPageBusySlug(slug);
+    const nextStatus: CustomPage['status'] = page.status === 'published' ? 'draft' : 'published';
+    await persistCustomPages({ ...customPagesMap, [slug]: { ...page, status: nextStatus } });
+    setPageBusySlug(null);
+  };
+
+  // Footer visibility is a single slug list that covers built-in + custom pages.
+  const handleToggleFooter = async (slug: string) => {
+    if (demoMode || !agency) return;
+    setPageBusySlug(slug);
+    const token = localStorage.getItem('auth_token');
+    const current = (agency.marketing_config || {}) as any;
+    const cur: string[] = Array.isArray(current.hiddenFooterPages) ? current.hiddenFooterPages : [];
+    const next = cur.includes(slug) ? cur.filter((s: string) => s !== slug) : [...cur, slug];
+    const updated = { ...current, hiddenFooterPages: next };
+    const res = await fetch(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ marketing_config: updated }) });
+    if (res.ok) await refreshAgency();
+    setPageBusySlug(null);
+  };
+
   // Adapter so the shared LegalEditor (built against the dashboard theme token
   // set) renders correctly inside this page's raw color-variable styling.
   const legalTheme = {
@@ -786,6 +871,97 @@ Ask me what platform I'm on if that helps.`;
           <h3 className="font-medium text-sm sm:text-base mb-3 sm:mb-4">Your website includes:</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">{(TEMPLATES.find(t => t.id === selectedTemplate)?.preview.sections || []).map((section) => (<div key={section} className="flex items-start gap-2 sm:gap-3"><span style={{ color: agencyPrimaryColor }}><CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 mt-0.5 flex-shrink-0" /></span><p className="font-medium text-xs sm:text-sm">{section}</p></div>))}</div>
         </div>
+
+        {/* ── Landing Pages manager ──────────────────────────────────────────
+            Surfaces the industry landing pages (built-in + agency-created) that
+            were previously invisible in the dashboard. Create spins up a full
+            Lorem-filled page the agency then edits; Footer toggles whether a page
+            appears in the site footer; drafts stay off the public site. */}
+        <div className="rounded-xl p-4 sm:p-6" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
+          <div className="flex items-start justify-between gap-3 mb-1">
+            <div className="flex items-center gap-2"><FileText className="h-4 w-4" style={{ color: agencyPrimaryColor }} /><h3 className="font-medium text-sm sm:text-base" style={{ color: textColor }}>Landing Pages</h3></div>
+            <button onClick={() => { setNewPageError(''); setNewPageLabel(''); setNewPageSlug(''); setSlugEditedManually(false); setNewPageTemplate('industry'); setPageModalOpen(true); }} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-white transition-opacity hover:opacity-90 flex-shrink-0" style={{ backgroundColor: agencyPrimaryColor }}><Plus className="h-4 w-4" />Create New Page</button>
+          </div>
+          <p className="text-xs sm:text-sm mb-4" style={{ color: mutedTextColor }}>Extra pages on your site for specific industries or campaigns, each on its own address. Toggle <span style={{ color: textColor, fontWeight: 500 }}>Footer</span> to show or hide a page in your site footer.</p>
+          <div className="space-y-2.5">
+            {INDUSTRY_PAGE_LIST.map((p) => {
+              const inFooter = pageInFooter(p.slug, true);
+              const busy = pageBusySlug === p.slug;
+              return (
+                <div key={p.slug} className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl px-3 py-2.5" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2"><p className="text-sm font-medium truncate" style={{ color: inputText }}>{p.label}</p><span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', color: inputMuted }}>Built-in</span></div>
+                    <p className="text-[11px] truncate" style={{ color: inputMuted }}>/{p.slug}</p>
+                  </div>
+                  <div className="flex items-center gap-1 sm:gap-1.5">
+                    <span className="flex items-center gap-1.5 text-[11px] mr-1" style={{ color: inputMuted }}>Footer
+                      <button type="button" role="switch" aria-checked={inFooter} disabled={busy || demoMode} onClick={() => handleToggleFooter(p.slug)} className="relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors disabled:opacity-50" style={{ backgroundColor: inFooter ? agencyPrimaryColor : (isDark ? 'rgba(255,255,255,0.15)' : '#d1d5db') }}><span className="inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform" style={{ transform: inFooter ? 'translateX(18px)' : 'translateX(3px)' }} /></button>
+                    </span>
+                    <a href={`${subdomainUrl}/${p.slug}`} target="_blank" rel="noopener noreferrer" title="View page" className={`p-1.5 rounded-lg ${isDark ? 'hover:bg-white/[0.08]' : 'hover:bg-black/[0.04]'}`} style={{ color: inputMuted }}><ExternalLink className="h-4 w-4" /></a>
+                    <button onClick={() => router.push(`/agency/marketing/editor?page=${encodeURIComponent(p.slug)}`)} title="Edit page" className={`p-1.5 rounded-lg ${isDark ? 'hover:bg-white/[0.08]' : 'hover:bg-black/[0.04]'}`} style={{ color: inputMuted }}><Pencil className="h-4 w-4" /></button>
+                  </div>
+                </div>
+              );
+            })}
+            {customPagesList.map((cp) => {
+              const published = cp.status === 'published';
+              const inFooter = pageInFooter(cp.slug, published);
+              const busy = pageBusySlug === cp.slug;
+              const viewHref = published ? `${subdomainUrl}/${cp.slug}` : `${subdomainUrl}/${cp.slug}?preview=1`;
+              return (
+                <div key={cp.slug} className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl px-3 py-2.5" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2"><p className="text-sm font-medium truncate" style={{ color: inputText }}>{cp.label}</p><span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: published ? `${agencyPrimaryColor}1f` : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'), color: published ? agencyPrimaryColor : inputMuted }}>{published ? 'Live' : 'Draft'}</span></div>
+                    <p className="text-[11px] truncate" style={{ color: inputMuted }}>/{cp.slug}</p>
+                  </div>
+                  <div className="flex items-center gap-1 sm:gap-1.5">
+                    <span className="flex items-center gap-1.5 text-[11px] mr-1" style={{ color: inputMuted, opacity: published ? 1 : 0.4 }}>Footer
+                      <button type="button" role="switch" aria-checked={inFooter} disabled={!published || busy || demoMode} onClick={() => handleToggleFooter(cp.slug)} className="relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors disabled:opacity-50" style={{ backgroundColor: inFooter ? agencyPrimaryColor : (isDark ? 'rgba(255,255,255,0.15)' : '#d1d5db') }}><span className="inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform" style={{ transform: inFooter ? 'translateX(18px)' : 'translateX(3px)' }} /></button>
+                    </span>
+                    <button onClick={() => handleTogglePublish(cp.slug)} disabled={busy || demoMode} title={published ? 'Switch to draft' : 'Publish page'} className="text-[11px] font-semibold px-2 py-1 rounded-lg disabled:opacity-50 transition-colors" style={{ backgroundColor: published ? 'transparent' : agencyPrimaryColor, color: published ? inputMuted : '#ffffff', border: published ? `1px solid ${inputBorder}` : 'none' }}>{busy ? '…' : published ? 'Unpublish' : 'Publish'}</button>
+                    <a href={viewHref} target="_blank" rel="noopener noreferrer" title="View page" className={`p-1.5 rounded-lg ${isDark ? 'hover:bg-white/[0.08]' : 'hover:bg-black/[0.04]'}`} style={{ color: inputMuted }}><ExternalLink className="h-4 w-4" /></a>
+                    <button onClick={() => router.push(`/agency/marketing/editor?page=${encodeURIComponent(cp.slug)}`)} title="Edit page" className={`p-1.5 rounded-lg ${isDark ? 'hover:bg-white/[0.08]' : 'hover:bg-black/[0.04]'}`} style={{ color: inputMuted }}><Pencil className="h-4 w-4" /></button>
+                    <button onClick={() => handleDeletePage(cp.slug)} disabled={busy || demoMode} title="Delete page" className={`p-1.5 rounded-lg disabled:opacity-50 ${isDark ? 'hover:bg-white/[0.08]' : 'hover:bg-black/[0.04]'}`} style={{ color: '#ef4444' }}><Trash2 className="h-4 w-4" /></button>
+                  </div>
+                </div>
+              );
+            })}
+            {customPagesList.length === 0 && (
+              <p className="text-xs pt-1" style={{ color: mutedTextColor }}>No custom pages yet. Create one to add an industry or campaign page of your own.</p>
+            )}
+          </div>
+        </div>
+
+        {/* Create-new-page modal */}
+        {pageModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }} onClick={() => { if (!creatingPage) setPageModalOpen(false); }}>
+            <div className="w-full max-w-md rounded-2xl p-5 sm:p-6 max-h-[90vh] overflow-y-auto" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }} onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-base font-semibold mb-1" style={{ color: textColor }}>Create a new page</h3>
+              <p className="text-xs mb-4" style={{ color: mutedTextColor }}>Pick a starting template. Your page is created filled with placeholder text that you replace with your own in the editor.</p>
+              <div className="space-y-2.5 mb-4">
+                {PAGE_TEMPLATES.map((t) => (
+                  <button key={t.id} onClick={() => setNewPageTemplate(t.id)} className="w-full text-left rounded-xl p-3 transition-colors" style={{ backgroundColor: inputBg, border: `1.5px solid ${newPageTemplate === t.id ? agencyPrimaryColor : inputBorder}` }}>
+                    <div className="flex items-center justify-between"><span className="text-sm font-semibold" style={{ color: inputText }}>{t.name}</span>{newPageTemplate === t.id && <Check className="h-4 w-4 flex-shrink-0" style={{ color: agencyPrimaryColor }} />}</div>
+                    <p className="text-[11px] mt-0.5" style={{ color: inputMuted }}>{t.description}</p>
+                  </button>
+                ))}
+              </div>
+              <label className="block text-xs font-medium mb-1" style={{ color: mutedTextColor }}>Page name</label>
+              <input value={newPageLabel} onChange={(e) => { setNewPageLabel(e.target.value); if (!slugEditedManually) setNewPageSlug(normalizePageSlug(e.target.value)); }} placeholder="e.g. Dentists" className="w-full rounded-lg px-3 py-2 text-sm mb-3 outline-none" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: inputText }} />
+              <label className="block text-xs font-medium mb-1" style={{ color: mutedTextColor }}>Address</label>
+              <div className="flex items-center rounded-lg px-3 py-2" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
+                <span className="text-sm" style={{ color: inputMuted }}>/</span>
+                <input value={newPageSlug} onChange={(e) => { setSlugEditedManually(true); setNewPageSlug(normalizePageSlug(e.target.value)); }} placeholder="dentists" className="flex-1 bg-transparent text-sm outline-none ml-0.5" style={{ color: inputText }} />
+              </div>
+              <p className="text-[11px] mt-1.5" style={{ color: inputMuted }}>Lives at {subdomainUrl ? `${subdomainUrl.replace(/^https?:\/\//, '')}/${newPageSlug || '…'}` : `/${newPageSlug || '…'}`}</p>
+              {newPageError && <p className="text-xs mt-2" style={{ color: '#ef4444' }}>{newPageError}</p>}
+              <div className="flex items-center justify-end gap-2 mt-5">
+                <button onClick={() => setPageModalOpen(false)} disabled={creatingPage} className="px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50" style={{ color: mutedTextColor }}>Cancel</button>
+                <button onClick={handleCreatePage} disabled={creatingPage} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-50" style={{ backgroundColor: agencyPrimaryColor }}>{creatingPage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}Create &amp; Edit</button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── Your Clients' Dashboard ────────────────────────────────────────
             Prevents the onboarding confusion surfaced by a support request:

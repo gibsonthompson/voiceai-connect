@@ -413,7 +413,19 @@ export default function AgencySiteClient({ agency, industry }: { agency: Agency;
         { label: 'Privacy Policy', href: '/privacy' },
         { label: 'Terms & Conditions', href: '/terms' },
       ],
-      industryLinks: INDUSTRY_PAGE_LIST.map((p) => ({ label: p.label, href: `/${p.slug}` })),
+      industryLinks: (() => {
+        const hidden: string[] = Array.isArray((mc as any)?.hiddenFooterPages) ? (mc as any).hiddenFooterPages : [];
+        return [
+          // Built-in industry pages (unless the agency hid them).
+          ...INDUSTRY_PAGE_LIST.filter((p) => !hidden.includes(p.slug)).map((p) => ({ label: p.label, href: `/${p.slug}` })),
+          // Published agency-created pages (unless hidden).
+          ...((mc as any)?.customPages && typeof (mc as any).customPages === 'object'
+            ? Object.values((mc as any).customPages as Record<string, any>)
+                .filter((cp) => cp && cp.slug && cp.status === 'published' && !hidden.includes(cp.slug))
+                .map((cp: any) => ({ label: cp.label || cp.slug, href: `/${cp.slug}` }))
+            : []),
+        ];
+      })(),
     },
     // Login URL last so the custom-domain/subdomain resolution always wins
     clientLoginPath: loginUrl,
@@ -473,9 +485,15 @@ export default function AgencySiteClient({ agency, industry }: { agency: Agency;
   // win over the static lib defaults, so each agency can tailor its own pages;
   // everything the overlay doesn't touch (features, steps, pricing) stays shared
   // with the homepage.
-  const industryOverride: any = industry && (mc?.industryPages && typeof mc.industryPages === 'object')
-    ? (mc.industryPages[industry.slug] || {})
-    : {};
+  // Custom pages (agency-created) overlay from marketing_config.customPages;
+  // built-in industry pages overlay from marketing_config.industryPages. Both
+  // overlay the same fields on the agency's branded template, so the render
+  // below is identical either way.
+  const isCustomPage = !!(industry && (industry as any).custom);
+  const overlayBag: any = isCustomPage
+    ? (mc?.customPages && typeof mc.customPages === 'object' ? mc.customPages : null)
+    : (mc?.industryPages && typeof mc.industryPages === 'object' ? mc.industryPages : null);
+  const industryOverride: any = industry && overlayBag ? (overlayBag[industry.slug] || {}) : {};
   const renderConfig: Partial<MarketingConfig> = industry ? {
     ...marketingConfig,
     hero: {

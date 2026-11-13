@@ -24,7 +24,7 @@
 // -----------------------------------------------------------------------------
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Check, Loader2, Monitor, Tablet, Smartphone, MousePointerClick, ExternalLink, AlertCircle, Layers, X, ChevronUp, ChevronDown, FileText, Undo2, Save, LayoutTemplate, Type } from 'lucide-react';
 import { useAgency } from '../../context';
 import { defaultMarketingConfig } from '@/types/marketing';
@@ -46,14 +46,15 @@ function industryOverlayKey(field: string): OverlayKey | null {
   if (seg === 'faqs') return 'faqs';
   return null;
 }
-// Remap a homepage field path to its industryPages[slug] address, or null when
-// the field is shared with the homepage.
-function remapIndustryField(field: string, slug: string): string | null {
+// Remap a homepage field path to a chosen overlay bag: 'industryPages' for the built-in
+// verticals, 'customPages' for agency-created pages. Both overlay the same
+// fields on the template, so the editor writes to whichever bag owns the slug.
+function remapOverlayField(field: string, slug: string, base: 'industryPages' | 'customPages'): string | null {
   const key = industryOverlayKey(field);
   if (!key) return null;
-  if (key === 'headline') return `industryPages.${slug}.headline`;
-  if (key === 'subheadline') return `industryPages.${slug}.subheadline`;
-  return `industryPages.${slug}.${field}`; // problems / sampleCall / faqs keep their sub-path
+  if (key === 'headline') return `${base}.${slug}.headline`;
+  if (key === 'subheadline') return `${base}.${slug}.subheadline`;
+  return `${base}.${slug}.${field}`;
 }
 
 // Blank item used when "+ Add" is clicked for a repeatable list. Keyed by the
@@ -512,6 +513,22 @@ export default function WebsiteEditorPage() {
     configRef.current = setByPath(configRef.current, path, clone(val));
   }, []);
 
+  // True when the slug belongs to an agency-created custom page (vs a built-in
+  // industry vertical). Custom pages store their copy in customPages[slug].
+  const isCustomSlug = useCallback((slug: string): boolean => {
+    const bag = (configRef.current as any)?.customPages;
+    return !!(slug && bag && typeof bag === 'object' && bag[slug]);
+  }, []);
+  // Which overlay bag a slug writes to.
+  const overlayBaseFor = useCallback((slug: string): 'industryPages' | 'customPages' => (isCustomSlug(slug) ? 'customPages' : 'industryPages'), [isCustomSlug]);
+  // Seed an overlay field before the first edit. Built-in verticals seed from
+  // the lib default; custom pages already carry a full copy of every field
+  // (created from a template), so there is nothing to seed for them.
+  const ensureOverlaySeed = useCallback((slug: string, field: string, base: 'industryPages' | 'customPages') => {
+    if (base === 'industryPages') { ensureIndustrySeed(slug, field); return; }
+    // custom: field already present in customPages[slug]; guard just in case.
+  }, [ensureIndustrySeed]);
+
   // Switch the editor to a different page (homepage or an industry slug). The
   // iframe remounts via its key and re-pushes the current config on load.
   const switchPage = useCallback((slug: string) => {
@@ -524,6 +541,32 @@ export default function WebsiteEditorPage() {
     lastEditFieldRef.current = null;
     setUndoDepth(0);
   }, []);
+
+  // Agency-created custom pages available in the page switcher.
+  const customPageList = useMemo(() => {
+    const bag = (agency?.marketing_config as any)?.customPages;
+    if (!bag || typeof bag !== 'object') return [] as { slug: string; label: string }[];
+    return (Object.values(bag) as any[]).filter((p) => p && p.slug).map((p) => ({ slug: p.slug as string, label: (p.label || p.slug) as string }));
+  }, [agency]);
+  // Human label for the page currently selected in the switcher.
+  const pageLabel = useCallback((slug: string): string => {
+    if (!slug) return 'Homepage';
+    if (slug === 'signup') return 'Signup page';
+    if (slug === 'webcall') return 'Web call widget';
+    return INDUSTRY_PAGE_LIST.find((p) => p.slug === slug)?.label || customPageList.find((p) => p.slug === slug)?.label || slug;
+  }, [customPageList]);
+
+  // Deep-link: open the editor directly on a page when the Pages manager passes
+  // ?page=<slug>. Applied once, after the working config is ready.
+  const searchParams = useSearchParams();
+  const initialPageApplied = useRef(false);
+  useEffect(() => {
+    if (initialPageApplied.current || !configReady) return;
+    const want = searchParams.get('page');
+    if (!want) { initialPageApplied.current = true; return; }
+    initialPageApplied.current = true;
+    if (INDUSTRY_PAGE_LIST.some((p) => p.slug === want) || isCustomSlug(want)) switchPage(want);
+  }, [configReady, searchParams, switchPage, isCustomSlug]);
 
   // Inbound bridge from the iframe (Editable regions on the agency site).
   useEffect(() => {
@@ -551,10 +594,12 @@ export default function WebsiteEditorPage() {
         if (!configRef.current) return;
         const slug = currentPageRef.current;
         let arrPath = d.path;
-        // problems/faqs are overlaid per industry page; features/steps/etc stay shared.
+        // problems/faqs are overlaid per page (industry or custom); features/
+        // steps/etc stay shared with the homepage.
         if (slug && (d.path === 'problems' || d.path === 'faqs')) {
-          ensureIndustrySeed(slug, d.path);
-          arrPath = `industryPages.${slug}.${d.path}`;
+          const base = overlayBaseFor(slug);
+          ensureOverlaySeed(slug, d.path, base);
+          arrPath = `${base}.${slug}.${d.path}`;
         }
         const cur = getByPath(configRef.current, arrPath);
         const arr = Array.isArray(cur) ? cur.slice() : [];
@@ -575,8 +620,9 @@ export default function WebsiteEditorPage() {
         const slug = currentPageRef.current;
         let field = d.field;
         if (slug) {
-          const remapped = remapIndustryField(field, slug);
-          if (remapped) { ensureIndustrySeed(slug, field); field = remapped; }
+          const base = overlayBaseFor(slug);
+          const remapped = remapOverlayField(field, slug, base);
+          if (remapped) { ensureOverlaySeed(slug, field, base); field = remapped; }
         }
         pushUndo(field); // snapshot before the first edit to this field (coalesced)
         configRef.current = setByPath(configRef.current, field, typeof d.value === 'string' ? d.value : '');
@@ -594,7 +640,7 @@ export default function WebsiteEditorPage() {
     };
     window.addEventListener('message', onMsg);
     return () => window.removeEventListener('message', onMsg);
-  }, [pushConfig, ensureIndustrySeed, pushUndo, markConfigDirty, markColsDirty, undo]);
+  }, [pushConfig, ensureIndustrySeed, ensureOverlaySeed, overlayBaseFor, pushUndo, markConfigDirty, markColsDirty, undo]);
 
   // Leaving prompts to save when there are unsaved changes.
   const leave = useCallback(() => router.push('/agency/marketing'), [router]);
@@ -658,12 +704,12 @@ export default function WebsiteEditorPage() {
               style={{ color: ui.text, backgroundColor: ui.ctl }}
             >
               <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">{currentPage ? (INDUSTRY_PAGE_LIST.find((p) => p.slug === currentPage)?.label || currentPage) : 'Homepage'}</span>
+              <span className="hidden sm:inline">{pageLabel(currentPage)}</span>
               <ChevronDown className="h-3.5 w-3.5" />
             </button>
             {pageMenuOpen && (
               <div className="absolute left-0 mt-1 rounded-lg py-1 z-20" style={{ minWidth: 190, backgroundColor: ui.menu, border: `1px solid ${ui.menuBorder}`, boxShadow: ui.menuShadow }}>
-                {[{ slug: '', label: 'Homepage' }, ...INDUSTRY_PAGE_LIST, { slug: 'signup', label: 'Signup page' }, { slug: 'webcall', label: 'Web call widget' }].map((p) => (
+                {[{ slug: '', label: 'Homepage' }, ...INDUSTRY_PAGE_LIST, ...customPageList, { slug: 'signup', label: 'Signup page' }, { slug: 'webcall', label: 'Web call widget' }].map((p) => (
                   <button
                     key={p.slug || 'home'}
                     onClick={() => switchPage(p.slug)}

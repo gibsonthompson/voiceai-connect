@@ -97,6 +97,23 @@ export interface FAQItem {
   answer: string;
 }
 
+// An agency-created custom landing page. Shares the industry overlay content
+// shape (headline/subheadline/problems/sampleCall/faqs) so it renders through
+// the same path, plus its own metadata.
+export interface CustomPage {
+  slug: string;
+  label: string;
+  // 'industry' = the SEO vertical layout seed; 'generic' = a general landing
+  // page seed. Informational after creation (both render the same overlay).
+  template: 'industry' | 'generic';
+  status: 'draft' | 'published';
+  headline: string[];
+  subheadline: string;
+  problems: ProblemItem[];
+  sampleCall: { customerName: string; service: string; summary: string };
+  faqs: FAQItem[];
+}
+
 export interface FooterLink {
   label: string;
   href: string;
@@ -198,6 +215,18 @@ export interface MarketingConfig {
     sampleCall?: { customerName?: string; service?: string; summary?: string };
     faqs?: FAQItem[];
   }>;
+  // Agency-created custom landing pages, keyed by slug (e.g. 'dentists',
+  // 'about'). Unlike industryPages (which overlay the fixed lib verticals),
+  // these are whole pages the agency owns: created from a Lorem-filled template
+  // and then edited to their own copy. Rendered through the same overlay path as
+  // industry pages. `status` gates public visibility (drafts 404 publicly and
+  // render only in the editor/preview); `showInFooter` controls the footer link.
+  customPages?: Record<string, CustomPage>;
+  // Page slugs excluded from the footer "Industries" column. Applies to both
+  // built-in industry pages and published custom pages, so an agency can drop
+  // any footer link it does not want. A slug not listed here shows (built-in
+  // always; custom only once published).
+  hiddenFooterPages?: string[];
   // Order of the body sections (keys from lib/marketing-sections). Unset = each
   // template's built-in default order. Set by the in-context editor's reorder
   // controls. Unknown keys are ignored per template.

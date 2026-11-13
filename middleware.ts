@@ -176,7 +176,7 @@ export async function middleware(request: NextRequest) {
   // =========================================================================
   // HELPER: Rewrite to agency-site with all cookies/headers set
   // =========================================================================
-  function rewriteToAgencySite(agency: { id: string; name: string; slug: string }) {
+  function rewriteToAgencySite(agency: { id: string; name: string; slug: string; marketing_config?: any }) {
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set('x-agency-id', agency.id);
     requestHeaders.set('x-agency-name', agency.name);
@@ -186,12 +186,18 @@ export async function middleware(request: NextRequest) {
     // the platform's. Without this the layout only knows the rewritten path.
     requestHeaders.set('x-pathname', pathname);
 
-    // Industry landing pages: /auto, /medspa, /law, etc. on the agency host
-    // rewrite to the shared industry route, which overlays the vertical's copy
-    // on the agency's own branded template. Checked before the static list so a
-    // slug is routed as an industry page rather than passing through.
+    // Landing pages on the agency host rewrite to the shared page route, which
+    // overlays the page's copy on the agency's own branded template. This covers
+    // the built-in industry verticals (/auto, /medspa, /law) AND the agency's own
+    // custom pages (marketing_config.customPages[slug]). Only EXACT, KNOWN
+    // single-segment slugs are rerouted, so every other path (real routes,
+    // unknown slugs) passes through below exactly as before. Checked before the
+    // static list so a known slug is routed as a page rather than passing through.
     const firstSeg = pathname.split('/')[1];
-    if (firstSeg && pathname === `/${firstSeg}` && INDUSTRY_PAGE_SLUGS.includes(firstSeg)) {
+    const customPageSlugs = (agency.marketing_config && typeof agency.marketing_config === 'object' && agency.marketing_config.customPages && typeof agency.marketing_config.customPages === 'object')
+      ? Object.keys(agency.marketing_config.customPages)
+      : [];
+    if (firstSeg && pathname === `/${firstSeg}` && (INDUSTRY_PAGE_SLUGS.includes(firstSeg) || customPageSlugs.includes(firstSeg))) {
       const url = request.nextUrl.clone();
       url.pathname = `/agency-site/industry/${firstSeg}`;
       const rewriteResponse = NextResponse.rewrite(url, { request: { headers: requestHeaders } });
@@ -296,7 +302,7 @@ export async function middleware(request: NextRequest) {
     // Look up agency by slug (allow active or trial status)
     const { data: agency } = await supabase
       .from('agencies')
-      .select('id, name, status, slug')
+      .select('id, name, status, slug, marketing_config')
       .eq('slug', slug)
       .in('status', ['active', 'trial'])
       .single();
@@ -322,7 +328,7 @@ export async function middleware(request: NextRequest) {
 
   const { data: customDomainAgency } = await supabase
     .from('agencies')
-    .select('id, name, status, slug, marketing_domain')
+    .select('id, name, status, slug, marketing_domain, marketing_config')
     .eq('marketing_domain', cleanHostname)
     .eq('domain_verified', true)
     .in('status', ['active', 'trial'])
