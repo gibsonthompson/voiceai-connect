@@ -235,6 +235,8 @@ export default function BrandingPage() {
   const [useMarketingFonts, setUseMarketingFonts] = useState(false);
   const [iconStyle, setIconStyle] = useState<string>('lucide');
   const [brandKit, setBrandKit] = useState<any>(null);
+  const [kitSaving, setKitSaving] = useState(false);
+  const [kitSaved, setKitSaved] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [logoScale, setLogoScale] = useState<number>(1);
   // Core brand palette (primary/secondary/accent). Edited here so the branding
@@ -309,6 +311,12 @@ export default function BrandingPage() {
   const handleClear = (key: keyof BrandingOverrides) => { setOverrides(prev => { const next = { ...prev }; delete next[key]; return next; }); setSaved(false); setError(null); };
   const handleResetAll = () => { setOverrides({}); setSaved(false); setError(null); };
   const handleSave = async () => { if (!agency) return; setSaving(true); setError(null); setSaved(false); try { const token = localStorage.getItem('auth_token'); const cleanOverrides: BrandingOverrides = {}; for (const field of COLOR_FIELDS) { const val = overrides[field.key]; if (isValidHex(val)) { cleanOverrides[field.key] = val; } } if (logoScale > 1) { (cleanOverrides as any).logo_scale = Math.round(logoScale * 100) / 100; } const payload = { branding_overrides: Object.keys(cleanOverrides).length > 0 ? cleanOverrides : null, display_font: displayFont || null, body_font: bodyFont || null, marketing_display_font: effMarketingDisplay, marketing_body_font: effMarketingBody, icon_style: iconStyle || null, brand_kit: brandKit || null, primary_color: isValidHex(brandPrimary) ? brandPrimary : (agency.primary_color || '#00a19b'), secondary_color: isValidHex(brandSecondary) ? brandSecondary : (agency.secondary_color || '#007e77'), accent_color: isValidHex(brandAccent) ? brandAccent : (agency.accent_color || '#01f5d1') }; const response = await fetchWithRetry(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload) }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to save branding'); } await refreshAgency(); setSaved(true); setTimeout(() => setSaved(false), 3000); } catch (err) { setError(err instanceof Error ? err.message : 'Failed to save'); } finally { setSaving(false); } };
+
+  // The Brand kit section (fonts + nav icon style) saves on its own, separate
+  // from the color sections, so tweaking fonts/icons doesn't require touching
+  // the color save and vice versa.
+  const brandKitDirty = fontsChanged || marketingFontsChanged || kitChanged;
+  const handleSaveBrandKit = async () => { if (!agency) return; setKitSaving(true); setError(null); setKitSaved(false); try { const token = localStorage.getItem('auth_token'); const payload = { display_font: displayFont || null, body_font: bodyFont || null, marketing_display_font: effMarketingDisplay, marketing_body_font: effMarketingBody, icon_style: iconStyle || null, brand_kit: brandKit || null }; const response = await fetchWithRetry(`${backendUrl}/api/agency/${agency.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify(payload) }); if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'Failed to save brand kit'); } await refreshAgency(); setKitSaved(true); setTimeout(() => setKitSaved(false), 3000); } catch (err) { setError(err instanceof Error ? err.message : 'Failed to save'); } finally { setKitSaving(false); } };
 
   // ── LOCKED FOR FREE PLAN ────────────────────────────────────────────
   if (!hasWhiteLabel) {
@@ -489,6 +497,10 @@ export default function BrandingPage() {
                   <span className="text-[13px] font-semibold tracking-wide" style={{ color: iconStyle === 'none' ? theme.primary : theme.textMuted }}>Aa</span>
                   <span className="text-[12px] font-medium" style={{ color: iconStyle === 'none' ? theme.primary : theme.textMuted }}>Text only (no icons)</span>
                 </button>
+              </div>
+
+              <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
+                <button onClick={handleSaveBrandKit} disabled={kitSaving || !brandKitDirty} className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{kitSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : kitSaved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}{kitSaving ? 'Saving...' : kitSaved ? 'Saved!' : 'Save Brand Kit'}</button>
               </div>
             </div>
           </div>
