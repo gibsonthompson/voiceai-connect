@@ -7,7 +7,7 @@ import {
   ArrowLeft, Building2, User, Mail, Phone, MapPin, Globe,
   PhoneCall, CreditCard, Clock, ChevronRight, Loader2,
   Copy, Check, ExternalLink, Save, RotateCcw, AlertCircle, Bot,
-  X, Paintbrush, Lock, ChevronDown, Users, Shield, Trash2, Ban,
+  X, Paintbrush, Lock, ChevronDown, Users, Shield, Trash2, Ban, Plus,
   PhoneForwarded, CalendarCheck, AlertTriangle, ShieldX, Radio, Bell,
   CheckCircle2, Circle, Briefcase, HelpCircle, Mic, ClipboardList, UserCheck, MessageSquare
 } from 'lucide-react';
@@ -171,6 +171,150 @@ const CLIENT_USER_PERMS: Record<string, string> = {
   dashboard: 'Dashboard', calls: 'Calls', contacts: 'Contacts', messages: 'Messages',
   my_business: 'My Business', ai_agent: 'AI Agent', settings: 'Settings', billing: 'Billing',
 };
+
+function ClientNumbersCard({ clientId, agencyId, theme, backendUrl }: { clientId: string; agencyId?: string; theme: any; backendUrl: string; }) {
+  const [primary, setPrimary] = useState<string | null>(null);
+  const [numbers, setNumbers] = useState<any[]>([]);
+  const [costCents, setCostCents] = useState(999);
+  const [max, setMax] = useState(5);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+  const [showAdd, setShowAdd] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [areaCode, setAreaCode] = useState('');
+  const [label, setLabel] = useState('');
+  const [removingId, setRemovingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      if (!agencyId) return;
+      try {
+        const token = localStorage.getItem('auth_token');
+        const res = await fetch(`${backendUrl}/api/agency/${agencyId}/clients/${clientId}/numbers`, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) throw new Error('Failed to load numbers');
+        const data = await res.json();
+        if (!active) return;
+        setPrimary(data.primary || null);
+        setNumbers(data.numbers || []);
+        if (typeof data.monthlyCostCents === 'number') setCostCents(data.monthlyCostCents);
+        if (typeof data.max === 'number') setMax(data.max);
+      } catch {
+        if (active) setErr('Could not load phone numbers');
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, [clientId, agencyId, backendUrl]);
+
+  const costLabel = `$${(costCents / 100).toFixed(2)}/mo`;
+  const fmt = (e164: string) => { const d = String(e164 || '').replace(/\D/g, '').slice(-10); return d.length === 10 ? `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}` : e164; };
+  const atMax = numbers.length >= max;
+
+  const handleAdd = async () => {
+    setAdding(true); setErr(null);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/agency/${agencyId}/clients/${clientId}/numbers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ areaCode: areaCode || undefined, label: label || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not add a number');
+      setNumbers(prev => [...prev, data.number]);
+      setShowAdd(false); setAreaCode(''); setLabel('');
+    } catch (e: any) {
+      setErr(e.message || 'Could not add a number');
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const handleRemove = async (id: string) => {
+    if (!confirm(`Remove this number? It will be released and the ${costLabel} charge stops.`)) return;
+    setRemovingId(id); setErr(null);
+    try {
+      const token = localStorage.getItem('auth_token');
+      const res = await fetch(`${backendUrl}/api/agency/${agencyId}/clients/${clientId}/numbers/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Could not remove'); }
+      setNumbers(prev => prev.filter(n => n.id !== id));
+    } catch (e: any) {
+      setErr(e.message || 'Could not remove the number');
+    } finally {
+      setRemovingId(null);
+    }
+  };
+
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+      <div className="p-4 sm:p-6">
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2"><Phone className="h-4 w-4" style={{ color: theme.iconColor }} /><h2 className="font-semibold text-sm sm:text-base">Phone Numbers</h2></div>
+          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.primary15, color: theme.primary }}>{numbers.length} extra</span>
+        </div>
+        <p className="text-xs mb-4" style={{ color: theme.cardTextMuted }}>Extra numbers all ring this client&apos;s AI, so you can run different numbers on different ads or channels. Each one is {costLabel}, billed to your account. Charge your client whatever you like, or nothing.</p>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-6"><Loader2 className="h-5 w-5 animate-spin" style={{ color: theme.iconColor }} /></div>
+        ) : (
+          <div className="space-y-2.5">
+            {primary && (
+              <div className="rounded-lg p-3 flex items-center justify-between gap-2" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate" style={{ color: theme.text }}>{fmt(primary)}</p>
+                  <p className="text-xs" style={{ color: theme.cardTextMuted }}>Primary number</p>
+                </div>
+                <span className="text-[10px] font-medium px-2 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: theme.primary15, color: theme.primary }}>Included</span>
+              </div>
+            )}
+
+            {numbers.map((n) => (
+              <div key={n.id} className="rounded-lg p-3 flex items-center justify-between gap-2" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate" style={{ color: theme.text }}>{fmt(n.e164)}</p>
+                  <p className="text-xs truncate" style={{ color: theme.cardTextMuted }}>{n.label ? n.label : 'Additional number'} &middot; {costLabel}</p>
+                </div>
+                <button onClick={() => handleRemove(n.id)} disabled={removingId === n.id} className="flex-shrink-0 inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.errorBg, color: theme.errorText, border: `1px solid ${theme.errorBorder}` }}>
+                  {removingId === n.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}Remove
+                </button>
+              </div>
+            ))}
+
+            {err && (
+              <div className="rounded-lg p-3 flex items-center gap-2" style={{ backgroundColor: theme.errorBg, border: `1px solid ${theme.errorBorder}` }}><AlertCircle className="h-4 w-4 flex-shrink-0" style={{ color: theme.errorText }} /><p className="text-xs" style={{ color: theme.errorText }}>{err}</p></div>
+            )}
+
+            {showAdd ? (
+              <div className="rounded-lg p-3 space-y-2.5" style={{ backgroundColor: theme.hover, border: `1px solid ${theme.border}` }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-xs mb-1" style={{ color: theme.cardTextMuted }}>Area code (optional)</label>
+                    <input value={areaCode} onChange={e => setAreaCode(e.target.value.replace(/\D/g, '').slice(0, 3))} placeholder="e.g. 404" inputMode="numeric" className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, color: theme.text }} />
+                  </div>
+                  <div>
+                    <label className="block text-xs mb-1" style={{ color: theme.cardTextMuted }}>Label (optional)</label>
+                    <input value={label} onChange={e => setLabel(e.target.value.slice(0, 60))} placeholder="e.g. Google Ads" className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}`, color: theme.text }} />
+                  </div>
+                </div>
+                <p className="text-xs" style={{ color: theme.cardTextMuted }}>Leave the area code blank to match the client&apos;s existing number. Adds {costLabel} to your bill.</p>
+                <div className="flex items-center gap-2">
+                  <button onClick={handleAdd} disabled={adding} className="inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary, color: theme.primaryText }}>{adding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}{adding ? 'Provisioning...' : `Add number (${costLabel})`}</button>
+                  <button onClick={() => { setShowAdd(false); setAreaCode(''); setLabel(''); setErr(null); }} disabled={adding} className="rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.hover, color: theme.text, border: `1px solid ${theme.border}` }}>Cancel</button>
+                </div>
+              </div>
+            ) : (
+              <button onClick={() => setShowAdd(true)} disabled={atMax} title={atMax ? `Up to ${max} extra numbers` : undefined} className="w-full flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50" style={{ backgroundColor: theme.primary15, color: theme.primary, border: `1px dashed ${theme.primary30 || theme.border}` }}>
+                <Plus className="h-4 w-4" />{atMax ? `Maximum ${max} extra numbers` : 'Add a number'}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function ClientUsersCard({ clientId, theme, backendUrl }: { clientId: string; theme: any; backendUrl: string; }) {
   const [members, setMembers] = useState<any[]>([]);
@@ -1155,6 +1299,9 @@ export default function AgencyClientDetailPage() {
 
           {/* Client Users - read-only view of the client's additional dashboard logins */}
           <ClientUsersCard clientId={clientId} theme={theme} backendUrl={backendUrl} />
+
+          {/* Phone Numbers - primary + agency-added extra lines (all ring the same AI) */}
+          <ClientNumbersCard clientId={clientId} agencyId={agency?.id} theme={theme} backendUrl={backendUrl} />
 
           {/* Client Branding */}
           <div>
