@@ -48,6 +48,11 @@ interface Agency {
   // Custom domain
   marketing_domain: string | null;
   domain_verified: boolean | null;
+  // Optional separate app/client domain (e.g. app.covercall.ca). Client-facing
+  // links (login) route here when verified; the marketing site stays on
+  // marketing_domain.
+  app_domain: string | null;
+  app_domain_verified: boolean | null;
   // Custom marketing nav links (external header/footer links)
   custom_nav_links: { label: string; url: string }[] | null;
   // Analytics fields
@@ -145,10 +150,17 @@ function resolveHomepageUrl(agency: Agency): string {
 // ============================================================================
 function resolveLoginUrl(agency: Agency): string {
   const path = '/client/login';
+  const clean = (d: string) => d.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
+  // The client app lives on the app domain when the agency set one up, so send
+  // client logins there; otherwise fall back to the marketing domain, then the
+  // platform subdomain.
+  const appDomain = agency.app_domain?.trim();
+  if (appDomain && agency.app_domain_verified === true) {
+    return `https://${clean(appDomain)}${path}`;
+  }
   const domain = agency.marketing_domain?.trim();
   if (domain && agency.domain_verified === true) {
-    const clean = domain.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
-    return `https://${clean}${path}`;
+    return `https://${clean(domain)}${path}`;
   }
   if (agency.slug) {
     return `https://${agency.slug}.myvoiceaiconnect.com${path}`;

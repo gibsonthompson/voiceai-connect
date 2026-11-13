@@ -344,6 +344,25 @@ export async function middleware(request: NextRequest) {
     return rewriteToUnavailable();
   }
 
+  // 3b. Custom APP domain (e.g. app.covercall.ca). The client app lives here, not
+  // the marketing site. /client and /cc requests already returned above, so they
+  // render normally; anything else that reaches here (the root, marketing paths)
+  // is sent to the client login, which resolves the agency from this host.
+  const { data: appDomainAgency } = await supabase
+    .from('agencies')
+    .select('id, status, app_domain')
+    .eq('app_domain', cleanHostname)
+    .eq('app_domain_verified', true)
+    .in('status', ['active', 'trial'])
+    .single();
+
+  if (appDomainAgency) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = '/client/login';
+    loginUrl.search = '';
+    return NextResponse.redirect(loginUrl);
+  }
+
   // 4. Unknown domain - could be local dev or misconfigured
   console.log(`[Middleware] Unknown hostname: ${hostname}, pathname: ${pathname}`);
   
