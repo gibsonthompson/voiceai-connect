@@ -400,7 +400,6 @@ export default function MarketingPageAurora({ config: partial }: AuroraProps) {
                 <span>{branding.name}</span>
               </div>
               <p className="a-footer-tagline">Professional AI that answers every call, books appointments, and sends instant summaries, 24/7.</p>
-              {footer.email && <p style={{fontSize:'0.8125rem',color:'var(--a-text-muted)',marginTop:'0.75rem'}}><a href={`mailto:${footer.email}`} style={{color:'var(--a-text-secondary)'}}>{footer.email}</a></p>}
             </div>
             <div className="a-footer-col">
               <h4>Product</h4>

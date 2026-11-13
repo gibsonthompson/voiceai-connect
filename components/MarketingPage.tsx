@@ -844,9 +844,6 @@ function Footer({ config }: { config: MarketingConfig }) {
               ) : (<span>{branding.name}</span>)}
             </div>
             <TEdit config={config} as="p" className="footer-tagline" k="footerTagline" d="Professional AI that answers every call, books appointments, and sends you instant summaries, 24/7." />
-            <div className="footer-contact">
-              {footer.address && <p>{footer.address}</p>}
-            </div>
           </div>
           <div className="footer-col">
             <h4><TEdit config={config} k="footerProduct" d="Product" /></h4>

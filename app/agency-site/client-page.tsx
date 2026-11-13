@@ -11,7 +11,6 @@ import { googleFontsHref, fontStack } from '@/lib/brandFonts';
 import { MarketingConfig, defaultMarketingConfig } from '@/types/marketing';
 import type { IndustryPageData } from '@/lib/industry-pages';
 import { INDUSTRY_PAGE_LIST } from '@/lib/industry-pages';
-import IndustryLandingPage from '@/components/IndustryLandingPage';
 import { getCurrencySymbol } from '@/lib/currency-symbols';
 import { getCurrencyForCountry, currencies } from '@/lib/currency';
 import { FEATURE_LABELS, FEATURE_ORDER } from '@/lib/plan-features-meta';
@@ -499,22 +498,65 @@ export default function AgencySiteClient({ agency, industry }: { agency: Agency;
   // built-in industry pages overlay from marketing_config.industryPages. Both
   // overlay the same fields on the agency's branded template, so the render
   // below is identical either way.
+  // Industry pages render on the agency's OWN homepage template (same nav, footer,
+  // pricing, styling) with the vertical's content mapped into the template's
+  // standard sections, so they read as the same site, not a separate one. The
+  // multi-industry grid is hidden (it makes no sense on a single-industry page).
+  const FEATURE_ICONS = ['calendar', 'message', 'transfer', 'training', 'moon', 'mic'];
   const isCustomPage = !!(industry && (industry as any).custom);
   const overlayBag: any = isCustomPage
     ? (mc?.customPages && typeof mc.customPages === 'object' ? mc.customPages : null)
     : (mc?.industryPages && typeof mc.industryPages === 'object' ? mc.industryPages : null);
   const industryOverride: any = industry && overlayBag ? (overlayBag[industry.slug] || {}) : {};
-  const renderConfig: Partial<MarketingConfig> = industry ? {
-    ...marketingConfig,
-    hero: {
-      ...(marketingConfig.hero as MarketingConfig['hero']),
-      headline: Array.isArray(industryOverride.headline) && industryOverride.headline.length ? industryOverride.headline : industry.headline,
-      description: typeof industryOverride.subheadline === 'string' && industryOverride.subheadline ? industryOverride.subheadline : industry.subheadline,
-    },
-    problems: Array.isArray(industryOverride.problems) && industryOverride.problems.length ? industryOverride.problems : industry.problems,
-    sampleCall: (industryOverride.sampleCall && typeof industryOverride.sampleCall === 'object') ? industryOverride.sampleCall : industry.sampleCall,
-    faqs: Array.isArray(industryOverride.faqs) && industryOverride.faqs.length ? industryOverride.faqs : industry.faqs,
-  } : marketingConfig;
+
+  let renderConfig: Partial<MarketingConfig> = marketingConfig;
+  if (richIndustry) {
+    // Built-in (auto/medspa/law): map the rich content into the template sections.
+    const r: any = richIndustry;
+    const heroBase = (marketingConfig.hero as any) || {};
+    renderConfig = {
+      ...marketingConfig,
+      showIndustries: false,
+      hero: {
+        ...heroBase,
+        badge: r.label,
+        headline: r.headline,
+        description: r.subheadline,
+        trustItems: Array.isArray(r.heroBullets) && r.heroBullets.length ? r.heroBullets : heroBase.trustItems,
+      },
+      sectionHeadings: {
+        ...(marketingConfig.sectionHeadings || {}),
+        problemHeadline: r.scenarios?.heading,
+        featuresHeadline: r.capabilities?.heading,
+        faqHeadline: 'Questions, Answered',
+      },
+      problems: (r.scenarios?.items || []).map((s: any) => ({ title: s.title, description: s.description })),
+      features: (r.capabilities?.items || []).map((c: any, i: number) => ({ title: c.title, description: c.description, icon: FEATURE_ICONS[i % FEATURE_ICONS.length] })),
+      solution: {
+        ...((marketingConfig.solution as any) || {}),
+        headline: `Built for ${r.label}`,
+        paragraphs: Array.isArray(r.intro) && r.intro.length ? r.intro : ((marketingConfig.solution as any)?.paragraphs || []),
+      },
+      sampleCall: { customerName: r.exampleCall?.callerName || '', service: r.label, summary: r.exampleCall?.summary || '' },
+      faqs: Array.isArray(r.faqs) ? r.faqs : [],
+      finalCta: { heading: r.closing?.heading || '', body: r.closing?.body || '' },
+    };
+  } else if (industry) {
+    // Thin agency-created custom page: overlay its fields on the template.
+    const heroBase = (marketingConfig.hero as any) || {};
+    renderConfig = {
+      ...marketingConfig,
+      showIndustries: false,
+      hero: {
+        ...heroBase,
+        headline: Array.isArray(industryOverride.headline) && industryOverride.headline.length ? industryOverride.headline : (industry as any).headline,
+        description: typeof industryOverride.subheadline === 'string' && industryOverride.subheadline ? industryOverride.subheadline : (industry as any).subheadline,
+      },
+      problems: Array.isArray(industryOverride.problems) && industryOverride.problems.length ? industryOverride.problems : (industry as any).problems,
+      sampleCall: (industryOverride.sampleCall && typeof industryOverride.sampleCall === 'object') ? industryOverride.sampleCall : (industry as any).sampleCall,
+      faqs: Array.isArray(industryOverride.faqs) && industryOverride.faqs.length ? industryOverride.faqs : (industry as any).faqs,
+    };
+  }
 
   // Route to the correct template. In the editor, a live template switch
   // (templateOverride) wins so the preview reflects the pick before saving.
@@ -526,13 +568,9 @@ export default function AgencySiteClient({ agency, industry }: { agency: Agency;
       {fontHref && <link rel="stylesheet" href={fontHref} />}
       {fontVarCss && <style dangerouslySetInnerHTML={{ __html: fontVarCss }} />}
       {editorMode && <style>{`[data-vai-edit]{border-radius:4px;transition:box-shadow .12s ease,background-color .12s ease} [data-vai-edit]:hover{box-shadow:0 0 0 2px ${(agency.primary_color || '#00a19b')}66} [data-vai-edit]:focus{box-shadow:0 0 0 2px ${(agency.primary_color || '#00a19b')};background-color:${(agency.primary_color || '#00a19b')}14}`}</style>}
-      {richIndustry ? (
-        <IndustryLandingPage agency={agency as any} content={richIndustry} config={marketingConfig} isDark={isDark} />
-      ) : (
-        <EditorProvider value={{ editor: editorMode, onEdit, onItem }}>
-          <TemplateComponent config={renderConfig} />
-        </EditorProvider>
-      )}
+      <EditorProvider value={{ editor: editorMode, onEdit, onItem }}>
+        <TemplateComponent config={renderConfig} />
+      </EditorProvider>
       {/* The floating FAQ/support bubble is hidden inside the website editor so
           it does not cover the content being edited. It still shows on the
           live public site and the plain (non-editor) preview. */}
