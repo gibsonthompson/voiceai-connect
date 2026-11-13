@@ -7,7 +7,7 @@ import {
   AlertCircle, CheckCircle2, Loader2, RefreshCw, Palette, Type, Save, Upload,
   Wand2, BarChart3, Share2, Layout, DollarSign, Code,
   ChevronUp, ChevronDown, Trash2, Plus, LayoutDashboard, FileText,
-  HelpCircle, Sparkles
+  HelpCircle, Sparkles, Lock
 } from 'lucide-react';
 import LegalEditor from '@/components/agency/LegalEditor';
 import LockedFeature from '@/components/LockedFeature';
@@ -19,7 +19,6 @@ import WebCallWidgetEditor from '@/components/dashboard/WebCallWidgetEditor';
 import { WebCallStyle } from '@/lib/webcall-style';
 import { ColorField, SegmentField, EditorTheme } from '@/components/dashboard/inline-editor';
 import { SignupStyle, resolveSignupPalette } from '@/lib/signup-style';
-import { NAMECHEAP_LOGO } from '@/lib/namecheap-logo';
 
 type ActiveTab = 'overview' | 'template' | 'content' | 'colors' | 'domain' | 'tracking' | 'seo' | 'navigation' | 'legal' | 'embed';
 
@@ -708,15 +707,15 @@ Ask me what platform I'm on if that helps.`;
         <div className="rounded-xl p-4 sm:p-5 flex flex-col" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
           <div className="flex items-start justify-between mb-3"><div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg" style={{ backgroundColor: `${agencyPrimaryColor}15`, color: agencyPrimaryColor }}><Globe className="h-4 w-4 sm:h-5 sm:w-5" /></div><span className="text-[10px] sm:text-xs font-medium px-2 py-0.5 sm:py-1 rounded-full" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', color: mutedTextColor }}>Recommended</span></div>
           <h3 className="font-medium text-sm sm:text-base mb-1">Use Your Own Domain</h3>
-          <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>Put your site on a domain you own, or a subdomain like <strong style={{ color: textColor }}>app.yourbrand.com</strong>, so clients see your brand, not ours.</p>
-          <div className="mt-auto pt-3 sm:pt-4 space-y-2.5">
+          <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>Put your site on a domain you own so clients see your brand, not ours.</p>
+          {/* Address-bar preview makes the subdomain idea concrete */}
+          <div className="mt-3 flex items-center gap-2 rounded-lg px-3 py-2.5" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
+            <Lock className="h-3.5 w-3.5 flex-shrink-0" style={{ color: mutedTextColor }} />
+            <span className="text-xs sm:text-[13px] truncate" style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', letterSpacing: '0.2px', color: textColor }}>app.<strong style={{ color: agencyPrimaryColor, fontWeight: 600 }}>yourbrand</strong>.com</span>
+          </div>
+          <div className="mt-auto pt-3 sm:pt-4">
             <button onClick={() => setActiveTab('domain')} className="w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs sm:text-sm font-semibold text-white transition-opacity hover:opacity-90" style={{ backgroundColor: agencyPrimaryColor }}><Globe className="h-4 w-4" />Connect a Domain</button>
-            <div className="flex items-center gap-2.5"><span className="h-px flex-1" style={{ backgroundColor: borderColor }} /><span className="text-[10px] sm:text-xs whitespace-nowrap" style={{ color: mutedTextColor }}>No domain yet?</span><span className="h-px flex-1" style={{ backgroundColor: borderColor }} /></div>
-            <a href="https://www.namecheap.com/domains/domain-name-search/" target="_blank" rel="noopener noreferrer" className="group w-full flex items-center justify-center gap-3 rounded-lg px-3 py-2.5 transition-shadow hover:shadow-md" style={{ backgroundColor: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }}>
-              <img src={NAMECHEAP_LOGO} alt="Namecheap" style={{ height: 34, width: 'auto', display: 'block' }} />
-              <span className="font-medium text-xs sm:text-sm" style={{ color: '#4b5563' }}>Find a Domain</span>
-              <ExternalLink className="h-3.5 w-3.5" style={{ color: '#9ca3af' }} />
-            </a>
+            <p className="text-center text-[11px] sm:text-xs mt-2.5" style={{ color: mutedTextColor }}>No domain yet? <a href="https://www.namecheap.com/domains/domain-name-search/" target="_blank" rel="noopener noreferrer" className="font-semibold inline-flex items-center gap-1 hover:opacity-80" style={{ color: agencyPrimaryColor }}>Find one on Namecheap<ExternalLink className="h-3 w-3" /></a></p>
           </div>
         </div>
       </div>
