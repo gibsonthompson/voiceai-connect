@@ -421,7 +421,7 @@ export default function AgencyLeadsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('priority');
-  const [hasEmailFirst, setHasEmailFirst] = useState(false);
+  const [hasEmailOnly, setHasEmailOnly] = useState(false);
   const [showCSVImport, setShowCSVImport] = useState(false);
   const [showManage, setShowManage] = useState(false);
 
@@ -536,15 +536,8 @@ export default function AgencyLeadsPage() {
       lead.email?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSearch;
   });
-  const scoped = base.filter((l) => !skippedIds.has(l.id));
+  const scoped = base.filter((l) => !skippedIds.has(l.id) && (!hasEmailOnly || (!!l.email && l.email.includes('@'))));
   const workQueue = [...scoped].sort((a, b) => {
-    // "Has email" toggle: leads with a real email float to the top, applied
-    // before the chosen sort so it combines with any of them.
-    if (hasEmailFirst) {
-      const ea = a.email && a.email.includes('@') ? 0 : 1;
-      const eb = b.email && b.email.includes('@') ? 0 : 1;
-      if (ea !== eb) return ea - eb;
-    }
     if (sortBy === 'industry') {
       const ia = (a.industry || '').toLowerCase(), ib = (b.industry || '').toLowerCase();
       if (ia !== ib) { if (!ia) return 1; if (!ib) return -1; return ia.localeCompare(ib); }
@@ -665,7 +658,7 @@ export default function AgencyLeadsPage() {
     '--lp-info-bg': theme.infoBg,
   } as CSSProperties;
 
-  const hasFilters = Boolean(searchQuery);
+  const hasFilters = Boolean(searchQuery) || hasEmailOnly;
   const currentQueueItem = currentLead ? followUpQueue.find((q) => q.lead_id === currentLead.id) : undefined;
 
   const pageContent = (
@@ -721,14 +714,18 @@ export default function AgencyLeadsPage() {
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={() => setHasEmailFirst((v) => !v)}
-            aria-pressed={hasEmailFirst}
-            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors whitespace-nowrap"
-            style={hasEmailFirst
-              ? { backgroundColor: 'var(--lp-primary-15)', border: '1px solid var(--lp-primary-30)', color: 'var(--lp-primary)' }
-              : { backgroundColor: 'var(--lp-input)', border: '1px solid var(--lp-input-border)', color: 'var(--lp-muted)' }}
+            role="checkbox"
+            aria-checked={hasEmailOnly}
+            onClick={() => setHasEmailOnly((v) => !v)}
+            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors whitespace-nowrap"
+            style={{ backgroundColor: 'var(--lp-input)', border: `1px solid ${hasEmailOnly ? 'var(--lp-primary-30)' : 'var(--lp-input-border)'}`, color: hasEmailOnly ? 'var(--lp-primary)' : 'var(--lp-muted)' }}
           >
-            <Mail className="h-4 w-4" />
+            <span
+              className="flex items-center justify-center rounded-[4px]"
+              style={{ width: 16, height: 16, flexShrink: 0, border: `1.5px solid ${hasEmailOnly ? 'var(--lp-primary)' : 'var(--lp-input-border)'}`, backgroundColor: hasEmailOnly ? 'var(--lp-primary)' : 'transparent' }}
+            >
+              {hasEmailOnly && <Check className="h-3 w-3" style={{ color: '#fff' }} />}
+            </span>
             Has email
           </button>
           <div className="flex-1 sm:flex-none sm:w-44">
