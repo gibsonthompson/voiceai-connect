@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { 
   FileText, Mail, MessageSquare, PhoneCall, Plus, Search, Loader2,
-  MoreVertical, Copy, Trash2, Edit, Sparkles, Megaphone, ChevronRight
+  MoreVertical, Copy, Trash2, Edit, Sparkles, Megaphone, ChevronRight, Check
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
@@ -14,7 +14,6 @@ import FirstClientBanner from '@/components/agency/FirstClientBanner';
 import SignatureEditor from '@/components/agency/SignatureEditor';
 import { buildDefaultSignatureHtml } from '@/lib/default-signature';
 import { formatPhoneNumber } from '@/lib/utils';
-import { CustomSelect } from '@/components/ui/custom-select';
 import { EMAIL_PROVIDERS, normalizeProvider } from '@/lib/email-providers';
 
 const PLATFORM_DOMAIN = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'myvoiceaiconnect.com';
@@ -32,6 +31,46 @@ interface Template {
   sequence_order: number | null;
   use_count: number;
   created_at: string;
+}
+
+// Compact, self-contained brand marks for the email-provider tiles. Clean
+// recognizable glyphs in each brand's color (no external assets / network).
+function ProviderLogo({ id }: { id: string }) {
+  const common = { width: 22, height: 22, 'aria-hidden': true } as const;
+  if (id === 'gmail') {
+    return (
+      <svg viewBox="0 0 48 48" {...common}>
+        <path fill="#4caf50" d="M45 16.2l-5 2.75l-5 4.75L35 40h7c1.657 0 3-1.343 3-3V16.2z" />
+        <path fill="#1e88e5" d="M3 16.2l3.614 1.71L13 23.7V40H6c-1.657 0-3-1.343-3-3V16.2z" />
+        <polygon fill="#e53935" points="35,11.2 24,19.45 13,11.2 12,17 13,23.7 24,31.95 35,23.7 36,17" />
+        <path fill="#c62828" d="M3 12.298V16.2l10 7.5V11.2L9.876 8.859C9.132 8.301 8.228 8 7.298 8C4.924 8 3 9.924 3 12.298z" />
+        <path fill="#fbc02d" d="M45 12.298V16.2l-10 7.5V11.2l3.124-2.341C38.868 8.301 39.772 8 40.702 8C43.076 8 45 9.924 45 12.298z" />
+      </svg>
+    );
+  }
+  if (id === 'outlook365' || id === 'outlookcom') {
+    return (
+      <svg viewBox="0 0 24 24" {...common}>
+        <rect x="2" y="2" width="20" height="20" rx="4" fill="#0F6CBD" />
+        <ellipse cx="12" cy="12" rx="5" ry="6" fill="none" stroke="#fff" strokeWidth="2.4" />
+      </svg>
+    );
+  }
+  if (id === 'yahoo') {
+    return (
+      <svg viewBox="0 0 24 24" {...common}>
+        <rect x="2" y="2" width="20" height="20" rx="4" fill="#5F01D1" />
+        <text x="12" y="16.5" textAnchor="middle" fontFamily="Arial, Helvetica, sans-serif" fontSize="13" fontWeight="700" fill="#fff">y!</text>
+      </svg>
+    );
+  }
+  // default: a neutral mail-app envelope
+  return (
+    <svg viewBox="0 0 24 24" {...common}>
+      <rect x="2" y="4.5" width="20" height="15" rx="3" fill="#64748b" />
+      <path d="M3.5 7l8.5 5.5L20.5 7" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
 }
 
 export default function OutreachPage() {
@@ -766,13 +805,30 @@ export default function OutreachPage() {
               <p className="mb-2 text-[11px] leading-relaxed" style={{ color: theme.cardTextMuted }}>
                 The composer&apos;s one-click button opens this app with the recipient and subject ready, and copies the message so you paste it in with your logo. Pick whichever you send from.
               </p>
-              <div className="sm:max-w-xs">
-                <CustomSelect
-                  value={emailProvider}
-                  onChange={(v) => saveEmailProvider(v || 'gmail')}
-                  options={EMAIL_PROVIDERS.map((pv) => ({ value: pv.id, label: pv.label }))}
-                  ui={{ inputStyle: { backgroundColor: theme.input, border: `1px solid ${theme.inputBorder}`, color: theme.text }, text: theme.text, muted: theme.cardTextMuted, panelBg: theme.card, panelBorder: theme.inputBorder, hover: theme.primary15, accent: theme.primary, isDark: theme.isDark }}
-                />
+              <div className="flex flex-wrap gap-2">
+                {EMAIL_PROVIDERS.map((pv) => {
+                  const active = emailProvider === pv.id;
+                  return (
+                    <button
+                      key={pv.id}
+                      type="button"
+                      onClick={() => saveEmailProvider(pv.id)}
+                      aria-pressed={active}
+                      className="flex-1 min-w-[150px] inline-flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors text-left"
+                      style={{
+                        backgroundColor: active ? theme.primary15 : theme.input,
+                        border: `1.5px solid ${active ? theme.primary : theme.inputBorder}`,
+                        color: active ? theme.text : theme.cardTextMuted,
+                      }}
+                    >
+                      <span className="shrink-0 inline-flex items-center justify-center rounded-md" style={{ width: 28, height: 28, backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : '#ffffff', border: `1px solid ${theme.border}` }}>
+                        <ProviderLogo id={pv.id} />
+                      </span>
+                      <span className="truncate">{pv.label}</span>
+                      {active && <Check className="h-4 w-4 ml-auto shrink-0" style={{ color: theme.primary }} />}
+                    </button>
+                  );
+                })}
               </div>
               {emailProviderSaved && <span className="mt-2 inline-block text-xs" style={{ color: theme.primary }}>Saved</span>}
             </div>
