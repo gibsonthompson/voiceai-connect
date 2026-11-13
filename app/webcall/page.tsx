@@ -17,7 +17,7 @@
 
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Phone, PhoneOff, Mic, MicOff, Loader2, AlertCircle } from 'lucide-react';
+import { Phone, PhoneOff, Mic, MicOff, Loader2, AlertCircle, ArrowRight } from 'lucide-react';
 import { fontStack, googleFontsHref } from '@/lib/brandFonts';
 import WebCallShell from '@/components/widgets/WebCallShell';
 import { resolveWebCallPalette, WebCallStyle } from '@/lib/webcall-style';
@@ -300,11 +300,30 @@ function WebcallInner() {
                       <PhoneOff style={{ height: 16, width: 16 }} />End call
                     </button>
                   ) : (
-                    <button onClick={startCall} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, borderRadius: 999, padding: '12px 24px', fontSize: 15, fontWeight: 600, color: palette.buttonIcon, backgroundColor: palette.buttonColor, border: 'none', cursor: 'pointer' }}>
+                    // In the demo, "Call again" becomes the secondary action so
+                    // the sign-up CTA below is the clear next step.
+                    <button onClick={startCall} style={mode === 'demo'
+                      ? { display: 'inline-flex', alignItems: 'center', gap: 8, borderRadius: 999, padding: '10px 20px', fontSize: 14, fontWeight: 600, color: text, backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#f3f4f6', border: `1px solid ${border}`, cursor: 'pointer' }
+                      : { display: 'inline-flex', alignItems: 'center', gap: 8, borderRadius: 999, padding: '12px 24px', fontSize: 15, fontWeight: 600, color: palette.buttonIcon, backgroundColor: palette.buttonColor, border: 'none', cursor: 'pointer' }}>
                       <Phone style={{ height: 16, width: 16 }} />Call again
                     </button>
                   )}
                 </div>
+                {/* Post-demo CTA: once a prospect has heard the AI, point them
+                    straight at signing up. Demo mode only (never on a client's
+                    own live widget), and target=_top so it breaks out of the
+                    embed to the agency's own signup. */}
+                {phase === 'ended' && mode === 'demo' && (
+                  <div style={{ marginTop: 20, paddingTop: 18, borderTop: `1px solid ${border}`, textAlign: 'center' }}>
+                    <p style={{ fontSize: 15, fontWeight: 700, color: palette.heading, margin: '0 0 12px', fontFamily: fontStack(config?.displayFont, 'display'), lineHeight: 1.3 }}>
+                      Want this answering your calls, 24/7?
+                    </p>
+                    <a href="/signup" target="_top" rel="noopener" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 999, padding: '13px 28px', fontSize: 15, fontWeight: 700, color: palette.buttonIcon, backgroundColor: palette.buttonColor, border: 'none', cursor: 'pointer', textDecoration: 'none', boxShadow: `0 10px 24px -8px ${hexToRgba(palette.buttonColor, 0.6)}` }}>
+                      Get started
+                      <ArrowRight style={{ height: 16, width: 16 }} />
+                    </a>
+                  </div>
+                )}
                 {error && phase === 'ended' && <p style={{ fontSize: 12.5, color: '#ef4444', textAlign: 'center', marginTop: 10 }}>{error}</p>}
               </>
             )}
