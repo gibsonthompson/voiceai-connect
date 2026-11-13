@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { 
   FileText, Mail, MessageSquare, PhoneCall, Plus, Search, Loader2,
-  MoreVertical, Copy, Trash2, Edit, Sparkles, Megaphone, ChevronRight, Check
+  MoreVertical, Copy, Trash2, Edit, Sparkles, Megaphone, ChevronRight, Check, Send
 } from 'lucide-react';
 import { useAgency } from '../context';
 import { usePlanFeatures } from '@/hooks/usePlanFeatures';
@@ -798,43 +798,80 @@ export default function OutreachPage() {
               </button>
               {signatureSaved && <span className="text-xs" style={{ color: theme.primary }}>Saved</span>}
             </div>
-
-            {/* Which email app the composer's one-click opens */}
-            <div className="mt-5 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
-              <label className="block text-sm font-semibold mb-1" style={{ color: theme.text }}>Send emails from</label>
-              <p className="mb-2 text-[11px] leading-relaxed" style={{ color: theme.cardTextMuted }}>
-                The composer&apos;s one-click button opens this app with the recipient and subject ready, and copies the message so you paste it in with your logo. Pick whichever you send from.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {EMAIL_PROVIDERS.map((pv) => {
-                  const active = emailProvider === pv.id;
-                  return (
-                    <button
-                      key={pv.id}
-                      type="button"
-                      onClick={() => saveEmailProvider(pv.id)}
-                      aria-pressed={active}
-                      className="flex-1 min-w-[150px] inline-flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors text-left"
-                      style={{
-                        backgroundColor: active ? theme.primary15 : theme.input,
-                        border: `1.5px solid ${active ? theme.primary : theme.inputBorder}`,
-                        color: active ? theme.text : theme.cardTextMuted,
-                      }}
-                    >
-                      <span className="shrink-0 inline-flex items-center justify-center rounded-md" style={{ width: 28, height: 28, backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : '#ffffff', border: `1px solid ${theme.border}` }}>
-                        <ProviderLogo id={pv.id} />
-                      </span>
-                      <span className="truncate">{pv.label}</span>
-                      {active && <Check className="h-4 w-4 ml-auto shrink-0" style={{ color: theme.primary }} />}
-                    </button>
-                  );
-                })}
-              </div>
-              {emailProviderSaved && <span className="mt-2 inline-block text-xs" style={{ color: theme.primary }}>Saved</span>}
-            </div>
           </div>
         </div>
       </div>
+      </div>
+
+      {/* Send Emails From: its own full-width row under the opener + signature. */}
+      <div className="rounded-xl p-5 sm:p-6 mb-6 sm:mb-8" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+        <div className="flex items-start gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0" style={{ backgroundColor: theme.primary15 }}>
+            <Send className="h-4 w-4" style={{ color: theme.primary }} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold" style={{ color: theme.text }}>Send Emails From</p>
+            <p className="mt-1 mb-3 text-xs leading-relaxed" style={{ color: theme.cardTextMuted }}>
+              Pick the app you send from. The composer&apos;s one-click button opens it with the recipient and subject ready, and copies your full message (logo and all) so you paste it in and send. You always send the email yourself, VoiceAI Connect doesn&apos;t send it for you.
+            </p>
+            {/* Online webmail providers span the full row; the desktop mail app gets its own row below. */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+              {EMAIL_PROVIDERS.filter((pv) => pv.id !== 'default').map((pv) => {
+                const active = emailProvider === pv.id;
+                return (
+                  <button
+                    key={pv.id}
+                    type="button"
+                    onClick={() => saveEmailProvider(pv.id)}
+                    aria-pressed={active}
+                    className="w-full inline-flex items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-colors text-left"
+                    style={{
+                      backgroundColor: active ? theme.primary15 : theme.input,
+                      border: `1.5px solid ${active ? theme.primary : theme.inputBorder}`,
+                      color: active ? theme.text : theme.cardTextMuted,
+                    }}
+                  >
+                    <span className="shrink-0 inline-flex items-center justify-center rounded-md" style={{ width: 24, height: 24, backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : '#ffffff', border: `1px solid ${theme.border}` }}>
+                      <ProviderLogo id={pv.id} />
+                    </span>
+                    <span className="whitespace-nowrap">{pv.label}</span>
+                    {active && <Check className="h-4 w-4 ml-auto shrink-0" style={{ color: theme.primary }} />}
+                  </button>
+                );
+              })}
+            </div>
+            {/* The desktop mail app is a different kind of handoff (mailto), so it
+                gets its own full-width row instead of being mixed into the grid. */}
+            {(() => {
+              const pv = EMAIL_PROVIDERS.find((p) => p.id === 'default');
+              if (!pv) return null;
+              const active = emailProvider === pv.id;
+              return (
+                <button
+                  type="button"
+                  onClick={() => saveEmailProvider(pv.id)}
+                  aria-pressed={active}
+                  className="mt-2 w-full inline-flex items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-colors text-left"
+                  style={{
+                    backgroundColor: active ? theme.primary15 : theme.input,
+                    border: `1.5px solid ${active ? theme.primary : theme.inputBorder}`,
+                    color: active ? theme.text : theme.cardTextMuted,
+                  }}
+                >
+                  <span className="shrink-0 inline-flex items-center justify-center rounded-md" style={{ width: 24, height: 24, backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : '#ffffff', border: `1px solid ${theme.border}` }}>
+                    <ProviderLogo id={pv.id} />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block whitespace-nowrap">{pv.label}</span>
+                    <span className="block text-[10px] leading-tight" style={{ color: theme.cardTextMuted }}>Opens your device&apos;s default mail app (Apple Mail, Outlook desktop, and so on).</span>
+                  </span>
+                  {active && <Check className="h-4 w-4 ml-auto shrink-0" style={{ color: theme.primary }} />}
+                </button>
+              );
+            })()}
+            {emailProviderSaved && <span className="mt-2 inline-block text-xs" style={{ color: theme.primary }}>Saved</span>}
+          </div>
+        </div>
       </div>
 
       {/* Quick Links */}
