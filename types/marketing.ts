@@ -242,7 +242,19 @@ export interface MarketingConfig {
   // Editable "what a missed call costs" figure for the ROI calculator. This
   // varies a lot by industry and country, so agencies set their own. Templates
   // fall back to 500 when unset.
-  roi?: { missedCallCost?: number };
+  //  - body: the intro paragraph under the ROI headline (plain text).
+  //  - competitorsNote: the small caption under "Annual Revenue Lost".
+  //  - ctaLabel: the button label inside the ROI result card.
+  //  - showMultiple: when false, the big "Nx ROI" figure is hidden (some agencies
+  //    find the multiple reads as hype). Defaults to shown.
+  // Each falls back to the template's own default when unset.
+  roi?: {
+    missedCallCost?: number;
+    body?: string;
+    competitorsNote?: string;
+    ctaLabel?: string;
+    showMultiple?: boolean;
+  };
   // Editable final call-to-action copy. Templates fall back to their own default
   // heading/body when a field is blank.
   finalCta?: { heading?: string; body?: string };

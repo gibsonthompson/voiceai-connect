@@ -612,6 +612,15 @@ function Comparison({ config }: { config: MarketingConfig }) {
 // ============================================================================
 // ROI CALCULATOR (currency-correct)
 // ============================================================================
+// Default ROI copy. Agencies override each in the Content editor; a blank value
+// falls back to these. The framing deliberately avoids the "missed calls / 24/7"
+// angle some agencies found accusatory, leaning instead on the value of
+// answering every call.
+const ROI_HEADLINE_DEFAULT = 'What Answering Every Call Is Worth';
+const ROI_BODY_DEFAULT = "Some calls come in when you're busy, closed, or already on the phone. Move the slider to your weekly average and see what answering them is worth.";
+const ROI_COMPETITORS_DEFAULT = 'Customers who went elsewhere';
+const ROI_CTA_DEFAULT = 'Capture Every Call, Start Free Trial';
+
 function ROICalculator({ config }: { config: MarketingConfig }) {
   const { pricing } = config;
   const cs = config.currencySymbol || '$';
@@ -625,6 +634,7 @@ function ROICalculator({ config }: { config: MarketingConfig }) {
   const annualCost = lowest * 12;
   const annualSavings = annualLost - annualCost;
   const roi = annualCost > 0 ? Math.round(annualSavings / annualCost) : 0;
+  const showMultiple = config.roi?.showMultiple !== false;
   const m = (n: number) => priceString(cs, n.toLocaleString(), pos);
 
   return (
@@ -632,12 +642,12 @@ function ROICalculator({ config }: { config: MarketingConfig }) {
       <div className="bsd-container">
         <div className="bsd-section-head center">
           <TEdit config={config} as="span" className="bsd-eyebrow" k="eyebrowRoi" d="Do the math" />
-          <Editable as="h2" field="sectionHeadings.roiHeadline" value={config.sectionHeadings?.roiHeadline ?? 'What are missed calls costing you?'}>{config.sectionHeadings?.roiHeadline ?? 'What are missed calls costing you?'}</Editable>
-          <p>The average missed call costs a small business about {pos === 'after' ? '' : cs}<Editable as="span" field="roi.missedCallCost" value={String(COST)}>{COST.toLocaleString()}</Editable>{pos === 'after' ? ` ${cs}` : ''} in lost revenue. Move the slider to see yours.</p>
+          <Editable as="h2" field="sectionHeadings.roiHeadline" value={config.sectionHeadings?.roiHeadline || ROI_HEADLINE_DEFAULT}>{config.sectionHeadings?.roiHeadline || ROI_HEADLINE_DEFAULT}</Editable>
+          <Editable as="p" field="roi.body" value={config.roi?.body || ROI_BODY_DEFAULT}>{config.roi?.body || ROI_BODY_DEFAULT}</Editable>
         </div>
         <div className="bsd-roi bsd-reveal">
           <div className="bsd-roi-top">
-            <span><TEdit config={config} k="roiSliderLabel" d="Calls you miss per week" /></span>
+            <span><TEdit config={config} k="roiSliderLabel" d="Unanswered calls per week" /></span>
             <span>{missed}</span>
           </div>
           <input type="range" min={1} max={25} value={missed} onChange={e => setMissed(Number(e.target.value))} aria-label="Calls missed per week" />
@@ -651,16 +661,16 @@ function ROICalculator({ config }: { config: MarketingConfig }) {
             <div className="bsd-roi-loss">
               <TEdit config={config} as="p" className="k" k="roiAnnualLost" d="Annual revenue lost" />
               <p className="v">{m(annualLost)}</p>
-              <p className="s">Going to your competitors</p>
+              <Editable as="p" field="roi.competitorsNote" value={config.roi?.competitorsNote || ROI_COMPETITORS_DEFAULT} className="s">{config.roi?.competitorsNote || ROI_COMPETITORS_DEFAULT}</Editable>
             </div>
           </div>
           <div className="bsd-roi-summary">
-            <div className="bsd-roi-summary-grid">
+            <div className={`bsd-roi-summary-grid${showMultiple ? '' : ' bsd-roi-summary-grid--2'}`}>
               <div><p className="k">{config.branding.name} <TEdit config={config} k="roiCostLabel" d="cost" /></p><p className="v pri">{priceString(cs, lowest, pos)}/mo</p></div>
               <div><TEdit config={config} as="p" className="k" k="roiAnnualSavings" d="Annual savings" /><p className="v pos">{m(annualSavings)}</p></div>
-              <div><TEdit config={config} as="p" className="k" k="roiReturn" d="Return on investment" /><p className="v pos">{roi}x</p></div>
+              {showMultiple && (<div><TEdit config={config} as="p" className="k" k="roiReturn" d="Return on investment" /><p className="v pos">{roi}x</p></div>)}
             </div>
-            <a href="/signup" className="bsd-btn bsd-btn-primary" style={{ marginTop: '1.25rem' }}>Stop losing {m(monthlyLost)}/month</a>
+            <a href="/signup" className="bsd-btn bsd-btn-primary" style={{ marginTop: '1.25rem' }}>{config.roi?.ctaLabel || ROI_CTA_DEFAULT}</a>
           </div>
         </div>
       </div>

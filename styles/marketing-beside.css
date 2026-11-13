@@ -412,6 +412,8 @@
 @media (min-width: 560px) {
   .beside .bsd-proof-grid { grid-template-columns: repeat(4, 1fr); }
   .beside .bsd-roi-summary-grid { grid-template-columns: repeat(3, 1fr); }
+  /* When the ROI multiple is hidden, the summary has two cells instead of three. */
+  .beside .bsd-roi-summary-grid.bsd-roi-summary-grid--2 { grid-template-columns: repeat(2, 1fr); }
   .beside .bsd-hero-ctas { flex-direction: row; }
   .beside .bsd-final-actions { }
 }

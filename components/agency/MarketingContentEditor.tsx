@@ -93,7 +93,7 @@ interface EditorConfig {
   pricing: PricingTier[];
   faqs: FAQItem[];
   footer: FooterConfig;
-  roi: { missedCallCost: number };
+  roi: { missedCallCost: number; body: string; competitorsNote: string; ctaLabel: string; showMultiple: boolean };
   finalCta: { heading: string; body: string };
   sampleCall: { customerName: string; service: string; summary: string };
 }
@@ -150,7 +150,7 @@ const DEFAULT_CONFIG: EditorConfig = {
   pricing: [
     { name: 'Starter', price: 49, subtitle: 'For solo operators', features: ['1 AI phone number', 'Up to 50 calls/month', 'Calendar integration', 'Text summaries', 'Call recordings'], isPopular: false },
     { name: 'Professional', price: 99, subtitle: 'For growing businesses', features: ['Everything in Starter', 'Up to 150 calls/month', 'Lead qualification', 'Call transfer rules', 'Analytics dashboard'], isPopular: true },
-    { name: 'Growth', price: 149, subtitle: 'For high-volume operations', features: ['Everything in Professional', 'Up to 500 calls/month', 'Up to 3 phone numbers', 'Custom AI training', 'Priority support'], isPopular: false },
+    { name: 'Growth', price: 149, subtitle: 'For high-volume operations', features: ['Everything in Professional', 'Up to 500 calls/month', 'Custom AI training', 'Priority support'], isPopular: false },
   ],
   faqs: [
     { question: "Do callers know they're talking to an AI?", answer: "Most don't. Our AI uses natural conversation patterns and a voice that sounds human. If someone directly asks, the AI will be honest." },
@@ -164,7 +164,7 @@ const DEFAULT_CONFIG: EditorConfig = {
     tagline: 'Professional AI that answers every call, books appointments, and sends instant summaries — 24/7.',
   },
   showIndustries: true,
-  roi: { missedCallCost: 500 },
+  roi: { missedCallCost: 500, body: '', competitorsNote: '', ctaLabel: '', showMultiple: true },
   finalCta: { heading: '', body: '' },
   sampleCall: { customerName: 'Jordan Blake', service: 'Appointment booking', summary: 'Caller wanted to book an appointment and asked for the next available time.' },
 };
@@ -290,7 +290,13 @@ export default function MarketingContentEditor({
         pricing: mc.pricing?.length ? mc.pricing.map((t: any) => ({ ...t, price: typeof t.price === 'number' ? t.price : parseInt(t.price) || 0 })) : prev.pricing,
         faqs: mc.faqs?.length ? mc.faqs.map((f: any) => ({ question: f.question || '', answer: f.answer || '' })) : prev.faqs,
         footer: { ...prev.footer, email: mc.footer?.email || prev.footer.email, tagline: mc.footer?.tagline || prev.footer.tagline },
-        roi: { missedCallCost: typeof mc.roi?.missedCallCost === 'number' ? mc.roi.missedCallCost : prev.roi.missedCallCost },
+        roi: {
+          missedCallCost: typeof mc.roi?.missedCallCost === 'number' ? mc.roi.missedCallCost : prev.roi.missedCallCost,
+          body: typeof mc.roi?.body === 'string' ? mc.roi.body : prev.roi.body,
+          competitorsNote: typeof mc.roi?.competitorsNote === 'string' ? mc.roi.competitorsNote : prev.roi.competitorsNote,
+          ctaLabel: typeof mc.roi?.ctaLabel === 'string' ? mc.roi.ctaLabel : prev.roi.ctaLabel,
+          showMultiple: typeof mc.roi?.showMultiple === 'boolean' ? mc.roi.showMultiple : prev.roi.showMultiple,
+        },
         finalCta: { heading: mc.finalCta?.heading ?? prev.finalCta.heading, body: mc.finalCta?.body ?? prev.finalCta.body },
         sampleCall: {
           customerName: mc.sampleCall?.customerName ?? prev.sampleCall.customerName,
@@ -347,7 +353,13 @@ export default function MarketingContentEditor({
       pricing: config.pricing,
       faqs: config.faqs,
       footer: { ...(existing.footer || {}), email: config.footer.email, tagline: config.footer.tagline },
-      roi: { missedCallCost: config.roi.missedCallCost },
+      roi: {
+        missedCallCost: config.roi.missedCallCost,
+        body: config.roi.body.trim(),
+        competitorsNote: config.roi.competitorsNote.trim(),
+        ctaLabel: config.roi.ctaLabel.trim(),
+        showMultiple: config.roi.showMultiple !== false,
+      },
       // Only persist final CTA overrides when non-blank, so blank fields let each
       // template keep its own default heading/body.
       finalCta: { heading: config.finalCta.heading.trim(), body: config.finalCta.body.trim() },
@@ -376,6 +388,10 @@ export default function MarketingContentEditor({
       if (field === 'hero.headline') return { ...prev, hero: { ...prev.hero, headline: value.split('\n') } };
       if (field === 'hero.badge') return { ...prev, hero: { ...prev.hero, badge: value } };
       if (field === 'hero.description') return { ...prev, hero: { ...prev.hero, description: value } };
+      if (field === 'roi.missedCallCost') return { ...prev, roi: { ...prev.roi, missedCallCost: Math.max(0, parseInt(value.replace(/[^0-9.]/g, '')) || 0) } };
+      if (field === 'roi.body') return { ...prev, roi: { ...prev.roi, body: value } };
+      if (field === 'roi.competitorsNote') return { ...prev, roi: { ...prev.roi, competitorsNote: value } };
+      if (field === 'roi.ctaLabel') return { ...prev, roi: { ...prev.roi, ctaLabel: value } };
       return prev;
     });
   }, [inboundEdit]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -736,15 +752,40 @@ export default function MarketingContentEditor({
         </div>
 
         <div className="space-y-2 pt-2" style={{ borderTop: `1px solid ${borderColor}` }}>
-          <span className="text-xs font-semibold" style={{ color: textColor }}>Missed-call calculator</span>
-          <label className="block text-xs mb-1" style={{ color: mutedTextColor }}>What one missed call costs a business</label>
+          <span className="text-xs font-semibold" style={{ color: textColor }}>ROI calculator</span>
+          <label className="block text-xs mb-1" style={{ color: mutedTextColor }}>What one unanswered call is worth</label>
           <div className="flex items-center gap-2">
             <span className="text-sm" style={{ color: mutedTextColor }}>$</span>
             <input type="number" min={0} value={config.roi.missedCallCost}
-              onChange={e => update(p => ({ ...p, roi: { missedCallCost: Math.max(0, parseInt(e.target.value) || 0) } }))}
+              onChange={e => update(p => ({ ...p, roi: { ...p.roi, missedCallCost: Math.max(0, parseInt(e.target.value) || 0) } }))}
               className={inputClass} style={inputStyle} />
           </div>
-          <p className="text-xs" style={{ color: mutedTextColor }}>Used in the ROI calculator. This varies a lot by industry, so set what fits your market.</p>
+          <p className="text-xs" style={{ color: mutedTextColor }}>Drives the ROI math. This varies a lot by industry, so set what fits your market.</p>
+
+          <div className="pt-1">
+            <label className="block text-xs mb-1" style={{ color: mutedTextColor }}>Intro text</label>
+            <textarea value={config.roi.body} placeholder="Leave blank to use the template default" rows={2}
+              onChange={e => update(p => ({ ...p, roi: { ...p.roi, body: e.target.value } }))}
+              className={inputClass + ' resize-none'} style={inputStyle} />
+          </div>
+          <div>
+            <label className="block text-xs mb-1" style={{ color: mutedTextColor }}>Caption under the annual total</label>
+            <input type="text" value={config.roi.competitorsNote} placeholder="Leave blank to use the template default"
+              onChange={e => update(p => ({ ...p, roi: { ...p.roi, competitorsNote: e.target.value } }))}
+              className={inputClass} style={inputStyle} />
+          </div>
+          <div>
+            <label className="block text-xs mb-1" style={{ color: mutedTextColor }}>Button label</label>
+            <input type="text" value={config.roi.ctaLabel} placeholder="Leave blank to use the template default"
+              onChange={e => update(p => ({ ...p, roi: { ...p.roi, ctaLabel: e.target.value } }))}
+              className={inputClass} style={inputStyle} />
+          </div>
+          <label className="flex items-center gap-2 pt-1 cursor-pointer">
+            <input type="checkbox" checked={config.roi.showMultiple !== false}
+              onChange={e => update(p => ({ ...p, roi: { ...p.roi, showMultiple: e.target.checked } }))} />
+            <span className="text-xs" style={{ color: mutedTextColor }}>Show the big ROI multiple (e.g. 88x)</span>
+          </label>
+          <p className="text-xs" style={{ color: mutedTextColor }}>Leave any field blank to keep your template&apos;s default wording.</p>
         </div>
 
         <div className="space-y-2 pt-2" style={{ borderTop: `1px solid ${borderColor}` }}>

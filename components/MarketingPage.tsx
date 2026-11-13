@@ -549,6 +549,15 @@ function ComparisonSection({ config }: { config: MarketingConfig }) {
 // ============================================================================
 // ROI CALCULATOR
 // ============================================================================
+// Default ROI copy. Agencies override each in the Content editor; a blank value
+// falls back to these. The framing deliberately avoids the "missed calls / 24/7"
+// angle some agencies found accusatory, leaning instead on the value of
+// answering every call.
+const ROI_HEADLINE_DEFAULT = 'What Answering Every Call Is Worth';
+const ROI_BODY_DEFAULT = "Some calls come in when you're busy, closed, or already on the phone. Slide to your weekly average and see what answering them is worth.";
+const ROI_COMPETITORS_DEFAULT = 'Customers who went elsewhere';
+const ROI_CTA_DEFAULT = 'Capture Every Call, Start Free Trial';
+
 function ROICalculatorSection({ config }: { config: MarketingConfig }) {
   const { branding, pricing } = config;
   const cs = config.currencySymbol || '$';
@@ -563,6 +572,7 @@ function ROICalculatorSection({ config }: { config: MarketingConfig }) {
   const annualAICost = lowestPrice * 12;
   const annualSavings = annualLost - annualAICost;
   const roiMultiple = annualAICost > 0 ? Math.round(annualSavings / annualAICost) : 0;
+  const showMultiple = config.roi?.showMultiple !== false;
   const primaryRgb = hexToRgb(branding.primaryColor);
   const tintBg = primaryRgb ? `rgba(${primaryRgb.r}, ${primaryRgb.g}, ${primaryRgb.b}, 0.08)` : 'rgba(18, 32, 146, 0.08)';
 
@@ -570,13 +580,13 @@ function ROICalculatorSection({ config }: { config: MarketingConfig }) {
     <section className="stats-section" style={{ scrollMarginTop: '6rem' }}>
       <div className="container">
         <div className="section-header">
-          <Editable as="h2" field="sectionHeadings.roiHeadline" value={config.sectionHeadings?.roiHeadline ?? 'What Are Missed Calls Costing You?'}>{config.sectionHeadings?.roiHeadline ?? 'What Are Missed Calls Costing You?'}</Editable>
-          <p>Industry research shows the average missed call costs a small business <strong>{cs}<Editable as="span" field="roi.missedCallCost" value={String(COST_PER_MISSED)}>{COST_PER_MISSED.toLocaleString()}</Editable></strong> in lost revenue. Use the slider to see your potential losses.</p>
+          <Editable as="h2" field="sectionHeadings.roiHeadline" value={config.sectionHeadings?.roiHeadline || ROI_HEADLINE_DEFAULT}>{config.sectionHeadings?.roiHeadline || ROI_HEADLINE_DEFAULT}</Editable>
+          <Editable as="p" field="roi.body" value={config.roi?.body || ROI_BODY_DEFAULT}>{config.roi?.body || ROI_BODY_DEFAULT}</Editable>
         </div>
         <div className="live-stats" style={{ display: 'block', padding: '2rem' }}>
           <div style={{ marginBottom: '2rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.75rem' }}>
-              <TEdit config={config} as="span" style={{ fontFamily: 'var(--font-primary)', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-medium)' }} k="roiSliderLabel" d="Calls you miss per week" />
+              <TEdit config={config} as="span" style={{ fontFamily: 'var(--font-primary)', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-medium)' }} k="roiSliderLabel" d="Unanswered calls per week" />
               <span style={{ fontFamily: 'var(--font-primary)', fontSize: '2rem', fontWeight: 800, color: branding.primaryColor }}>{missedPerWeek}</span>
             </div>
             <input type="range" min={1} max={25} value={missedPerWeek} onChange={e => setMissedPerWeek(Number(e.target.value))} style={{ width: '100%', accentColor: branding.primaryColor, height: '6px', cursor: 'pointer' }} />
@@ -591,16 +601,16 @@ function ROICalculatorSection({ config }: { config: MarketingConfig }) {
             <div style={{ padding: '1.25rem', borderRadius: 'var(--radius-md)', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)', textAlign: 'center' }}>
               <TEdit config={config} as="p" style={{ fontSize: '0.75rem', fontWeight: 600, color: '#dc2626', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }} k="roiAnnualLost" d="Annual Revenue Lost" />
               <p style={{ fontSize: 'clamp(1.5rem, 3vw, 2.25rem)', fontWeight: 800, color: '#dc2626', fontFamily: 'var(--font-primary)', lineHeight: 1.1 }}>{cs}{annualLost.toLocaleString()}</p>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginTop: '0.25rem', marginBottom: 0 }}>That&apos;s going to your competitors</p>
+              <Editable as="p" field="roi.competitorsNote" value={config.roi?.competitorsNote || ROI_COMPETITORS_DEFAULT} style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginTop: '0.25rem', marginBottom: 0 }}>{config.roi?.competitorsNote || ROI_COMPETITORS_DEFAULT}</Editable>
             </div>
           </div>
           <div style={{ padding: '1.5rem', borderRadius: 'var(--radius-lg)', background: tintBg, border: `1px solid ${branding.primaryColor}25`, textAlign: 'center' }}>
-            <div className="roi-summary-grid" style={{ display: 'grid', gap: '1rem', alignItems: 'center' }}>
+            <div className={`roi-summary-grid${showMultiple ? '' : ' roi-summary-grid--2'}`} style={{ display: 'grid', gap: '1rem', alignItems: 'center' }}>
               <div><p style={{ fontSize: '0.688rem', fontWeight: 600, color: 'var(--text-light)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{branding.name} <TEdit config={config} k="roiCostLabel" d="Cost" /></p><p style={{ fontSize: '1.5rem', fontWeight: 800, color: branding.primaryColor, fontFamily: 'var(--font-primary)', marginBottom: 0 }}>{cs}{lowestPrice}/mo</p></div>
               <div><TEdit config={config} as="p" style={{ fontSize: '0.688rem', fontWeight: 600, color: 'var(--text-light)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }} k="roiAnnualSavings" d="Annual Savings" /><p style={{ fontSize: '1.5rem', fontWeight: 800, color: '#10b981', fontFamily: 'var(--font-primary)', marginBottom: 0 }}>{cs}{annualSavings.toLocaleString()}</p></div>
-              <div><TEdit config={config} as="p" style={{ fontSize: '0.688rem', fontWeight: 600, color: 'var(--text-light)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }} k="roiReturn" d="Return on Investment" /><p style={{ fontSize: '1.5rem', fontWeight: 800, color: '#10b981', fontFamily: 'var(--font-primary)', marginBottom: 0 }}>{roiMultiple}x ROI</p></div>
+              {showMultiple && (<div><TEdit config={config} as="p" style={{ fontSize: '0.688rem', fontWeight: 600, color: 'var(--text-light)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }} k="roiReturn" d="Return on Investment" /><p style={{ fontSize: '1.5rem', fontWeight: 800, color: '#10b981', fontFamily: 'var(--font-primary)', marginBottom: 0 }}>{roiMultiple}x ROI</p></div>)}
             </div>
-            <a href="/signup" className="btn-primary" style={{ marginTop: '1.25rem', display: 'inline-flex' }}>Stop Losing {cs}{monthlyLost.toLocaleString()}/month, Start Free Trial</a>
+            <a href="/signup" className="btn-primary" style={{ marginTop: '1.25rem', display: 'inline-flex' }}>{config.roi?.ctaLabel || ROI_CTA_DEFAULT}</a>
           </div>
         </div>
       </div>

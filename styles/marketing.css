@@ -269,6 +269,8 @@
 .marketing-page .roi-summary-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; align-items: center; }
 @media (min-width: 600px) {
   .marketing-page .roi-summary-grid { grid-template-columns: repeat(3, 1fr); }
+  /* When the ROI multiple is hidden, the summary has two cells instead of three. */
+  .marketing-page .roi-summary-grid.roi-summary-grid--2 { grid-template-columns: repeat(2, 1fr); }
 }
 
 /* ==================== PROBLEM/SOLUTION SECTION ==================== */
