@@ -11,6 +11,7 @@ import { googleFontsHref, fontStack } from '@/lib/brandFonts';
 import { MarketingConfig, defaultMarketingConfig } from '@/types/marketing';
 import type { IndustryPageData } from '@/lib/industry-pages';
 import { INDUSTRY_PAGE_LIST } from '@/lib/industry-pages';
+import IndustryLandingPage from '@/components/IndustryLandingPage';
 import { getCurrencySymbol } from '@/lib/currency-symbols';
 import { getCurrencyForCountry, currencies } from '@/lib/currency';
 import { FEATURE_LABELS, FEATURE_ORDER } from '@/lib/plan-features-meta';
@@ -189,16 +190,25 @@ const TEMPLATES: Record<string, React.ComponentType<{ config: Partial<MarketingC
 // Receives agency data as prop (fetched server-side by page.tsx)
 // Builds MarketingConfig and renders the correct template
 // ============================================================================
-export default function AgencySiteClient({ agency, industry }: { agency: Agency; industry?: IndustryPageData }) {
+export default function AgencySiteClient({ agency, industry }: { agency: Agency; industry?: any }) {
+  // A built-in industry page carries the rich content model (scenarios etc.) and
+  // is not a thin agency-created custom page. Those render the dedicated layout.
+  const richIndustry = (industry && (industry as any).scenarios && !(industry as any).custom) ? (industry as IndustryPageData) : null;
+
   // Client-side branding (favicon, title, theme cache)
   useEffect(() => {
     if (agency.logo_url) setFavicon(agency.logo_url);
     // Use the agency's link-preview (OG) title for the browser tab when they've
     // set one, so the tab matches their branding instead of the generic default.
     const ogT = (agency.og_title || '').trim();
-    setPageTitle(ogT || `${agency.name} - AI Phone Answering`);
+    if (richIndustry) {
+      // Industry pages keep their own title (the homepage OG title would be wrong).
+      setPageTitle(`AI Receptionist for ${richIndustry.label} | ${agency.name}`);
+    } else {
+      setPageTitle(ogT || `${agency.name} - AI Phone Answering`);
+    }
     setCachedTheme(agency.website_theme);
-  }, [agency]);
+  }, [agency, richIndustry]);
 
   // ── Live preview bridge ──
   // When this site is loaded inside the dashboard's Content tab with ?preview=1,
@@ -516,9 +526,13 @@ export default function AgencySiteClient({ agency, industry }: { agency: Agency;
       {fontHref && <link rel="stylesheet" href={fontHref} />}
       {fontVarCss && <style dangerouslySetInnerHTML={{ __html: fontVarCss }} />}
       {editorMode && <style>{`[data-vai-edit]{border-radius:4px;transition:box-shadow .12s ease,background-color .12s ease} [data-vai-edit]:hover{box-shadow:0 0 0 2px ${(agency.primary_color || '#00a19b')}66} [data-vai-edit]:focus{box-shadow:0 0 0 2px ${(agency.primary_color || '#00a19b')};background-color:${(agency.primary_color || '#00a19b')}14}`}</style>}
-      <EditorProvider value={{ editor: editorMode, onEdit, onItem }}>
-        <TemplateComponent config={renderConfig} />
-      </EditorProvider>
+      {richIndustry ? (
+        <IndustryLandingPage agency={agency as any} content={richIndustry} config={marketingConfig} isDark={isDark} />
+      ) : (
+        <EditorProvider value={{ editor: editorMode, onEdit, onItem }}>
+          <TemplateComponent config={renderConfig} />
+        </EditorProvider>
+      )}
       {/* The floating FAQ/support bubble is hidden inside the website editor so
           it does not cover the content being edited. It still shows on the
           live public site and the plain (non-editor) preview. */}

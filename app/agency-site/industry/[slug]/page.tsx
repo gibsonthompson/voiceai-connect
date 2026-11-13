@@ -55,17 +55,10 @@ function getCustomPage(agency: any, slug: string): CustomPage | null {
 // overlay from marketing_config.customPages instead of industryPages.
 function builtInToData(page: ReturnType<typeof getIndustryPage>) {
   if (!page) return null;
-  return {
-    slug: page.slug,
-    industryValue: page.industryValue,
-    label: page.label,
-    headline: page.headline,
-    subheadline: page.subheadline,
-    problems: page.problems,
-    sampleCall: page.sampleCall,
-    faqs: page.faqs,
-    custom: false,
-  };
+  // Pass the whole rich page minus the server-only meta functions (which cannot
+  // cross the RSC boundary). The client renders the dedicated industry layout.
+  const { metaTitle, metaDescription, ...rest } = page;
+  return { ...rest, custom: false };
 }
 function customToData(page: CustomPage) {
   return {
