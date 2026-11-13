@@ -19,6 +19,7 @@ import WebCallWidgetEditor from '@/components/dashboard/WebCallWidgetEditor';
 import { WebCallStyle } from '@/lib/webcall-style';
 import { ColorField, SegmentField, EditorTheme } from '@/components/dashboard/inline-editor';
 import { SignupStyle, resolveSignupPalette } from '@/lib/signup-style';
+import { NAMECHEAP_LOGO } from '@/lib/namecheap-logo';
 
 type ActiveTab = 'overview' | 'template' | 'content' | 'colors' | 'domain' | 'tracking' | 'seo' | 'navigation' | 'legal' | 'embed';
 
@@ -295,6 +296,7 @@ export default function MarketingWebsitePage() {
     warningBorder: isDark ? 'rgba(245,158,11,0.2)' : 'rgba(245,158,11,0.2)',
   };
   const subdomainUrl = `https://${agency?.slug || 'demo'}.${platformDomain}`;
+  const subdomainSlug = agency?.slug || 'demo';
   const signupUrl = agency?.marketing_domain && agency?.domain_verified ? `https://${agency.marketing_domain}/signup` : `${subdomainUrl}/signup`;
   const hasAccess = canUseMarketingSite || demoMode;
 
@@ -700,8 +702,16 @@ Ask me what platform I'm on if that helps.`;
         <div className="rounded-xl p-4 sm:p-5 flex flex-col" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
           <div className="flex items-start justify-between mb-3"><div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg" style={{ backgroundColor: `${agencyPrimaryColor}15`, color: agencyPrimaryColor }}><Globe className="h-4 w-4 sm:h-5 sm:w-5" /></div><span className="flex items-center gap-1.5 text-[10px] sm:text-xs font-medium px-2 py-0.5 sm:py-1 rounded-full" style={{ backgroundColor: `${agencyPrimaryColor}15`, color: agencyPrimaryColor }}><span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ backgroundColor: agencyPrimaryColor }} />Live</span></div>
           <h3 className="font-medium text-sm sm:text-base mb-1">Your Website</h3>
-          <p className="text-xs sm:text-sm mb-3 sm:mb-4 truncate" style={{ color: mutedTextColor }}>{subdomainUrl}</p>
-          <div className="mt-auto flex gap-2"><a href={demoMode ? '#' : subdomainUrl} target={demoMode ? undefined : '_blank'} rel="noopener noreferrer" onClick={demoMode ? (e) => e.preventDefault() : undefined} className="flex-1 flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs sm:text-sm font-semibold text-white transition-opacity hover:opacity-90" style={{ backgroundColor: agencyPrimaryColor }}><Eye className="h-4 w-4" />View Site</a><button onClick={() => copyToClipboard(subdomainUrl, 'subdomain')} className={`flex items-center justify-center rounded-lg px-3 py-2.5 transition-colors ${isDark ? 'hover:bg-white/[0.1]' : 'hover:bg-black/[0.05]'}`} style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: inputMuted }}>{copied === 'subdomain' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}</button></div>
+          <p className="text-xs sm:text-sm" style={{ color: mutedTextColor }}>Live and ready to share with your clients.</p>
+          {/* Address-bar preview mirrors the domain card for visual balance */}
+          <div className="mt-3 flex items-center gap-2 rounded-lg px-3 py-2.5" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
+            <Globe className="h-3.5 w-3.5 flex-shrink-0" style={{ color: mutedTextColor }} />
+            <span className="text-xs sm:text-[13px] truncate" style={{ color: textColor }}><strong style={{ color: agencyPrimaryColor, fontWeight: 600 }}>{subdomainSlug}</strong>.{platformDomain}</span>
+          </div>
+          <div className="mt-auto pt-3 sm:pt-4 flex flex-col gap-2.5">
+            <a href={demoMode ? '#' : subdomainUrl} target={demoMode ? undefined : '_blank'} rel="noopener noreferrer" onClick={demoMode ? (e) => e.preventDefault() : undefined} className="w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs sm:text-sm font-semibold text-white transition-opacity hover:opacity-90" style={{ backgroundColor: agencyPrimaryColor }}><Eye className="h-4 w-4" />View Site</a>
+            <button onClick={() => copyToClipboard(subdomainUrl, 'subdomain')} className={`w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs sm:text-sm font-semibold transition-colors ${isDark ? 'hover:bg-white/[0.1]' : 'hover:bg-black/[0.05]'}`} style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}`, color: inputMuted }}>{copied === 'subdomain' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}{copied === 'subdomain' ? 'Copied' : 'Copy Link'}</button>
+          </div>
         </div>
         {/* Use your own domain */}
         <div className="rounded-xl p-4 sm:p-5 flex flex-col" style={{ backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
@@ -711,11 +721,15 @@ Ask me what platform I'm on if that helps.`;
           {/* Address-bar preview makes the subdomain idea concrete */}
           <div className="mt-3 flex items-center gap-2 rounded-lg px-3 py-2.5" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
             <Lock className="h-3.5 w-3.5 flex-shrink-0" style={{ color: mutedTextColor }} />
-            <span className="text-xs sm:text-[13px] truncate" style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', letterSpacing: '0.2px', color: textColor }}>app.<strong style={{ color: agencyPrimaryColor, fontWeight: 600 }}>yourbrand</strong>.com</span>
+            <span className="text-xs sm:text-[13px] truncate" style={{ color: textColor }}>app.<strong style={{ color: agencyPrimaryColor, fontWeight: 600 }}>yourbrand</strong>.com</span>
           </div>
-          <div className="mt-auto pt-3 sm:pt-4">
+          <div className="mt-auto pt-3 sm:pt-4 flex flex-col gap-2.5">
             <button onClick={() => setActiveTab('domain')} className="w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs sm:text-sm font-semibold text-white transition-opacity hover:opacity-90" style={{ backgroundColor: agencyPrimaryColor }}><Globe className="h-4 w-4" />Connect a Domain</button>
-            <p className="text-center text-[11px] sm:text-xs mt-2.5" style={{ color: mutedTextColor }}>No domain yet? <a href="https://www.namecheap.com/domains/domain-name-search/" target="_blank" rel="noopener noreferrer" className="font-semibold inline-flex items-center gap-1 hover:opacity-80" style={{ color: agencyPrimaryColor }}>Find one on Namecheap<ExternalLink className="h-3 w-3" /></a></p>
+            <a href="https://www.namecheap.com/domains/domain-name-search/" target="_blank" rel="noopener noreferrer" className="w-full flex items-center justify-center gap-2.5 rounded-lg px-3 py-2 transition-opacity hover:opacity-80" style={{ backgroundColor: inputBg, border: `1px solid ${inputBorder}` }}>
+              <span className="flex items-center rounded-md px-1.5 py-1" style={{ backgroundColor: '#ffffff' }}><img src={NAMECHEAP_LOGO} alt="Namecheap" style={{ height: 16, width: 'auto', display: 'block' }} /></span>
+              <span className="text-xs sm:text-[13px] font-semibold" style={{ color: inputMuted }}>No domain yet? Find one on Namecheap</span>
+              <ExternalLink className="h-3 w-3 flex-shrink-0" style={{ color: inputMuted }} />
+            </a>
           </div>
         </div>
       </div>
