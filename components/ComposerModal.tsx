@@ -1175,7 +1175,7 @@ export default function ComposerModal({
                   {type === 'linkedin' ? (
                     <>Copy the message, then open their LinkedIn profile to paste it as a direct message. Use "Copy, Open &amp; Log" to do it all in one click.</>
                   ) : type === 'email' ? (
-                    <>"Open Gmail &amp; Log" opens a Gmail compose window addressed to them with the subject filled in, and puts the full message plus your signature (logo and all) on your clipboard. Paste it into the body with Cmd or Ctrl + V, then send, and Gmail closes the window for you. On Outlook or another email? Hit "Copy &amp; Log" instead, then paste it into your own email. Either way VoiceAI Connect doesn&apos;t send it, you do.</>
+                    <><strong>Paste into the compose window to keep your logo.</strong> "Open Gmail &amp; Log" opens a Gmail compose addressed to them with the subject filled in, and puts the full message (logo and formatting included) on your clipboard. Press Cmd or Ctrl + V in the body, then send, and Gmail closes the window for you. The body isn&apos;t pre-filled on purpose: Gmail&apos;s link can only carry plain text, so pasting is what brings the logo through. On Outlook or another email? Hit "Copy &amp; Log" and paste into your own compose window. Either way VoiceAI Connect doesn&apos;t send it, you do.</>
                   ) : (
                     <>Copy the message, then send it from your own phone. "Copy &amp; Log" copies it and records that you reached out, so your follow-up queue stays accurate. It does not send the text.</>
                   )}
