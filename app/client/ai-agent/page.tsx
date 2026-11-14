@@ -58,6 +58,18 @@ const SectionCalendarIcon = (props: { className?: string }) => (
   <Calendar {...props} />
 );
 
+// Neutral mark for a connected CalDAV account (iCloud, Fastmail, Nextcloud, …).
+// We don't ship per-provider logos, so this is a simple cloud+calendar glyph
+// that reads as "a calendar account" without implying one brand.
+const CalDavIcon = ({ className = '', style }: { className?: string; style?: React.CSSProperties }) => (
+  <svg viewBox="0 0 24 24" className={className} style={style} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="3" y="4.5" width="18" height="16" rx="2.5" />
+    <path d="M3 9h18" />
+    <path d="M8 2.5v4M16 2.5v4" />
+    <path d="M8.5 15.5a2 2 0 0 1 .3-3.98 2.8 2.8 0 0 1 5.4.46 1.9 1.9 0 0 1 .3 3.52H8.5Z" />
+  </svg>
+);
+
 const SectionCard = ({ icon, title, subtitle, live, children, theme, primaryColor }: { icon: any; title: string; subtitle?: string; live?: boolean; children: React.ReactNode; theme: any; primaryColor: string; glass?: any }) => (
   <SharedSectionCard icon={icon} title={title} subtitle={subtitle} live={live} theme={theme} primaryColor={primaryColor}>{children}</SharedSectionCard>
 );
@@ -143,6 +155,11 @@ export default function ClientAIAgentPage() {
   const [calendarStatus, setCalendarStatus] = useState<CalendarStatus | null>(null);
   const [calendarLoading, setCalendarLoading] = useState(true);
   const [disconnectingCalendar, setDisconnectingCalendar] = useState(false);
+  // CalDAV (iCloud / Fastmail / other) connect form
+  const [caldavOpen, setCaldavOpen] = useState(false);
+  const [connectingCaldav, setConnectingCaldav] = useState(false);
+  const [caldavErr, setCaldavErr] = useState<string | null>(null);
+  const [caldavForm, setCaldavForm] = useState<{ provider: 'icloud' | 'fastmail' | 'other'; serverUrl: string; username: string; password: string }>({ provider: 'icloud', serverUrl: '', username: '', password: '' });
   // Built-in (native) calendar state
   const [nativeSettings, setNativeSettings] = useState<any>(null);
   const [nativeBusy, setNativeBusy] = useState(false);
@@ -227,11 +244,27 @@ export default function ClientAIAgentPage() {
   const fetchCurrentVoice = async () => { if (!client) return; try { const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/voice`, { headers: { Authorization: `Bearer ${getAuthToken()}` } }); if (r.ok) { const d = await r.json(); if (d.success) { setCurrentVoiceId(d.voice_id); setSelectedVoiceId(d.voice_id); setCurrentVoiceMeta(d.voice || null); } } } catch {} };
   const fetchGreeting = async () => { if (!client) return; setGreetingLoading(true); try { const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/greeting`, { headers: { Authorization: `Bearer ${getAuthToken()}` } }); if (r.ok) { const d = await r.json(); if (d.success) { setGreetingMessage(d.greeting_message); setOriginalGreeting(d.greeting_message); } } } catch {} finally { setGreetingLoading(false); } };
 
-  // Which calendar provider this client is on, for this section (Google or
-  // Microsoft). Microsoft wins when it is the selected provider or already
-  // connected; otherwise Google (the default). GHL/native have their own sections.
-  const calendarProvider = (): 'google' | 'microsoft' =>
-    (((client as any)?.calendar_provider === 'microsoft') || (client as any)?.microsoft_calendar_connected) ? 'microsoft' : 'google';
+  // Which calendar provider this client is on, for this section (Google,
+  // Microsoft or CalDAV). The selected provider wins when set, else we fall back
+  // to whichever has a "connected" flag; otherwise Google (the default).
+  // GHL/native have their own sections.
+  const calendarProvider = (): 'google' | 'microsoft' | 'caldav' => {
+    const cp = (client as any)?.calendar_provider;
+    if (cp === 'caldav' || (client as any)?.caldav_connected) return 'caldav';
+    if (cp === 'microsoft' || (client as any)?.microsoft_calendar_connected) return 'microsoft';
+    return 'google';
+  };
+
+  // Friendly label for a connected CalDAV account, derived from its server host
+  // (we don't store a provider tag). Falls back to the generic "CalDAV".
+  const caldavLabel = (): string => {
+    const u = String((client as any)?.caldav_base_url || '').toLowerCase();
+    if (u.includes('icloud')) return 'iCloud';
+    if (u.includes('fastmail')) return 'Fastmail';
+    if (u.includes('nextcloud')) return 'Nextcloud';
+    if (u.includes('zoho')) return 'Zoho';
+    return 'CalDAV';
+  };
 
   const fetchCalendarStatus = async () => {
     if (!client) return;
@@ -244,8 +277,8 @@ export default function ClientAIAgentPage() {
       }
     } catch (err) {
       console.error('Failed to fetch calendar status:', err);
-      const connected = provider === 'microsoft' ? ((client as any).microsoft_calendar_connected || false) : (client.google_calendar_connected || false);
-      const email = provider === 'microsoft' ? ((client as any).microsoft_calendar_email || null) : ((client as any).google_calendar_email || null);
+      const connected = provider === 'caldav' ? ((client as any).caldav_connected || false) : provider === 'microsoft' ? ((client as any).microsoft_calendar_connected || false) : (client.google_calendar_connected || false);
+      const email = provider === 'caldav' ? ((client as any).caldav_calendar_email || (client as any).caldav_username || null) : provider === 'microsoft' ? ((client as any).microsoft_calendar_email || null) : ((client as any).google_calendar_email || null);
       setCalendarStatus({ connected, token_valid: connected, calendar_access: connected, plan_allowed: true, plan_message: null, email });
     } finally {
       setCalendarLoading(false);
@@ -268,9 +301,48 @@ export default function ClientAIAgentPage() {
     window.location.href = `${getBackendUrl()}/api/auth/microsoft-calendar/connect?clientId=${client?.id}&return=${ret}`;
   };
 
+  // ── CalDAV (iCloud / Fastmail / other): app-specific password, no OAuth ──────
+  // CalDAV has no browser redirect — the client enters their email + app
+  // password and we verify + discover server-side. The password is only POSTed
+  // to our backend over HTTPS and stored there; it is never kept in page state
+  // longer than the submit.
+  const handleConnectCaldav = async () => {
+    if (!client) return;
+    const username = caldavForm.username.trim();
+    const password = caldavForm.password;
+    const provider = caldavForm.provider;
+    if (!username || !password) { setCaldavErr('Enter your email and app-specific password.'); return; }
+    if (provider === 'other' && !caldavForm.serverUrl.trim()) { setCaldavErr('Enter your CalDAV server URL.'); return; }
+    setConnectingCaldav(true); setCaldavErr(null);
+    try {
+      const r = await fetch(`${getBackendUrl()}/api/auth/caldav-calendar/connect`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` },
+        body: JSON.stringify({ clientId: client.id, provider, serverUrl: provider === 'other' ? caldavForm.serverUrl.trim() : undefined, username, password }),
+      });
+      const d = await r.json();
+      if (r.ok && d.success) {
+        setCaldavForm({ provider: 'icloud', serverUrl: '', username: '', password: '' });
+        setCaldavOpen(false);
+        showMessage('Calendar connected');
+        setCalendarStatus({ connected: true, token_valid: true, calendar_access: true, plan_allowed: true, plan_message: null, email: d.email || username });
+        // Reflect the new provider locally so the connected card renders at once.
+        (client as any).calendar_provider = 'caldav';
+        (client as any).caldav_connected = true;
+        (client as any).caldav_calendar_email = d.email || username;
+      } else {
+        setCaldavErr(d.message || d.error || 'Could not connect that calendar.');
+      }
+    } catch {
+      setCaldavErr('Could not reach the server. Try again.');
+    } finally {
+      setConnectingCaldav(false);
+    }
+  };
+
   const handleDisconnectCalendar = async () => {
     const provider = calendarProvider();
-    const label = provider === 'microsoft' ? 'Outlook / Microsoft 365' : 'Google Calendar';
+    const label = provider === 'caldav' ? `your ${caldavLabel()} calendar` : provider === 'microsoft' ? 'Outlook / Microsoft 365' : 'Google Calendar';
     if (!confirm(`Are you sure you want to disconnect ${label}? Your AI receptionist will no longer be able to book appointments.`)) return;
     setDisconnectingCalendar(true);
     try {
@@ -498,7 +570,7 @@ export default function ClientAIAgentPage() {
     : filteredVoices;
   const availableAccents = getAvailableAccents();
   const isNativeActive = (client as any)?.calendar_provider === 'native' || !!nativeSettings?.is_native;
-  const isExternalConnected = !!(calendarStatus?.connected || client?.google_calendar_connected || (client as any)?.microsoft_calendar_connected);
+  const isExternalConnected = !!(calendarStatus?.connected || client?.google_calendar_connected || (client as any)?.microsoft_calendar_connected || (client as any)?.caldav_connected);
   const isCalendarLive = isNativeActive || isExternalConnected;
   const isCalendarPlanAllowed = (client as any)?.is_test_client || calendarStatus?.plan_allowed !== false;
   const isGhlConnected = ghlStatus?.connected || (client as any)?.ghl_connected;
@@ -668,11 +740,11 @@ export default function ClientAIAgentPage() {
                 ) : (
                   <div className="flex items-center gap-3.5 rounded-2xl p-3.5 sm:p-4" style={{ backgroundColor: theme.successBg, border: `1px solid ${theme.successBorder}` }}>
                     <div className="flex h-11 w-11 items-center justify-center rounded-xl flex-shrink-0" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
-                      {calendarProvider() === 'microsoft' ? <OutlookIcon className="w-6 h-6" /> : <GoogleGIcon className="w-6 h-6" />}
+                      {calendarProvider() === 'caldav' ? <CalDavIcon className="w-6 h-6" style={{ color: primaryColor }} /> : calendarProvider() === 'microsoft' ? <OutlookIcon className="w-6 h-6" /> : <GoogleGIcon className="w-6 h-6" />}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-semibold leading-tight" style={{ color: theme.successText }}>{calendarProvider() === 'microsoft' ? 'Outlook' : 'Google Calendar'}</p>
+                        <p className="text-sm font-semibold leading-tight" style={{ color: theme.successText }}>{calendarProvider() === 'caldav' ? caldavLabel() : calendarProvider() === 'microsoft' ? 'Outlook' : 'Google Calendar'}</p>
                         <span className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5" style={{ backgroundColor: theme.card, border: `1px solid ${theme.successBorder}` }}>
                           <span className="relative flex h-1.5 w-1.5">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ backgroundColor: theme.success }} />
@@ -726,6 +798,51 @@ export default function ClientAIAgentPage() {
                   <button onClick={handleConnectMicrosoft} className="w-full flex items-center justify-center gap-2.5 py-3 rounded-xl text-sm font-semibold transition hover:shadow-sm" style={{ backgroundColor: theme.card, color: theme.text, border: `1px solid ${theme.border}` }}>
                     <OutlookIcon className="w-[18px] h-[18px]" /> Connect Outlook / Microsoft 365
                   </button>
+
+                  {!caldavOpen ? (
+                    <button onClick={() => { setCaldavOpen(true); setCaldavErr(null); }} className="w-full flex items-center justify-center gap-2.5 py-3 rounded-xl text-sm font-semibold transition hover:shadow-sm" style={{ backgroundColor: theme.card, color: theme.text, border: `1px solid ${theme.border}` }}>
+                      <CalDavIcon className="w-[18px] h-[18px]" style={{ color: primaryColor }} /> Connect iCloud, Fastmail or other
+                    </button>
+                  ) : (
+                    <div className="rounded-xl p-3.5 space-y-3" style={{ backgroundColor: theme.card, border: `1px solid ${theme.border}` }}>
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-semibold" style={{ color: theme.text }}>Connect by app password</p>
+                        <button onClick={() => { setCaldavOpen(false); setCaldavErr(null); }} className="text-[11px] font-semibold" style={{ color: theme.textMuted }}>Cancel</button>
+                      </div>
+
+                      {/* Provider picker — sets the server automatically for the two
+                          common hosts; "Other" exposes a server-URL field. */}
+                      <div className="flex flex-wrap gap-1.5">
+                        {([['icloud', 'iCloud'], ['fastmail', 'Fastmail'], ['other', 'Other']] as const).map(([v, label]) => {
+                          const active = caldavForm.provider === v;
+                          return (
+                            <button key={v} onClick={() => setCaldavForm(f => ({ ...f, provider: v }))} className="px-3 py-1.5 rounded-lg text-[11px] font-semibold transition" style={{ backgroundColor: active ? primaryColor : (theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6'), color: active ? theme.primaryText : theme.textMuted }}>{label}</button>
+                          );
+                        })}
+                      </div>
+
+                      {caldavForm.provider === 'other' && (
+                        <input type="url" value={caldavForm.serverUrl} onChange={(e) => setCaldavForm(f => ({ ...f, serverUrl: e.target.value }))} placeholder="CalDAV server URL (https://…)" autoComplete="off" className="w-full px-3 py-2.5 rounded-lg text-sm outline-none" style={{ backgroundColor: theme.bg, color: theme.text, border: `1px solid ${theme.border}` }} />
+                      )}
+
+                      <input type="email" value={caldavForm.username} onChange={(e) => setCaldavForm(f => ({ ...f, username: e.target.value }))} placeholder="Email address" autoComplete="off" className="w-full px-3 py-2.5 rounded-lg text-sm outline-none" style={{ backgroundColor: theme.bg, color: theme.text, border: `1px solid ${theme.border}` }} />
+                      <input type="password" value={caldavForm.password} onChange={(e) => setCaldavForm(f => ({ ...f, password: e.target.value }))} placeholder="App-specific password" autoComplete="new-password" className="w-full px-3 py-2.5 rounded-lg text-sm outline-none" style={{ backgroundColor: theme.bg, color: theme.text, border: `1px solid ${theme.border}` }} />
+
+                      <p className="text-[11px] leading-relaxed" style={{ color: theme.textMuted4 }}>
+                        {caldavForm.provider === 'icloud'
+                          ? 'Use an app-specific password from appleid.apple.com (Sign-In & Security → App-Specific Passwords) — not your normal Apple ID password.'
+                          : caldavForm.provider === 'fastmail'
+                          ? 'Create an app password in Fastmail under Settings → Privacy & Security → App passwords, with Calendars (CalDAV) access.'
+                          : 'Enter the CalDAV server URL and an app-specific password for your account. Your normal password usually will not work.'}
+                      </p>
+
+                      {caldavErr && <p className="text-[11px] font-medium" style={{ color: theme.error }}>{caldavErr}</p>}
+
+                      <button onClick={handleConnectCaldav} disabled={connectingCaldav} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: primaryColor, color: theme.primaryText }}>
+                        {connectingCaldav ? (<><Loader2 className="w-4 h-4 animate-spin" /> Connecting…</>) : 'Connect calendar'}
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {nativeErr && <p className="text-[11px] font-medium text-center" style={{ color: theme.error }}>{nativeErr}</p>}
