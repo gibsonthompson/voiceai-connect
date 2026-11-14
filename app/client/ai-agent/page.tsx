@@ -65,6 +65,14 @@ const SectionCard = ({ icon, title, subtitle, live, children, theme, primaryColo
 // Appointment-length options for the built-in calendar.
 const DURATIONS = [15, 30, 45, 60, 90, 120];
 
+// Booking-preference options.
+const SLOT_INTERVALS: { v: number; label: string }[] = [
+  { v: 15, label: '15 min' }, { v: 30, label: '30 min' }, { v: 60, label: '1 hr' }, { v: 90, label: '1.5 hr' }, { v: 120, label: '2 hr' },
+];
+const TIME_WINDOWS: { key: string; label: string }[] = [
+  { key: 'morning', label: 'Morning' }, { key: 'afternoon', label: 'Afternoon' }, { key: 'evening', label: 'Evening' },
+];
+
 const SaveButton = ({ onClick, disabled, loading: btnLoading, label, primaryColor, theme }: { onClick: () => void; disabled: boolean; loading: boolean; label: string; primaryColor: string; theme: any }) => (
   <button onClick={onClick} disabled={disabled} className="w-full mt-3 py-2.5 sm:py-3 rounded-xl font-semibold text-sm transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2" style={{ backgroundColor: primaryColor, color: theme.primaryText }}>
     {btnLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : label}
@@ -141,6 +149,12 @@ export default function ClientAIAgentPage() {
   const [savingDuration, setSavingDuration] = useState(false);
   const [durationSaved, setDurationSaved] = useState(false);
   const [nativeErr, setNativeErr] = useState<string | null>(null);
+  // Booking preferences (apply to every calendar provider): how far apart offered
+  // times are, and which parts of the day the AI may offer.
+  const [bookingInterval, setBookingInterval] = useState<number>(30);
+  const [bookingWindows, setBookingWindows] = useState<string[]>([]);
+  const [savingPrefs, setSavingPrefs] = useState(false);
+  const [prefsSaved, setPrefsSaved] = useState(false);
 
   // GoHighLevel state
   const [ghlStatus, setGhlStatus] = useState<GhlStatus | null>(null);
@@ -324,6 +338,29 @@ export default function ClientAIAgentPage() {
     } catch (e: any) { setNativeErr(e.message); } finally { setSavingDuration(false); }
   };
 
+  // Keep the booking-preference controls in sync with whatever the server has.
+  useEffect(() => {
+    if (!nativeSettings) return;
+    setBookingInterval(Number(nativeSettings.booking_slot_interval) > 0 ? Number(nativeSettings.booking_slot_interval) : 30);
+    setBookingWindows(Array.isArray(nativeSettings.booking_time_windows) ? nativeSettings.booking_time_windows : []);
+  }, [nativeSettings]);
+
+  // Save interval + day-part windows (applies to Google, Outlook, and native).
+  const saveBookingPrefs = async (interval: number, windows: string[]) => {
+    if (!client) return;
+    setBookingInterval(interval); setBookingWindows(windows);
+    setSavingPrefs(true); setPrefsSaved(false); setNativeErr(null);
+    try {
+      const r = await fetch(`${getBackendUrl()}/api/client/${client.id}/calendar/native/settings`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken()}` },
+        body: JSON.stringify({ booking_slot_interval: interval, booking_time_windows: windows }),
+      });
+      const d = await r.json();
+      if (!r.ok || !d.success) throw new Error(d.error || 'Could not save');
+      setPrefsSaved(true); setTimeout(() => setPrefsSaved(false), 2200);
+    } catch (e: any) { setNativeErr(e.message); } finally { setSavingPrefs(false); }
+  };
+
   // GoHighLevel: status is public (no auth header), same pattern as the calendar
   // status check. Connect/disconnect mirror the Google flow.
   const fetchGhlStatus = async () => {
@@ -471,6 +508,50 @@ export default function ClientAIAgentPage() {
 
   if (loading || !client) return <div className="flex items-center justify-center min-h-[50vh]" style={{ backgroundColor: theme.bg }}><Loader2 className="h-8 w-8 animate-spin" style={{ color: theme.textMuted4 }} /></div>;
 
+  // Booking preferences control, shown inside the calendar card whenever a
+  // calendar is connected (any provider). Times of day on top, then spacing.
+  const bookingPrefsBlock = (
+    <div className="rounded-xl p-3 sm:p-3.5 space-y-3" style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}>
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold" style={{ color: theme.text }}>Times your AI offers</p>
+        {savingPrefs ? (<span className="text-[11px] flex items-center gap-1" style={{ color: theme.textMuted }}><Loader2 className="w-3 h-3 animate-spin" /> Saving</span>)
+          : prefsSaved ? (<span className="text-[11px] flex items-center gap-1" style={{ color: theme.successText }}><Check className="w-3 h-3" /> Saved</span>) : null}
+      </div>
+
+      <div>
+        <p className="text-[11px] mb-1.5" style={{ color: theme.textMuted }}>Times of day <span style={{ color: theme.textMuted4 }}>(leave all off to allow any time)</span></p>
+        <div className="flex flex-wrap gap-1.5">
+          {TIME_WINDOWS.map((w) => {
+            const active = bookingWindows.includes(w.key);
+            return (
+              <button key={w.key} onClick={() => saveBookingPrefs(bookingInterval || 30, active ? bookingWindows.filter((x) => x !== w.key) : [...bookingWindows, w.key])} disabled={savingPrefs}
+                className="px-3 py-1.5 rounded-lg text-[11px] font-semibold transition disabled:opacity-60"
+                style={{ backgroundColor: active ? primaryColor : (theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6'), color: active ? theme.primaryText : theme.textMuted }}>
+                {w.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
+        <p className="text-[11px] mb-1.5" style={{ color: theme.textMuted }}>How far apart</p>
+        <div className="flex flex-wrap gap-1.5">
+          {SLOT_INTERVALS.map((s) => {
+            const active = (bookingInterval || 30) === s.v;
+            return (
+              <button key={s.v} onClick={() => saveBookingPrefs(s.v, bookingWindows)} disabled={savingPrefs}
+                className="px-3 py-1.5 rounded-lg text-[11px] font-semibold transition disabled:opacity-60"
+                style={{ backgroundColor: active ? primaryColor : (theme.isDark ? 'rgba(255,255,255,0.04)' : '#f3f4f6'), color: active ? theme.primaryText : theme.textMuted }}>
+                {s.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 pb-24 min-h-screen" style={{ backgroundColor: theme.bg }}>
       <style dangerouslySetInnerHTML={{ __html: ANIM_CSS }} />
@@ -567,6 +648,8 @@ export default function ClientAIAgentPage() {
                   Your open times come from the business hours on your <a href="/client/my-business" className="font-semibold underline" style={{ color: primaryColor }}>My Business</a> page. See and manage every booking on the <a href="/client/calendar" className="font-semibold underline" style={{ color: primaryColor }}>Calendar</a> tab.
                 </div>
 
+                {bookingPrefsBlock}
+
                 <button onClick={disableNative} disabled={nativeBusy} className="w-full py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: theme.errorBg, color: theme.error, border: `1px solid ${theme.errorBorder}` }}>
                   {nativeBusy ? (<span className="flex items-center justify-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Turning off...</span>) : 'Turn off built-in calendar'}
                 </button>
@@ -613,6 +696,8 @@ export default function ClientAIAgentPage() {
                     <p className="text-xs sm:text-sm font-medium" style={{ color: theme.warningText }}>Calendar connection may have expired. Disconnect and connect again to keep bookings flowing.</p>
                   </div>
                 )}
+
+                {bookingPrefsBlock}
 
                 <button onClick={handleDisconnectCalendar} disabled={disconnectingCalendar} className="w-full py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: theme.bg, color: theme.textMuted, border: `1px solid ${theme.border}` }}>
                   {disconnectingCalendar ? (<span className="flex items-center justify-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Disconnecting...</span>) : 'Disconnect calendar'}
